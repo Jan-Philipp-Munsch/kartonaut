@@ -2828,3 +2828,270 @@ void loop() {
 }
 
 */
+
+/*
+#include <LittleFS.h>
+
+// nicht mir LittleFS ohne spikes alle 55kb möglich :(
+
+// ===== QSPI-LittleFS Setup =====
+LittleFS_QSPIFlash myfs;
+File logFile;
+
+// ===== Parameter =====
+static const uint32_t LOOP_HZ   = 250;
+static const uint32_t LOOP_US   = 1000000UL / LOOP_HZ;   // 4000 µs
+static const uint32_t LOG_BYTES = 4UL * 1024UL * 1024UL; // 4 MB Datei
+static const size_t   NUM_WORDS = 20;                    // 20 × int16_t
+static const size_t   REC_BYTES = 4 + NUM_WORDS * 2;     // 44 B / Datensatz
+static const size_t PAGE_SIZE = 512;                     // Schreibblock statt 256
+
+
+// ===== Record-Struktur =====
+typedef struct __attribute__((packed,aligned(4))) {
+  uint32_t ts_us;
+  int16_t  v[NUM_WORDS];
+} Record;
+
+// ===== Globale Variablen =====
+static uint32_t logOffset = 0;
+static uint32_t t_next    = 0;
+static uint8_t  pageBuf[PAGE_SIZE];
+static size_t   pageFill  = 0;
+bool logging = false, paused = false;
+
+// ===== Helper: Open ab Anfang (kein Append) =====
+File openWriteFromBegin(const char* path) {
+#ifdef FILE_WRITE_BEGIN
+  return myfs.open(path, FILE_WRITE_BEGIN);
+#else
+  File f = myfs.open(path, FILE_WRITE);
+  if (f) f.seek(0);
+  return f;
+#endif
+}
+
+// ===== Pre-Allokation (4 MB 0xFF) =====
+// ======================================================
+// 1) Pre-Allokation + Öffnen ab Dateianfang (kein Append)
+//    -> inkl. optionalem "Warm-up", um den ersten Commit
+//       vor den Messbetrieb zu verlagern.
+// ======================================================
+bool preallocateAndOpen(const char* path) {
+  if (logFile) logFile.close();
+  Serial.printf("Pre-allocating %lu bytes (0xFF)…\n", (unsigned long)LOG_BYTES);
+
+  // Datei anlegen & mit 0xFF füllen (blockierend – gewollt)
+  File f = myfs.open(path, FILE_WRITE);              // Erstellen/Größe setzen
+  if (!f) { Serial.println("open failed (prealloc)"); return false; }
+
+  const size_t BU = 4096;
+  static uint8_t ff[BU];
+  memset(ff, 0xFF, sizeof(ff));
+
+  f.seek(0);
+  for (uint32_t off = 0; off < LOG_BYTES; off += BU) {
+    size_t n = (LOG_BYTES - off >= BU) ? BU : (LOG_BYTES - off);
+    if (f.write(ff, n) != n) {
+      Serial.println("prealloc write failed");
+      f.close();
+      return false;
+    }
+  }
+  f.flush();     // hier darf es dauern
+  f.close();
+
+  // Für den Messbetrieb OHNE Append ab Anfang öffnen:
+#ifdef FILE_WRITE_BEGIN
+  logFile = myfs.open(path, FILE_WRITE_BEGIN);
+#else
+  logFile = myfs.open(path, FILE_WRITE);
+  if (logFile) logFile.seek(0);
+#endif
+  if (!logFile) { Serial.println("open failed (logging)"); return false; }
+
+  // Schreibe von Anfang an, kein seek() mehr während des Betriebs
+  logOffset = 0;
+  pageFill  = 0;
+  logFile.seek(0);
+
+  // ---------- Optionales "Warm-up" (empfohlen) ----------
+  // ein paar KB schreiben & flushen, damit der erste größere
+  // FS-Commit vor den eigentlichen Messdaten passiert.
+  {
+    static uint8_t warm[1024];
+    memset(warm, 0xFF, sizeof(warm));
+    for (int i = 0; i < 4; ++i) logFile.write(warm, sizeof(warm)); // 4 KB
+    logFile.flush();
+    // zurück zum Start für den echten Log
+    logFile.seek(0);
+    logOffset = 0;
+  }
+  // ------------------------------------------------------
+
+  Serial.println("Pre-allocation done. Logging file open.");
+  return true;
+}
+
+
+// ===== Erase / List =====
+void eraseFS() { Serial.println("Formatting FS…"); myfs.quickFormat(); Serial.println("done."); }
+void listFiles() {
+  Serial.print("\nSpace Used = "); Serial.println(myfs.usedSize());
+  Serial.print("Filesystem = "); Serial.println(myfs.totalSize());
+  File dir = myfs.open("/"); Serial.println("Directory:");
+  while (true) {
+    File e = dir.openNextFile(); if (!e) break;
+    Serial.printf(" %-20s %u B\n", e.name(), (unsigned)e.size());
+    e.close();
+  }
+}
+
+// ===== Datenquelle =====
+void makeSample(Record& r) {
+  r.ts_us = micros();
+  for (size_t i = 0; i < NUM_WORDS; ++i)
+    r.v[i] = (int16_t)random(-32768, 32767);
+}
+
+// ===== Schreiben direkt in Datei =====
+// =======================================
+// 2) flushPage() – ohne seek(), cursor-basiert
+//    (seek() wurde bereits EINMAL vorab
+//     auf 0 gesetzt; write() erhöht logOffset)
+// =======================================
+void flushPage() {
+  if (!logFile || pageFill == 0) return;
+
+  // Optional: Schutz, nicht über LOG_BYTES hinaus schreiben
+  if (logOffset + pageFill > LOG_BYTES) {
+    size_t clamp = LOG_BYTES - logOffset;
+    if ((int32_t)clamp <= 0) { pageFill = 0; return; }
+    size_t w = logFile.write(pageBuf, clamp);
+    if (w != clamp) Serial.println("[WARN] write() short/failed (clamp)");
+    logOffset += w;
+    pageFill = 0;
+    return;
+  }
+
+  // Direkt schreiben (KEIN seek() hier!)
+  size_t w = logFile.write(pageBuf, pageFill);
+  if (w != pageFill) Serial.println("[WARN] write() short/failed");
+  logOffset += w;
+  pageFill = 0;
+}
+
+
+void writeRecord(const Record& r) {
+  if (!logFile) return;
+  const uint8_t* p = (const uint8_t*)&r;
+  for (size_t i = 0; i < sizeof(r); ++i) {
+    pageBuf[pageFill++] = p[i];
+    if (pageFill >= PAGE_SIZE) flushPage();
+  }
+}
+
+// ===== Dump-Hilfen =====
+static inline bool isAllFF(const uint8_t* p, size_t n) {
+  for (size_t i = 0; i < n; ++i) if (p[i] != 0xFF) return false;
+  return true;
+}
+uint32_t findUsedLength(File& f, uint32_t cap) {
+  const size_t CH = 4096; static uint8_t buf[CH];
+  uint32_t used=0,last=0; f.seek(0);
+  while (used < cap) {
+    size_t n = (cap - used >= CH) ? CH : (cap - used);
+    int r = f.read(buf, n); if (r <= 0) break;
+    if (!isAllFF(buf, r)) last = used + r;
+    used += r;
+  }
+  return (last / REC_BYTES) * REC_BYTES;
+}
+void dumpCSV(File& f, uint32_t maxB) {
+  Serial.print("ts_us");
+  for (int i=0;i<(int)NUM_WORDS;++i){Serial.print(",int");Serial.print(i);}
+  Serial.println();
+  Record r;
+  uint32_t readB=0;
+  while (readB+REC_BYTES<=maxB) {
+    if (f.read((uint8_t*)&r, REC_BYTES)!=REC_BYTES) break;
+    readB+=REC_BYTES;
+    Serial.print(r.ts_us);
+    for (size_t i=0;i<NUM_WORDS;++i){Serial.print(',');Serial.print(r.v[i]);}
+    Serial.println();
+  }
+  Serial.println("<end>");
+}
+
+// ===== Dump-Varianten =====
+static const char* LOG_PATH = "/log_i16_ts.bin";
+void dumpCurrent() {
+  Serial.println("\nDump current session:");
+  if (logOffset+pageFill==0){Serial.println("(no data)");return;}
+  flushPage(); File f=myfs.open(LOG_PATH); if(!f){Serial.println("open failed");return;}
+  dumpCSV(f, logOffset); f.close();
+}
+void dumpExisting() {
+  Serial.println("\nDump existing file (auto-len):");
+  File f=myfs.open(LOG_PATH); if(!f){Serial.println("open failed");return;}
+  uint32_t len=findUsedLength(f,LOG_BYTES);
+  if(!len){Serial.println("(empty)");f.close();return;}
+  f.seek(0); dumpCSV(f,len); f.close();
+}
+
+// ===== Menü =====
+void menu() {
+  Serial.println("\nCommands:");
+  Serial.println(" s=start (prealloc+log)  p=pause  x=stop");
+  Serial.println(" d=dump current  D=dump existing  l=list  e=erase  h=help");
+}
+
+// ===== Hauptlogik =====
+void setup() {
+  Serial.begin(115200);
+  while(!Serial&&millis()<3000){}
+  Serial.println("\nTeensy 4.1 – 250 Hz QSPI Flash Logger");
+  if(!myfs.begin()){Serial.println("Flash init FAILED");while(1){}}
+  Serial.println("LittleFS ready.");
+  randomSeed(analogRead(A0)^micros());
+  t_next=micros()+LOOP_US;
+  menu();
+}
+
+void loop() {
+  // ---- Konsole ----
+  if (Serial.available()) {
+    char c=Serial.read();
+    switch(c){
+      case 'e': eraseFS(); break;
+      case 'l': listFiles(); break;
+      case 's': logging=false;paused=false;
+                if(preallocateAndOpen(LOG_PATH)){logging=true;Serial.println("Logging started.");} break;
+      case 'p': paused=true;Serial.println("Paused.");break;
+      case 'x': logging=false;flushPage();Serial.printf("Stopped. Bytes =%lu\n",(unsigned long)logOffset);
+                if(logFile)logFile.close();break;
+      case 'd': dumpCurrent();break;
+      case 'D': dumpExisting();break;
+      case 'h': menu();break;
+    }
+    while(Serial.read()!=-1){}
+  }
+
+  // ---- 250 Hz Loop ----
+  uint32_t now=micros();
+  if((int32_t)(now-t_next)>=0){
+    uint32_t t0=micros();
+    if(logging&&!paused){
+      Record r; makeSample(r);
+      writeRecord(r);
+    }
+    uint32_t loopTime=micros()-t0;
+    if(loopTime>LOOP_US)
+      Serial.printf("\n⚠️ Loop %lu us (> %lu) off=%lu\n",
+        (unsigned long)loopTime,(unsigned long)LOOP_US,(unsigned long)logOffset);
+    t_next+=LOOP_US;
+    if((int32_t)(micros()-t_next)>10*(int32_t)LOOP_US)
+      t_next=micros()+LOOP_US;
+  }
+}
+*/

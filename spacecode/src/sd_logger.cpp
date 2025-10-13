@@ -1,3 +1,4 @@
+/*
 #include <Arduino.h>
 #include <SdFat.h>
 
@@ -680,3 +681,5 @@ void loop() {
     }
   }
 }
+
+*/

@@ -1,8 +1,7 @@
 
 // ToDo
 // implement GPS
-// implement radio, condensator???
-// implement data logging
+// implement radio
 
 // angle conversion to servo output
 
@@ -13,7 +12,7 @@
 // Vec3 Library+aufräumen
 // Exmem
 
-/*
+
 #include <Arduino.h>
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
@@ -118,6 +117,124 @@ BLA::Matrix<1,1> L; BLA::Matrix<1,1> M;
 
 boolean calib_kal = true;
 float offset = 0;
+
+struct Vec3 {
+    float x, y, z;
+
+    // Konstruktor
+    Vec3(float x = 0, float y = 0, float z = 0) : x(x), y(y), z(z) {}
+
+    // Addition
+    Vec3 operator+(const Vec3& other) const {
+        return {x + other.x, y + other.y, z + other.z};
+    }
+    // Skalierung (Vektor * Skalar)
+    Vec3 operator*(float scalar) const {
+        return {x * scalar, y * scalar, z * scalar};
+    }
+    // Skalierung (Skalar * Vektor)
+    friend Vec3 operator*(float scalar, const Vec3& v) {
+        return {v.x * scalar, v.y * scalar, v.z * scalar};
+    }
+    // Addition mit Zuweisung (+=)
+    Vec3& operator+=(const Vec3& other) {
+        x += other.x; y += other.y; z += other.z;
+        return *this;
+    }
+  };
+
+  float normOfVec3(Vec3 v){
+      return sqrtf(v.x*v.x+v.y*v.y+v.z*v.z);
+    }
+
+  void printVec3(Vec3 v) {
+    SERIAL_PORT.print(v.x, 3);
+    SERIAL_PORT.print(",");
+    SERIAL_PORT.print(v.y, 3);
+    SERIAL_PORT.print(",");
+    SERIAL_PORT.println(v.z, 3);
+  }
+
+  void printTeleplotVec3(Vec3 v, String s) {
+
+    SERIAL_PORT.print(">X_" + s + ":");
+    SERIAL_PORT.println(v.x, 3);
+    SERIAL_PORT.print(">Y_" + s + ":");
+    SERIAL_PORT.println(v.y, 3);
+    SERIAL_PORT.print(">Z_" + s + ":");
+    SERIAL_PORT.println(v.z, 3);
+  }
+
+  struct Quaternion {
+    float w, x, y, z;
+
+    Quaternion conjugate() const {
+        return {w, -x, -y, -z};
+    }
+
+    Quaternion operator*(const Quaternion& b) const {
+        return {
+            w*b.w - x*b.x - y*b.y - z*b.z,
+            w*b.x + x*b.w + y*b.z - z*b.y,
+            w*b.y - x*b.z + y*b.w + z*b.x,
+            w*b.z + x*b.y - y*b.x + z*b.w
+
+        };
+    }
+
+    Quaternion normalize() const {
+      float mag = sqrt(w*w + x*x + y*y + z*z);
+      if (mag == 0) return {1, 0, 0, 0}; // fallback
+      return {w/mag, x/mag, y/mag, z/mag};
+    }
+  };
+
+  Vec3 rotateVector(const Quaternion& q, const Vec3& v) {
+    // Quaternion v als rein imaginären Vektor (w = 0)
+    Quaternion qv = {0, v.x, v.y, v.z}; 
+    Quaternion q_conj = q.conjugate();
+    Quaternion rotated = q * qv * q_conj;
+
+    return Vec3(rotated.x, rotated.y, rotated.z);
+  }
+  
+  void printQuaternion(Quaternion q) {
+    SERIAL_PORT.print(q.w, 3);
+    SERIAL_PORT.print(",");
+    SERIAL_PORT.print(q.x, 3);
+    SERIAL_PORT.print(",");
+    SERIAL_PORT.print(q.y, 3);
+    SERIAL_PORT.print(",");
+    SERIAL_PORT.println(q.z, 3);
+  }
+
+  Vec3 QuantToEuler(Quaternion q) {
+
+    // roll (x-axis rotation)
+    double t0 = +2.0 * (q.w * q.x + q.y * q.z);
+    double t1 = +1.0 - 2.0 * (q.x * q.x + q.y * q.y);
+    double roll = atan2(t0, t1) * 180.0 / PI;
+
+    // pitch (y-axis rotation)
+    double t2 = +2.0 * (q.w * q.y - q.x * q.z);
+    t2 = t2 > 1.0 ? 1.0 : t2;
+    t2 = t2 < -1.0 ? -1.0 : t2;
+    double pitch = asin(t2) * 180.0 / PI;
+
+    // yaw (z-axis rotation)
+    double t3 = +2.0 * (q.w * q.z + q.x * q.y);
+    double t4 = +1.0 - 2.0 * (q.y * q.y + q.z * q.z);
+    double yaw = atan2(t3, t4) * 180.0 / PI;
+
+    SERIAL_PORT.print(">Roll:");
+    SERIAL_PORT.println(roll, 1);
+    SERIAL_PORT.print(">Pitch:");
+    SERIAL_PORT.println(pitch, 1);
+    SERIAL_PORT.print(">Yaw:");
+    SERIAL_PORT.println(yaw, 1);
+
+    return Vec3 {yaw, pitch, roll};
+  }
 
 // consts for accel
 Vec3 a_IMU = {0, 0, 0};
@@ -375,124 +492,6 @@ void setup()
   LoopTimer = micros();
   
 }
-
-  struct Vec3 {
-    float x, y, z;
-
-    // Konstruktor
-    Vec3(float x = 0, float y = 0, float z = 0) : x(x), y(y), z(z) {}
-
-    // Addition
-    Vec3 operator+(const Vec3& other) const {
-        return {x + other.x, y + other.y, z + other.z};
-    }
-    // Skalierung (Vektor * Skalar)
-    Vec3 operator*(float scalar) const {
-        return {x * scalar, y * scalar, z * scalar};
-    }
-    // Skalierung (Skalar * Vektor)
-    friend Vec3 operator*(float scalar, const Vec3& v) {
-        return {v.x * scalar, v.y * scalar, v.z * scalar};
-    }
-    // Addition mit Zuweisung (+=)
-    Vec3& operator+=(const Vec3& other) {
-        x += other.x; y += other.y; z += other.z;
-        return *this;
-    }
-  };
-
-  float normOfVec3(Vec3 v){
-      return sqrtf(v.x*v.x+v.y*v.y+v.z*v.z);
-    }
-
-  void printVec3(Vec3 v) {
-    SERIAL_PORT.print(v.x, 3);
-    SERIAL_PORT.print(",");
-    SERIAL_PORT.print(v.y, 3);
-    SERIAL_PORT.print(",");
-    SERIAL_PORT.println(v.z, 3);
-  }
-
-  void printTeleplotVec3(Vec3 v, String s) {
-
-    SERIAL_PORT.print(">X_" + s + ":");
-    SERIAL_PORT.println(v.x, 3);
-    SERIAL_PORT.print(">Y_" + s + ":");
-    SERIAL_PORT.println(v.y, 3);
-    SERIAL_PORT.print(">Z_" + s + ":");
-    SERIAL_PORT.println(v.z, 3);
-  }
-
-  struct Quaternion {
-    float w, x, y, z;
-
-    Quaternion conjugate() const {
-        return {w, -x, -y, -z};
-    }
-
-    Quaternion operator*(const Quaternion& b) const {
-        return {
-            w*b.w - x*b.x - y*b.y - z*b.z,
-            w*b.x + x*b.w + y*b.z - z*b.y,
-            w*b.y - x*b.z + y*b.w + z*b.x,
-            w*b.z + x*b.y - y*b.x + z*b.w
-
-        };
-    }
-
-    Quaternion normalize() const {
-      float mag = sqrt(w*w + x*x + y*y + z*z);
-      if (mag == 0) return {1, 0, 0, 0}; // fallback
-      return {w/mag, x/mag, y/mag, z/mag};
-    }
-  };
-
-  Vec3 rotateVector(const Quaternion& q, const Vec3& v) {
-    // Quaternion v als rein imaginären Vektor (w = 0)
-    Quaternion qv = {0, v.x, v.y, v.z}; 
-    Quaternion q_conj = q.conjugate();
-    Quaternion rotated = q * qv * q_conj;
-
-    return Vec3(rotated.x, rotated.y, rotated.z);
-  }
-  
-  void printQuaternion(Quaternion q) {
-    SERIAL_PORT.print(q.w, 3);
-    SERIAL_PORT.print(",");
-    SERIAL_PORT.print(q.x, 3);
-    SERIAL_PORT.print(",");
-    SERIAL_PORT.print(q.y, 3);
-    SERIAL_PORT.print(",");
-    SERIAL_PORT.println(q.z, 3);
-  }
-
-  Vec3 QuantToEuler(Quaternion q) {
-
-    // roll (x-axis rotation)
-    double t0 = +2.0 * (q.w * q.x + q.y * q.z);
-    double t1 = +1.0 - 2.0 * (q.x * q.x + q.y * q.y);
-    double roll = atan2(t0, t1) * 180.0 / PI;
-
-    // pitch (y-axis rotation)
-    double t2 = +2.0 * (q.w * q.y - q.x * q.z);
-    t2 = t2 > 1.0 ? 1.0 : t2;
-    t2 = t2 < -1.0 ? -1.0 : t2;
-    double pitch = asin(t2) * 180.0 / PI;
-
-    // yaw (z-axis rotation)
-    double t3 = +2.0 * (q.w * q.z + q.x * q.y);
-    double t4 = +1.0 - 2.0 * (q.y * q.y + q.z * q.z);
-    double yaw = atan2(t3, t4) * 180.0 / PI;
-
-    SERIAL_PORT.print(">Roll:");
-    SERIAL_PORT.println(roll, 1);
-    SERIAL_PORT.print(">Pitch:");
-    SERIAL_PORT.println(pitch, 1);
-    SERIAL_PORT.print(">Yaw:");
-    SERIAL_PORT.println(yaw, 1);
-
-    return Vec3 {yaw, pitch, roll};
-  }
 
 void BMP_signals(){
   z_BMP = bmp.readAltitude(gndps);
@@ -755,219 +754,3 @@ void loop()
 
   return;
 }
-
-
-
-//flash logging test 
-
-
-/*
-#include <LittleFS.h>
-
-// LittleFS supports creating file systems (FS) in multiple memory types.  Depending on the 
-// memory type you want to use you would uncomment one of the following constructors
-
-LittleFS_QSPIFlash myfs;  // Used to create FS on QSPI NOR flash chips located on the bottom of the T4.1 such as the W25Q16JV*IQ/W25Q16FV,  for the full list of supported NOR flash see https://github.com/PaulStoffregen/LittleFS#nor-flash
-
-File dataFile;  // Specifes that dataFile is of File type
-
-int record_count = 0;
-bool write_data = false;
-
-void logData()
-{
-    // make a string for assembling the data to log:
-    String dataString = "";
-    int size = 8;
-    float current[size]= {0.0};
-  
-    // read three sensors and append to the string:
-    for (int analogPin = 0; analogPin < 3; analogPin++) {
-      int sensor = analogRead(analogPin);
-      dataString += String(sensor);
-      if (analogPin < 2) {
-        dataString += ",";
-      }
-    }
-  
-    // if the file is available, write to it:
-    if (dataFile) {
-      u_int64_t timer = micros();
-        for (size_t i = 0; i < size; i++)
-        {
-          dataFile.print(current[i],5);
-          if (i < (size-1)){
-            dataFile.print(",");
-          }
-          else{
-            dataFile.println();
-          }
-          
-        }
-
-      Serial.println(micros()-timer);
-      // print to the serial port too:
-      Serial.println(dataString);
-      record_count += 1;
-    } else {
-      // if the file isn't open, pop up an error:
-      Serial.println("error opening datalog.txt");
-    }
-    delay(4); // run at a reasonable not-too-fast speed for testing
-}
-
-void stopLogging()
-{
-  Serial.println("\nStopped Logging Data!!!");
-  write_data = false;
-  // Closes the data file.
-  dataFile.close();
-  Serial.printf("Records written = %d\n", record_count);
-}
-
-
-void dumpLog()
-{
-  Serial.print("\nDumping Log");
-  // open the file.
-  u_int64_t timer = micros();
-  dataFile = myfs.open("datalog.txt");
-  Serial.print(" in ");
-  Serial.print(micros()-timer);
-  Serial.println(" us.");
-
-  // if the file is available, write to it:
-  if (dataFile) {
-    while (dataFile.available()) {
-      Serial.write(dataFile.read());
-    }
-    dataFile.close();
-  }  
-  // if the file isn't open, pop up an error:
-  else {
-    Serial.println("error opening datalog.txt");
-  } 
-}
-
-void menu()
-{
-  Serial.println();
-  Serial.println("Menu Options:");
-  Serial.println("\tl - List files on disk");
-  Serial.println("\te - Erase files on disk");
-  Serial.println("\ts - Start Logging data (Restarting logger will append records to existing log)");
-  Serial.println("\tx - Stop Logging data");
-  Serial.println("\td - Dump Log");
-  Serial.println("\th - Menu");
-  Serial.println();
-}
-
-void printSpaces(int num) {
-  for (int i=0; i < num; i++) {
-    Serial.print(" ");
-  }
-}
-
-void printDirectory(File dir, int numSpaces) {
-   while(true) {
-     File entry = dir.openNextFile();
-     if (! entry) {
-       //Serial.println("** no more files **");
-       break;
-     }
-     printSpaces(numSpaces);
-     Serial.print(entry.name());
-     if (entry.isDirectory()) {
-       Serial.println("/");
-       printDirectory(entry, numSpaces+2);
-     } else {
-       // files have sizes, directories do not
-       printSpaces(36 - numSpaces - strlen(entry.name()));
-       Serial.print("  ");
-       Serial.println(entry.size(), DEC);
-     }
-     entry.close();
-   }
-}
-
-void printDirectory(FS &fs) {
-  Serial.println("Directory\n---------");
-  printDirectory(fs.open("/"), 0);
-  Serial.println();
-}
-
-
-
-void listFiles()
-{
-  Serial.print("\n Space Used = ");
-  Serial.println(myfs.usedSize());
-  Serial.print("Filesystem Size = ");
-  Serial.println(myfs.totalSize());
-
-  printDirectory(myfs);
-}
-
-void eraseFiles()
-{
-  myfs.quickFormat();  // performs a quick format of the created di
-  Serial.println("\nFiles erased !");
-}
-
-
-void setup()
-{
-
-  // Open serial communications and wait for port to open:
-  Serial.begin(115200);
-  while (!Serial) {
-    // wait for serial port to connect.
-  }
-  Serial.println("\n" __FILE__ " " __DATE__ " " __TIME__);
-
-  Serial.print("Initializing LittleFS ...");
-
-  // see if the Flash is present and can be initialized:
-  if (!myfs.begin()) {
-    Serial.printf("Error starting %s\n", "QSPI FLASH");
-    while (1) {
-      // Error, so don't do anything more - stay stuck here
-    }
-  }
-  Serial.println("LittleFS initialized.");
-  
-  menu();
-  
-}
-
-void loop()
-{ 
-  if ( Serial.available() ) {
-    char rr;
-    rr = Serial.read();
-    switch (rr) {
-      case 'l': listFiles(); break;
-      case 'e': eraseFiles(); break;
-      case 's':
-        {
-          Serial.println("\nLogging Data!!!");
-          write_data = true;   // sets flag to continue to write data until new command is received
-          // opens a file or creates a file if not present,  FILE_WRITE will append data to
-          // to the file created.
-          dataFile = myfs.open("datalog.txt", FILE_WRITE);
-          logData();
-        }
-        break;
-      case 'x': stopLogging(); break;
-      case 'd': dumpLog(); break;
-      case '\r':
-      case '\n':
-      case 'h': menu(); break;
-    }
-    while (Serial.read() != -1) ; // remove rest of characters.
-  } 
-
-  if(write_data) logData();
-}
-*/
-

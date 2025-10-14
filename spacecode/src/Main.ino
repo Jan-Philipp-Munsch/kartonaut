@@ -7,6 +7,8 @@
 #include "Control.h"
 #include "Timing.h"
 #include <HardwareSerial.h>
+#include "SDLogger.h"
+
 
 HardwareSerial& hc12 = Serial8;
 
@@ -21,8 +23,15 @@ static float AltitudeKalman = 0.f, VelocityVerticalKalman = 0.f;
 static float alt_offset = 0.0f;
 static bool  offset_applied = false;
 
+int i = 0;
+
 void setup(){
   Serial.begin(115200);
+
+  if(LOG_DATA){
+    SDLogger_setup();
+    SDLogger_start();
+  }
 
   Indicators_setup();
   //Indicate_success();
@@ -31,7 +40,6 @@ void setup(){
   Motor_setup();
   Control_setup();
   Sensors_setup();
-
 
   hc12.begin(HC12_BAUD);
 
@@ -90,16 +98,18 @@ void loop(){
                   roll_cmd_norm, roll_pwm, roll_dir);
   }
 
+  // --- INA219 Daten
+  PowerData p;
 
   // --- Teleplot-Ausgaben (Konsole) ---
 
-  if(false)  {
+  if(PLOT_KALMAN)  {
     Serial.print(">Kalman_Alt:");  Serial.println(AltitudeKalman - alt_offset, 3);
     Serial.print(">Kalman_Vz:");   Serial.println(VelocityVerticalKalman, 3);
     //Serial.print(">Baro_Alt:");    Serial.println(baro.alt_m - alt_offset, 3);
     //Serial.print(">dt_meas:");     Serial.println(loopTimer.dt_meas_s, 6);
   }
-  if(false)  {
+  if(PLOT_ROLL)  {
     // Teleplot
     Serial.print(">Roll_Angle:");       Serial.println(roll_angle_deg, 3);
     Serial.print(">Roll_Rate:");        Serial.println(roll_rate_dps, 3);
@@ -108,8 +118,7 @@ void loop(){
     Serial.print(">Roll_PWM:");         Serial.println(roll_pwm);
     Serial.print(">Roll_Dir:");         Serial.println(roll_dir);
   }
-  if(false)  {
-    PowerData p;
+  if(PLOT_ELECTRICS)  {
     if (Read_Power(p)) {
       // optional: leichte Glättung für nicer plots
       static float i_filt = 0.0f, pwr_filt = 0.0f;
@@ -132,6 +141,52 @@ void loop(){
     }
   }
 
+
+  if(LOG_DATA){
+    SDFrame fr;
+    fr.kalman_alt_m   = AltitudeKalman;
+    fr.kalman_vz_ms   = VelocityVerticalKalman;
+    fr.baro_alt_m     = baro.alt_m;
+
+    fr.a_nav_x_ms2    = imu.a_nav.x;
+    fr.a_nav_y_ms2    = imu.a_nav.y;
+    fr.a_nav_z_ms2    = imu.a_nav.z;
+
+    fr.omega_x_dps    = imu.omega_dps.x;
+    fr.omega_y_dps    = imu.omega_dps.y;
+    fr.omega_z_dps    = imu.omega_dps.z;
+
+    fr.roll_angle_deg = roll_angle_deg;
+    fr.roll_rate_dps  = roll_rate_dps;
+    fr.yaw_deg        = yaw_deg_cmd;
+    fr.pitch_deg      = pitch_deg_cmd;
+    fr.roll_pwm       = roll_pwm;
+    fr.roll_dir       = roll_dir;
+
+    fr.bus_V          = p.bus_V;
+    fr.load_V         = p.load_V;
+    fr.current_mA     = p.current_mA;
+    fr.power_mW       = p.power_mW;
+    fr.ina_overflow   = p.overflow ? 1 : 0;
+    // optional Reserven oder raw_i16 belegen…
+    SDLogger_logFrame(fr);
+  } 
+
+  // test logging
+
+  if(LOG_DATA){
+    i++;
+    if(i>1000){
+      SDLogger_stop();
+      auto res = SDLogger_exportLatestCSVx(true);  // true = physikalische Einheiten
+      if (res.ok) {
+        Serial.printf("Export erfolgreich: %s  Zeilen=%lu  Bytes=%llu\n",
+                      res.csv_name, (unsigned long)res.rows, (unsigned long long)res.bytes);
+      } else {
+        Serial.println("Export fehlgeschlagen.");
+      }
+    }
+  }
 
   LoopTimer_overrunCheck(t0);
 }

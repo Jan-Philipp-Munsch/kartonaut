@@ -9,7 +9,6 @@
 #include <HardwareSerial.h>
 #include "SDLogger.h"
 
-
 HardwareSerial& hc12 = Serial8;
 
 // ======= State =======
@@ -23,20 +22,25 @@ static float AltitudeKalman = 0.f, VelocityVerticalKalman = 0.f;
 static float alt_offset = 0.0f;
 static bool  offset_applied = false;
 
-int i = 0;
+// --- Logging Steuerung ---
+#define LOG_DATA 1          // 0 = aus, 1 = an
+static uint32_t log_iter = 0;
+static bool     log_exported = false;
+
+// Slack-Deadline (für SDLogger)
+static uint32_t t_next = 0;
 
 void setup(){
   Serial.begin(115200);
 
-  if(LOG_DATA){
+  // SD-Logger init
+  if (LOG_DATA) {
     SDLogger_setup();
     SDLogger_start();
+    SDLogger_setTimingGuard(/*safety*/1.5f, /*flush_min_slack_us*/3000, /*sync_min_slack_us*/6000);
   }
 
   Indicators_setup();
-  //Indicate_success();
-  //Indicate_waiting();
-
   Motor_setup();
   Control_setup();
   Sensors_setup();
@@ -50,11 +54,13 @@ void setup(){
   kal.setPDiag(KALMAN_INIT_PZ_VAR, KALMAN_INIT_PV_VAR);
 
   LoopTimer_init(loopTimer);
-  //Indicate_success();
+
+  // Slack-Deadline initialisieren (für feste Loop-Periode)
+  t_next = micros() + LOOP_PERIOD_US;
 }
 
 void loop(){
-  if (!LoopTimer_tick(loopTimer)) return; // exakte Periodik
+  if (!LoopTimer_tick(loopTimer)) return; // exakte Periodik nach Timing.h
   const uint32_t t0 = micros();
 
   // --- Sensors ---
@@ -63,7 +69,7 @@ void loop(){
 
   ImuData imu;
   if (Read_IMU(imu, a_norm_filt)){
-    // integrierte Rotation (nur Demo wie in deinem Code)
+    // integrierte Rotation (Demo)
     rot_deg += imu.omega_dps * loopTimer.dt_meas_s;
   }
 
@@ -83,66 +89,56 @@ void loop(){
   // --- Control: Servos (Grad) ---
   int yaw_deg_cmd = SERVO_DEG_CENTER, pitch_deg_cmd = SERVO_DEG_CENTER;
   AttState attOut;
-  if(false){
+  if (false) {
     Control_updatePY(imu.omega_dps, rot_deg, loopTimer.dt_meas_s, a_norm_filt,
-                    yaw_deg_cmd, pitch_deg_cmd, attOut);
+                     yaw_deg_cmd, pitch_deg_cmd, attOut);
     Apply_servos_deg(yaw_deg_cmd, pitch_deg_cmd);
   }
 
-  // --- Control: Roll
-  float roll_angle_deg, roll_rate_dps, roll_corr_angle_deg, roll_cmd_norm;
-  int   roll_pwm, roll_dir;
-  if(false){
+  // --- Control: Roll (Default-Werte, falls Feature aus) ---
+  float roll_angle_deg = 0.0f;
+  float roll_rate_dps  = 0.0f;
+  float roll_corr_angle_deg = 0.0f;
+  float roll_cmd_norm  = 0.0f;
+  int   roll_pwm = 0;
+  int   roll_dir = 0;
+  if (false) {
     Control_updateRoll(imu.omega_dps, rot_deg, loopTimer.dt_meas_s,
-                  roll_angle_deg, roll_rate_dps, roll_corr_angle_deg,
-                  roll_cmd_norm, roll_pwm, roll_dir);
+                       roll_angle_deg, roll_rate_dps, roll_corr_angle_deg,
+                       roll_cmd_norm, roll_pwm, roll_dir);
   }
 
-  // --- INA219 Daten
-  PowerData p;
+  // --- INA219 Daten (einmal pro Loop einlesen) ---
+  /*
+  PowerData p{};
+  (void)Read_Power(p); // liefert true, wenn neue Messung — wir nutzen die Felder so oder so
 
   // --- Teleplot-Ausgaben (Konsole) ---
-
-  if(PLOT_KALMAN)  {
+  if (PLOT_KALMAN)  {
     Serial.print(">Kalman_Alt:");  Serial.println(AltitudeKalman - alt_offset, 3);
     Serial.print(">Kalman_Vz:");   Serial.println(VelocityVerticalKalman, 3);
-    //Serial.print(">Baro_Alt:");    Serial.println(baro.alt_m - alt_offset, 3);
-    //Serial.print(">dt_meas:");     Serial.println(loopTimer.dt_meas_s, 6);
   }
-  if(PLOT_ROLL)  {
-    // Teleplot
-    Serial.print(">Roll_Angle:");       Serial.println(roll_angle_deg, 3);
-    Serial.print(">Roll_Rate:");        Serial.println(roll_rate_dps, 3);
-    //Serial.print(">Roll_Corr_Angle:");  Serial.println(roll_corr_angle_deg, 3);
-    //Serial.print(">Roll_CMD:");         Serial.println(roll_cmd_norm, 3);
-    Serial.print(">Roll_PWM:");         Serial.println(roll_pwm);
-    Serial.print(">Roll_Dir:");         Serial.println(roll_dir);
+  if (PLOT_ROLL)  {
+    Serial.print(">Roll_Angle:");  Serial.println(roll_angle_deg, 3);
+    Serial.print(">Roll_Rate:");   Serial.println(roll_rate_dps, 3);
+    Serial.print(">Roll_PWM:");    Serial.println(roll_pwm);
+    Serial.print(">Roll_Dir:");    Serial.println(roll_dir);
   }
-  if(PLOT_ELECTRICS)  {
-    if (Read_Power(p)) {
-      // optional: leichte Glättung für nicer plots
-      static float i_filt = 0.0f, pwr_filt = 0.0f;
-      const float ALPHA = 0.2f; // 0..1 (höher = glatter)
+  if (PLOT_ELECTRICS)  {
+    // leichte Glättung für nicer plots
+    static float i_filt = 0.0f, pwr_filt = 0.0f;
+    const float ALPHA = 0.2f; // 0..1 (höher = glatter)
+    i_filt   += (p.current_mA - i_filt) * ALPHA;
+    pwr_filt += (p.power_mW   - pwr_filt) * ALPHA;
 
-      i_filt   += (p.current_mA - i_filt) * ALPHA;
-      pwr_filt += (p.power_mW   - pwr_filt) * ALPHA;
-
-      //Serial.print(">INA_Shunt_mV:");  Serial.println(p.shunt_mV,   3);
-      Serial.print(">INA_Bus_V:");     Serial.println(p.bus_V,      3);
-      //Serial.print(">INA_Load_V:");    Serial.println(p.load_V,     3);
-      //Serial.print(">INA_Current_mA:");Serial.println(p.current_mA, 3);
-      //Serial.print(">INA_Power_mW:");  Serial.println(p.power_mW,   3);
-
-      // gefilterte Kurven (falls du sie getrennt sehen willst)
-      Serial.print(">INA_Current_mA_f:"); Serial.println(i_filt,   3);
-      Serial.print(">INA_Power_mW_f:");   Serial.println(pwr_filt, 3);
-      // Overflow-Flag als 0/1
-      //Serial.print(">INA_Overflow:");  Serial.println(p.overflow ? 1 : 0);
-    }
+    Serial.print(">INA_Bus_V:");       Serial.println(p.bus_V,      3);
+    Serial.print(">INA_Current_mA_f:");Serial.println(i_filt,       3);
+    Serial.print(">INA_Power_mW_f:");  Serial.println(pwr_filt,     3);
   }
 
 
-  if(LOG_DATA){
+  // --- Logging: ein Frame pro Loop ---
+  if (LOG_DATA && SDLogger_isRecording()) {
     SDFrame fr;
     fr.kalman_alt_m   = AltitudeKalman;
     fr.kalman_vz_ms   = VelocityVerticalKalman;
@@ -168,26 +164,29 @@ void loop(){
     fr.current_mA     = p.current_mA;
     fr.power_mW       = p.power_mW;
     fr.ina_overflow   = p.overflow ? 1 : 0;
-    // optional Reserven oder raw_i16 belegen…
+
+    // Slack-aware schreiben
     SDLogger_logFrame(fr);
-  } 
 
-  // test logging
-
-  if(LOG_DATA){
-    i++;
-    if(i>1000){
-      SDLogger_stop();
-      auto res = SDLogger_exportLatestCSVx(true);  // true = physikalische Einheiten
-      if (res.ok) {
-        Serial.printf("Export erfolgreich: %s  Zeilen=%lu  Bytes=%llu\n",
-                      res.csv_name, (unsigned long)res.rows, (unsigned long long)res.bytes);
-      } else {
-        Serial.println("Export fehlgeschlagen.");
-      }
-    }
+    // Iterationen zählen (für Test)
+    log_iter++;
   }
 
+  // --- Test: nach N Loops stoppen & genau 1× CSV exportieren ---
+  if (LOG_DATA && !log_exported && log_iter > 1000) {
+    SDLogger_stop();  // schließt .TMP → .BIN
+    auto res = SDLogger_exportLatestCSVx(true);  // true = physikalische Einheiten
+
+    if (res.ok) {
+      Serial.printf("Export erfolgreich: %s  Zeilen=%lu  Bytes=%llu\n",
+                    res.csv_name, (unsigned long)res.rows, (unsigned long long)res.bytes);
+    } else {
+      Serial.println("Export fehlgeschlagen.");
+    }
+    log_exported = true;  // verhindert mehrfachen Export
+  }
+
+*/
+  // Overrun-Check (bestehende Helper)
   LoopTimer_overrunCheck(t0);
 }
-

@@ -1,13 +1,17 @@
 #pragma once
 #include <Arduino.h>
 
-// ========= öffentliches API =========
-void SDLogger_setup();                   // SD initialisieren, TMP→BIN recovern
-bool SDLogger_start();                   // neue LOGxxxxx.TMP anlegen (pre-allocate)
-void SDLogger_stop();                    // flush + rename → .BIN
-bool SDLogger_isRecording();             // Status
+// ===========================
+// Öffentliche API
+// ===========================
+void SDLogger_setup();      // SD initialisieren, TMP→BIN Auto-Recovery
+bool SDLogger_start();      // neue LOGxxxxx.TMP (pre-allocate) anlegen
+void SDLogger_stop();       // flush + truncate + rename → .BIN
+bool SDLogger_isRecording();
 
-// Ein Frame mit deinen Größen. Werte als floats/ints, wir packen sie in int16.
+// ===========================
+// Frame-Typ (ein Call pro Loop)
+// ===========================
 struct SDFrame {
   // Navigation / Sensorik
   float kalman_alt_m;      // z-Estimate
@@ -37,14 +41,14 @@ struct SDFrame {
   float power_mW;
   int   ina_overflow;      // 0/1
 
-  // Reserviert für später (z.B. GPS, Temps, Flags …)
+  // Reserviert für später
   float rsv1, rsv2, rsv3, rsv4, rsv5;
 
-  // Optional: eigene 8 int16-Kanäle direkt (werden unverändert übernommen)
+  // Optional: 8 rohe i16-Kanäle (werden 1:1 geschrieben)
   int16_t raw_i16[8];
 
-  SDFrame() :
-    kalman_alt_m(0), kalman_vz_ms(0), baro_alt_m(0),
+  SDFrame()
+  : kalman_alt_m(0), kalman_vz_ms(0), baro_alt_m(0),
     a_nav_x_ms2(0), a_nav_y_ms2(0), a_nav_z_ms2(0),
     omega_x_dps(0), omega_y_dps(0), omega_z_dps(0),
     roll_angle_deg(0), roll_rate_dps(0),
@@ -54,26 +58,42 @@ struct SDFrame {
   { memset(raw_i16, 0, sizeof(raw_i16)); }
 };
 
-// Ein Frame schreiben (macht selbst Pufferung/Flush). Gibt true bei Erfolg.
+// Log-Frame schreiben (RAM-seitig packen & page-buffern).
+// slack_us = verbleibende µs bis zur Loop-Deadline (0 ⇒ kein Sync im Flug).
+bool SDLogger_logFrame(const SDFrame& f, uint32_t slack_us);
+
+// Wrapper für alte Aufrufe ohne Slack (übernimmt slack_us=0)
 bool SDLogger_logFrame(const SDFrame& f);
 
-// CSV-Export (auf SD-Karte im Root). Gibt true bei Erfolg.
-bool SDLogger_exportLatestCSV(bool scaled = true);
-bool SDLogger_exportBINtoCSV(const char* binName, bool scaled = true);
+// ===========================
+// Timing/Guards (Debug/Tuning)
+// ===========================
+struct SDLogTiming {
+  uint32_t flush_us_last = 0;
+  uint32_t flush_us_avg  = 0;
+  uint32_t flush_us_max  = 0;
 
-// === Ergebnisstruktur für CSV-Export ===
+  uint32_t sync_us_last  = 0;
+  uint32_t sync_us_avg   = 0;
+  uint32_t sync_us_max   = 0;
+};
+
+void SDLogger_getTiming(SDLogTiming& out);
+void SDLogger_setTimingGuard(float safety_factor,
+                             uint32_t min_slack_flush_us,
+                             uint32_t min_slack_sync_us);
+
+// ===========================
+// CSV-Export (optional, am Boden)
+// ===========================
 struct SDExportResult {
   bool     ok = false;        // Erfolg?
-  uint32_t rows = 0;          // Anzahl Datensätze (Zeilen)
-  uint64_t bytes = 0;         // geschriebene Bytes (inkl. Header)
+  uint32_t rows = 0;          // Datensätze (Zeilen)
+  uint64_t bytes = 0;         // geschriebene Bytes inkl. Header
   char     csv_name[16] = {0};
 };
 
-// Neue API (liefert Detail-Rückmeldung)
 SDExportResult SDLogger_exportBINtoCSVx(const char* binName, bool scaled = true);
 SDExportResult SDLogger_exportLatestCSVx(bool scaled = true);
-
-// (Bestehende bool-APIs bleiben – optional intern auf x-Variante mappen)
 bool SDLogger_exportBINtoCSV(const char* binName, bool scaled = true);
 bool SDLogger_exportLatestCSV(bool scaled = true);
-

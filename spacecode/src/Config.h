@@ -58,7 +58,7 @@ constexpr float KALMAN_SETTLE_TIME_S     = 20.0f;
 constexpr long HC12_BAUD = 9600;
 
 // Debug
-constexpr bool VERBOSE = true;
+constexpr bool VERBOSE = false;
 
 // Teleplot
 
@@ -68,4 +68,5 @@ constexpr bool PLOT_ELECTRICS = false;
 
 // LOGGING
 
+constexpr bool LOOP_WARNING = true;
 constexpr bool LOG_DATA = false;

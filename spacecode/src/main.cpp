@@ -1,4 +1,4 @@
-
+/*
 // ToDo
 // implement GPS
 // implement radio
@@ -754,3 +754,4 @@ void loop()
 
   return;
 }
+  */

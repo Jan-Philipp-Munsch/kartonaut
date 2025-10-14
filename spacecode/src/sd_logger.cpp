@@ -1,4 +1,5 @@
-/*
+
+
 #include <Arduino.h>
 #include <SdFat.h>
 
@@ -14,7 +15,7 @@ static const SdioConfig sdConfig = SdioConfig(FIFO_SDIO);
 // ===========================
 static const uint32_t LOOP_HZ   = 250;
 static const uint32_t LOOP_US   = 1000000UL / LOOP_HZ;  // 4000 µs
-static const size_t   NUM_I16   = 20;
+static const size_t   NUM_I16   = 40;
 
 // Datensatz: 4 + 2 + 2 + 40 = 48 B
 struct __attribute__((packed,aligned(4))) Record {
@@ -371,7 +372,12 @@ void dumpCSV_Selected_Serial() {
   rf.rewind();
 
   Serial.printf("\nDumping %s as CSV (used=%llu bytes)\n", name, (unsigned long long)used);
-  Serial.println("t_s,write_us_prev,int0,int1,int2,int3,int4,int5,int6,int7,int8,int9,int10,int11,int12,int13,int14,int15,int16,int17,int18,int19");
+  String header = "t_s,write_us_prev";
+  for (int8_t i = 1; i <= NUM_I16; i++)
+  {
+    header = header + ", int" + i;
+  }
+  Serial.println(header);
 
   Record r;
   uint64_t left = used;
@@ -682,4 +688,3 @@ void loop() {
   }
 }
 
-*/

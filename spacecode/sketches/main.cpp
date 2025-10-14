@@ -24,7 +24,6 @@
 #include <FastLED.h>
 #include <PWMServo.h>
 #include <Servo.h>
-#include <LittleFS.h>
 #include <INA219_WE.h>
 
 // HC12 radio
@@ -36,14 +35,6 @@ HardwareSerial& hc12 = Serial8;
 #define I2C_ADDRESS 0x40
 INA219_WE ina219 = INA219_WE(I2C_ADDRESS);
 
-// Flash Logger
-
-LittleFS_QSPIFlash myfs;  // Used to create FS on QSPI NOR flash chips located on the bottom of the T4.1 such as the W25Q16JV*IQ/W25Q16FV,  for the full list of supported NOR flash see https://github.com/PaulStoffregen/LittleFS#nor-flash
-
-File dataFile;  // Specifes that dataFile is of File type
-
-int record_count = 0;
-bool write_data = false;
 
 // Roll motor
 const int IN1 = 2;  // PWM-fähig
@@ -103,7 +94,7 @@ float busVoltage_V = 0.0;
 float current_mA = 0.0;
 float power_mW = 0.0; 
 
-float LoopTimer;
+uint32_t LoopTimer;
 float Servotimer;
 using namespace BLA;
 float AltitudeKalman, VelocityVerticalKalman;
@@ -265,8 +256,9 @@ void Indicate_success(){
     led1 = CRGB::Green;
     led2 = CRGB::Green;
     FastLED.show();
-    delay(50);    
+    delay(50);  
   }
+  FastLED.clear(true);
 }
 
 void Indicate_waiting(){
@@ -285,7 +277,6 @@ void LED_setup(){
   FastLED.addLeds<WS2812B, LED1_PIN, GRB>(&led1, 1);
   FastLED.addLeds<WS2812B, LED2_PIN, GRB>(&led2, 1);
   FastLED.clear();
-  FastLED.show();
 }
 
 void RollMotor_setup(){
@@ -381,28 +372,6 @@ void Servo_setup(){
   //pitchServo.write();
 }
 
-void LittleFS_setup(){
-  while (!Serial) {
-    // wait for serial port to connect.
-  }
-  Serial.println("\n" __FILE__ " " __DATE__ " " __TIME__);
-
-  Serial.print("Initializing LittleFS ...");
-
-  // see if the Flash is present and can be initialized:
-  if (!myfs.begin()) {
-    Serial.printf("Error starting %s\n", "QSPI FLASH");
-    while (1) {
-      // Error, so don't do anything more - stay stuck here
-    }
-  }
-  Serial.println("LittleFS initialized.");
-
-  write_data = true;   // sets flag to continue to write data until new command is received
-  // opens a file or creates a file if not present,  FILE_WRITE will append data to
-  // to the file created.
-  dataFile = myfs.open("datalog.txt", FILE_WRITE);
-}
 
 void INA_setup() {
 
@@ -480,8 +449,6 @@ void setup()
   kalman_2d_setup();
 
   Servo_setup();
-
-  LittleFS_setup();
 
   INA_setup();
 
@@ -687,33 +654,6 @@ void stabilizeRPY(){ // calculations based on gyrometer
   }
 }
 
-void logFloatArray(float* array, int size)
-{ 
-  // if the file is available, write to it:
-  if (dataFile) {
-    u_int64_t timer = micros();
-      for (int i = 0; i < size; i++)
-      {
-        dataFile.print(array[i],5);
-        if (i < (size-1)){
-          dataFile.print(",");
-        }
-        else{
-          dataFile.println();
-        }
-        
-      }
-
-    //Serial.println(micros()-timer);
-    // print to the serial port too:
-    record_count += 1;
-  } else {
-    // if the file isn't open, pop up an error:
-    Serial.println("error opening datalog.txt");
-  }
-
-}
-
 void loop()
 {   
 
@@ -725,13 +665,7 @@ void loop()
   //stabilizeRPY();
 
   //float daten[] = {1.0, 2.0, 3.0};
-  //logFloatArray(daten, 3);
 
-  const char* msg = "Hello! How are you? BlaBliBlub\n";
-
-  if (hc12.availableForWrite() > strlen(msg)) {
-    hc12.write(msg); // Achtung: write ist meist schnell, aber blockiert bei vollem Buffer
-  }
 
   if(false){
 
@@ -748,10 +682,35 @@ void loop()
     Serial.println(VelocityVerticalKalman);
   }
    
-  Serial.println(micros()-LoopTimer);
-  while (micros() - LoopTimer < dt*1e6); 
-  LoopTimer=micros(); 
+  //Serial.println(micros()-LoopTimer);
+  //while (micros() - LoopTimer < dt*1e6); 
 
+  if (micros() - LoopTimer > dt*1e6) {
+      Serial.printf("\n⚠️  Loop overrun: %lu us (> %lu us).\n",
+                    (unsigned long)(micros() - LoopTimer), (unsigned long) (dt*1e6));
+    }
+  LoopTimer=micros(); 
+  
   return;
 }
-  */
+*/
+
+/*
+// HC-12 Empfänger (Teensy)
+// hc12-Pins: passend zu deinem Board -> Serial8 verwenden ist ok
+#include <Arduino.h>
+
+HardwareSerial& hc12 = Serial8;
+
+void setup() {
+  Serial.begin(9600);
+  hc12.begin(9600);
+  Serial.println("Empfaenger bereit");
+}
+
+void loop() {
+  while (hc12.available()) {
+    Serial.write(hc12.read());
+  }
+}
+*/

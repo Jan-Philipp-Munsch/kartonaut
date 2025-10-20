@@ -98,7 +98,7 @@ void Control_updateRoll(const Vec3& omega_dps,
   // Stellgrößenbegrenzung & Mindest-PWM
   const float CMD_MAX      = 1.0f;
   const float CMD_DEADBAND = 0.02f;  // 2 %
-  const int   MIN_PWM      = 600;    // ca. 15 % von 4095 (tunen)
+  const int   MIN_PWM      = 100;    // ca. 15 % von 4095 (tunen)
 
   static float roll_int = 0.0f;
 

@@ -23,7 +23,6 @@ static float alt_offset = 0.0f;
 static bool  offset_applied = false;
 
 // --- Logging Steuerung ---
-#define LOG_DATA 1          // 0 = aus, 1 = an
 static uint32_t log_iter = 0;
 static bool     log_exported = false;
 
@@ -41,6 +40,9 @@ void setup(){
   }
 
   Indicators_setup();
+  Indicate_success();
+  Indicate_waiting();
+
   Motor_setup();
   Control_setup();
   Sensors_setup();
@@ -52,6 +54,8 @@ void setup(){
   kal.setMeasStd(KALMAN_MEAS_STD_M);
   kal.setState(KALMAN_INIT_Z_M, KALMAN_INIT_VZ_MS);
   kal.setPDiag(KALMAN_INIT_PZ_VAR, KALMAN_INIT_PV_VAR);
+
+  Indicate_success();
 
   LoopTimer_init(loopTimer);
 
@@ -90,7 +94,7 @@ void loop(){
   // --- Control: Servos (Grad) ---
   int yaw_deg_cmd = SERVO_DEG_CENTER, pitch_deg_cmd = SERVO_DEG_CENTER;
   AttState attOut;
-  if (false) {
+  if (PY_CONTROL_ACTIVE) {
     Control_updatePY(imu.omega_dps, rot_deg, loopTimer.dt_meas_s, a_norm_filt,
                      yaw_deg_cmd, pitch_deg_cmd, attOut);
     Apply_servos_deg(yaw_deg_cmd, pitch_deg_cmd);
@@ -103,7 +107,7 @@ void loop(){
   float roll_cmd_norm  = 0.0f;
   int   roll_pwm = 0;
   int   roll_dir = 0;
-  if (false) {
+  if (ROLL_CONTROL_ACTIVE) {
     Control_updateRoll(imu.omega_dps, rot_deg, loopTimer.dt_meas_s,
                        roll_angle_deg, roll_rate_dps, roll_corr_angle_deg,
                        roll_cmd_norm, roll_pwm, roll_dir);
@@ -124,6 +128,12 @@ void loop(){
     Serial.print(">Roll_Rate:");   Serial.println(roll_rate_dps, 3);
     Serial.print(">Roll_PWM:");    Serial.println(roll_pwm);
     Serial.print(">Roll_Dir:");    Serial.println(roll_dir);
+  }
+  if (PLOT_PY)  {
+    Serial.print(">Pitch_Angle:"); Serial.println(rot_deg.y, 3);
+    Serial.print(">Yaw_Angle:");   Serial.println(rot_deg.x, 3);
+    Serial.print(">Yaw_Servo_Out:");   Serial.println(yaw_deg_cmd);
+    Serial.print(">Pitch_Servo_Out:"); Serial.println(pitch_deg_cmd);
   }
   if (PLOT_ELECTRICS)  {
     // leichte Glättung für nicer plots

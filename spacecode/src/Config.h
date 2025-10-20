@@ -64,8 +64,17 @@ constexpr bool VERBOSE = false;
 // Teleplot
 constexpr bool PLOT_KALMAN = false;
 constexpr bool PLOT_ROLL = false;
+constexpr bool PLOT_PY = false;
 constexpr bool PLOT_ELECTRICS = false;
 
 // LOGGING
 constexpr bool LOOP_WARNING = true;
 constexpr bool LOG_DATA = false;
+
+// CONTROLS
+constexpr bool ROLL_CONTROL_ACTIVE = false;
+constexpr bool PY_CONTROL_ACTIVE = false;
+
+// FEEDBACK
+constexpr bool SILENT = true;
+constexpr bool DARK = false;

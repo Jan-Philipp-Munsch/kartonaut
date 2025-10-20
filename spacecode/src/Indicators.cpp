@@ -16,9 +16,13 @@ void Indicate_success(){
     FastLED.clear(true);
     delay(50);
     if (i==3) break;
-    digitalWrite(PIN_BEEPER, HIGH);
+    if(!SILENT){
+      digitalWrite(PIN_BEEPER, HIGH);
+    }
     led1 = CRGB::Green; led2 = CRGB::Green;
-    FastLED.show();
+    if(!DARK){
+      FastLED.show();
+    }
     delay(50);
   }
   digitalWrite(PIN_BEEPER, LOW);
@@ -26,7 +30,11 @@ void Indicate_success(){
 }
 
 void Indicate_waiting(){
-  digitalWrite(PIN_BEEPER, HIGH);
+  if(!SILENT){
+      digitalWrite(PIN_BEEPER, HIGH);
+  }
   led1 = CRGB::Orange; led2 = CRGB::Orange;
-  FastLED.show();
+  if(!DARK){
+      FastLED.show();
+  }
 }

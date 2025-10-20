@@ -26,7 +26,7 @@ bool LoopTimer_tick(LoopTimer& t){
 
 void LoopTimer_overrunCheck(uint32_t loop_start_us){
   const uint32_t dur = micros() - loop_start_us;
-  Serial.println(dur);
+  //Serial.println(dur);
   if (dur > LOOP_PERIOD_US){
     if (LOOP_WARNING){
       Serial.printf("\n⚠️  Loop overrun: %lu us (> %lu us)\n",

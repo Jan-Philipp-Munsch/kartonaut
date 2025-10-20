@@ -62,7 +62,7 @@ void Sensors_setup(){
 
   // --- INA219 ---
   ina_ok = ina219.init();
-
+  
   if (bmp_ok) BMP_calibrate_ground();
 }
 
@@ -232,7 +232,13 @@ bool Read_IMU(ImuData& out, float& a_norm_filt){
       gyro_filt.y += (omega.y - gyro_filt.y) * GYRO_ALPHA;
       gyro_filt.z += (omega.z - gyro_filt.z) * GYRO_ALPHA;
 
-      out.omega_dps   = gyro_filt;
+      if(GYRO_FILT){
+        out.omega_dps = gyro_filt;
+      }
+      else{
+        out.omega_dps = omega;
+      }
+
       last_omega_dps  = out.omega_dps;
       out.hasGyro     = true;
     }
@@ -255,11 +261,11 @@ bool Read_Baro(BaroData& out){
 
 bool Read_Power(PowerData& out){
   if (!ina_ok) return false;
-  out.shunt_mV   = ina219.getShuntVoltage_mV();
+  //out.shunt_mV   = ina219.getShuntVoltage_mV();
   out.bus_V      = ina219.getBusVoltage_V();
   out.current_mA = ina219.getCurrent_mA();
-  out.power_mW   = ina219.getBusPower();
-  out.load_V     = out.bus_V + out.shunt_mV/1000.0f;
-  out.overflow   = ina219.getOverflow();
+  //out.power_mW   = ina219.getBusPower();
+  //out.load_V     = out.bus_V + out.shunt_mV/1000.0f;
+  //out.overflow   = ina219.getOverflow();
   return true;
 }

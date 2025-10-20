@@ -13,6 +13,7 @@ constexpr float MOMENT_ARM_M = 0.30f;
 // ===== IMU scaling (ICM-20948 DMP raw ranges assumed) =====
 constexpr float ACC_LSB_PER_G    = 8192.0f;    // ±4 g
 constexpr float GYRO_LSB_PER_DPS = 16.384f;    // ±2000 dps
+constexpr bool GYRO_FILT = false;
 
 // ===== I2C speeds =====
 constexpr uint32_t I2C_MAIN_SPEED_HZ = 400000; // safe for BMP280 & INA219
@@ -61,12 +62,10 @@ constexpr long HC12_BAUD = 9600;
 constexpr bool VERBOSE = false;
 
 // Teleplot
-
 constexpr bool PLOT_KALMAN = false;
 constexpr bool PLOT_ROLL = false;
 constexpr bool PLOT_ELECTRICS = false;
 
 // LOGGING
-
 constexpr bool LOOP_WARNING = true;
 constexpr bool LOG_DATA = false;

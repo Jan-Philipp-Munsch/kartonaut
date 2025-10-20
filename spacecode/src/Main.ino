@@ -59,7 +59,9 @@ void setup(){
   t_next = micros() + LOOP_PERIOD_US;
 }
 
+
 void loop(){
+
   if (!LoopTimer_tick(loopTimer)) return; // exakte Periodik nach Timing.h
   const uint32_t t0 = micros();
 
@@ -67,11 +69,10 @@ void loop(){
   BaroData baro;
   Read_Baro(baro);
 
+  // Integration, wenn kein neuer Wert fehlt!
   ImuData imu;
-  if (Read_IMU(imu, a_norm_filt)){
-    // integrierte Rotation (Demo)
-    rot_deg += imu.omega_dps * loopTimer.dt_meas_s;
-  }
+  Read_IMU(imu, a_norm_filt);
+  rot_deg += imu.omega_dps * loopTimer.dt_meas_s;
 
   // --- Kalman (mit aktuellem dt) ---
   kal.setDt(loopTimer.dt_meas_s, KALMAN_SIGMA_ACC_MS2);
@@ -109,7 +110,7 @@ void loop(){
   }
 
   // --- INA219 Daten (einmal pro Loop einlesen) ---
-  /*
+ 
   PowerData p{};
   (void)Read_Power(p); // liefert true, wenn neue Messung — wir nutzen die Felder so oder so
 
@@ -126,14 +127,13 @@ void loop(){
   }
   if (PLOT_ELECTRICS)  {
     // leichte Glättung für nicer plots
-    static float i_filt = 0.0f, pwr_filt = 0.0f;
+    static float i_filt = 0.0f;
     const float ALPHA = 0.2f; // 0..1 (höher = glatter)
     i_filt   += (p.current_mA - i_filt) * ALPHA;
-    pwr_filt += (p.power_mW   - pwr_filt) * ALPHA;
 
     Serial.print(">INA_Bus_V:");       Serial.println(p.bus_V,      3);
     Serial.print(">INA_Current_mA_f:");Serial.println(i_filt,       3);
-    Serial.print(">INA_Power_mW_f:");  Serial.println(pwr_filt,     3);
+
   }
 
 
@@ -160,10 +160,7 @@ void loop(){
     fr.roll_dir       = roll_dir;
 
     fr.bus_V          = p.bus_V;
-    fr.load_V         = p.load_V;
     fr.current_mA     = p.current_mA;
-    fr.power_mW       = p.power_mW;
-    fr.ina_overflow   = p.overflow ? 1 : 0;
 
     // Slack-aware schreiben
     SDLogger_logFrame(fr);
@@ -186,7 +183,6 @@ void loop(){
     log_exported = true;  // verhindert mehrfachen Export
   }
 
-*/
   // Overrun-Check (bestehende Helper)
   LoopTimer_overrunCheck(t0);
 }

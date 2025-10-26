@@ -1,3 +1,4 @@
+/*
 #include <Arduino.h>
 #include "Config.h"
 #include "MathTypes.h"
@@ -36,7 +37,7 @@ void setup(){
   if (LOG_DATA) {
     SDLogger_setup();
     SDLogger_start();
-    SDLogger_setTimingGuard(/*safety*/1.5f, /*flush_min_slack_us*/3000, /*sync_min_slack_us*/6000);
+    SDLogger_setTimingGuard(1.5f, 3000, 6000);
   }
 
   Indicators_setup();
@@ -196,3 +197,4 @@ void loop(){
   // Overrun-Check (bestehende Helper)
   LoopTimer_overrunCheck(t0);
 }
+*/

@@ -1,4 +1,4 @@
-/*
+
 // ===== Sender: sendet 1x/Sek. eine BEACON-Zeile über HC-12 =====
 #include <Arduino.h>
 
@@ -43,4 +43,3 @@ void loop() {
     next_ms += PERIOD_MS;
   }
 }
-*/

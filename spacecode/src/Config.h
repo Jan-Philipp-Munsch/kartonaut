@@ -76,5 +76,5 @@ constexpr bool ROLL_CONTROL_ACTIVE = false;
 constexpr bool PY_CONTROL_ACTIVE = false;
 
 // FEEDBACK
-constexpr bool SILENT = true;
+constexpr bool SILENT = false;
 constexpr bool DARK = false;

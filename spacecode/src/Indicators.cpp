@@ -38,3 +38,22 @@ void Indicate_waiting(){
       FastLED.show();
   }
 }
+
+void Indicate_warn(){
+    for (int i=0; i<40; ++i){
+    digitalWrite(PIN_BEEPER, LOW);
+    FastLED.clear(true);
+    delay(250);
+    if (i==39) break;
+    if(!SILENT){
+      digitalWrite(PIN_BEEPER, HIGH);
+    }
+    led1 = CRGB::Red; led2 = CRGB::Red;
+    if(!DARK){
+      FastLED.show();
+    }
+    delay(250);
+  }
+  digitalWrite(PIN_BEEPER, LOW);
+  FastLED.clear(true);
+}

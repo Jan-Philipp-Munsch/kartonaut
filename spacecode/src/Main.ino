@@ -1,4 +1,4 @@
-/*
+
 #include <Arduino.h>
 #include "Config.h"
 #include "MathTypes.h"
@@ -29,6 +29,9 @@ static bool     log_exported = false;
 
 // Slack-Deadline (für SDLogger)
 static uint32_t t_next = 0;
+
+// Mosfet test
+const int ON_PIN = 23;
 
 void setup(){
   Serial.begin(115200);
@@ -62,11 +65,15 @@ void setup(){
 
   // Slack-Deadline initialisieren (für feste Loop-Periode)
   t_next = micros() + LOOP_PERIOD_US;
+
+  // Mosfet low initialisieren
+  pinMode(ON_PIN, OUTPUT);
+  digitalWrite(ON_PIN, LOW); 
 }
 
 
 void loop(){
-
+/*
   if (!LoopTimer_tick(loopTimer)) return; // exakte Periodik nach Timing.h
   const uint32_t t0 = micros();
 
@@ -196,5 +203,13 @@ void loop(){
 
   // Overrun-Check (bestehende Helper)
   LoopTimer_overrunCheck(t0);
-}
 */
+  Indicate_warn();
+  delay(2000);
+  digitalWrite(ON_PIN, HIGH);   // definierter Start
+  delay(1000);
+  Indicate_success();
+  digitalWrite(ON_PIN, LOW); 
+  delay(100000);
+
+}

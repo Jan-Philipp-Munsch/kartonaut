@@ -5,3 +5,4 @@
 void Indicators_setup();
 void Indicate_success();
 void Indicate_waiting();
+void Indicate_warn();

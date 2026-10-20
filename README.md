@@ -1,93 +1,102 @@
 # Mission Space
 
-Eine Modellrakete mit Schubvektorsteuerung (TVC) und selbst entwickeltem Flugcomputer,
-aufgebaut nach dem Vorbild der „Scout F“ von [BPS.space](https://bps.space).
-Der Motor hängt in einem Kardan mit zwei Servos, ein Rollmotor hält die Rollachse,
-ein Fallschirm bringt die Rakete zurück. An Bord sitzt ein Teensy 4.1 mit IMU,
-Barometer, Strommonitor, SD-Logger und 433-MHz-Funk zur Bodenstation.
+*Deutsche Fassung: [README.de.md](README.de.md). The detailed documents
+([PROJECT.md](PROJECT.md), [spacecode/README.md](spacecode/README.md),
+[hardware/mainboard/README.md](hardware/mainboard/README.md)) are in German.*
 
-<img src="docs/img/model_rocket.png" width="220" align="right" alt="Gesamtmodell (Blender)">
+A thrust-vector-controlled (TVC) model rocket with a home-built flight computer,
+modelled on the "Scout F" by [BPS.space](https://bps.space). The motor sits in a
+two-servo gimbal, a roll motor holds the roll axis, and a parachute brings the rocket
+back. On board is a Teensy 4.1 with IMU, barometer, power monitor, SD logger and a
+433 MHz radio link to the ground station.
+
+<img src="docs/img/model_rocket.png" width="220" align="right" alt="Full model (Blender)">
 
 | | |
 |---|---|
-| Rumpf | Ø 75 mm, 1 m lang, 3D-gedruckte Spitze und Landebeine |
-| Motor | Estes E12 (24 mm) im Kardan, Schubkurve E12/F35 in der Simulation |
-| Startmasse | ca. 0,9 kg geplant |
-| Flugcomputer | Teensy 4.1, ICM-20948 (DMP), BMP280, INA219, HC-12, microSD |
-| Aktoren | 2× SG90 (TVC), Rollmotor an H-Brücke, Fallschirm-Servo |
-| Regelung | PID auf Pitch/Yaw mit Momenten-Umrechnung in den TVC-Winkel, PID auf Roll |
-| Status | Firmware und Elektronik auf dem Tisch getestet, Mainboard rev A spezifiziert, noch kein Flug |
+| Airframe | Ø 75 mm, 1 m long, 3D-printed nose cone and landing legs |
+| Motor | Estes E12 (24 mm) in the gimbal; E12 and F35 thrust curves in the simulation |
+| Lift-off mass | about 0.9 kg planned |
+| Flight computer | Teensy 4.1, ICM-20948 (DMP), BMP280, INA219, HC-12, microSD |
+| Actuators | 2× SG90 (TVC), roll motor on an H-bridge, parachute servo |
+| Control | PID on pitch/yaw with torque-to-gimbal-angle conversion, PID on roll |
+| Status | Firmware and electronics bench-tested, mainboard rev A specified, no flight yet |
 
-Der aktuelle Stand aller Arbeitspakete, die Befunde aus der Code-Durchsicht und die
-nächsten Schritte stehen in [PROJECT.md](PROJECT.md).
+The state of every work package, the findings from the code review and the next steps
+are tracked in [PROJECT.md](PROJECT.md) (German).
 
-## Aufbau des Repos
+## Repository layout
 
 ```
-spacecode/            Flug-Firmware (PlatformIO, Teensy 4.1)        -> spacecode/README.md
-  src/                Module: Sensors, KalmanZ, Control, SDLogger, Timing, Indicators
-  examples/           eigenständige Test-Sketches (Funk, I2C-Scan, Pyro-MOSFET)
-hardware/mainboard/   Spezifikation des Mainboards rev A, Umriss (DXF), Platzierungsplan
-docs/                 Render-Skript für Blender und Bilder
-PROJECT.md            Projektdatei: Eckdaten, Fortschritt, Befunde, Änderungsprotokoll
+spacecode/            flight firmware (PlatformIO, Teensy 4.1)     -> spacecode/README.md
+  src/                modules: Sensors, KalmanZ, Control, SDLogger, Timing, Indicators
+  examples/           stand-alone test sketches (radio, I2C scan, pyro MOSFET)
+hardware/mainboard/   mainboard rev A specification, outline (DXF), placement plan
+docs/                 Blender render script and images
+PROJECT.md            project file: key data, progress, findings, changelog
 ```
 
-Die Bodenstation (Arduino Nano mit HC-12-Empfänger) ist ein eigenes Repo:
-[groundcode](https://github.com/Jan-Philipp-Munsch/groundcode).
-Die 6DOF-Simulation (MATLAB/Simulink, Monte-Carlo und PID-Suche) und die
-Blender-CAD-Modelle liegen außerhalb dieses Repos.
+The ground station (Arduino Nano with HC-12 receiver) lives in its own repository,
+[groundcode](https://github.com/Jan-Philipp-Munsch/groundcode). The 6-DOF simulation
+(MATLAB/Simulink, Monte Carlo and PID search) and the Blender CAD models are kept
+outside this repository.
 
-## Firmware bauen und flashen
+## Building and flashing the firmware
 
-Voraussetzung ist [PlatformIO](https://platformio.org) (CLI oder VS-Code-Erweiterung).
+You need [PlatformIO](https://platformio.org) (CLI or the VS Code extension).
 
 ```bash
 cd spacecode
-pio run                      # Flug-Firmware bauen
-pio run -t upload            # auf den Teensy 4.1 flashen
-pio device monitor           # serielle Konsole, 115200 Bd
-pio run -e radio_beacon      # einen Test-Sketch aus examples/ bauen
+pio run                      # build the flight firmware
+pio run -t upload            # flash the Teensy 4.1
+pio device monitor           # serial console, 115200 baud
+pio run -e radio_beacon      # build one of the test sketches in examples/
 ```
 
-Alle Pins, Reglerparameter, Filterkonstanten und Debug-Schalter liegen in
-[`spacecode/src/Config.h`](spacecode/src/Config.h). Die Regler sind dort
-abgeschaltet, bis der erste Flugtest ansteht.
+All pins, controller gains, filter constants and debug switches live in
+[`spacecode/src/Config.h`](spacecode/src/Config.h). The controllers are switched off
+there until the first flight test.
 
-## Wie die Firmware arbeitet
+## How the firmware works
 
-Die Hauptschleife läuft mit festem Takt (100 Hz) und erledigt pro Durchlauf:
+The main loop runs at a fixed 100 Hz and does the following on every pass:
 
-1. **Sensoren lesen.** Die IMU liefert über den DMP Quaternion, Beschleunigung und
-   Drehrate aus der FIFO, das Barometer die Höhe, der INA219 Spannung und Strom.
-2. **Lage integrieren.** Die Drehrate des Gyros wird zu Yaw, Pitch und Roll aufsummiert.
-   Im Flug sind Kompass und Beschleunigungsstützung unbrauchbar, deshalb rein inertial.
-3. **Höhe schätzen.** Ein Kalman-Filter mit den Zuständen Höhe und Vertikalgeschwindigkeit
-   fusioniert Barometer und Vertikalbeschleunigung.
-4. **Regeln.** Ein PID auf Pitch und Yaw liefert ein Moment, das über
-   `M = l · m · |a| · sin(δ)` in den TVC-Winkel und dann in Servo-Grad umgerechnet wird.
-   Ein zweiter PID treibt den Rollmotor über die H-Brücke.
-5. **Loggen.** Ein 88-Byte-Frame pro Durchlauf geht in einen Seitenpuffer; physische
-   Schreibzugriffe und Syncs auf die SD-Karte passieren nur in freier Zeit vor der
-   nächsten Deadline. Am Boden wird das Binärlog als CSV exportiert.
+1. **Read the sensors.** The IMU's DMP delivers quaternion, acceleration and angular
+   rate from its FIFO, the barometer the altitude, the INA219 voltage and current.
+2. **Integrate attitude.** The gyro rate is summed into yaw, pitch and roll. In flight
+   the magnetometer and accelerometer aiding are useless, so attitude is purely inertial.
+3. **Estimate altitude.** A Kalman filter with the states altitude and vertical velocity
+   fuses the barometer with vertical acceleration.
+4. **Control.** A PID on pitch and yaw outputs a torque that is converted via
+   `M = l · m · |a| · sin(δ)` into a gimbal angle and then into servo degrees. A second
+   PID drives the roll motor through the H-bridge.
+5. **Log.** One 88-byte frame per pass goes into a page buffer; physical writes and syncs
+   to the SD card only happen in the spare time before the next deadline. On the ground
+   the binary log is exported as CSV.
 
-Details zu den Modulen, dem Log-Format und den Test-Sketches:
-[spacecode/README.md](spacecode/README.md).
+Module details, the log format and the test sketches are described in
+[spacecode/README.md](spacecode/README.md) (German).
 
 ## Hardware
 
-Heute hängen alle Sensoren als Breakouts mit Dupont-Kabeln am Teensy. Das ist im Flug
-das größte Ausfallrisiko. [hardware/mainboard/](hardware/mainboard/README.md) spezifiziert
-deshalb ein Mainboard rev A als Längs-Schlitten 54 × 120 mm mit Teensy-Sockel, IMU auf der
-Rollachse, zwei Buck-Wandlern, zwei Pyro-Kanälen mit Arming und allen Steckern an den
-Stirnseiten. Schaltplan und Layout in KiCad sind der nächste Schritt.
+Today all sensors hang off the Teensy as breakout boards with Dupont wires, which is the
+biggest failure risk in flight. [hardware/mainboard/](hardware/mainboard/README.md)
+therefore specifies a mainboard rev A: a 54 × 120 mm sled with a Teensy socket, the IMU on
+the roll axis, two buck converters, two pyro channels with arming, and all connectors on
+the end faces. Schematic and layout in KiCad are the next step.
 
-## Bekannte Baustellen
+## Known open points
 
-- Masse und Reglerparameter zwischen Firmware und Simulation abgleichen.
-- Lage als Quaternion aus dem Gyro statt komponentenweiser Integration (gilt nur für
-  kleine Winkel ohne Rollen).
-- Gyro-Kalibrierung auf der Rampe statt fester Offsets.
-- Flugzustandsautomat (Pad, Boost, Coast, Apogäum, Bergung) und Pyro-Logik mit Arming.
-- Telemetrieprotokoll über HC-12.
+- Align mass and controller gains between firmware and simulation.
+- Attitude as a quaternion from the gyro instead of component-wise integration (only
+  valid for small angles without roll).
+- Gyro calibration on the pad instead of fixed offsets.
+- Flight state machine (pad, boost, coast, apogee, recovery) and pyro logic with arming.
+- Telemetry protocol over the HC-12.
 
-Die vollständige Liste mit Begründungen steht in [PROJECT.md §5](PROJECT.md).
+The full list with reasoning is in [PROJECT.md §5](PROJECT.md).
+
+## License
+
+[MIT](LICENSE). The BPS.space Scout F files that served as reference are not part of
+this repository.

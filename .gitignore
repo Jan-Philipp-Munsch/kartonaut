@@ -1,1 +1,16 @@
+# Bodenstation: eigenes Repo (github.com/Jan-Philipp-Munsch/groundcode)
 groundcode/
+
+# Persönliche Notizen (OneNote), nicht Teil des veröffentlichten Projekts
+eLab/
+*.one
+*.onetoc2
+
+# Python
+__pycache__/
+*.pyc
+
+# Betriebssystem / Editor
+.DS_Store
+Thumbs.db
+*.swp

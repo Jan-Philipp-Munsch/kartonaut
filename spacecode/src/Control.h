@@ -1,37 +1,49 @@
 #pragma once
+// Control.h – Lageregler für Pitch/Yaw (TVC-Kardan) und Roll (Rollmotor)
+// sowie die Ansteuerung der Servos und der H-Brücke.
+//
+// Alle Winkel in Grad. Die Lage kommt als integrierter Gyro-Winkel aus
+// main.cpp (rot_deg: x = Yaw, y = Pitch, z = Roll). Die Regler integrieren
+// selbst nur ihre I-Anteile.
 #include "Config.h"
 #include "MathTypes.h"
 #include <PWMServo.h>
 #include <Servo.h>
 
-
-struct AttState {
-  Vec3 rot_deg;      // integrierte Rotation (Yaw, Pitch, Roll) in deg
-  Vec3 rot_int_deg;  // Integrator
+// Ergebnis der Rollregelung, für Logging und Teleplot
+struct RollOutput {
+  float angle_deg    = 0.0f;   // Roll-Winkel (integriert)
+  float rate_dps     = 0.0f;   // Roll-Rate
+  float corr_deg     = 0.0f;   // Regelabweichung (Soll 0°)
+  float cmd_norm     = 0.0f;   // Stellgröße -1..+1
+  int   pwm          = 0;      // 0..ROLL_PWM_MAX
+  int   dir          = 0;      // -1, 0, +1
 };
 
+// Servos (TVC + Fallschirm) anhängen und auf Mitte stellen
 void Control_setup();
+// H-Brücke des Rollmotors konfigurieren (PWM-Frequenz und -Auflösung)
 void Motor_setup();
 
-void Control_updateRoll(const Vec3& omega_dps,
-                        const Vec3& rot_prev_deg,
-                        float dt_meas,
-                        // Outputs:
-                        float& roll_angle_deg,
-                        float& roll_rate_dps,
-                        float& roll_corr_angle_deg,
-                        float& roll_cmd_norm,  // -1..+1
-                        int&   roll_pwm,       // 0..4095
-                        int&   roll_dir);      // -1,0,+1
-
-// Regler berechnet direkt Ziel-Servowinkel in Grad (0..180)
-void Control_updatePY(const Vec3& omega_dps,
-                      const Vec3& rot_prev_deg,
-                      float dt_meas,
+// PID auf Yaw (x) und Pitch (y). Rechnet das geforderte Moment über
+// M = l * m * |a| * sin(delta) in einen TVC-Winkel um und daraus in
+// Servo-Grad (0..180) innerhalb der mechanischen Fenster.
+void Control_updatePY(const Vec3& rot_deg,
+                      const Vec3& omega_dps,
+                      float dt_s,
                       float a_norm_filt,
-                      int& yaw_deg_out,     // 0..180°
-                      int& pitch_deg_out,   // 0..180°
-                      AttState& out_state);
+                      int& yaw_servo_deg,
+                      int& pitch_servo_deg);
 
-// setzt die Servos (PWMServo.write expects degrees 0..180)
+// PID auf Roll (z) mit Totband und Mindest-PWM, treibt die H-Brücke direkt.
+void Control_updateRoll(const Vec3& rot_deg,
+                        const Vec3& omega_dps,
+                        float dt_s,
+                        RollOutput& out);
+
+// Rollmotor stromlos (beide Halbbrücken 0)
+void Motor_coast();
+
+// Servowinkel setzen (0..180, wird geklemmt)
 void Apply_servos_deg(int yaw_deg, int pitch_deg);
+void Chute_servo_deg(int deg);

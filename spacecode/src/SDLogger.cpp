@@ -1,3 +1,11 @@
+// SDLogger.cpp – Binär-Logger auf die SD-Karte des Teensy 4.1 (SDIO).
+//
+// Pro Loop ein 88-Byte-Record (Zeitstempel + 40 × int16, feste Skalierung,
+// siehe mapFrameToI16). Die Datei wird vorab alloziert (LOG_BYTES) und als
+// LOGxxxxx.TMP geschrieben; SDLogger_stop() kürzt sie und benennt sie in
+// .BIN um. Beim nächsten Start werden liegengebliebene .TMP repariert.
+// Physische Writes und Syncs passieren nur, wenn die Loop dafür Slack hat.
+// Am Boden exportiert SDLogger_exportLatestCSVx() die Datei als CSV.
 #include "SDLogger.h"
 #include <SdFat.h>
 #include <ctype.h>
@@ -369,9 +377,9 @@ bool SDLogger_logFrame(const SDFrame& f){
 // CSV-Export (am Boden nutzen)
 // ===========================
 
-// Decoder passend zum Mapping
+// Decoder passend zum Mapping (q_s und q_u unterscheiden sich nur im Klemmen)
 static inline float d_s(int16_t v, float s){ return float(v) / s; }
-static inline float d_u(int16_t v, float s){ return float(v) / s; }
+static inline float d_u(int16_t v, float s){ return d_s(v, s); }
 
 static bool findLatestBIN(char* out, size_t outSz){
   if (!ensureSdBegun()) return false;
@@ -497,7 +505,7 @@ SDExportResult SDLogger_exportBINtoCSVx(const char* name, bool scaled){
         "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,"
         "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,"
         "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,"
-        "%d,%d,%d,%d,%d,%d,%d,%d\n",
+        "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
         t_s, r.write_us_prev,
         r.v[0], r.v[1], r.v[2], r.v[3], r.v[4], r.v[5], r.v[6], r.v[7], r.v[8], r.v[9],
         r.v[10], r.v[11], r.v[12], r.v[13], r.v[14], r.v[15], r.v[16], r.v[17], r.v[18], r.v[19],
@@ -516,8 +524,8 @@ SDExportResult SDLogger_exportBINtoCSVx(const char* name, bool scaled){
   rf.close();
 
   res.ok = true;
-  strncpy(res.csv_name, csvName, sizeof(res.csv_name));
-  res.csv_name[sizeof(res.csv_name)-1] = 0;
+  static_assert(sizeof(res.csv_name) >= sizeof(csvName), "csv_name zu klein");
+  memcpy(res.csv_name, csvName, sizeof(csvName));
   return res;
 }
 

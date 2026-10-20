@@ -1,3 +1,6 @@
+// Sensors.cpp – Barometer (BMP280), IMU (ICM-20948 mit DMP/FIFO) und
+// Strommonitor (INA219). Liefert pro Loop einen Satz physikalischer Werte
+// im Körpersystem (x, y quer, z = Rollachse) und im Navigationssystem.
 #include "Sensors.h"
 
 #ifdef USE_WIRE1_FOR_IMU
@@ -52,7 +55,6 @@ void Sensors_setup(){
     ok &= (imu.setDMPODRrate(DMP_ODR_Reg_Quat9, 0) == ICM_20948_Stat_Ok);
     ok &= (imu.setDMPODRrate(DMP_ODR_Reg_Accel, 0) == ICM_20948_Stat_Ok);
     ok &= (imu.setDMPODRrate(DMP_ODR_Reg_Gyro, 0) == ICM_20948_Stat_Ok);
-    ok &= (imu.setDMPODRrate(DMP_ODR_Reg_Gyro_Calibr, 0) == ICM_20948_Stat_Ok);
     ok &= (imu.enableFIFO() == ICM_20948_Stat_Ok);
     ok &= (imu.enableDMP() == ICM_20948_Stat_Ok);
     ok &= (imu.resetDMP() == ICM_20948_Stat_Ok);
@@ -157,7 +159,6 @@ bool Read_IMU(ImuData& out, float& a_norm_filt){
   static Vec3 last_omega_dps = {0,0,0};
   static Vec3 gyro_filt = {0,0,0};
 
-  constexpr float GYRO_ALPHA = 0.25f; // 0..1 (höher = glatter)
   const uint32_t t_start = micros();
 
   // Default: gebe die letzten Werte aus; markiere Flags als "nicht frisch"
@@ -171,8 +172,7 @@ bool Read_IMU(ImuData& out, float& a_norm_filt){
   // Wir versuchen die FIFO zu lesen, auch wenn dataReady() false sagt.
   // Beenden, wenn kein "MoreDataAvail" kommt oder wir unser Cap erreichen.
   bool got_any = false;
-  const int READ_CAP = 24;     // Sicherheitsgrenze
-  for (int i=0; i<READ_CAP; ++i){
+  for (int i=0; i<IMU_FIFO_READ_CAP; ++i){
     icm_20948_DMP_data_t d;
     imu.readDMPdataFromFIFO(&d);
 
@@ -209,9 +209,9 @@ bool Read_IMU(ImuData& out, float& a_norm_filt){
       a_body_ms2 = a_body_ms2 - g_acc_bias_body_ms2;
       out.a_body = a_body_ms2;
 
+      // out.q ist entweder der frische Quat dieses Frames oder last_q
       const Vec3 gravity_nav(0,0,-G_MS2);
-      const Quaternion& q_use = out.hasQuat ? out.q : last_q; // konsistent rotieren
-      out.a_nav = rotateVector(q_use, a_body_ms2) + gravity_nav;
+      out.a_nav = rotateVector(out.q, a_body_ms2) + gravity_nav;
 
       // |a| leicht glätten
       const float aN = norm(a_body_ms2);
@@ -221,16 +221,18 @@ bool Read_IMU(ImuData& out, float& a_norm_filt){
     }
 
     // --- Gyro ---
-    if ((d.header & DMP_header_bitmap_Gyro_Calibr) > 0){
+    // Raw_Gyro.Data wird von der Bibliothek nur beim Gyro-Paket (Bit 0x4000)
+    // gefüllt, nicht beim Gyro_Calibr-Paket. Darum hier auf das Gyro-Bit prüfen.
+    if ((d.header & DMP_header_bitmap_Gyro) > 0){
       Vec3 omega = {
-        (float)(d.Raw_Gyro.Data.X + 12.1f) / GYRO_LSB_PER_DPS,
-        (float)(d.Raw_Gyro.Data.Y - 7.96f) / GYRO_LSB_PER_DPS,
-        (float)(d.Raw_Gyro.Data.Z + 2.44f) / GYRO_LSB_PER_DPS
+        ((float)d.Raw_Gyro.Data.X + GYRO_BIAS_LSB_X) / GYRO_LSB_PER_DPS,
+        ((float)d.Raw_Gyro.Data.Y + GYRO_BIAS_LSB_Y) / GYRO_LSB_PER_DPS,
+        ((float)d.Raw_Gyro.Data.Z + GYRO_BIAS_LSB_Z) / GYRO_LSB_PER_DPS
       };
       // IIR-Glättung
-      gyro_filt.x += (omega.x - gyro_filt.x) * GYRO_ALPHA;
-      gyro_filt.y += (omega.y - gyro_filt.y) * GYRO_ALPHA;
-      gyro_filt.z += (omega.z - gyro_filt.z) * GYRO_ALPHA;
+      gyro_filt.x += (omega.x - gyro_filt.x) * GYRO_FILT_ALPHA;
+      gyro_filt.y += (omega.y - gyro_filt.y) * GYRO_FILT_ALPHA;
+      gyro_filt.z += (omega.z - gyro_filt.z) * GYRO_FILT_ALPHA;
 
       if(GYRO_FILT){
         out.omega_dps = gyro_filt;

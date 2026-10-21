@@ -1,0 +1,268 @@
+{
+  "board": {
+    "design_settings": {
+      "defaults": {
+        "board_outline_line_width": 0.1,
+        "copper_line_width": 0.2,
+        "copper_text_size_h": 1.5,
+        "copper_text_size_v": 1.5,
+        "copper_text_thickness": 0.3,
+        "silk_line_width": 0.12,
+        "silk_text_size_h": 0.8,
+        "silk_text_size_v": 0.8,
+        "silk_text_thickness": 0.12
+      },
+      "rules": {
+        "min_clearance": 0.127,
+        "min_track_width": 0.127,
+        "min_via_diameter": 0.45,
+        "min_through_hole_diameter": 0.3,
+        "min_via_annular_width": 0.075,
+        "min_hole_clearance": 0.25,
+        "min_hole_to_hole": 0.25,
+        "min_copper_edge_clearance": 0.3,
+        "min_silk_clearance": 0.0,
+        "min_text_height": 0.6,
+        "min_text_thickness": 0.1,
+        "solder_mask_to_copper_clearance": 0.0
+      },
+      "track_widths": [
+        0.0,
+        0.2,
+        0.3,
+        0.6,
+        1.2,
+        2.0
+      ],
+      "via_dimensions": [
+        {
+          "diameter": 0.0,
+          "drill": 0.0
+        },
+        {
+          "diameter": 0.6,
+          "drill": 0.3
+        },
+        {
+          "diameter": 0.8,
+          "drill": 0.4
+        }
+      ]
+    }
+  },
+  "meta": {
+    "filename": "mainboard.kicad_pro",
+    "version": 3
+  },
+  "net_settings": {
+    "classes": [
+      {
+        "name": "Default",
+        "track_width": 0.2,
+        "clearance": 0.15,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "diff_pair_width": 0.2,
+        "diff_pair_gap": 0.25,
+        "wire_width": 6,
+        "bus_width": 12,
+        "line_style": 0,
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 2147483647
+      },
+      {
+        "name": "Strom",
+        "track_width": 1.2,
+        "clearance": 0.25,
+        "via_diameter": 0.8,
+        "via_drill": 0.4,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "diff_pair_width": 0.2,
+        "diff_pair_gap": 0.25,
+        "wire_width": 6,
+        "bus_width": 12,
+        "line_style": 0,
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 0
+      },
+      {
+        "name": "Versorgung",
+        "track_width": 0.6,
+        "clearance": 0.2,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "diff_pair_width": 0.2,
+        "diff_pair_gap": 0.25,
+        "wire_width": 6,
+        "bus_width": 12,
+        "line_style": 0,
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 1
+      }
+    ],
+    "meta": {
+      "version": 4
+    },
+    "netclass_patterns": [
+      {
+        "netclass": "Strom",
+        "pattern": "VBAT2_RAW"
+      },
+      {
+        "netclass": "Strom",
+        "pattern": "VBAT2_REV"
+      },
+      {
+        "netclass": "Strom",
+        "pattern": "VBAT_PROT"
+      },
+      {
+        "netclass": "Strom",
+        "pattern": "VBAT_MEAS"
+      },
+      {
+        "netclass": "Strom",
+        "pattern": "VSERVO"
+      },
+      {
+        "netclass": "Strom",
+        "pattern": "VBAT_ARMED"
+      },
+      {
+        "netclass": "Strom",
+        "pattern": "PYRO1_NEG"
+      },
+      {
+        "netclass": "Strom",
+        "pattern": "PYRO2_NEG"
+      },
+      {
+        "netclass": "Strom",
+        "pattern": "GND_PWR"
+      },
+      {
+        "netclass": "Versorgung",
+        "pattern": "VBAT1_RAW"
+      },
+      {
+        "netclass": "Versorgung",
+        "pattern": "VBAT1_PROT"
+      },
+      {
+        "netclass": "Versorgung",
+        "pattern": "VSYS_IN"
+      },
+      {
+        "netclass": "Versorgung",
+        "pattern": "5V_SYS"
+      },
+      {
+        "netclass": "Versorgung",
+        "pattern": "5V_SERVO"
+      },
+      {
+        "netclass": "Versorgung",
+        "pattern": "3V3"
+      },
+      {
+        "netclass": "Versorgung",
+        "pattern": "3V3_RF"
+      },
+      {
+        "netclass": "Versorgung",
+        "pattern": "TEENSY_VIN"
+      },
+      {
+        "netclass": "Versorgung",
+        "pattern": "MOT_A"
+      },
+      {
+        "netclass": "Versorgung",
+        "pattern": "MOT_B"
+      },
+      {
+        "netclass": "Versorgung",
+        "pattern": "U1_SW"
+      },
+      {
+        "netclass": "Versorgung",
+        "pattern": "U2_L1"
+      },
+      {
+        "netclass": "Versorgung",
+        "pattern": "U2_L2"
+      },
+      {
+        "netclass": "Versorgung",
+        "pattern": "GND"
+      }
+    ]
+  },
+  "erc": {
+    "erc_exclusions": [
+      [
+        "pin_to_pin|2070100|749300|0108db02-d0bd-598a-b70b-6815eecf266f|29f85bb4-89b8-5ada-a2e3-aaba07f63502|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5",
+        "DRV8833: Bruecken A und B bewusst parallel (Datenblatt 8.3.6)"
+      ],
+      [
+        "pin_to_pin|2070100|774700|37a563e6-2da7-5a99-b610-fe6babff5138|5b90348a-62da-5d7a-9405-1d8a2dfc9249|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5",
+        "DRV8833: Bruecken A und B bewusst parallel (Datenblatt 8.3.6)"
+      ],
+      [
+        "pin_to_pin|1816100|673100|127a281e-8606-5618-a079-ba424c7961c8|69e1b699-f125-5d0b-867f-2ba9e9e84a66|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/f0386704-8586-5f5e-9fc9-73b7b3ca675e",
+        "AISEN ohne Strommessung direkt an GND_PWR"
+      ],
+      [
+        "pin_to_pin|1816100|698500|5da8c95c-5408-5c84-b300-605c78a45458|69e1b699-f125-5d0b-867f-2ba9e9e84a66|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/f0386704-8586-5f5e-9fc9-73b7b3ca675e",
+        "BISEN ohne Strommessung direkt an GND_PWR"
+      ]
+    ]
+  },
+  "schematic": {
+    "legacy_lib_dir": "",
+    "legacy_lib_list": []
+  },
+  "sheets": [
+    [
+      "3edc49d3-b449-556d-9f7a-20d2b2dcc15a",
+      "Root"
+    ],
+    [
+      "f0386704-8586-5f5e-9fc9-73b7b3ca675e",
+      "Versorgung"
+    ],
+    [
+      "7aa8f6ee-40d7-5189-874a-fcda12dd5add",
+      "Teensy"
+    ],
+    [
+      "41a2edf9-9ac1-57a8-b9ee-df5359ac0313",
+      "Sensorik"
+    ],
+    [
+      "dce22e09-eb1c-53d2-9412-314fa368e186",
+      "Funk"
+    ],
+    [
+      "3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5",
+      "Aktoren"
+    ],
+    [
+      "f3bfd7a7-18a3-5e33-9d61-76883bfe05fd",
+      "Pyro"
+    ],
+    [
+      "34041105-3591-5cd0-b6c2-ebe09970d09e",
+      "Signal"
+    ]
+  ],
+  "text_variables": {}
+}

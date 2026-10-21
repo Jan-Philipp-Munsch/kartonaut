@@ -1,0 +1,7 @@
+out/*.dsn
+out/*.ses
+out/*.json
+*-backups/
+fp-info-cache
+*.kicad_prl
+__pycache__/

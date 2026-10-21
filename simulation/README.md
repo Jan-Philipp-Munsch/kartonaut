@@ -191,14 +191,44 @@ Tischtest zeigen; die Simulation kann es nicht entscheiden.
 8. **`Moments2Commands`** setzt den cos-Faktor auf die andere Achse als die Dynamik
    (`My = -l T sin th_y cos th_z`, der Block rechnet mit `cos th_y` für `th_z`). Bis ±5° ist der
    Fehler unter 1 %; 1:1 übernommen.
-9. **Nicht übernommen**: Random Number mit Varianz 0 auf `wd_x` (wirkungslos), der
-   auskommentierte Hit-Crossing-Stop bei Höhe 0,01 m (es gibt keinen Boden; nach dem Gipfel fällt
-   die Rakete weiter, und bei 7,3 s zündet der zweite Motor im Fall), die unbenutzten
-   F35-Lookups und Thrust-Curve-Signal-Builder, Scopes und To-Workspace-Blöcke.
+9. **Nicht übernommen**: Random Number mit Varianz 0 auf `wd_x` (wirkungslos), die unbenutzten
+   F35-Lookups und Thrust-Curve-Signal-Builder, Scopes und To-Workspace-Blöcke. **Anders als
+   Simulink gibt es einen Boden** (`SimParams.ground`, Vorgabe an, seit 21.10.2026 abends): Auf der
+   Rampe bewegt sich die Rakete nicht, bis der Schub das Gewicht übersteigt, und der Lauf endet bei
+   der Landung (`extra["t_land"]`); die Plots laufen also nicht mehr bis 12 s ins Negative.
+   `--no-ground` in `run_nominal.py` und `compare_gains.py` rechnet wie Simulink (der dort
+   auskommentierte Hit-Crossing-Stop bei 0,01 m hätte dasselbe getan).
 10. Der `Delay`-Block läuft in Simulink mit geerbter Abtastzeit; mit `secondburn/100` im Step-Block
     des Reglers ist 7,3 s die einzige konsistente Lesart.
 
 ## Ergebnis: Firmware-Gewinne gegen Tuner-Gewinne
+
+**Nachtrag 21.10.2026 abends, mit Boden** (`SimParams.ground`, siehe Abweichung 9): Die Tabellen
+weiter unten sind ohne Boden gerechnet, wie Simulink. Mit Boden sitzt die Rakete auf der Rampe, bis
+der Schub das Gewicht übersteigt, und das ändert bei Schub-Gewichts-Verhältnissen nahe 1 viel: Ohne
+Boden sinkt die Rakete in den ersten 0,3 s des E12 um 0,4 m und nimmt 2,6 m/s Geschwindigkeitsdefizit
+mit, das bei nur 2 m/s² Nettobeschleunigung die ganze Brennphase bleibt. `compare_gains.py --accel
+specific_force` mit Boden (Rauschen an, statischer Fehler 1/0,6°, Landung = Zeitpunkt Höhe 0):
+
+| Fahrzeug `cad` (1,013 kg Start) | maxHeight | Kipp max Brenn. | Kipp 3,55 s | seitlich 3,55 s | Landung |
+|---|---|---|---|---|---|
+| Simulink-Regler, Firmware-Gewinne | 20,2 m | 3,9° | 0,9° | 1,7 m | 6,3 s |
+| Simulink-Regler, Tuner | 19,4 m | 6,7° | 6,4° | 2,6 m | 6,3 s |
+| Firmware 1:1 (Gain 23) | 20,0 m | 6,8° | 0,6° | 3,2 m | 6,3 s |
+| Firmware, Servo-Gain 6 | 20,2 m | 1,8° | 0,5° | 1,0 m | 6,3 s |
+
+| Fahrzeug `preload` (0,76 kg Start) | maxHeight | Kipp max Brenn. | Kipp 3,55 s | seitlich 3,55 s | Landung |
+|---|---|---|---|---|---|
+| Simulink-Regler, Firmware-Gewinne | 62,2 m | 5,3° | 1,0° | 3,7 m | – (zweite Zündung bei 7,3 s hebt sie wieder) |
+| Simulink-Regler, Tuner | 53,7 m | 23,0° | 19,5° | 16,6 m | 9,0 s |
+| Firmware 1:1 (Gain 23) | 57,0 m | 25,1° | 3,3° | 14,5 m | 8,7 s |
+| Firmware, Servo-Gain 6 | 61,5 m | 4,9° | 2,5° | 2,5 m | 9,6 s |
+
+Mit Boden erreicht die 1,0-kg-Rakete am E12 also 20 m statt 9 m (ohne Boden), die 0,7-kg-Rakete
+62 m statt 48 m. Die Rangfolge der Regler bleibt dieselbe. Ohne Boden (`--no-ground`) kommen die
+alten Zahlen wieder heraus. Für den zweiten Motor gilt: Bei der `cad`-Rakete ist er mit 7,3 s zu
+spät (Landung bei 6,3 s), ein Landebrennen braucht eine Zündung aus der Höhe statt nach Zeit.
+
 
 `scripts/compare_gains.py` (Rauschen an, statischer Fehler 1°/0,6°, ein Seed). Maßgeblich
 ist die erste Brennphase (0..3,55 s); danach gibt es keinen Schub und keine Stellmöglichkeit,
@@ -300,8 +330,8 @@ entspricht in Gipfelhöhe (48 m gegen 45 m) und Streuung dem MATLAB-Bild `Images
 - Das CAD-Massenmodell (981 g) bestätigt: mit 0,9..1,0 kg trägt die E12 die Rakete nur knapp
   (Gipfel 9..10 m). Masse senken oder F35 rechnen (`--vehicle cad`, Schubkurve `MotorParams(curve="F35")`;
   dann aber Beschleunigungsbereich ±4 g der IMU prüfen, PROJECT.md §5 Punkt 4).
-- Kein Boden und zweite Zündung im Fall sind Eigenheiten des Simulink-Modells; für eine
-  Flugvorhersage gehört ein Bodenkontakt und ein Flugzustandsautomat hinein.
+- Die zweite Zündung bei 7,3 s trifft im Modell die fallende Rakete (ohne Boden) oder kommt nach
+  der Landung (mit Boden); für eine Flugvorhersage gehört ein Flugzustandsautomat hinein.
 - Der Vergleich mit dem Simulink-Nominallauf ist nur über das Bild
   `Images/Monte-Carlo (1).png` möglich (45 m Gipfel, Streuung ±20 m seitlich bei 7 s);
   `run_montecarlo.py --vehicle preload --gains preload` liegt in dieser Größenordnung.

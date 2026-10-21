@@ -212,6 +212,8 @@ class SimParams:
     controller: str = "simulink"   # "simulink" oder "firmware"
     t_end: float = 12.0            # s, StopTime des Modells (Monte-Carlo: 7 s)
     substeps: int = 10             # RK4-Teilschritte je Regelschritt (dt/substeps = 1 ms)
+    ground: bool = True            # Boden: auf der Rampe keine Bewegung nach unten, der Lauf endet bei der
+                                   # Landung (Hoehe 0 nach dem Abheben). False = wie Simulink, ohne Boden.
     seed: int | None = None
 
     def with_(self, **kw) -> "SimParams":

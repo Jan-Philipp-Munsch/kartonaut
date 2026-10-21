@@ -38,6 +38,7 @@ def add_common_args(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--static-error-z", type=float, default=None)
     ap.add_argument("--mis-y", type=float, default=None); ap.add_argument("--mis-z", type=float, default=None)
     ap.add_argument("--t-end", type=float, default=12.0)
+    ap.add_argument("--no-ground", action="store_true", help="ohne Boden rechnen (wie Simulink)")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--substeps", type=int, default=10)
 
@@ -67,7 +68,8 @@ def build_params(args) -> SimParams:
                      motor=MotorParams(fuel_model=args.fuel),
                      servo=ServoParams(servo_deg_per_tvc_deg=args.servo_gain),
                      noise=NoiseParams(enabled=not args.no_noise, accel_model=args.accel),
-                     controller=args.controller, t_end=args.t_end, seed=args.seed, substeps=args.substeps)
+                     controller=args.controller, t_end=args.t_end, seed=args.seed, substeps=args.substeps,
+                     ground=not args.no_ground)
 
 
 def describe(p: SimParams) -> str:

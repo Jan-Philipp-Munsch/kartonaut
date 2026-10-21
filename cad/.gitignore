@@ -1,4 +1,5 @@
 # Export von cad/build.py: alles generiert, nur das Gesamt-STEP bleibt im Repo
 export/*
 !export/rocket.step
+!export/testrig.step
 __pycache__/

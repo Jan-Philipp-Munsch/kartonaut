@@ -7,6 +7,9 @@ jedem Teilschritt normiert. Ablauf je Takt ``t_k``:
 2. Estimator: ``w_est, q_est, T_est``.
 3. Regler liefert ``th_y_com, th_z_com`` (Grad), ZOH haelt sie bis ``t_{k+1}``.
 4. Integration ``t_k -> t_{k+1}``.
+
+Mit ``SimParams.ground`` (Vorgabe) sitzt die Rakete auf der Rampe, bis der Schub das Gewicht
+uebersteigt, und der Lauf endet bei der Landung (Hoehe 0); ``extra["t_land"]`` nennt den Zeitpunkt.
 """
 from __future__ import annotations
 
@@ -75,6 +78,9 @@ def simulate(p: SimParams) -> SimResult:
     # Zustand
     r = np.zeros(3); rd = np.zeros(3); w = np.zeros(3); q = np.array([1.0, 0.0, 0.0, 0.0])
     xy = np.zeros(2); xz = np.zeros(2)
+    lifted = False
+    t_land = None
+    k_last = n_steps
 
     def derivs(t, r, rd, w, q, xy, xz):
         T = thrust.thrust(t, dt)
@@ -108,6 +114,12 @@ def simulate(p: SimParams) -> SimResult:
         log["tilt"][k] = tilt_deg(q); log["T_est"][k] = T_est
         if k == n_steps:
             break
+        if p.ground and lifted and r[0] <= 0.0:
+            # Landung: letzter Takt geloggt (Hoehe auf 0 geklemmt), Lauf endet hier
+            log["r"][k, 0] = 0.0
+            t_land = t
+            k_last = k
+            break
 
         # Integration bis t + dt (RK4 mit festen Teilschritten)
         for s in range(p.substeps):
@@ -122,8 +134,19 @@ def simulate(p: SimParams) -> SimResult:
             r, rd, w, q, xy, xz = [v + h / 6.0 * (d1 + 2 * d2 + 2 * d3 + d4)
                                    for v, d1, d2, d3, d4 in zip((r, rd, w, q, xy, xz), k1, k2, k3, k4)]
             q = q / np.linalg.norm(q)
+            if p.ground and not lifted:
+                if r[0] > 1e-6:
+                    lifted = True
+                else:   # auf der Rampe: kein Sinken, keine Drehung
+                    r[:] = 0.0; rd[:] = 0.0; w[:] = 0.0
+
+    n = k_last + 1
+    t_arr = t_arr[:n]
+    for key in log:
+        log[key] = log[key][:n]
 
     return SimResult(params=p, t=t_arr, r=log["r"], rd=log["rd"], rdd=log["rdd"], w_dps=log["w_dps"],
                      q=log["q"], m=log["m"], T=log["T"], th_y=log["th_y"], th_z=log["th_z"],
                      th_y_com=log["th_y_com"], th_z_com=log["th_z_com"], u=log["u"], rot=log["rot"],
-                     tilt_deg=log["tilt"], T_est=log["T_est"])
+                     tilt_deg=log["tilt"], T_est=log["T_est"],
+                     extra={"t_land": t_land, "landed": t_land is not None})

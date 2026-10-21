@@ -21,7 +21,7 @@ SD-Logger und 433-MHz-LoRa-Funk zur Bodenstation. Das Gesamtsystem wird vor dem 
 |---|---|
 | Rumpf | Klima-Papprohr Ø 75 mm (innen 72,6 mm), 2 × 500 mm, Kuppler 150 mm; Kunststoffspitze, Fallschirm 125 cm |
 | Motor | TSP E12-0, 24 mm, 39 Ns, 12 N mittel, 3,5 s Brenndauer, ohne Ausstoßladung; erster Flug mit einem Motor, Landebrennen mit einem zweiten später |
-| Startmasse | 981 g im Massenmodell (`cad/`), Schwerpunkt 448 mm über der Düse; laut Simulation zu schwer für einen E12, das Massenbudget wird geprüft |
+| Startmasse | 981 g im Massenmodell (`cad/`), Schwerpunkt 448 mm über der Düse; laut Simulation trägt ein E12 das nur 20 m hoch, das Massenbudget wird geprüft |
 | Flugcomputer | Teensy 4.1 auf einem Mainboard (rev B spezifiziert): IMU ICM-42688-P, Barometer BMP390, Strommonitor INA219, LoRa SX1268, microSD, zwei Pyro-Kanäle mit Arming |
 | Versorgung | zwei Akkus: 1S-LiPo für die Elektronik (Buck-Boost), 2S-LiPo für Servos, Rollmotor und Pyro |
 | Aktoren | 2 × FrSky Xact W5652H im Kardan (direkt am 2S), Rollmotor an einem DRV8833, Pyro-Kolbenausstoß |
@@ -75,9 +75,9 @@ Drei Befunde, die das Projekt verändern:
   Gewinne (kp 3,1, ki 5, kd 0,385) haben einen 40-mal größeren D-Anteil, treiben den Kardan sofort
   in die ±5°-Begrenzung und schwingen mit 3 bis 4 Hz. Ein kleiner I-Anteil würde den statischen
   Servo-Fehler ausregeln.
-- **Die Rakete ist für einen E12 zu schwer.** Mit 0,94 kg liegt das Schub-Gewichts-Verhältnis bei 1,2
-  und der Gipfel bei 10 m; mit 0,7 kg bei 48 m. Entweder sinkt die Masse (das Papprohr allein
-  wiegt 240 g) oder der Motor wird eine Klasse stärker.
+- **Die Rakete ist für einen E12 zu schwer.** Mit den 1,0 kg des Massenmodells liegt das
+  Schub-Gewichts-Verhältnis bei 1,1 und der Gipfel bei 20 m; mit 0,7 kg bei 62 m. Entweder sinkt die
+  Masse (das Papprohr allein wiegt 240 g) oder der Motor wird eine Klasse stärker.
 - **Die Servo-Kardan-Übersetzung entscheidet über die Stellreserve.** Mit den 23 Servo-Grad je
   Kardan-Grad aus `Config.h` erreicht der Kardan nur ±1°, mit den gemessenen 6 sind es ±3,75°.
   Wird am neuen Kardan gemessen.
@@ -167,8 +167,16 @@ getestet: Die Rakete hängt in einem Gestell, das sie um den Schwerpunkt nicken 
 lässt, und an Stelle des Raketenmotors sitzt ein Brushless-Motor (Racerstar BR2814, 1000 KV,
 11-Zoll-Propeller, 4S-LiPo) im Kardan. Bei Teilgas liefert er die 12 N des E12, und der Teensy
 kann den Regler sogar entlang der E12-Schubkurve fahren. Motor, Regler, Propeller, Akku und
-Ladegeräte sind gekauft; das Gestell ist die nächste mechanische Aufgabe. Der
-Fallschirmausstoß ist mit etwa 1 g Schwarzpulver schon getestet.
+Ladegeräte sind gekauft. Das Gestell ist in [`cad/testrig.py`](cad/README.md) konstruiert: ein
+zweiachsiger Rahmen auf Kugellagern, ein gedruckter Klemmkragen am Schwerpunkt, ein Prop-Adapter,
+der ins Motorrohr steckt, und ein Schutzkäfig um den Propeller; das Build-Skript prüft, dass bei
+±20° Rig-Auslenkung und ±7° Kardan nichts kollidiert. Der Fallschirmausstoß ist mit etwa 1 g
+Schwarzpulver schon getestet.
+
+<p>
+<img src="docs/img/cad/testrig.png" width="40%" alt="Prüfstand: Rakete im zweiachsigen Rahmen">
+<img src="docs/img/cad/testrig_drive.png" width="52%" alt="Antriebsende: Propellermotor im Kardan mit Schutzkäfig">
+</p>
 
 ## Firmware
 

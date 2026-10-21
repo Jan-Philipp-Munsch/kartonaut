@@ -20,7 +20,7 @@ station. The whole system is simulated in a six-degree-of-freedom model before i
 |---|---|
 | Airframe | Klima cardboard tube Ø 75 mm (ID 72.6 mm), 2 × 500 mm, couplers 150 mm; plastic nose cone, 125 cm parachute |
 | Motor | TSP E12-0, 24 mm, 39 Ns, 12 N average, 3.5 s burn, no ejection charge; first flight on one motor, landing burn on a second one later |
-| Lift-off mass | 981 g in the mass model (`cad/`), centre of gravity 448 mm above the nozzle; the simulation says this is too heavy for one E12, so the mass budget is under review |
+| Lift-off mass | 981 g in the mass model (`cad/`), centre of gravity 448 mm above the nozzle; the simulation says one E12 lifts this to only 20 m, so the mass budget is under review |
 | Flight computer | Teensy 4.1 on a mainboard (rev B specified): ICM-42688-P IMU, BMP390 barometer, INA219 power monitor, LoRa SX1268, microSD, two pyro channels with arming |
 | Power | two batteries: 1S LiPo for the electronics (buck-boost), 2S LiPo for servos, roll motor and pyro |
 | Actuators | 2 × FrSky Xact W5652H in the gimbal (direct on 2S), roll motor on a DRV8833, pyro piston ejection |
@@ -73,9 +73,9 @@ Three findings that change the project:
   keep the tilt below 10° during the burn. The gains found earlier by the MATLAB grid search
   (kp 3.1, ki 5, kd 0.385) have a 40 times larger D term, drive the gimbal straight into its ±5°
   limit and oscillate at 3 to 4 Hz. A small I term would remove the static servo offset.
-- **The rocket is too heavy for an E12.** With 0.94 kg the thrust-to-weight ratio is 1.2 and the
-  apogee 10 m; with 0.7 kg it is 48 m. Either the mass comes down (the cardboard tube alone is
-  240 g) or the motor goes up one class.
+- **The rocket is too heavy for an E12.** With the 1.0 kg of the mass model the thrust-to-weight
+  ratio is 1.1 and the apogee 20 m; with 0.7 kg it is 62 m. Either the mass comes down (the
+  cardboard tube alone is 240 g) or the motor goes up one class.
 - **The servo-to-gimbal ratio decides the control authority.** With the 23 servo degrees per gimbal
   degree in `Config.h` the gimbal only reaches ±1°, with the measured 6 it reaches ±3.75°. To be
   measured on the new gimbal.
@@ -166,8 +166,16 @@ without a rocket motor: the rocket hangs in a rig that lets it pitch and yaw abo
 of gravity, and a brushless motor (Racerstar BR2814, 1000 KV, 11-inch propeller, 4S LiPo) sits
 in the gimbal in place of the rocket motor. At part throttle it delivers the 12 N of the E12,
 and the Teensy can even drive the ESC along the E12 thrust curve. Motor, ESC, propellers,
-battery and chargers are bought; the rig itself is the next mechanical job. The parachute
+battery and chargers are bought. The rig is designed in [`cad/testrig.py`](cad/README.md): a
+two-axis gimbal frame on bearings, a printed clamp collar at the centre of gravity, a propeller
+adapter that plugs into the motor tube, and a guard cage around the propeller; the build script
+checks that nothing collides at ±20° of rig tilt and ±7° of gimbal deflection. The parachute
 ejection has already been tested with about 1 g of black powder.
+
+<p>
+<img src="docs/img/cad/testrig.png" width="40%" alt="Test rig: rocket in the two-axis frame">
+<img src="docs/img/cad/testrig_drive.png" width="52%" alt="Drive end: propeller motor in the gimbal with guard cage">
+</p>
 
 ## Firmware
 

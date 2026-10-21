@@ -146,8 +146,9 @@ def motor():
     return m.cut(nozzle)
 
 
-def build(parts: Parts, pitch_deg=0.0, yaw_deg=0.0):
-    """Kardan montiert; pitch_deg kippt das Motorrohr um x, yaw_deg den Innenrahmen um y (Darstellung)."""
+def build(parts: Parts, pitch_deg=0.0, yaw_deg=0.0, motor_kind="e12"):
+    """Kardan montiert; pitch_deg kippt das Motorrohr um x, yaw_deg den Innenrahmen um y (Darstellung).
+    motor_kind "e12": Adapter 29→24 und TSP E12; "prop": Prop-Adapter, BR2814 und Propeller (Prüfstand)."""
     zr = P.TVC_RING_Z
     up = (0, 0, zr)
     piv = (0, 0, P.PIVOT_H)
@@ -160,10 +161,13 @@ def build(parts: Parts, pitch_deg=0.0, yaw_deg=0.0):
     inner_group = [("Innenrahmen", inner_gimbal(), "printed2"),
                    ("Servo Innenrahmen W5652H", s_in, "servo"),
                    ("Servohebel außen", h_out, "steel")]
-    motor_group = [("Motorrohr", motor_tube(), "printed"),
-                   ("Adapter 29→24", adapter().translate((0, 0, P.ADAPTER_Z[0] - zr)), "printed2"),
-                   ("Motor TSP E12-0", motor().translate((0, 0, -zr)), "motor"),
-                   ("Servohebel innen", h_in, "steel")]
+    motor_group = [("Motorrohr", motor_tube(), "printed"), ("Servohebel innen", h_in, "steel")]
+    if motor_kind == "prop":
+        import testrig
+        motor_group += [(n, s.translate((0, 0, -zr)), c) for n, s, c in testrig.prop_motor_parts()]
+    else:
+        motor_group += [("Adapter 29→24", adapter().translate((0, 0, P.ADAPTER_Z[0] - zr)), "printed2"),
+                        ("Motor TSP E12-0", motor().translate((0, 0, -zr)), "motor")]
     for name, shp, col in motor_group:
         shp = rot_about(shp, piv, (1, 0, 0), pitch_deg)
         shp = rot_about(shp, piv, (0, 1, 0), yaw_deg)

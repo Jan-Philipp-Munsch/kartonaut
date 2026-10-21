@@ -117,3 +117,16 @@ def test_quaternion_norm_stays_one(controller):
     res = simulate(p)
     assert np.max(np.abs(np.linalg.norm(res.q, axis=1) - 1.0)) < 1e-12
     assert np.all(np.isfinite(res.r))
+
+
+def test_ground_contact_ends_run_at_landing():
+    """Mit Boden sinkt die Rakete nie unter 0 und der Lauf endet bei der Landung, vor t_end."""
+    from tvcsim.params import SimParams, VehicleParams
+    from tvcsim.sim import simulate
+    p = SimParams(vehicle=VehicleParams.preload(), t_end=12.0, seed=1, substeps=5)
+    res = simulate(p)
+    assert res.r[:, 0].min() >= -1e-9
+    assert res.extra["landed"] and res.t[-1] < 12.0
+    assert res.max_height > 5.0
+    res2 = simulate(p.with_(ground=False))
+    assert res2.t[-1] == 12.0 and res2.r[-1, 0] < 0.0

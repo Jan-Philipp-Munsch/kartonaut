@@ -81,6 +81,11 @@ elif view == "tvc":
 elif view == "avionics":
     # von +y (Bestückungsseite mit Teensy), schräg
     aim((0.7, 1.0, 0.45), ctr, ext.z * 1.12, 1000, 1400)
+elif view == "testrig":
+    # Gestell von schräg vorn, Welle quer im Bild
+    aim((0.9, 1.3, 0.5), ctr, max(ext.z * 1.08, ext.x * 1.15), 1200, 1500)
+elif view == "testrig_drive":
+    aim((1.0, -1.0, 0.55), ctr, max(ext) * 1.15, 1300, 1000)
 
 scene.render.filepath = out_png
 scene.render.image_settings.file_format = "PNG"

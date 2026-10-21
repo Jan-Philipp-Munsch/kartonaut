@@ -315,7 +315,9 @@ def main():
     for s, flags in circuit.PWR_FLAGS.items():
         for net in flags:
             net_sheets.setdefault(net, set()).add(s)
-    globals_ = {n for n, s in net_sheets.items() if len(s) > 1}
+    # all labels global: net names in the netlist stay plain ("VBAT_MEAS", not "/Versorgung/VBAT_MEAS"),
+    # so they match the board, the net class patterns and the spec
+    globals_ = set(net_sheets)
 
     sheet_nodes = []
     for i, (stem, title, page_title) in enumerate(circuit.SHEETS):
@@ -401,9 +403,9 @@ def write_project():
             "defaults": {"board_outline_line_width": 0.1, "copper_line_width": 0.2, "copper_text_size_h": 1.5,
                          "copper_text_size_v": 1.5, "copper_text_thickness": 0.3, "silk_line_width": 0.12,
                          "silk_text_size_h": 0.8, "silk_text_size_v": 0.8, "silk_text_thickness": 0.12},
-            "rules": {"min_clearance": 0.127, "min_track_width": 0.127, "min_via_diameter": 0.45,
-                      "min_through_hole_diameter": 0.3, "min_via_annular_width": 0.075, "min_hole_clearance": 0.25,
-                      "min_hole_to_hole": 0.25, "min_copper_edge_clearance": 0.3, "min_silk_clearance": 0.0,
+            "rules": {"min_clearance": 0.127, "min_track_width": 0.09, "min_via_diameter": 0.45,
+                      "min_through_hole_diameter": 0.2, "min_via_annular_width": 0.075, "min_hole_clearance": 0.25,
+                      "min_hole_to_hole": 0.25, "min_copper_edge_clearance": 0.2, "min_silk_clearance": 0.0,
                       "min_text_height": 0.6, "min_text_thickness": 0.1, "solder_mask_to_copper_clearance": 0.0},
             "track_widths": [0.0, 0.2, 0.3, 0.6, 1.2, 2.0],
             "via_dimensions": [{"diameter": 0.0, "drill": 0.0}, {"diameter": 0.6, "drill": 0.3}, {"diameter": 0.8, "drill": 0.4}],

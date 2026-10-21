@@ -10,7 +10,7 @@
 		(rev "B")
 		(company "Mission Space")
 		(comment 1 "Teensy 4.1 auf Buchsenleisten, Erweiterungsleiste, Befestigung")
-		(comment 2 "erzeugt von hardware/mainboard/kicad/gen_schematic.py aus circuit.py - nicht von Hand aendern")
+		(comment 2 "erzeugt aus circuit.py (gen_schematic.py)")
 	)
 	(lib_symbols
 		(symbol "mainboard:Teensy4.1_Socket"
@@ -1029,33 +1029,36 @@
 		(stroke (width 0) (type default))
 		(uuid "0d0f2acc-2c11-5e09-a71e-95c4878dec98")
 	)
-	(label "EXP_D10"
+	(global_label "EXP_D10"
+		(shape passive)
 		(at 40.64 73.66 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "eb3b8538-b8b8-5a34-b4d9-36c35518ae57")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "724378cf-f2f2-5520-be2e-e9d81bca7fb1")
 	)
 	(wire
 		(pts (xy 43.18 76.2) (xy 40.64 76.2))
 		(stroke (width 0) (type default))
 		(uuid "276986e3-3ca2-5b14-8cbe-63b74be13749")
 	)
-	(label "EXP_D11"
+	(global_label "EXP_D11"
+		(shape passive)
 		(at 40.64 76.2 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "7741e32d-c595-5e71-b92e-5358876c1a8d")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "897c1788-9441-5b2f-9b5e-4749b9f41a23")
 	)
 	(wire
 		(pts (xy 43.18 78.74) (xy 40.64 78.74))
 		(stroke (width 0) (type default))
 		(uuid "3bee511f-2648-5461-af90-799babf41b65")
 	)
-	(label "EXP_D12"
+	(global_label "EXP_D12"
+		(shape passive)
 		(at 40.64 78.74 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "94410713-903d-58fc-91f7-3369bc19e799")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "a89f4749-0bc3-5e18-82e6-a06103ec7094")
 	)
 	(wire
 		(pts (xy 43.18 81.28) (xy 40.64 81.28))
@@ -1086,11 +1089,12 @@
 		(stroke (width 0) (type default))
 		(uuid "af25da67-ccd2-59c7-a929-cd39478935a5")
 	)
-	(label "EXP_D25"
+	(global_label "EXP_D25"
+		(shape passive)
 		(at 40.64 86.36 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "5d8248a4-e25c-5f9f-b465-eda9e490858b")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "8ab61cb4-5cb1-593c-bf06-c5201e2f445e")
 	)
 	(wire
 		(pts (xy 43.18 88.9) (xy 40.64 88.9))
@@ -1145,22 +1149,24 @@
 		(stroke (width 0) (type default))
 		(uuid "14e3a433-906f-53f1-859c-4eb1a9b8f2a4")
 	)
-	(label "EXP_D30"
+	(global_label "EXP_D30"
+		(shape passive)
 		(at 40.64 99.06 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "9b3e47b9-b7a6-5acb-8ab7-0434e96360bc")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "e6e28292-bd7c-5b9c-9cad-92d9429df268")
 	)
 	(wire
 		(pts (xy 43.18 101.6) (xy 40.64 101.6))
 		(stroke (width 0) (type default))
 		(uuid "114df74a-3af0-579a-9dfe-7be8fae3a166")
 	)
-	(label "EXP_D31"
+	(global_label "EXP_D31"
+		(shape passive)
 		(at 40.64 101.6 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "455f98bc-08a0-58a5-abd9-d85018f10de8")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "33389649-9c62-598c-a9c5-18821796594e")
 	)
 	(wire
 		(pts (xy 43.18 104.14) (xy 40.64 104.14))
@@ -1287,44 +1293,48 @@
 		(stroke (width 0) (type default))
 		(uuid "447d6445-263a-5a16-a9a1-85d3c84b34fd")
 	)
-	(label "EXP_D17"
+	(global_label "EXP_D17"
+		(shape passive)
 		(at 76.2 68.58 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "e9af97ce-792c-5da4-a49a-4a250bd8750d")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "dc214bbf-da88-5fbd-b4dc-1419db0df5cb")
 	)
 	(wire
 		(pts (xy 73.66 71.12) (xy 76.2 71.12))
 		(stroke (width 0) (type default))
 		(uuid "616d05cc-e002-5aeb-98a6-8d6819eed7c4")
 	)
-	(label "EXP_D16"
+	(global_label "EXP_D16"
+		(shape passive)
 		(at 76.2 71.12 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "89a8c8b8-4012-5542-81a5-8671b8942930")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "3609ddd0-cb53-5013-8d19-97bb71348145")
 	)
 	(wire
 		(pts (xy 73.66 73.66) (xy 76.2 73.66))
 		(stroke (width 0) (type default))
 		(uuid "9fe0bc93-ecbe-5be1-b8f0-d5402ac34d5d")
 	)
-	(label "EXP_D15"
+	(global_label "EXP_D15"
+		(shape passive)
 		(at 76.2 73.66 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "063bec4c-49fd-58ee-a4c2-d1f03e02581d")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "6daa9af5-1a20-53f7-9b11-7dc53a9cda54")
 	)
 	(wire
 		(pts (xy 73.66 76.2) (xy 76.2 76.2))
 		(stroke (width 0) (type default))
 		(uuid "2adef75f-ce02-5254-ac1e-d9d178bbd12a")
 	)
-	(label "EXP_D14"
+	(global_label "EXP_D14"
+		(shape passive)
 		(at 76.2 76.2 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "88dd44f3-44cd-5458-9d02-312a83505fdd")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "402f8f6e-b376-5963-a88a-f7a387651283")
 	)
 	(wire
 		(pts (xy 73.66 78.74) (xy 76.2 78.74))
@@ -1403,11 +1413,12 @@
 		(stroke (width 0) (type default))
 		(uuid "5773fab1-1fb9-5734-8128-e938c107cda7")
 	)
-	(label "EXP_D37"
+	(global_label "EXP_D37"
+		(shape passive)
 		(at 76.2 93.98 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "0b211e8a-f299-5d87-b8bf-b44e742d0317")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "e1c0cda1-3914-5fc4-b4d1-c702f2f6d2d9")
 	)
 	(wire
 		(pts (xy 73.66 96.52) (xy 76.2 96.52))
@@ -1572,121 +1583,132 @@
 		(stroke (width 0) (type default))
 		(uuid "f2915244-ff6a-5a98-9276-425c6347b9ea")
 	)
-	(label "EXP_D10"
+	(global_label "EXP_D10"
+		(shape passive)
 		(at 115.57 46.99 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "67774c2b-95e2-5392-bf93-66d783584d72")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "ebed725f-8f0d-59a6-8fe0-ef6aa16c11ba")
 	)
 	(wire
 		(pts (xy 130.81 46.99) (xy 133.35 46.99))
 		(stroke (width 0) (type default))
 		(uuid "1868b6ab-b877-561a-b18c-688267792483")
 	)
-	(label "EXP_D11"
+	(global_label "EXP_D11"
+		(shape passive)
 		(at 133.35 46.99 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "45ebfcc3-4e8e-5c9b-bef5-51529b2b93bf")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "61f75e41-2b16-5984-be22-2feb600b2af1")
 	)
 	(wire
 		(pts (xy 118.11 49.53) (xy 115.57 49.53))
 		(stroke (width 0) (type default))
 		(uuid "f2c7f680-72d1-52f8-a48d-53930ceabe6f")
 	)
-	(label "EXP_D12"
+	(global_label "EXP_D12"
+		(shape passive)
 		(at 115.57 49.53 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "aa455afc-7c1b-5be9-8fd9-4b85a039e6ff")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "dd823b90-e075-59e1-b96d-5f1428613007")
 	)
 	(wire
 		(pts (xy 130.81 49.53) (xy 133.35 49.53))
 		(stroke (width 0) (type default))
 		(uuid "73fe851e-78ee-576f-9651-65f9a8e8aa07")
 	)
-	(label "EXP_D14"
+	(global_label "EXP_D14"
+		(shape passive)
 		(at 133.35 49.53 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "b0d7ba88-d37c-52e2-83f1-5e80b67b201a")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "8354eff5-b4e8-5a2e-8687-3397e94a5264")
 	)
 	(wire
 		(pts (xy 118.11 52.07) (xy 115.57 52.07))
 		(stroke (width 0) (type default))
 		(uuid "671df223-83ac-5852-8931-c941292436a5")
 	)
-	(label "EXP_D15"
+	(global_label "EXP_D15"
+		(shape passive)
 		(at 115.57 52.07 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "ef9552bf-19a1-5ecd-ad2d-1f418e3b266f")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "3e1914bf-0972-5496-ad43-122593daac68")
 	)
 	(wire
 		(pts (xy 130.81 52.07) (xy 133.35 52.07))
 		(stroke (width 0) (type default))
 		(uuid "2825a8a0-3c0c-565f-9dfb-ea9f607fcc8b")
 	)
-	(label "EXP_D16"
+	(global_label "EXP_D16"
+		(shape passive)
 		(at 133.35 52.07 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "2383b8e7-1c90-5350-87ad-b266182a6d0c")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "e3560e86-287b-5c39-96ae-bad44c566780")
 	)
 	(wire
 		(pts (xy 118.11 54.61) (xy 115.57 54.61))
 		(stroke (width 0) (type default))
 		(uuid "1bd36fc9-48fd-5bb9-a2ed-babd569955a6")
 	)
-	(label "EXP_D17"
+	(global_label "EXP_D17"
+		(shape passive)
 		(at 115.57 54.61 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "8413c2d4-34c6-5dad-bcc9-1a4a824404e2")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "d01066bc-07ba-5084-b31c-e8bf618e905e")
 	)
 	(wire
 		(pts (xy 130.81 54.61) (xy 133.35 54.61))
 		(stroke (width 0) (type default))
 		(uuid "cb38be01-6831-5f7d-8f03-e353cdd09a13")
 	)
-	(label "EXP_D25"
+	(global_label "EXP_D25"
+		(shape passive)
 		(at 133.35 54.61 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "33f98f14-87d2-5c8b-976d-068b396265ed")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "1f6b0d9e-a875-55a3-a404-52a2338ca2f9")
 	)
 	(wire
 		(pts (xy 118.11 57.15) (xy 115.57 57.15))
 		(stroke (width 0) (type default))
 		(uuid "cd8df661-b83b-53c7-9f26-7f6fbca72f39")
 	)
-	(label "EXP_D30"
+	(global_label "EXP_D30"
+		(shape passive)
 		(at 115.57 57.15 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "62ec6b52-7eb5-52e5-87ae-a40f5136cd5e")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "0db6410b-6fed-5a35-9560-09189ac13d16")
 	)
 	(wire
 		(pts (xy 130.81 57.15) (xy 133.35 57.15))
 		(stroke (width 0) (type default))
 		(uuid "e1461dd7-33fb-562c-a850-eebdbe01c53c")
 	)
-	(label "EXP_D31"
+	(global_label "EXP_D31"
+		(shape passive)
 		(at 133.35 57.15 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "cd88a3ff-776a-5b0e-84ec-21ffb5cc27e9")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "bc4d1e4e-0e36-5006-b97b-cc0a7199154f")
 	)
 	(wire
 		(pts (xy 118.11 59.69) (xy 115.57 59.69))
 		(stroke (width 0) (type default))
 		(uuid "907efd8f-86db-557b-80d6-9377f5937cfe")
 	)
-	(label "EXP_D37"
+	(global_label "EXP_D37"
+		(shape passive)
 		(at 115.57 59.69 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "31b31438-3028-5e65-82e0-dbed52609256")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "ca8e5873-994b-5ca7-962f-3fc585ace2da")
 	)
 	(wire
 		(pts (xy 130.81 59.69) (xy 133.35 59.69))

@@ -10,7 +10,7 @@
 		(rev "B")
 		(company "Mission Space")
 		(comment 1 "TVC-Servos am 2S-Akku, Fallschirm-Servo, Rollmotor DRV8833")
-		(comment 2 "erzeugt von hardware/mainboard/kicad/gen_schematic.py aus circuit.py - nicht von Hand aendern")
+		(comment 2 "erzeugt aus circuit.py (gen_schematic.py)")
 	)
 	(lib_symbols
 		(symbol "Device:R"
@@ -672,11 +672,12 @@
 		(stroke (width 0) (type default))
 		(uuid "39ad3e67-26df-56a6-a9ab-546f62696c6e")
 	)
-	(label "SERVO_YAW_S"
+	(global_label "SERVO_YAW_S"
+		(shape passive)
 		(at 26.67 64.77 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "05015bff-4fc5-5e3f-9609-bcae3df69d10")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "dee75c98-7792-5c23-ba4c-6adab82bba97")
 	)
 	(symbol
 		(lib_id "Connector_Generic:Conn_01x03")
@@ -716,11 +717,12 @@
 		(stroke (width 0) (type default))
 		(uuid "c0567703-faa3-53cd-b2f7-84305bc3d07c")
 	)
-	(label "SERVO_YAW_S"
+	(global_label "SERVO_YAW_S"
+		(shape passive)
 		(at 54.61 44.45 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "b81163b8-fedb-51fe-9203-b53dad36ea6a")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "e9d098fb-1370-5b8f-ad0f-d17a4312f9a7")
 	)
 	(wire
 		(pts (xy 57.15 46.99) (xy 54.61 46.99))
@@ -789,11 +791,12 @@
 		(stroke (width 0) (type default))
 		(uuid "0469d21b-5294-53be-beb9-705c0ef7d654")
 	)
-	(label "SERVO_PITCH_S"
+	(global_label "SERVO_PITCH_S"
+		(shape passive)
 		(at 68.58 67.31 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "39176df2-c325-5582-959c-47074c2e5092")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "9eb79234-094e-528d-b8d8-dab20f0ccc66")
 	)
 	(symbol
 		(lib_id "Connector_Generic:Conn_01x03")
@@ -833,11 +836,12 @@
 		(stroke (width 0) (type default))
 		(uuid "44f42d54-70bb-5d14-9462-531fa07ce732")
 	)
-	(label "SERVO_PITCH_S"
+	(global_label "SERVO_PITCH_S"
+		(shape passive)
 		(at 99.06 44.45 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "6bf48889-e133-5e22-8339-f48105b4b0a6")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "ed2be0db-5e97-55e9-8612-aad7952c0be6")
 	)
 	(wire
 		(pts (xy 101.6 46.99) (xy 99.06 46.99))
@@ -906,11 +910,12 @@
 		(stroke (width 0) (type default))
 		(uuid "07957a52-3c64-56e4-8023-ee30f5b67f98")
 	)
-	(label "SERVO_CHUTE_S"
+	(global_label "SERVO_CHUTE_S"
+		(shape passive)
 		(at 114.3 67.31 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "9168a9fa-de20-5592-8061-dd06749fc891")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "00ff0f75-8074-58d4-a889-f7fe5a66325b")
 	)
 	(symbol
 		(lib_id "Connector_Generic:Conn_01x03")
@@ -950,11 +955,12 @@
 		(stroke (width 0) (type default))
 		(uuid "b3459b1a-1e71-5abd-9a54-3dd19e380e37")
 	)
-	(label "SERVO_CHUTE_S"
+	(global_label "SERVO_CHUTE_S"
+		(shape passive)
 		(at 143.51 44.45 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "fb189868-0374-53f1-b182-315213cc29b1")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "f7a36053-18dd-50c8-bbde-da97f6aa1209")
 	)
 	(wire
 		(pts (xy 146.05 46.99) (xy 143.51 46.99))
@@ -1080,22 +1086,24 @@
 		(stroke (width 0) (type default))
 		(uuid "24443e8b-3b43-5679-916b-ac30baca5175")
 	)
-	(label "U7_SLEEP"
+	(global_label "U7_SLEEP"
+		(shape passive)
 		(at 179.07 62.23 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "d4fd1a34-12ec-5e20-a05e-ec296eaf852e")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "8fcd62f5-2297-5142-87d4-4af66e7f25ef")
 	)
 	(wire
 		(pts (xy 207.01 74.93) (xy 209.55 74.93))
 		(stroke (width 0) (type default))
 		(uuid "89e0d993-04a6-5fde-a42a-85856e5292e1")
 	)
-	(label "MOT_A"
+	(global_label "MOT_A"
+		(shape passive)
 		(at 209.55 74.93 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "385b528f-aa82-5e84-87d6-e4908aa89b5d")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "3c39ba12-fe24-57fa-83b6-be2e842d31d6")
 	)
 	(wire
 		(pts (xy 181.61 67.31) (xy 179.07 67.31))
@@ -1114,22 +1122,24 @@
 		(stroke (width 0) (type default))
 		(uuid "77c68ee3-4e06-5b99-ab60-40a991db93a4")
 	)
-	(label "MOT_B"
+	(global_label "MOT_B"
+		(shape passive)
 		(at 209.55 77.47 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "af9b9e4c-e5d6-55da-9a2d-3e45f2f9c034")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "886b7e87-4d06-51fc-a6bb-2586ebb3051b")
 	)
 	(wire
 		(pts (xy 207.01 82.55) (xy 209.55 82.55))
 		(stroke (width 0) (type default))
 		(uuid "4cca78ab-de2b-571c-9568-88f99ee5dfad")
 	)
-	(label "MOT_B"
+	(global_label "MOT_B"
+		(shape passive)
 		(at 209.55 82.55 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "944759cd-943a-572d-9337-7ff50a3d8385")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "7ca97184-60a9-5987-a785-fa25fc3069c4")
 	)
 	(wire
 		(pts (xy 181.61 69.85) (xy 179.07 69.85))
@@ -1148,11 +1158,12 @@
 		(stroke (width 0) (type default))
 		(uuid "bfa3d027-1808-5545-a43c-8642929eed67")
 	)
-	(label "MOT_A"
+	(global_label "MOT_A"
+		(shape passive)
 		(at 209.55 80.01 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "9c0ae8d9-c440-540e-b12e-e188892f7ba4")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "27319b41-98c2-5b96-b3d2-c2118d4d7343")
 	)
 	(wire
 		(pts (xy 207.01 69.85) (xy 209.55 69.85))
@@ -1195,11 +1206,12 @@
 		(stroke (width 0) (type default))
 		(uuid "8073bba1-4c56-5cea-99e6-ae3db436831c")
 	)
-	(label "U7_VCP"
+	(global_label "U7_VCP"
+		(shape passive)
 		(at 179.07 64.77 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "7da49952-625b-547a-9582-60bc59f5c9bd")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "6a1cafb6-ff4b-5fed-9a83-44c2f71dceb9")
 	)
 	(wire
 		(pts (xy 201.93 57.15) (xy 201.93 54.61))
@@ -1230,11 +1242,12 @@
 		(stroke (width 0) (type default))
 		(uuid "8bdb6d67-2159-5e8d-9125-b0cf3e66a97b")
 	)
-	(label "U7_VINT"
+	(global_label "U7_VINT"
+		(shape passive)
 		(at 199.39 54.61 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "7e8d2cae-330f-56b0-a75c-220316042952")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "f7eefa26-756d-5e00-badb-e14519e4c3f3")
 	)
 	(wire
 		(pts (xy 181.61 77.47) (xy 179.07 77.47))
@@ -1314,11 +1327,12 @@
 		(stroke (width 0) (type default))
 		(uuid "150d18bc-f34e-5fca-8187-85c137da5de3")
 	)
-	(label "U7_SLEEP"
+	(global_label "U7_SLEEP"
+		(shape passive)
 		(at 227.33 63.5 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "246701c3-081e-57b0-b696-47d43f70d7cf")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "d75b5e55-d6a4-5f70-a556-10f88d70163b")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -1498,11 +1512,12 @@
 		(stroke (width 0) (type default))
 		(uuid "ed68030f-06be-569d-9ca0-44fd88bd8524")
 	)
-	(label "U7_VCP"
+	(global_label "U7_VCP"
+		(shape passive)
 		(at 294.64 48.26 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "9b6a37d3-c214-5b75-8944-e5b78060ed14")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "44302f2a-7279-5e29-b930-0915f617dc44")
 	)
 	(wire
 		(pts (xy 294.64 58.42) (xy 294.64 60.96))
@@ -1546,11 +1561,12 @@
 		(stroke (width 0) (type default))
 		(uuid "ade9e92b-1e3c-59d1-8363-ba31e4a546d0")
 	)
-	(label "U7_VINT"
+	(global_label "U7_VINT"
+		(shape passive)
 		(at 170.18 115.57 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "3bee6587-83db-5f09-9ffc-d40186df5d40")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "2193fa63-1844-5e6c-915b-8f7fd52c2ab6")
 	)
 	(wire
 		(pts (xy 170.18 125.73) (xy 170.18 128.27))
@@ -1599,22 +1615,24 @@
 		(stroke (width 0) (type default))
 		(uuid "7992ee2a-af2a-50e3-b501-c5267397ef04")
 	)
-	(label "MOT_A"
+	(global_label "MOT_A"
+		(shape passive)
 		(at 191.77 109.22 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "041a3851-3052-5b56-a4f4-c8227edbb686")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "ab158df5-878d-590d-aa02-271c7e3173fd")
 	)
 	(wire
 		(pts (xy 194.31 111.76) (xy 191.77 111.76))
 		(stroke (width 0) (type default))
 		(uuid "9134e2e6-5f41-5985-9ba4-b80e6e842f22")
 	)
-	(label "MOT_B"
+	(global_label "MOT_B"
+		(shape passive)
 		(at 191.77 111.76 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "c7aba7fe-5ee5-5102-92f3-82fcbb0d4d52")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "4fc8606b-8e62-5991-8640-0429b2029db4")
 	)
 	(rectangle
 		(start 312.24 30)
@@ -1668,11 +1686,12 @@
 		(stroke (width 0) (type default))
 		(uuid "009d86c7-fe0e-521b-8eba-ee83aad43a81")
 	)
-	(label "U7_VINT"
+	(global_label "U7_VINT"
+		(shape passive)
 		(at 318.77 44.45 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "84915ba6-83e3-5e68-8bcd-ce4949794d10")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "91b4cda4-c7a4-5c92-9fd8-5d7b949248c0")
 	)
 	(embedded_fonts no)
 )

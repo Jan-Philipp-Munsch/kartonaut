@@ -1,144 +1,181 @@
 # Mainboard rev B – KiCad-Projekt
 
 Stand 2026-10-21. Schaltplan und Platine von rev B werden hier **aus Code erzeugt**, nicht von Hand
-gezeichnet. Die Quelle der Wahrheit ist `circuit.py`; Schaltplan, Platine und Prüfungen werden daraus
-abgeleitet. Die Vorgabe ist die Spezifikation `../README.md` (rev B). Dieses Dokument beschreibt,
-wie das Projekt entstanden ist, was fertig ist, was offen ist und wo bewusst von der Spezifikation
-abgewichen wurde.
+gezeichnet. Die Quelle der Wahrheit ist `circuit.py`: Schaltplan, Platine und Prüfungen werden daraus
+abgeleitet. Die Vorgabe ist die Spezifikation `../README.md` (rev B). Dieses Dokument beschreibt, wie das
+Projekt entstanden ist, was fertig ist, was offen ist und wo bewusst von der Spezifikation abgewichen wurde.
+Die Fertigerwahl steht in `../Fertiger_2026-10-21.md`.
+
+![Platine schräg](img/render_iso.png)
 
 ## 1. Stand auf einen Blick
 
 | Schritt | Stand |
 |---|---|
-| KiCad 10.0.6 installiert | erledigt (Benutzerinstallation, siehe §2) |
-| Bibliotheken (Teensy 4.1, LCSC-Teile) | erledigt, `lib/` |
-| Schaltung als Daten | erledigt, `circuit.py`: 134 Bauteile, 89 Netze, 7 Blätter |
-| Schaltplan | erledigt, `mainboard.kicad_sch` + 7 Unterblätter, PDF in `out/` |
-| ERC | **0 Fehler, 0 Warnungen**, 4 begründete Ausschlüsse (DRV8833, §5) |
-| Platine: Umriss, Footprints, Netze, Lagen, Flächen | Generator fertig (`gen_pcb.py`) |
-| Platine: Platzierung | **Entwurf, nicht fertig**: 12 Überschneidungen fest platzierter Teile, 9 Teile ohne Platz (§6) |
-| Routing (Freerouting) | vorbereitet (DSN-Export, SES-Import im Generator), noch nicht gelaufen |
-| DRC, Gerber, BOM/CPL | offen |
+| Schaltung als Daten (`circuit.py`) | 134 Bauteile, 89 Netze, 7 Schaltplanblätter |
+| ERC | **0 Fehler, 0 Warnungen**, 4 begründete Ausschlüsse (§6) |
+| Netzliste gegen Spezifikation §4 (`check_design.py`) | **OK**: alle 42 Teensy-Pins und 6 Schienen |
+| Platzierung | **alle 134 Footprints**, keine Überschneidung, Regeln aus dem Platzierungsplan eingehalten |
+| Routing | 1620 Bahnsegmente (3,65 m), 231 Vias, vier Lagen |
+| DRC (JLC-Regeln) | **0 Fehler**, Schaltplan-Parität **0 Abweichungen** |
+| Offene Verbindungen | **3**, jede unter 2 mm, von Hand zu ziehen (§5.4) |
+| Abbildungen | Renders oben, unten und schräg, Lagenbilder (`img/`) |
+| Fertigungsdaten (Gerber, BOM, CPL) | offen, nach den 3 Verbindungen und dem Review (§8) |
 
-## 2. Werkzeuge und Installation
+| Oben | Unten |
+|---|---|
+| ![oben](img/render_top.png) | ![unten](img/render_bottom.png) |
 
-- **KiCad 10.0.6** (aktuelle Version in winget, nicht 9 wie im Plan). Die winget-Installation für alle
-  Benutzer blieb an der Administrator-Abfrage hängen. Deshalb wurde der signierte Installer
-  (KiCad Services Corp.) als **Benutzerinstallation** ausgeführt: `/S /CurrentUser`, Ziel
-  `%LOCALAPPDATA%\Programs\KiCad\10.0`. Die globalen Bibliothekstabellen (`sym-lib-table`,
-  `fp-lib-table`) wurden aus dem KiCad-Template nach `%APPDATA%\kicad\10.0\` kopiert. Das macht die
-  GUI sonst beim ersten Start; `kicad-cli` braucht sie.
-- **easyeda2kicad** (pip) für die vier Teile, die die KiCad-Bibliothek nicht hat. Symbol, Footprint und
-  3D-Modell kommen direkt aus der LCSC/EasyEDA-Datenbank, also genau die Footprints, mit denen JLC bestückt:
-  ICM-42688-P (C1850418), BMP390 (C5124834), TPS63070RNMR (C109322), E22-400T22S (C2903765).
-- **Freerouting CLI 2.5.0** (offizielles GitHub-Release, Prüfsumme kontrolliert) unter
-  `%LOCALAPPDATA%\Programs\freerouting-cli\freerouting-cli.exe`, eigenständig, ohne Java.
+Die Lagen einzeln: `img/layers.pdf` (F.Cu, In1 GND, In2, B.Cu Versorgung, Bestückungsdruck) und
+`img/layer_*.png`.
+
+## 2. Werkzeuge
+
+- **KiCad 10.0.6.** Die winget-Installation für alle Benutzer blieb an der Administrator-Abfrage
+  hängen. Deshalb wurde der signierte Installer (KiCad Services Corp.) als Benutzerinstallation
+  ausgeführt: `/S /CurrentUser` nach `%LOCALAPPDATA%\Programs\KiCad\10.0`. Die globalen
+  Bibliothekstabellen (`sym-lib-table`, `fp-lib-table`) wurden aus dem Template nach
+  `%APPDATA%\kicad\10.0\` kopiert; das macht die GUI sonst beim ersten Start.
+- **easyeda2kicad** (pip) für die vier Teile, die nicht in der KiCad-Bibliothek sind: ICM-42688-P (C1850418),
+  BMP390 (C5124834), TPS63070RNMR (C109322) und E22-400T22S (C2903765). Symbol, Footprint und
+  3D-Modell kommen direkt aus der LCSC/EasyEDA-Datenbank, also genau die Footprints, mit denen JLC bestückt.
+- **Freerouting 2.5.0** als JAR mit einer portablen **Temurin-25-JRE** (Zip, keine Installation), beides
+  unter `%LOCALAPPDATA%\Programs\freerouting\`, Prüfsummen kontrolliert. Die native
+  `freerouting-cli.exe` derselben Version stürzt mit einem GraalVM-Fehler ab; die JAR braucht Java 25.
+- **CadQuery** für zwei 3D-Modelle, die fehlen: Teensy 4.1 (vereinfacht, auf 8,5-mm-Sockeln) und
+  XT30PW-M (die KiCad-Bibliothek nennt das Modell, liefert es aber nicht).
 - Datenblätter für die eigenen Entscheidungen: TPS63070 (SLVSC58B: Pinbelegung, Teiler-Tabelle 4,
-  Kondensatoren) und ICM-42688-P (DS-000347: RESV-Pins, Abblockung, Tabelle 9/10).
+  Kondensatoren) und ICM-42688-P (DS-000347: RESV-Pins, Abblockung).
 
 ## 3. Aufbau und Ablauf
 
 ```
-circuit.py          Schaltung als Daten: Bauteile, Werte, Footprints, LCSC-Nummern, Netze, Blätter, Blöcke
-build_lib.py        lib/mainboard.kicad_sym + Teensy41_Socket.kicad_mod; setzt die Pin-Typen der LCSC-Symbole
-gen_schematic.py    Projektdatei (Regeln, Netzklassen, ERC-Ausschlüsse), Wurzelblatt + 7 Unterblätter
-gen_pcb.py          Platine: Umriss, Footprints mit Netzen, Platzierung, GND-Flächen, Sperrflächen, Bestückungsdruck
-sexpr.py            kleiner S-Ausdruck-Leser/-Schreiber für die KiCad-Dateien
-lib/                lcsc.* (easyeda2kicad), mainboard.* (Teensy)
-out/                erzeugte PDFs, DSN/SES, Berichte
+circuit.py          Schaltung als Daten: Bauteile, Werte, Footprints, LCSC-Nummern, Netze, Blätter, Blöcke, Netzklassen
+build_lib.py        lib/mainboard.*: Teensy-Symbol, Sockel-Footprint, 3D-Modelle Teensy und XT30; Pin-Typen der LCSC-Symbole
+gen_schematic.py    Projektdatei (JLC-Regeln, Netzklassen, ERC-Ausschlüsse), Wurzelblatt und 7 Unterblätter
+check_design.py     Tor 1: Netzliste aus dem Schaltplan gegen die Pin-Tabelle der Spezifikation
+gen_pcb.py          Platine: Umriss, Footprints, Platzierung, Flächen, Sperrflächen, Plane-Vias, DSN/SES, Nachbesserung
+render.py           Lagenbilder zuschneiden und zusammenfügen, Renders auf die Platine zuschneiden
+make.sh             ganze Kette: ./make.sh [sch|pcb|drc|img]
+snapshot.py         schnelles Bild einzelner Lagen beim Entwickeln
+lib/                lcsc.* (easyeda2kicad), mainboard.* (eigene)
+out/                Schaltplan-PDF, ERC- und DRC-Bericht (alles andere dort ist Zwischenstand)
+img/                Renders und Lagenbilder
 ```
 
-Neu erzeugen:
+Neu erzeugen (Git Bash):
 
 ```bash
-python build_lib.py
-python gen_schematic.py
-"$LOCALAPPDATA/Programs/KiCad/10.0/bin/kicad-cli.exe" sch erc --format report -o out/erc.rpt mainboard.kicad_sch
-"$LOCALAPPDATA/Programs/KiCad/10.0/bin/kicad-cli.exe" sch export pdf -o out/mainboard_schematic.pdf mainboard.kicad_sch
-"$LOCALAPPDATA/Programs/KiCad/10.0/bin/python.exe" gen_pcb.py place
-"$LOCALAPPDATA/Programs/KiCad/10.0/bin/python.exe" gen_pcb.py dsn
-"$LOCALAPPDATA/Programs/freerouting-cli/freerouting-cli.exe" -de out/mainboard.dsn -do out/mainboard.ses -mp 30
-"$LOCALAPPDATA/Programs/KiCad/10.0/bin/python.exe" gen_pcb.py ses
+./make.sh
 ```
 
-Die letzten drei Zeilen (Routing) sind vorbereitet, aber noch nicht gelaufen (§6).
+`make.sh` ruft `kicad-cli` aus der Bash auf und nicht aus Python. Aus der Microsoft-Store-Python gestartet,
+findet `kicad-cli` die globalen Bibliothekstabellen nicht, denn der App-Container der Store-Python
+verdeckt sie. Der ERC meldet dann 265 Bibliotheksfehler, und die Renders haben keine Modelle.
 
 Warum Code statt GUI: Schaltung, Schaltplan und Platine können nicht auseinanderlaufen, jede Änderung ist
-ein Diff in `circuit.py`, und ERC, DRC und Netzlistenprüfung laufen auf Knopfdruck. Die erzeugten Dateien
-lassen sich trotzdem normal in KiCad öffnen und von Hand weiterbearbeiten. Ab dem Moment, in dem von Hand
-geroutet oder geschoben wird, ist der Generator für die Platine allerdings nicht mehr die Quelle.
+ein Diff in `circuit.py`, und ERC, Netzlistenprüfung und DRC laufen auf Knopfdruck. Die Dateien lassen sich
+normal in KiCad öffnen. Sobald dort von Hand geroutet wird (§5.4), ist die Platinendatei die Quelle und
+`./make.sh pcb` darf nicht mehr laufen. `./make.sh sch` und `./make.sh drc` bleiben nutzbar.
 
-### Schaltplan
+## 4. Schaltplan
 
-Jedes Pin bekommt einen kurzen Draht und ein Netzlabel: lokal, wenn das Netz auf seinem Blatt bleibt,
-global, wenn es Blätter verbindet. Jedes Blatt ist in umrahmte Funktionsblöcke gegliedert, etwa
-„2S: Buck U1 → 5V_SERVO“ oder „IMU ICM-42688-P, SPI1“. Die Blätter heißen Versorgung, Teensy, Sensorik,
-Funk, Aktoren, Pyro und Signal. Die Symbole stammen aus der KiCad-10-Standardbibliothek, abgeleitete
-Symbole werden flach kopiert. Die UUIDs werden aus Blatt und Referenz berechnet und sind deshalb bei
-jedem Lauf gleich, die Diffs bleiben klein.
+Jedes Pin bekommt einen kurzen Draht und ein globales Netzlabel. So sind die Netznamen in Netzliste,
+Platine, Netzklassen und Spezifikation dieselben (`VBAT_MEAS`, nicht `/Versorgung/VBAT_MEAS`). Jedes Blatt
+ist in umrahmte Funktionsblöcke gegliedert. Die Blätter heißen Versorgung, Teensy, Sensorik, Funk,
+Aktoren, Pyro und Signal. Die UUIDs werden aus Blatt und Referenz berechnet und sind deshalb bei jedem
+Lauf gleich. PDF: `out/mainboard_schematic.pdf`.
 
-### Platine
+## 5. Platine
 
-- Umriss 54 × 120 mm, R 2 mm, aus den Konstanten von `../outline.py` gezeichnet; geometrisch identisch
-  mit `mainboard_outline.dxf`. Die 4 M3-Bohrungen sind Footprints H1 bis H4.
-- 4 Lagen. In1 ist als *power plane* markiert und bleibt reine GND-Fläche, Freerouting meidet sie. GND-Füllung
-  liegt auf allen vier Lagen.
-- Netzklassen: *Strom* 1,2 mm (VBAT-Pfade, VSERVO, Pyro, GND_PWR), *Versorgung* 0,6 mm (1S-Pfad, 5V_SYS,
-  5V_SERVO, 3V3, Motor), Signale 0,2 mm. Dazu JLC-Mindestwerte im Projekt: 0,127 mm Bahn und Abstand,
-  Via 0,45/0,3 mm.
-- Sperrflächen: um die IMU keine Vias, darunter auf In2/B.Cu keine Bahnen; unter dem LoRa-Modul keine
-  Bahnen und Vias auf F.Cu/In2.
-- Platzierung: Stecker, ICs, Spulen und Elkos sind fest gesetzt (`ANCHORS`, `EDGE` mit bündiger
-  Steckeröffnung an der Stirnseite). Die Passiven setzt eine gierige Suche je Funktionsblock in dessen
-  Region, so nah wie möglich an das Pad des Bauteils, mit dem sie ein Netz teilen. Abblockkondensatoren
-  landen so am richtigen Pin.
-- Bestückungsdruck: Steckerbeschriftungen, IMU-Achsenpfeile (X quer, Y zur Spitze), Revision, Platzhalter
-  `JLCJLCJLCJLC` für die Auftragsnummer unter dem Teensy. Die Referenzen der Passiven stehen nur auf F.Fab.
+### 5.1 Lagen
 
-## 4. Entscheidungen, die die Spezifikation offen ließ oder die von ihr abweichen
+| Lage | Inhalt |
+|---|---|
+| F.Cu | alle Bauteile, Signale, GND-Füllung |
+| In1.Cu | **durchgehende GND-Fläche** (Lagentyp *power*, wird nicht geroutet) |
+| In2.Cu | Signale, GND-Füllung |
+| B.Cu | **geteilte Versorgungsfläche**: GND_PWR unter den Aktoren (TVC-Ende, rechter Streifen bis zum Motortreiber) und als Streifen an der rechten Kante bis zu den Pyro-FETs an der Spitze; **5V_SYS** auf der übrigen Fläche |
+
+Die Spezifikation sah die Versorgungsflächen auf Lage 3 vor. B.Cu ist gleichwertig und trägt ohnehin
+keine Bauteile. In2 bleibt so als zweite Signallage frei; ohne sie war die Platine nicht zu entflechten.
+Jedes SMD-Pad von GND, GND_PWR und 5V_SYS bekommt ein eigenes Via zu seiner Fläche, insgesamt 109. Das
+Via sitzt nur dort, wo Pad und Via über dem eigenen Teil der Teilung liegen.
+
+### 5.2 Netzklassen
+
+| Klasse | Bahn | Netze |
+|---|---|---|
+| Strom | 1,0 mm | VBAT2_RAW, VBAT2_REV, VBAT_PROT, VBAT_MEAS, VSERVO, VBAT_ARMED, PYRO1/2_NEG |
+| Rückstrom | 0,8 mm | GND_PWR (wo es nicht auf der Fläche läuft) |
+| Versorgung | 0,5 mm | 1S-Pfad, 5V_SERVO, 3V3_RF, TEENSY_VIN, MOT_A/B, U1_SW |
+| Wandler | 0,25 mm | VSYS_IN, U2_L1, U2_L2 (Pins des TPS63070 mit 0,5 mm Raster) |
+| Default | 0,2 mm | Signale, 3V3, GND (GND läuft über die Flächen) |
+
+JLC-Regeln im Projekt: 0,127 mm Abstand, Bahn mindestens 0,09 mm (Freerouting verjüngt an Pins auf
+0,10 bis 0,12 mm), Via 0,45/0,2 mm, 0,2 mm zum Rand.
+
+### 5.3 Platzierung
+
+Platziert wird nach `mainboard_placement.svg`. Die Stecker sind bündig an den Stirnseiten fest gesetzt,
+ebenso ICs, Spulen und Elkos (`ANCHORS`, `EDGE` in `gen_pcb.py`). Die Passiven setzt eine gierige Suche
+je Funktionsblock in dessen Region an das Pad, mit dem sie ein Netz teilen, mit 0,35 mm Abstand für
+Routingkanäle. Gemessene Regeln:
+
+- IMU genau auf der Rollachse unter dem Teensy, Chip-X quer, Chip-Y zur Spitze (Footprint gegen DS-000347
+  geprüft). Darunter keine Vias, auf In2 keine Bahnen. Die Spulen liegen mehr als 25 mm entfernt.
+- LoRa-Modul im linken Streifen, Antennenseite zur Spitze. Die Randpads des Moduls ragen 0,9 mm über den
+  Körper hinaus; es hat 0,2 mm zum Rand und 0,53 mm zu den Teensy-Pads.
+- Die Spulen der Wandler liegen so, dass SW, L1 und L2 ohne Kreuzung an ihre Pins gehen.
+- SD- und USB-Freiraum gilt nur für hohe THT-Teile. Karte und Stecker sitzen auf Teensy-Höhe, flache
+  SMD-Teile dürfen darunter.
+
+### 5.4 Routing und was offen ist
+
+Freerouting entflechtet den Großteil. Zwei Nachläufe exportieren die vorhandenen Bahnen als *fix* und
+routen nur das Offene; das Ergebnis wird in die Platine übernommen. Ein gewöhnlicher zweiter Lauf reißt
+alles neu auf und endet schlechter. Zuletzt schließt `gen_pcb.py patch` Bahnenden, die knapp vor ihrem Pad
+aufhören, mit kollisionsgeprüften Stummeln.
+
+**Drei Verbindungen fehlen und sind in KiCad von Hand zu ziehen** (interaktiver Router, wenige Minuten):
+
+| Netz | Wo | Warum |
+|---|---|---|
+| MOT_A | DRV8833 Pin 2 ↔ Pin 7 | parallele Brücken: MOT_A umschließt MOT_B (Pins 4/5), braucht ein Via und einen Bogen über In2 |
+| MOT_IN2 | DRV8833 Pin 10 ↔ Pin 15 | dasselbe auf der Eingangsseite |
+| SDA | BMP390 Pin 4, 0,7 mm Bahnende | LGA mit 0,5 mm Raster, Bahn endet vor dem Pad |
+
+Freerouting ist zwischen Läufen nicht vollständig reproduzierbar. Ein neuer `./make.sh pcb` kann eine
+andere Handvoll offener Verbindungen hinterlassen. Die eingecheckte Platine ist der beste Lauf.
+
+### 5.5 Bestückungsdruck
+
+Steckerbeschriftung (S/+/−), IMU-Achsen, Revision, Platzhalter `JLCJLCJLCJLC` unter dem Teensy. Die
+Referenzen der Passiven stehen nur auf F.Fab, die Zusatzfelder (LCSC, Funktion, Datenblatt) sind
+unsichtbar. Der DRC meldet noch 167 Bestückungsdruck-Warnungen. Ursachen sind Elko-Kreise, die
+Nachbarumrisse schneiden, und Siebdrucklinien der EasyEDA-Footprints über Pads (JLC schneidet diese
+automatisch weg). Das ist kosmetisch und wird beim Review bereinigt.
+
+## 6. Entscheidungen, die die Spezifikation offen ließ oder die von ihr abweichen
 
 | Punkt | Entscheidung | Grund |
 |---|---|---|
 | Referenzen | Standard (J1 bis J15, U1 bis U10, Q1 bis Q5, A1 = Teensy); der Name aus der Spezifikation steht im Feld `Funktion` | KiCad-Annotation braucht Präfix plus Zahl; Zuordnung in §7 |
-| Stecker an der TVC-Stirnseite | nur XT30 (14,4 mm) und die zwei TVC-Servos (je 11 mm) liegend; J_BAT1, J_SW, J_SERVO3, J_MOT **stehend** (Top-Entry) | nutzbar sind wegen der Bohrungen nur 41 mm, alle liegend bräuchten 62 mm |
-| Stecker an der Spitze | J_PYRO1/2 und J_ARM liegend an der Kante; GPS, Kamera, LED, Qwiic als stehende JST-GH/SH | gleicher Grund |
-| Sternpunkt | eigenes Netz **GND_PWR** für alle 2S-Rückströme, Netzbrücke NT1 am 2S-Minus | macht die Masseführung aus §3/§8 im Layout prüfbar |
-| Teensy-Pin 8 | war in der Spezifikation nicht vergeben; jetzt **MOT_FAULT** (DRV8833 nFAULT, 10 k nach 3V3) | Fehlermeldung des Motortreibers kostenlos mitnehmen |
-| Reset-Taster SW_RST | **entfallen** | der Teensy 4.1 hat am Sockel keinen Reset; der Program-Taster sitzt auf dem Teensy und ist durch die Luke erreichbar |
-| TVS | SMBJ12**CA** (bidirektional) statt SMBJ12A | keine Polaritätsfrage beim Bestücken |
-| TPS63070 | FB 680 k / 130 k (4,98 V, TI-Tabelle 4); EN-Teiler 330 k / 100 k als Unterspannungsschutz des 1S-Akkus: an ab 3,44 V, aus unter 3,01 V; PS/SYNC hoch | Tiefentladeschutz ohne Zusatzteil |
-| TPS563201 | FB 56 k / 10 k → 5,07 V, EN über 100 k an VIN | |
-| ICM-42688-P | RESV (2, 3, 7, 10, 11) und FSYNC an GND, VDD 100 n + 2,2 µ, VDDIO 10 n (DS-000347 Tab. 9/10); CS mit 10 k nach 3V3 | CS bleibt beim Booten inaktiv |
-| Servo-Signale | 220 Ω in Reihe | Schutz der Teensy-Pins bei Kurzschluss im Kabel |
-| E22 | RESET und ANT-Pad offen, Antenne über die IPEX-Buchse des Moduls | |
-| Bahnbreiten | 1,2 mm statt 2 mm für die Stromnetze | 2 mm passen nicht zwischen 2,0/2,5-mm-Steckerpins; 1,2 mm tragen ca. 3 A außen; für die Pyro-Spitze (5 A, 20 ms) reicht das, beim Layout-Review prüfen |
-| LCSC-Nummern | nur bei den Teilen aus `../ORDER.md` §3.3 eingetragen | Passive beim Bestellen mit dem JLC-Plugin zuordnen, keine geratenen Nummern |
-| W25Q128 | nicht auf der Platine | kommt laut Spezifikation unter den Teensy |
-
-## 5. ERC
-
-`kicad-cli sch erc`: 0 Fehler, 0 Warnungen. Vier Befunde sind im Projekt als Ausschluss mit Begründung
-eingetragen. Zwei davon: Die Brückenausgänge des DRV8833 sind gewollt parallel geschaltet (AOUT1/BOUT1,
-AOUT2/BOUT2). Die anderen zwei: AISEN/BISEN liegen ohne Strommessung direkt auf GND_PWR. Unterwegs gelernt:
-KiCad 10 speichert ERC-Ausschlüsse als `typ|x|y|uuid1|uuid2|blatt|blatt1|blatt2`, Positionen in 100 nm.
-
-## 6. Wo die Platzierung steht
-
-Der erste Lauf von `gen_pcb.py place` setzt 125 von 134 Footprints. Er meldet noch
-12 Überschneidungen fester Teile, unter anderem:
-
-- J1 mit J3, NT1 und H1;
-- A1 mit U6 und U10: INA219 und LoRa-Modul ragen in den Sockelstreifen, die Streifen links und rechts
-  sind nur 16 mm breit;
-- C3 mit J7, L1/C11/U7 im rechten Streifen, J15 mit dem Summer, J11/J13/J14 untereinander.
-
-Für 9 Teile (D1, C23–C25, R14, D3, Q5, R34, R35) findet die Suche keinen Platz. Die Courtyard-Maße aller
-fest gesetzten Teile sind ermittelt. Die nächste Runde verschiebt die Anker danach und erweitert die
-Regionen. Danach folgen Routing und DRC.
-
-Ehrliche Einschätzung: Die Fläche ist knapp. 134 Teile, drei stehende Elkos und das 16 × 26 mm große
-Funkmodul müssen in zwei 16-mm-Streifen neben dem Teensy. Wahrscheinlich müssen dafür einige 0603-Teile
-auf 0402 schrumpfen oder unter den Teensy wandern.
+| Stecker an der TVC-Stirnseite | nur XT30 und die zwei TVC-Servos liegend; J_BAT1, J_SW, J_SERVO3, J_MOT stehend | nutzbar sind 41 mm Kante, alle liegend bräuchten 62 mm |
+| Stecker an der Spitze | Pyro und Arming liegend an der Kante, GPS/Kamera/LED/Qwiic als stehende JST-GH/SH | gleicher Grund |
+| Sternpunkt | eigenes Netz **GND_PWR**, eine Netzbrücke NT1 am 2S-Minus, als Fläche auf B.Cu | macht §3/§8 im Layout prüfbar |
+| Versorgungsflächen | auf B.Cu statt In2 (§5.1) | In2 wird als Signallage gebraucht |
+| Bahnbreiten | Strom 1,0 mm statt 2 mm; dafür GND_PWR und 5V_SYS als Fläche | 2 mm passen nicht an 2,0/2,5-mm-Steckerpins; beim Review die Pyro-Spitze (5 A, 20 ms) prüfen |
+| Teensy-Pin 8 | **MOT_FAULT** (nFAULT des DRV8833, 10 k nach 3V3) | war in der Spezifikation nicht vergeben |
+| Reset-Taster SW_RST | entfallen | der Teensy 4.1 hat am Sockel keinen Reset; der Program-Taster ist durch die Luke erreichbar |
+| TVS | SMBJ12CA (bidirektional) | keine Polaritätsfrage |
+| TPS63070 | FB 680 k / 130 k (4,98 V); EN-Teiler 330 k / 100 k: an ab 3,44 V, aus unter 3,01 V; PS/SYNC hoch | Tiefentladeschutz für den 1S-Akku ohne Zusatzteil |
+| TPS563201 | FB 56 k / 10 k → 5,07 V | |
+| ICM-42688-P | RESV und FSYNC an GND, VDD 100 n + 2,2 µ, VDDIO 10 n; CS mit 10 k nach 3V3 | DS-000347 Tab. 9/10 |
+| Servo-Signale | 220 Ω in Reihe | Schutz der Teensy-Pins |
+| E22 | RESET und ANT-Pad offen, Antenne über die IPEX-Buchse | |
+| LCSC-Nummern | nur bei den Teilen aus `../ORDER.md` §3.3 | Passive beim Bestellen mit dem JLC-Plugin zuordnen |
+| ERC-Ausschlüsse | DRV8833: Brückenausgänge parallel; AISEN/BISEN direkt an GND_PWR | gewollt |
 
 ## 7. Referenzen ↔ Namen der Spezifikation
 
@@ -156,19 +193,24 @@ auf 0402 schrumpfen oder unter den Teensy wandern.
 
 ## 8. Nächste Schritte
 
-1. **Platzierung fertigstellen**: die Überschneidungen aus §6 beheben, alle Teile setzen, danach
-   Freerouting laufen lassen, Flächen füllen und den DRC mit den JLC-Regeln fahren.
-2. **Schöne Abbildungen der Platine**: Raytracing-Render von oben und unten und schräg
-   (`kicad-cli pcb render`, mit den 3D-Modellen der LCSC-Teile), dazu Lagenbilder (F.Cu, In2, B.Cu,
-   Bestückungsdruck) als SVG/PDF. Vergleich mit `mainboard_placement.svg` und den Hüllen aus
-   `outline.py`. Die Abbildungen gehen in den Design Guide.
-3. **Wo fertigen lassen**: Die bisherige Planung (`../ORDER.md`) geht von JLCPCB aus. Das ist
-   naheliegend, weil die LCSC-Footprints direkt passen und die Bestückung dort günstig ist. Zu vergleichen
-   wären europäische Fertiger mit Bestückung, etwa Aisler (DE), Eurocircuits (BE), Multi-CB (DE), und
-   PCBWay als zweite Option aus China. Kriterien: 4 Lagen, ENIG, Bestückung von LGA-14/LGA-10/VQFN,
-   Teileverfügbarkeit (ICM-42688-P, BMP390, TPS63070, E22), Lieferzeit, Zoll und Einfuhrumsatzsteuer,
-   Gesamtpreis für 5 Platinen davon 2 bestückt. Preise und Bestand am Tag der Entscheidung prüfen.
-4. Tor-1-Prüfung aus `../ORDER.md`: ein Skript, das die Netzliste gegen die Pin-Tabelle in `../README.md` §4
-   vergleicht; dann Review durch den Kollegen anhand des Schaltplan-PDFs.
-5. Fertigungsdaten: Gerber, Bohrdaten, BOM und CPL im JLC-Format über `kicad-cli`. Die LCSC-Nummern
-   der Passiven ergänzen.
+0. **Review-Punkte A1 bis A5 aus `../review_kicad_2026-10-21.md` einarbeiten**, bevor von Hand
+   geroutet wird. Sie ändern die Schaltung, danach wird die Platine mit `./make.sh` neu erzeugt.
+   - **A1 ist ein Datenblattverstoß**: 1066 µF am Ausgang des TPS63070, erlaubt sind 470 µF. Der
+     1000-µF-Elko kommt hinter D1 an TEENSY_VIN.
+   - A2: Unterspannungsschwelle des 1S-Akkus tiefer legen.
+   - A3: Hauptschalter schaltet über FETs statt im Strompfad.
+   - A4: Sicherungen je Akku.
+   - A5: Kelvin-Abgriff am Shunt.
+
+   Die B-Punkte nach Aufwand.
+1. In KiCad die dann noch offenen Verbindungen ziehen (heute drei, §5.4) und den Bestückungsdruck
+   bereinigen. Danach `./make.sh drc`.
+2. Review mit dem Kollegen anhand von Schaltplan-PDF, `img/layers.pdf` und Design Guide (Tor 1 und 2 in
+   `../ORDER.md`). Dabei besonders auf diese Punkte schauen:
+   - Breite und Lage der Strompfade;
+   - Masseführung um den Sternpunkt;
+   - der Abstand LoRa ↔ IMU.
+3. 1:1-Papierausdruck mit Teensy und Steckern in den Kuppler halten.
+4. Fertigungsdaten über `kicad-cli`: Gerber, Bohrdaten, BOM und CPL im JLC-Format. Die LCSC-Nummern der
+   Passiven ergänzen. Fertiger nach `../Fertiger_2026-10-21.md`: JLCPCB Economic; das BMP390 ist dort
+   zurzeit nicht lieferbar.

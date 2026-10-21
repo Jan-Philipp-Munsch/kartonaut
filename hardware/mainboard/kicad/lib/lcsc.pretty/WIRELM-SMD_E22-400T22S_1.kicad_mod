@@ -54,7 +54,7 @@
 	(fp_line (start 8.01 12.70) (end 7.70 12.70) (layer F.CrtYd) (width 0.05))
 	(fp_line (start 7.70 12.70) (end -8.00 12.69) (layer F.CrtYd) (width 0.05))
 	(fp_line (start -8.00 12.69) (end -8.00 -13.33) (layer F.CrtYd) (width 0.05))
-	(model "${KIPRJMOD}/lcsc.3dshapes/WIRELM-SMD_L26.0-W16.0-H3.2-E22-400T22S.wrl"
+	(model "${KIPRJMOD}/lib/lcsc.3dshapes/WIRELM-SMD_L26.0-W16.0-H3.2-E22-400T22S.wrl"
 		(offset (xyz 0.000 0.000 0.000))
 		(scale (xyz 1 1 1))
 		(rotate (xyz 0 0 0))

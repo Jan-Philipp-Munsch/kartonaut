@@ -10,7 +10,7 @@
 		(rev "B")
 		(company "Mission Space")
 		(comment 1 "Zwei Pyro-Kanaele low-side, Arming, Durchgangspruefung")
-		(comment 2 "erzeugt von hardware/mainboard/kicad/gen_schematic.py aus circuit.py - nicht von Hand aendern")
+		(comment 2 "erzeugt aus circuit.py (gen_schematic.py)")
 	)
 	(lib_symbols
 		(symbol "Connector_Generic:Conn_01x02"
@@ -603,11 +603,12 @@
 		(stroke (width 0) (type default))
 		(uuid "7a4e770e-82a8-5df2-af7a-b9415f906d88")
 	)
-	(label "VBAT_ARMED"
+	(global_label "VBAT_ARMED"
+		(shape passive)
 		(at 39.37 46.99 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "6d8f7ecd-01a1-542a-80c1-7d31ed50a3bd")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "38a67163-1bc9-5fbb-9900-f54492b2c1ae")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -639,11 +640,12 @@
 		(stroke (width 0) (type default))
 		(uuid "a052255f-d701-575d-a172-93fdca3f501f")
 	)
-	(label "VBAT_ARMED"
+	(global_label "VBAT_ARMED"
+		(shape passive)
 		(at 53.34 53.34 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "1c54a397-119e-5eb6-bcba-da81b168a9bc")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "6e643b8c-e69c-550b-a4db-cbde5044904f")
 	)
 	(wire
 		(pts (xy 53.34 63.5) (xy 53.34 66.04))
@@ -807,22 +809,24 @@
 		(stroke (width 0) (type default))
 		(uuid "c28acb5d-44ef-5d05-81b0-75fb53e57701")
 	)
-	(label "VBAT_ARMED"
+	(global_label "VBAT_ARMED"
+		(shape passive)
 		(at 121.92 44.45 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "37e7d50c-14cc-5bcb-bd64-a5cf61debd3b")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "38ae028c-6186-5b51-80ab-00c98f34227f")
 	)
 	(wire
 		(pts (xy 124.46 46.99) (xy 121.92 46.99))
 		(stroke (width 0) (type default))
 		(uuid "c8023b68-d6a6-51d4-8a01-73f4afb532d3")
 	)
-	(label "PYRO1_NEG"
+	(global_label "PYRO1_NEG"
+		(shape passive)
 		(at 121.92 46.99 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "2293eddb-d882-591f-afaf-d912f8491745")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "4af8d940-2a5a-53f4-8983-8355a4448149")
 	)
 	(symbol
 		(lib_id "Transistor_FET:AO3400A")
@@ -862,11 +866,12 @@
 		(stroke (width 0) (type default))
 		(uuid "97f540c7-935f-56d4-952a-71265a44cbf0")
 	)
-	(label "PYRO1_G"
+	(global_label "PYRO1_G"
+		(shape passive)
 		(at 146.05 63.5 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "89c921e3-ffd1-54c4-bb8f-38c91996d04a")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "c747af63-aff7-5d0f-8b8a-bf5653f53f5f")
 	)
 	(wire
 		(pts (xy 156.21 68.58) (xy 156.21 71.12))
@@ -885,11 +890,12 @@
 		(stroke (width 0) (type default))
 		(uuid "2f993f16-56cd-54c0-aa24-61bb22236824")
 	)
-	(label "PYRO1_NEG"
+	(global_label "PYRO1_NEG"
+		(shape passive)
 		(at 156.21 55.88 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "e0aac384-0d3c-58fe-8f5a-d79e2615a104")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "737301dd-8b2b-5f44-9dc7-655851e6d71f")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -933,11 +939,12 @@
 		(stroke (width 0) (type default))
 		(uuid "e9e68ad3-00df-5482-bfb7-5c2fde2d25d2")
 	)
-	(label "PYRO1_G"
+	(global_label "PYRO1_G"
+		(shape passive)
 		(at 162.56 66.04 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "23ebb314-d5bc-5ce0-b15f-cf4e7ef347f2")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "7e33f214-98f7-522c-8d64-939dd9a25216")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -970,11 +977,12 @@
 		(stroke (width 0) (type default))
 		(uuid "2b397c90-aceb-5b2d-ac1b-1bd42dc009e4")
 	)
-	(label "PYRO1_G"
+	(global_label "PYRO1_G"
+		(shape passive)
 		(at 176.53 49.53 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "14cb92dc-ab9d-5771-92a5-3031fc7ae320")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "3f6cb83c-1933-50d5-8938-7be66fc353ae")
 	)
 	(wire
 		(pts (xy 176.53 59.69) (xy 176.53 62.23))
@@ -1022,22 +1030,24 @@
 		(stroke (width 0) (type default))
 		(uuid "63bf0593-a842-59ea-a44b-7a661ce84e91")
 	)
-	(label "VBAT_ARMED"
+	(global_label "VBAT_ARMED"
+		(shape passive)
 		(at 204.47 44.45 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "207e392d-09fb-5d3f-979b-dc053a6a6384")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "a3aabfe2-77e4-5a42-ab96-e46913e345b9")
 	)
 	(wire
 		(pts (xy 214.63 44.45) (xy 217.17 44.45))
 		(stroke (width 0) (type default))
 		(uuid "c6de78c6-b4fd-52f4-91a1-b65a441a11bf")
 	)
-	(label "PYRO1_NEG"
+	(global_label "PYRO1_NEG"
+		(shape passive)
 		(at 217.17 44.45 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "52482c0b-985f-5e68-b3eb-8a242ebaadf5")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "4e6487ec-8cf3-5bb7-9954-2b0a0e24aa26")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -1070,11 +1080,12 @@
 		(stroke (width 0) (type default))
 		(uuid "c8cede9b-d060-51a1-bac1-f72809193a9a")
 	)
-	(label "PYRO1_NEG"
+	(global_label "PYRO1_NEG"
+		(shape passive)
 		(at 234.95 52.07 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "38ef9736-bc49-5aa2-8bc5-e862249b0c5f")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "5aacdafa-f7b3-5315-a19a-1b5362be6961")
 	)
 	(wire
 		(pts (xy 234.95 62.23) (xy 234.95 64.77))
@@ -1238,22 +1249,24 @@
 		(stroke (width 0) (type default))
 		(uuid "de5b201d-628a-5827-9ea1-61a544369ac8")
 	)
-	(label "VBAT_ARMED"
+	(global_label "VBAT_ARMED"
+		(shape passive)
 		(at 39.37 140.97 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "3bc16355-c892-5c97-bd98-e1a638fa8d5b")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "7d490680-4a4e-5e2b-9965-299bc7fe2896")
 	)
 	(wire
 		(pts (xy 41.91 143.51) (xy 39.37 143.51))
 		(stroke (width 0) (type default))
 		(uuid "bafe10bd-fbb2-55ad-a463-0ce78d6fcaa1")
 	)
-	(label "PYRO2_NEG"
+	(global_label "PYRO2_NEG"
+		(shape passive)
 		(at 39.37 143.51 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "22c750db-4d08-57ae-bab8-99ba97a1d280")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "12b3784d-cf4c-5e3d-b82b-822f10a99758")
 	)
 	(symbol
 		(lib_id "Transistor_FET:AO3400A")
@@ -1293,11 +1306,12 @@
 		(stroke (width 0) (type default))
 		(uuid "5de8df25-6e84-5608-ac6b-867e2a151bbf")
 	)
-	(label "PYRO2_G"
+	(global_label "PYRO2_G"
+		(shape passive)
 		(at 62.23 160.02 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "a06248c0-f0d8-5111-a3f1-c9885d07cb47")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "134a8746-26ff-5586-b2e7-6f7ef98cf281")
 	)
 	(wire
 		(pts (xy 72.39 165.1) (xy 72.39 167.64))
@@ -1316,11 +1330,12 @@
 		(stroke (width 0) (type default))
 		(uuid "20650159-c8a7-5581-a460-5202c7ebd5f2")
 	)
-	(label "PYRO2_NEG"
+	(global_label "PYRO2_NEG"
+		(shape passive)
 		(at 72.39 152.4 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "3ea95c6b-3d2d-5150-8c3d-7457fa9f63ee")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "7673f938-8016-5034-b671-eed6926daa18")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -1364,11 +1379,12 @@
 		(stroke (width 0) (type default))
 		(uuid "a590c126-c170-50ff-84f6-95b796a3b6d6")
 	)
-	(label "PYRO2_G"
+	(global_label "PYRO2_G"
+		(shape passive)
 		(at 80.01 162.56 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "61795e04-ec2e-5de3-9d67-caa615328708")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "390b4a28-c6de-5e26-86aa-d2b50f89e135")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -1401,11 +1417,12 @@
 		(stroke (width 0) (type default))
 		(uuid "1c43ad95-ed37-5314-a9a6-812b8d9487ea")
 	)
-	(label "PYRO2_G"
+	(global_label "PYRO2_G"
+		(shape passive)
 		(at 93.98 146.05 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "910c45e6-5ca9-5dca-b082-fced6867e7f4")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "8651a9e7-3401-54f9-b91d-3da619c0eb15")
 	)
 	(wire
 		(pts (xy 93.98 156.21) (xy 93.98 158.75))
@@ -1453,22 +1470,24 @@
 		(stroke (width 0) (type default))
 		(uuid "6b4598fc-5995-5b32-86de-62180fb10a10")
 	)
-	(label "VBAT_ARMED"
+	(global_label "VBAT_ARMED"
+		(shape passive)
 		(at 121.92 140.97 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "3f239fd5-996f-5de4-badc-87e25326115f")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "eee15d64-9492-551e-998c-bfdb07d806bb")
 	)
 	(wire
 		(pts (xy 132.08 140.97) (xy 134.62 140.97))
 		(stroke (width 0) (type default))
 		(uuid "08654ec0-1983-55b5-abe8-ae609e9027df")
 	)
-	(label "PYRO2_NEG"
+	(global_label "PYRO2_NEG"
+		(shape passive)
 		(at 134.62 140.97 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "044cc721-b065-56ac-945c-a4336547e43b")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "4ae4a6a5-14b9-5326-a1ee-ea8a4acd2244")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -1501,11 +1520,12 @@
 		(stroke (width 0) (type default))
 		(uuid "5738a7ab-01e8-534a-b287-81afea9511f8")
 	)
-	(label "PYRO2_NEG"
+	(global_label "PYRO2_NEG"
+		(shape passive)
 		(at 152.4 148.59 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "683fcda5-e08e-57ef-b97e-38a0df9422f0")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "2daba9fd-74dd-5f0b-9d26-4ebca661b85c")
 	)
 	(wire
 		(pts (xy 152.4 158.75) (xy 152.4 161.29))

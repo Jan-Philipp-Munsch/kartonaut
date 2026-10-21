@@ -1,6 +1,8 @@
-out/*.dsn
-out/*.ses
-out/*.json
+# generated intermediates; tracked from out/: schematic PDF, ERC and DRC reports
+out/*
+!out/mainboard_schematic.pdf
+!out/erc.rpt
+!out/drc.rpt
 *-backups/
 fp-info-cache
 *.kicad_prl

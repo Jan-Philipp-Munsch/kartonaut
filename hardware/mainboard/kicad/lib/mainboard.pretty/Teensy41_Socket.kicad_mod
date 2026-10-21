@@ -60,4 +60,7 @@
 	(pad "46" thru_hole circle (at 7.620 24.130) (size 1.7 1.7) (drill 1.0) (layers "*.Cu" "*.Mask"))
 	(pad "47" thru_hole circle (at 7.620 26.670) (size 1.7 1.7) (drill 1.0) (layers "*.Cu" "*.Mask"))
 	(pad "48" thru_hole circle (at 7.620 29.210) (size 1.7 1.7) (drill 1.0) (layers "*.Cu" "*.Mask"))
+	(model "${KICAD10_3DMODEL_DIR}/Connector_PinSocket_2.54mm.3dshapes/PinSocket_1x24_P2.54mm_Vertical.step" (offset (xyz -7.620 29.210 0)) (scale (xyz 1 1 1)) (rotate (xyz 0 0 0)))
+	(model "${KICAD10_3DMODEL_DIR}/Connector_PinSocket_2.54mm.3dshapes/PinSocket_1x24_P2.54mm_Vertical.step" (offset (xyz 7.620 29.210 0)) (scale (xyz 1 1 1)) (rotate (xyz 0 0 0)))
+	(model "${KIPRJMOD}/lib/mainboard.3dshapes/Teensy41.step" (offset (xyz 0.000 0.000 0)) (scale (xyz 1 1 1)) (rotate (xyz 0 0 0)))
 )

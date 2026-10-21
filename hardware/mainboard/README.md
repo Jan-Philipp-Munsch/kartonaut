@@ -4,7 +4,10 @@ Stand 2026-10-21. Rev B ersetzt rev A (`rev_a_2026-10-15.md`, dort stehen die Be
 die hier unverändert gelten). Die Planungsrunde vom 21.10.2026 (`docs/Plan_2026-10-21.md`, §2)
 hat die Sensorik, den Funk, die Servos und vor allem die Versorgung neu entschieden. Ziel bleibt:
 ein Board, das den Teensy 4.1 trägt und alles enthält, was heute als Breakout mit Dupont-Kabeln
-am Teensy hängt. Schaltplan und Layout gibt es noch nicht; das ist die Vorgabe für KiCad.
+am Teensy hängt. Das ist die Vorgabe für das KiCad-Projekt in `kicad/`. Stand 21.10.2026: Der Schaltplan
+ist fertig (ERC sauber, Netzliste gegen §4 geprüft). Die Platine ist platziert und bis auf drei Verbindungen
+geroutet, DRC ohne Fehler. Abweichungen von dieser Spezifikation und ihre Gründe stehen in
+`kicad/README.md` §6, die Fertigerwahl in `Fertiger_2026-10-21.md`.
 
 ![Platzierungsplan](mainboard_placement.svg)
 

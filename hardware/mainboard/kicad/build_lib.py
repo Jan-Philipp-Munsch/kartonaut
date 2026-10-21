@@ -117,6 +117,10 @@ def write_footprint():
     txt = ('\t(fp_text user "USB" (at 0 {:.3f}) (layer "F.SilkS") (effects (font (size 1 1) (thickness 0.15))))\n'
            '\t(fp_text user "SD" (at 0 {:.3f}) (layer "F.SilkS") (effects (font (size 1 1) (thickness 0.15))))\n'
            .format(-hl + 2.0, hl - 2.0))
+    socket = "${KICAD10_3DMODEL_DIR}/Connector_PinSocket_2.54mm.3dshapes/PinSocket_1x24_P2.54mm_Vertical.step"
+    models = "".join(f'\t(model "{m}" (offset (xyz {x:.3f} {y:.3f} {z})) (scale (xyz 1 1 1)) (rotate (xyz 0 0 0)))\n'
+                     for m, x, y, z in [(socket, -ROW / 2, 11.5 * PITCH, 0), (socket, ROW / 2, 11.5 * PITCH, 0),
+                                        ("${KIPRJMOD}/lib/mainboard.3dshapes/Teensy41.step", 0, 0, 0)])
     fp = ('(footprint "Teensy41_Socket" (version 20241229) (generator "build_lib.py")\n'
           '\t(layer "F.Cu")\n'
           '\t(descr "Teensy 4.1 on two 1x24 female headers, rows 15.24 mm apart; pads 1-24 left row, 25-48 right row, USB at -y")\n'
@@ -124,7 +128,7 @@ def write_footprint():
           '\t(property "Reference" "REF**" (at 0 {:.3f} 0) (layer "F.SilkS") (effects (font (size 1 1) (thickness 0.15))))\n'
           '\t(property "Value" "Teensy41_Socket" (at 0 {:.3f} 0) (layer "F.Fab") (effects (font (size 1 1) (thickness 0.15))))\n'
           .format(-hl - 2.5, hl + 1.5)
-          + "\n".join(lines) + "\n" + txt + "\n".join(pads) + "\n)\n")
+          + "\n".join(lines) + "\n" + txt + "\n".join(pads) + "\n" + models + ")\n")
     (LIB / "mainboard.pretty").mkdir(exist_ok=True)
     (LIB / "mainboard.pretty" / "Teensy41_Socket.kicad_mod").write_text(fp, encoding="utf-8")
 
@@ -143,6 +147,64 @@ LCSC_TYPES = {
 }
 
 
+def teensy_model():
+    """Simplified Teensy 4.1 on 8.5 mm sockets as STEP (CadQuery), for the 3D renders only."""
+    try:
+        import cadquery as cq
+    except ImportError:
+        print("cadquery missing: no Teensy 3D model")
+        return
+    z0 = 8.5                                       # socket height: Teensy PCB rests on the sockets
+    pcb = cq.Workplane("XY").box(17.78, 60.96, 1.57, centered=(True, True, False)).translate((0, 0, z0))
+    holes = cq.Workplane("XY")
+    for sx in (-ROW / 2, ROW / 2):
+        for i in range(24):
+            holes = holes.union(cq.Workplane("XY").circle(0.5).extrude(1.6).translate((sx, -29.21 + i * PITCH, z0)))
+    pcb = pcb.cut(holes)
+    top = z0 + 1.57
+    mcu = cq.Workplane("XY").box(10, 10, 1.2, centered=(True, True, False)).translate((0, -2.0, top))
+    flash = cq.Workplane("XY").box(5, 6, 1.0, centered=(True, True, False)).translate((0, 10.5, top))
+    usb = cq.Workplane("XY").box(7.5, 5.6, 2.6, centered=(True, True, False)).translate((0, 29.2, top))
+    sd = cq.Workplane("XY").box(12.0, 11.5, 1.6, centered=(True, True, False)).translate((0, -25.0, z0 - 1.6))
+    btn = cq.Workplane("XY").box(3.0, 2.2, 1.0, centered=(True, True, False)).translate((-5.0, 22.5, top))
+    asm = cq.Assembly()
+    asm.add(pcb, name="pcb", color=cq.Color(0.10, 0.35, 0.18))
+    asm.add(mcu, name="mcu", color=cq.Color(0.12, 0.12, 0.12))
+    asm.add(flash, name="flash", color=cq.Color(0.12, 0.12, 0.12))
+    asm.add(usb, name="usb", color=cq.Color(0.75, 0.75, 0.78))
+    asm.add(sd, name="sd", color=cq.Color(0.70, 0.70, 0.72))
+    asm.add(btn, name="button", color=cq.Color(0.9, 0.9, 0.9))
+    (LIB / "mainboard.3dshapes").mkdir(exist_ok=True)
+    asm.save(str(LIB / "mainboard.3dshapes" / "Teensy41.step"))
+
+
+def xt30_model():
+    """XT30PW-M (horizontal, board connector) as a simple STEP: the KiCad library names a model for
+    this footprint but does not ship it. Footprint origin = pin 1; the body extends toward -y (model +y)."""
+    try:
+        import cadquery as cq
+    except ImportError:
+        return
+    body = cq.Workplane("XY").box(10.2, 12.9, 5.2, centered=(True, False, False)).translate((-2.5, 0.6, 0))
+    for x in (0.0, -5.0):                                     # the two socket openings at the mouth
+        body = body.cut(cq.Workplane("XY").box(3.2, 4.0, 3.0, centered=(True, False, False)).translate((x, 9.6, 1.1)))
+    pins = cq.Workplane("XY")
+    for x in (0.0, -5.0):
+        pins = pins.union(cq.Workplane("XY").box(1.0, 1.0, 5.0, centered=(True, True, False)).translate((x, 0, -3.0)))
+    asm = cq.Assembly()
+    asm.add(body, name="body", color=cq.Color(0.95, 0.80, 0.15))
+    asm.add(pins, name="pins", color=cq.Color(0.80, 0.65, 0.30))
+    asm.save(str(LIB / "mainboard.3dshapes" / "XT30PW-M.step"))
+
+
+def fix_lcsc_model_paths():
+    for f in (LIB / "lcsc.pretty").glob("*.kicad_mod"):
+        s = f.read_text(encoding="utf-8")
+        s2 = s.replace("${KIPRJMOD}/lcsc.3dshapes/", "${KIPRJMOD}/lib/lcsc.3dshapes/")
+        if s2 != s:
+            f.write_text(s2, encoding="utf-8")
+
+
 def fix_lcsc_pin_types():
     path = LIB / "lcsc.kicad_sym"
     tree = parse(path.read_text(encoding="utf-8"))
@@ -158,4 +220,7 @@ if __name__ == "__main__":
     write_symbols()
     write_footprint()
     fix_lcsc_pin_types()
+    fix_lcsc_model_paths()
+    teensy_model()
+    xt30_model()
     print("lib/mainboard.kicad_sym, lib/mainboard.pretty/Teensy41_Socket.kicad_mod written; lcsc pin types set")

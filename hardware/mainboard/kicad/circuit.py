@@ -351,10 +351,16 @@ ERC_EXCLUSIONS = [
 # ---------------------------------------------------------------- net classes (spec §8)
 NETCLASSES = {
     # name: (track width, clearance, via diameter, via drill, nets)
-    "Strom": (1.2, 0.25, 0.8, 0.4, ["VBAT2_RAW", "VBAT2_REV", "VBAT_PROT", "VBAT_MEAS", "VSERVO", "VBAT_ARMED",
-                                    "PYRO1_NEG", "PYRO2_NEG", "GND_PWR"]),
-    "Versorgung": (0.6, 0.2, 0.6, 0.3, ["VBAT1_RAW", "VBAT1_PROT", "VSYS_IN", "5V_SYS", "5V_SERVO", "3V3",
-                                        "3V3_RF", "TEENSY_VIN", "MOT_A", "MOT_B", "U1_SW", "U2_L1", "U2_L2", "GND"]),
+    # 2S path, servo rail, pyro: up to 3 A continuous, 5 A for 20 ms. 1.0 mm outer copper carries
+    # about 2.5 A at 10 K; the current paths get both outer layers where space allows (README §4).
+    "Strom": (1.0, 0.2, 0.8, 0.4, ["VBAT2_RAW", "VBAT2_REV", "VBAT_PROT", "VBAT_MEAS", "VSERVO", "VBAT_ARMED",
+                                   "PYRO1_NEG", "PYRO2_NEG"]),
+    "Rueckstrom": (0.8, 0.2, 0.8, 0.4, ["GND_PWR"]),
+    "Versorgung": (0.5, 0.2, 0.6, 0.3, ["VBAT1_RAW", "VBAT1_PROT", "5V_SYS", "5V_SERVO", "3V3_RF", "TEENSY_VIN",
+                                        "MOT_A", "MOT_B", "U1_SW"]),
+    # pins of the TPS63070 (VQFN, 0.5 mm pitch) cannot take wider tracks
+    "Wandler": (0.25, 0.15, 0.6, 0.3, ["VSYS_IN", "U2_L1", "U2_L2"]),
+    # GND and 3V3 stay in the default class: GND rides on the planes, 3V3 carries sensor currents only
 }
 
 

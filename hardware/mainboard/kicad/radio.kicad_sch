@@ -10,7 +10,7 @@
 		(rev "B")
 		(company "Mission Space")
 		(comment 1 "LoRa E22-400T22S an Serial8, GPS an Serial1")
-		(comment 2 "erzeugt von hardware/mainboard/kicad/gen_schematic.py aus circuit.py - nicht von Hand aendern")
+		(comment 2 "erzeugt aus circuit.py (gen_schematic.py)")
 	)
 	(lib_symbols
 		(symbol "lcsc:E22-400T22S_C2903765"

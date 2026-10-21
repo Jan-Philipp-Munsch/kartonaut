@@ -10,7 +10,7 @@
 		(rev "B")
 		(company "Mission Space")
 		(comment 1 "Versorgung: 1S-Pfad (Elektronik) und 2S-Pfad (Aktoren, Pyro)")
-		(comment 2 "erzeugt von hardware/mainboard/kicad/gen_schematic.py aus circuit.py - nicht von Hand aendern")
+		(comment 2 "erzeugt aus circuit.py (gen_schematic.py)")
 	)
 	(lib_symbols
 		(symbol "Connector_Generic:Conn_01x02"
@@ -1739,11 +1739,12 @@
 		(stroke (width 0) (type default))
 		(uuid "02ead260-959a-5264-8987-199669264c54")
 	)
-	(label "VBAT2_RAW"
+	(global_label "VBAT2_RAW"
+		(shape passive)
 		(at 38.1 44.45 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "2b5f370e-196b-542b-aaef-109e056d1a6b")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "99497c2d-0fc7-5a77-ba1a-5b493d90a94c")
 	)
 	(wire
 		(pts (xy 40.64 46.99) (xy 38.1 46.99))
@@ -1795,33 +1796,36 @@
 		(stroke (width 0) (type default))
 		(uuid "1cb66cc5-15f3-5aec-b247-cd4794622603")
 	)
-	(label "Q1_G"
+	(global_label "Q1_G"
+		(shape passive)
 		(at 58.42 63.5 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "71078d2d-5d5a-5013-b3de-d4917e9e3148")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "88f36104-d069-5609-939c-443b07b03a72")
 	)
 	(wire
 		(pts (xy 68.58 68.58) (xy 68.58 71.12))
 		(stroke (width 0) (type default))
 		(uuid "4517aa0c-f9d4-57c3-b306-5b44d833a342")
 	)
-	(label "VBAT2_REV"
+	(global_label "VBAT2_REV"
+		(shape passive)
 		(at 68.58 71.12 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "d0c9cef5-86c5-5eae-96dc-d0f0825fb953")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "15e2c55c-eec0-563d-8829-275c3530972f")
 	)
 	(wire
 		(pts (xy 68.58 58.42) (xy 68.58 55.88))
 		(stroke (width 0) (type default))
 		(uuid "1caf743b-9e5c-5dec-926d-2ff63fd6bac7")
 	)
-	(label "VBAT2_RAW"
+	(global_label "VBAT2_RAW"
+		(shape passive)
 		(at 68.58 55.88 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "da926a75-81cf-5d5c-85be-235c696c9c35")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "6bb48609-8626-5960-9981-ae8aac6a22d0")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -1853,11 +1857,12 @@
 		(stroke (width 0) (type default))
 		(uuid "f037dc51-7170-549e-a00e-f0e3591fbda1")
 	)
-	(label "Q1_G"
+	(global_label "Q1_G"
+		(shape passive)
 		(at 74.93 45.72 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "e4a23dad-0105-57ca-a8f1-7cc47d04c88d")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "b557f484-c7ca-581e-9db3-f2f096191dfe")
 	)
 	(wire
 		(pts (xy 74.93 55.88) (xy 74.93 58.42))
@@ -1915,33 +1920,36 @@
 		(stroke (width 0) (type default))
 		(uuid "6136fbf8-6ede-52f5-813d-37e267a45c8e")
 	)
-	(label "VBAT1_PROT"
+	(global_label "VBAT1_PROT"
+		(shape passive)
 		(at 101.6 44.45 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "62b8409f-d2f1-558a-9ac1-be20aa101b9e")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "d687822e-7803-57a6-b457-8f7a4a02e894")
 	)
 	(wire
 		(pts (xy 104.14 46.99) (xy 101.6 46.99))
 		(stroke (width 0) (type default))
 		(uuid "45f29906-89c4-594d-91d0-fe62e0ae5a12")
 	)
-	(label "VSYS_IN"
+	(global_label "VSYS_IN"
+		(shape passive)
 		(at 101.6 46.99 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "2f900c7f-1065-558d-b177-c7e1a241a2c7")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "3ee672ab-c6e5-5ada-b367-09f061086ef3")
 	)
 	(wire
 		(pts (xy 104.14 49.53) (xy 101.6 49.53))
 		(stroke (width 0) (type default))
 		(uuid "ecdcf903-4eac-5b65-80f8-69990156f21c")
 	)
-	(label "VBAT2_REV"
+	(global_label "VBAT2_REV"
+		(shape passive)
 		(at 101.6 49.53 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "09283047-22ea-5d65-8727-adf98c164267")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "4d78ff80-5616-51fb-9b41-43df04ed613f")
 	)
 	(wire
 		(pts (xy 104.14 52.07) (xy 101.6 52.07))
@@ -1989,22 +1997,24 @@
 		(stroke (width 0) (type default))
 		(uuid "b55c7f27-f276-5fa4-bdc3-92bf6398f37b")
 	)
-	(label "VBAT1_PROT"
+	(global_label "VBAT1_PROT"
+		(shape passive)
 		(at 129.54 44.45 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "92b4ac77-05c5-5d40-a631-f2c16c9d1a77")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "70430f2b-7325-523c-9ba2-a6082850663d")
 	)
 	(wire
 		(pts (xy 142.24 44.45) (xy 144.78 44.45))
 		(stroke (width 0) (type default))
 		(uuid "1b54ba0b-b4d6-5631-8788-99e1dfe9739d")
 	)
-	(label "VSYS_IN"
+	(global_label "VSYS_IN"
+		(shape passive)
 		(at 144.78 44.45 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "c71dcb7e-fb80-5f66-b69c-e7aa69919960")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "35eb51d2-a57b-53f2-9633-5c4b14179814")
 	)
 	(symbol
 		(lib_id "Jumper:SolderJumper_2_Open")
@@ -2040,11 +2050,12 @@
 		(stroke (width 0) (type default))
 		(uuid "3a1bc901-e6a1-5214-b0ff-8857029c9c98")
 	)
-	(label "VBAT2_REV"
+	(global_label "VBAT2_REV"
+		(shape passive)
 		(at 38.1 92.71 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "4fc938db-0a92-5107-adb4-870201077fd4")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "df436642-47ba-56fa-adc8-58658545df6a")
 	)
 	(wire
 		(pts (xy 50.8 92.71) (xy 53.34 92.71))
@@ -2266,11 +2277,12 @@
 		(stroke (width 0) (type default))
 		(uuid "f667dfd6-772a-5d53-b8c5-cbaed2b012c3")
 	)
-	(label "VBAT_MEAS"
+	(global_label "VBAT_MEAS"
+		(shape passive)
 		(at 215.9 64.77 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "86be3c31-29e7-58a1-ad7b-307c72065601")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "a3704365-8c10-5fe0-8ecd-7e7ee36c62b7")
 	)
 	(symbol
 		(lib_id "Sensor_Energy:INA219AxD")
@@ -2397,11 +2409,12 @@
 		(stroke (width 0) (type default))
 		(uuid "68dc8e47-5fa2-5f4a-8e67-72f0c5eee89f")
 	)
-	(label "VBAT_MEAS"
+	(global_label "VBAT_MEAS"
+		(shape passive)
 		(at 247.65 63.5 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "bbf7d2f8-9deb-5f3f-addd-385301abb37f")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "0cf66f88-dd97-5c75-9d46-49cba742d231")
 	)
 	(wire
 		(pts (xy 250.19 58.42) (xy 247.65 58.42))
@@ -2515,11 +2528,12 @@
 		(stroke (width 0) (type default))
 		(uuid "f50898ce-8461-5ba4-838c-5c758a6e293e")
 	)
-	(label "VBAT_MEAS"
+	(global_label "VBAT_MEAS"
+		(shape passive)
 		(at 312.42 52.07 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "21ca6c29-9e7a-5a3b-b1e8-dd03fce77bb2")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "c99c3aa1-d7b2-5e8d-8314-8f4c8c27aeca")
 	)
 	(wire
 		(pts (xy 312.42 62.23) (xy 312.42 64.77))
@@ -2708,55 +2722,60 @@
 		(stroke (width 0) (type default))
 		(uuid "d29e5a71-51a8-5192-bc7d-2003eb649b1d")
 	)
-	(label "U1_SW"
+	(global_label "U1_SW"
+		(shape passive)
 		(at 430.53 45.72 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "30719afb-681b-5089-a1d6-0a1b6850eeab")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "53b4f54e-d191-5228-b81e-5c8fa9c86829")
 	)
 	(wire
 		(pts (xy 407.67 45.72) (xy 405.13 45.72))
 		(stroke (width 0) (type default))
 		(uuid "bac47a68-0efb-5a46-a81a-474dbcec7605")
 	)
-	(label "VBAT_MEAS"
+	(global_label "VBAT_MEAS"
+		(shape passive)
 		(at 405.13 45.72 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "cb70b686-ab89-5071-800e-7e8c44856683")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "fcc32ce4-313d-5078-b5c4-b31e8d24ce7b")
 	)
 	(wire
 		(pts (xy 427.99 50.8) (xy 430.53 50.8))
 		(stroke (width 0) (type default))
 		(uuid "462a8529-df8c-542c-ae1f-021d10588077")
 	)
-	(label "U1_FB"
+	(global_label "U1_FB"
+		(shape passive)
 		(at 430.53 50.8 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "a10f988b-d475-518d-9094-645ebe00ebba")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "6bcf8de1-3470-536a-9f61-96948accc413")
 	)
 	(wire
 		(pts (xy 407.67 50.8) (xy 405.13 50.8))
 		(stroke (width 0) (type default))
 		(uuid "c8067ae9-4a90-538d-bf24-da73b2ad9a73")
 	)
-	(label "U1_EN"
+	(global_label "U1_EN"
+		(shape passive)
 		(at 405.13 50.8 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "d96a239e-5f16-5b92-a6e6-2790b520ca6b")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "6cb71f66-8efa-5836-9cd3-d78ac1195830")
 	)
 	(wire
 		(pts (xy 427.99 48.26) (xy 430.53 48.26))
 		(stroke (width 0) (type default))
 		(uuid "a406cbf7-1f8e-5d2f-908b-5991594f9b99")
 	)
-	(label "U1_BST"
+	(global_label "U1_BST"
+		(shape passive)
 		(at 430.53 48.26 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "780de762-ab7e-5a59-991b-334f19454427")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "ebf73a7d-1c0a-57a0-9e7c-4d9e34f2b674")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -2788,22 +2807,24 @@
 		(stroke (width 0) (type default))
 		(uuid "1b2d7ee8-9321-58bd-8b7c-79090c4ff7cf")
 	)
-	(label "VBAT_MEAS"
+	(global_label "VBAT_MEAS"
+		(shape passive)
 		(at 445.77 52.07 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "7e7de8c7-1c6b-5b84-8983-2bc89b2519e5")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "b7f749d6-7b2f-522e-82e6-3d543cec511d")
 	)
 	(wire
 		(pts (xy 445.77 62.23) (xy 445.77 64.77))
 		(stroke (width 0) (type default))
 		(uuid "c4410fdf-94b7-54b7-a536-a9beaead4323")
 	)
-	(label "U1_EN"
+	(global_label "U1_EN"
+		(shape passive)
 		(at 445.77 64.77 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "3fc447a1-dcb4-50ac-95e4-c822fd9f259f")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "510f58ac-4739-546f-9849-6ea3ee6a139b")
 	)
 	(symbol
 		(lib_id "Device:C")
@@ -2835,11 +2856,12 @@
 		(stroke (width 0) (type default))
 		(uuid "d095a1ac-1f1b-56a7-ae3f-9b332061e7cd")
 	)
-	(label "VBAT_MEAS"
+	(global_label "VBAT_MEAS"
+		(shape passive)
 		(at 461.01 52.07 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "c7ad41f2-9c7e-52d6-8874-6ab6e4a2f4cd")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "4c7207b5-fb1a-5f79-a9ea-2e823546f7bf")
 	)
 	(wire
 		(pts (xy 461.01 62.23) (xy 461.01 64.77))
@@ -2883,11 +2905,12 @@
 		(stroke (width 0) (type default))
 		(uuid "c387ef99-4db8-5d3d-aa7a-44102adea731")
 	)
-	(label "VBAT_MEAS"
+	(global_label "VBAT_MEAS"
+		(shape passive)
 		(at 481.33 52.07 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "2a71498e-35e8-5d7c-8a75-a1aef815ba4e")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "9b49fd23-d1c5-5bc6-be21-b71c347c4803")
 	)
 	(wire
 		(pts (xy 481.33 62.23) (xy 481.33 64.77))
@@ -2931,11 +2954,12 @@
 		(stroke (width 0) (type default))
 		(uuid "e8066541-e831-59db-99b4-f523db99ae1e")
 	)
-	(label "VBAT_MEAS"
+	(global_label "VBAT_MEAS"
+		(shape passive)
 		(at 502.92 52.07 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "1726237d-a984-57a1-b809-b8ce98dc5b90")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "be7546e3-b4b7-53a3-8cda-826f9e10ee5f")
 	)
 	(wire
 		(pts (xy 502.92 62.23) (xy 502.92 64.77))
@@ -2979,22 +3003,24 @@
 		(stroke (width 0) (type default))
 		(uuid "00da509a-41aa-5e75-9f11-0570fb0c8327")
 	)
-	(label "U1_BST"
+	(global_label "U1_BST"
+		(shape passive)
 		(at 519.43 48.26 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "256d59c0-0bca-5e32-9604-221a50a35965")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "05fa39de-85d8-53b9-bae9-ec1288f1bfb1")
 	)
 	(wire
 		(pts (xy 519.43 58.42) (xy 519.43 60.96))
 		(stroke (width 0) (type default))
 		(uuid "a991951e-9b66-522e-81b4-b17d7b9e6080")
 	)
-	(label "U1_SW"
+	(global_label "U1_SW"
+		(shape passive)
 		(at 519.43 60.96 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "7c0bb0a3-e8c9-5a69-afda-eb2b77fb043d")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "9c40947f-8dee-57e9-8f2c-0471b044fed8")
 	)
 	(symbol
 		(lib_id "Device:L")
@@ -3027,11 +3053,12 @@
 		(stroke (width 0) (type default))
 		(uuid "11de1f4b-befc-535a-a19d-133c82ef6299")
 	)
-	(label "U1_SW"
+	(global_label "U1_SW"
+		(shape passive)
 		(at 393.7 86.36 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "6ac6fb34-b2bf-5fe1-80ea-e1385bee9af3")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "a1fe780f-a00e-57fb-81db-690cc332c8a8")
 	)
 	(wire
 		(pts (xy 393.7 96.52) (xy 393.7 99.06))
@@ -3087,11 +3114,12 @@
 		(stroke (width 0) (type default))
 		(uuid "b1e479a2-403e-5741-91f3-23c80f45b94a")
 	)
-	(label "U1_FB"
+	(global_label "U1_FB"
+		(shape passive)
 		(at 417.83 102.87 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "59dd4a4c-0a4d-57be-a3fd-3d8af08e968f")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "18e9aa09-72c0-57bf-9b7c-c2af4cbbaa0f")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -3123,11 +3151,12 @@
 		(stroke (width 0) (type default))
 		(uuid "7299ad9a-4893-5755-9535-a27e3b90391c")
 	)
-	(label "U1_FB"
+	(global_label "U1_FB"
+		(shape passive)
 		(at 431.8 86.36 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "eb6bf689-ce6e-5f14-8b87-daac32fedef6")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "1f331dda-ecb7-5cec-84b2-a25cf5d65e94")
 	)
 	(wire
 		(pts (xy 431.8 96.52) (xy 431.8 99.06))
@@ -3341,11 +3370,12 @@
 		(stroke (width 0) (type default))
 		(uuid "90108d1f-824c-574f-9d4a-0ef8a4d07003")
 	)
-	(label "VBAT1_RAW"
+	(global_label "VBAT1_RAW"
+		(shape passive)
 		(at 38.1 134.62 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "f3d4cab5-36f0-541f-96af-98ea5a2dd0cd")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "2689e2dd-b50f-55ef-81a0-cd2ec40179d4")
 	)
 	(wire
 		(pts (xy 40.64 137.16) (xy 38.1 137.16))
@@ -3397,33 +3427,36 @@
 		(stroke (width 0) (type default))
 		(uuid "6a57a4ed-a07c-54a1-8965-c1831be3d75f")
 	)
-	(label "Q2_G"
+	(global_label "Q2_G"
+		(shape passive)
 		(at 58.42 153.67 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "e182a15a-c21a-5952-9740-39b770d8b6d7")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "878cfc95-5829-52f7-bada-51612d7ff429")
 	)
 	(wire
 		(pts (xy 68.58 158.75) (xy 68.58 161.29))
 		(stroke (width 0) (type default))
 		(uuid "039fd967-958c-50d9-be77-62ff1f6d9a01")
 	)
-	(label "VBAT1_PROT"
+	(global_label "VBAT1_PROT"
+		(shape passive)
 		(at 68.58 161.29 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "b6b1ad4d-7cd3-539e-a742-9017ce4fb501")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "265f64d3-6edb-5e96-bedd-4ccedec6f8f4")
 	)
 	(wire
 		(pts (xy 68.58 148.59) (xy 68.58 146.05))
 		(stroke (width 0) (type default))
 		(uuid "971c24fc-06d0-5afd-843d-bfb26455dae7")
 	)
-	(label "VBAT1_RAW"
+	(global_label "VBAT1_RAW"
+		(shape passive)
 		(at 68.58 146.05 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "09dd6e98-f389-5a78-a22d-1de2481497f2")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "17386771-e78a-5a65-9822-df495fbf4391")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -3455,11 +3488,12 @@
 		(stroke (width 0) (type default))
 		(uuid "6856e04a-7e52-5478-bd98-a253be564162")
 	)
-	(label "Q2_G"
+	(global_label "Q2_G"
+		(shape passive)
 		(at 74.93 137.16 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "0eb32bbb-0222-5ffd-a694-589cd2dcf33c")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "10175d10-5ac8-5021-87ca-0f8e3e59d20b")
 	)
 	(wire
 		(pts (xy 74.93 147.32) (xy 74.93 149.86))
@@ -3503,11 +3537,12 @@
 		(stroke (width 0) (type default))
 		(uuid "405203ac-26a2-5e47-9411-7615a550114d")
 	)
-	(label "VSYS_IN"
+	(global_label "VSYS_IN"
+		(shape passive)
 		(at 88.9 139.7 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "08d9a052-0c4b-56cf-bfbc-4e2ebfaa0dce")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "dcef6e3a-644d-54d0-80ae-e1ce55f64d78")
 	)
 	(wire
 		(pts (xy 88.9 149.86) (xy 88.9 152.4))
@@ -3707,11 +3742,12 @@
 		(stroke (width 0) (type default))
 		(uuid "0b7b128d-e073-5f50-94ed-3dec8fbf5d33")
 	)
-	(label "VSYS_IN"
+	(global_label "VSYS_IN"
+		(shape passive)
 		(at 153.67 135.89 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "2f8ce77b-ca85-59bf-ab0f-a75078eb6a05")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "e867e604-d711-5b17-9a7c-67559942e729")
 	)
 	(no_connect
 		(at 156.21 138.43)
@@ -3722,11 +3758,12 @@
 		(stroke (width 0) (type default))
 		(uuid "07a657aa-a177-5f10-ad6d-04edddd134ac")
 	)
-	(label "U2_VAUX"
+	(global_label "U2_VAUX"
+		(shape passive)
 		(at 153.67 140.97 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "052f4322-335c-5608-a7a9-daaff389b113")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "51d1bd11-6609-5df1-b932-5c253f510b29")
 	)
 	(wire
 		(pts (xy 156.21 143.51) (xy 153.67 143.51))
@@ -3745,11 +3782,12 @@
 		(stroke (width 0) (type default))
 		(uuid "b4447d03-c875-580b-9e8c-fc2884151cf9")
 	)
-	(label "U2_FB"
+	(global_label "U2_FB"
+		(shape passive)
 		(at 153.67 146.05 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "a002c787-d777-5d8c-9245-30ce9feb89f3")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "cd4ba661-c4cb-5850-87c8-8e17ccad0e90")
 	)
 	(wire
 		(pts (xy 156.21 148.59) (xy 153.67 148.59))
@@ -3780,11 +3818,12 @@
 		(stroke (width 0) (type default))
 		(uuid "571c35d3-90f3-53c7-9667-8851cd4062a9")
 	)
-	(label "U2_L2"
+	(global_label "U2_L2"
+		(shape passive)
 		(at 186.69 151.13 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "eb075d73-c6d3-50bf-91d3-167a6f58653b")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "2d1fa4cc-2734-5551-b820-3815e812709b")
 	)
 	(wire
 		(pts (xy 184.15 148.59) (xy 186.69 148.59))
@@ -3803,33 +3842,36 @@
 		(stroke (width 0) (type default))
 		(uuid "2774ad5a-1e8e-5985-83d4-edea9eda4193")
 	)
-	(label "U2_L1"
+	(global_label "U2_L1"
+		(shape passive)
 		(at 186.69 146.05 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "5bc3c809-d143-59a3-9ac5-a26fd0b7331f")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "5826e1e7-b8c1-5b51-863f-c528b4c09d4a")
 	)
 	(wire
 		(pts (xy 184.15 143.51) (xy 186.69 143.51))
 		(stroke (width 0) (type default))
 		(uuid "b60231f5-a4da-5a2b-8573-8a48b284f536")
 	)
-	(label "VSYS_IN"
+	(global_label "VSYS_IN"
+		(shape passive)
 		(at 186.69 143.51 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "dcbe6beb-f8f9-5408-b634-79fb1d6b4523")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "94b0dc9c-a6d6-59af-af01-3976ce503f55")
 	)
 	(wire
 		(pts (xy 184.15 138.43) (xy 186.69 138.43))
 		(stroke (width 0) (type default))
 		(uuid "8749daca-d0e2-5fb8-9d1f-c339f299338c")
 	)
-	(label "U2_EN"
+	(global_label "U2_EN"
+		(shape passive)
 		(at 186.69 138.43 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "38c66c98-b835-54be-b082-965d9f32a62f")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "bb258c4f-3164-5b39-af64-c3769b900e0a")
 	)
 	(wire
 		(pts (xy 184.15 135.89) (xy 186.69 135.89))
@@ -3873,11 +3915,12 @@
 		(stroke (width 0) (type default))
 		(uuid "0ba56045-52c3-5c1d-9671-1db1de3e85a8")
 	)
-	(label "VSYS_IN"
+	(global_label "VSYS_IN"
+		(shape passive)
 		(at 203.2 139.7 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "68dfd71d-c698-5db8-9b56-fd3b31a5bbc1")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "a291be83-e4f7-5366-8373-431d06acc199")
 	)
 	(wire
 		(pts (xy 203.2 149.86) (xy 203.2 152.4))
@@ -3921,11 +3964,12 @@
 		(stroke (width 0) (type default))
 		(uuid "c1c38111-40c2-5173-a644-a45826e9be1a")
 	)
-	(label "VSYS_IN"
+	(global_label "VSYS_IN"
+		(shape passive)
 		(at 224.79 139.7 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "d8b71201-36b7-53f9-9eb1-ee147a57a7e1")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "305d1367-77b2-5ea4-bb2e-1d113d0ff10c")
 	)
 	(wire
 		(pts (xy 224.79 149.86) (xy 224.79 152.4))
@@ -3969,11 +4013,12 @@
 		(stroke (width 0) (type default))
 		(uuid "ca430072-c2fd-50b1-8206-01dd36f1a440")
 	)
-	(label "U2_VAUX"
+	(global_label "U2_VAUX"
+		(shape passive)
 		(at 245.11 139.7 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "7c79b1a2-d84e-560e-a81d-9ef4c2131ed1")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "50c3e5a4-9e1a-51b2-9ad4-a52281159e16")
 	)
 	(wire
 		(pts (xy 245.11 149.86) (xy 245.11 152.4))
@@ -4018,22 +4063,24 @@
 		(stroke (width 0) (type default))
 		(uuid "1b0186bc-5dc8-5b08-bcad-8791bd3c3ce1")
 	)
-	(label "U2_L1"
+	(global_label "U2_L1"
+		(shape passive)
 		(at 259.08 138.43 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "c91e9f51-419a-529a-9a3a-56517f46e19c")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "bb9dd7dd-9a4f-5cb0-aac6-c57e763e1119")
 	)
 	(wire
 		(pts (xy 259.08 148.59) (xy 259.08 151.13))
 		(stroke (width 0) (type default))
 		(uuid "7411b2ab-caf3-52d7-aae6-d035a644dbab")
 	)
-	(label "U2_L2"
+	(global_label "U2_L2"
+		(shape passive)
 		(at 259.08 151.13 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "8637f58a-9ca4-51d3-8bda-7295ce158055")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "aae81e6f-303b-5aa0-8c15-945c0545faf9")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -4077,11 +4124,12 @@
 		(stroke (width 0) (type default))
 		(uuid "a9129cc9-6745-5c2b-adeb-8a855df79ab7")
 	)
-	(label "U2_FB"
+	(global_label "U2_FB"
+		(shape passive)
 		(at 144.78 182.88 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "b1e67d8e-fd86-5e2f-9395-021d7cf1bc62")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "0893768b-914e-5f69-91f5-c01f57e4cb75")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -4113,11 +4161,12 @@
 		(stroke (width 0) (type default))
 		(uuid "94811c0f-5463-5879-aa4e-a2a708f0833f")
 	)
-	(label "U2_FB"
+	(global_label "U2_FB"
+		(shape passive)
 		(at 160.02 168.91 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "460f57f4-c1b6-52f9-b3b2-feb056a64d9c")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "ac9386db-0e58-5bcf-8764-f88b6c7511a0")
 	)
 	(wire
 		(pts (xy 160.02 179.07) (xy 160.02 181.61))
@@ -4161,22 +4210,24 @@
 		(stroke (width 0) (type default))
 		(uuid "12a9dcc2-0bb2-5494-b48c-1f55d178ff44")
 	)
-	(label "VSYS_IN"
+	(global_label "VSYS_IN"
+		(shape passive)
 		(at 175.26 171.45 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "39e68b60-d3d2-5c7f-9abb-7507078cf16b")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "8f24f507-edfc-5a8a-896b-9911f685c670")
 	)
 	(wire
 		(pts (xy 175.26 181.61) (xy 175.26 184.15))
 		(stroke (width 0) (type default))
 		(uuid "23c1e6cb-5bc5-55f6-b13d-c2379c69e346")
 	)
-	(label "U2_EN"
+	(global_label "U2_EN"
+		(shape passive)
 		(at 175.26 184.15 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "e4545f38-6197-582d-81e3-e77eca743dc3")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "14ba5249-1950-5ad1-9f53-a84967fb3b7a")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -4208,11 +4259,12 @@
 		(stroke (width 0) (type default))
 		(uuid "9941f348-3c05-5f29-b6c4-cbffb11e8630")
 	)
-	(label "U2_EN"
+	(global_label "U2_EN"
+		(shape passive)
 		(at 189.23 168.91 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "836db402-06c7-56f0-a9e2-205f3be96733")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "f21402f0-404e-5933-abbc-71e80513c5c4")
 	)
 	(wire
 		(pts (xy 189.23 179.07) (xy 189.23 181.61))
@@ -4852,11 +4904,12 @@
 		(stroke (width 0) (type default))
 		(uuid "5af4f4c8-afee-5425-829c-6a7e8480d850")
 	)
-	(label "VSYS_IN"
+	(global_label "VSYS_IN"
+		(shape passive)
 		(at 293.37 166.37 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "c67aa779-44ee-5f9a-95da-2665543218ff")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "207fb35a-6041-5783-ae63-7ddc9b4fb9cd")
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
@@ -5169,11 +5222,12 @@
 		(stroke (width 0) (type default))
 		(uuid "c0ab3cc0-a990-5808-9852-ad7dbc9b787e")
 	)
-	(label "VBAT_MEAS"
+	(global_label "VBAT_MEAS"
+		(shape passive)
 		(at 488.95 135.89 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "eabbf22e-c69a-5ae8-8cb5-fa24dc08f54b")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "259444f2-e4d0-5e3d-8a91-9e17a7995259")
 	)
 	(symbol
 		(lib_id "power:PWR_FLAG")
@@ -5210,11 +5264,12 @@
 		(stroke (width 0) (type default))
 		(uuid "6652e5f8-e93f-59e1-a847-43d07b644afe")
 	)
-	(label "VSYS_IN"
+	(global_label "VSYS_IN"
+		(shape passive)
 		(at 509.27 135.89 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "b6567e60-8d77-5ffc-b22f-3144581b493a")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "4528c987-1575-540a-8c55-19e35d7b6d0d")
 	)
 	(symbol
 		(lib_id "power:PWR_FLAG")

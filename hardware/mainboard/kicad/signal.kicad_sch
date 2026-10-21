@@ -10,7 +10,7 @@
 		(rev "B")
 		(company "Mission Space")
 		(comment 1 "WS2812B mit Pegelwandler, Summer, Kamera-Trigger")
-		(comment 2 "erzeugt von hardware/mainboard/kicad/gen_schematic.py aus circuit.py - nicht von Hand aendern")
+		(comment 2 "erzeugt aus circuit.py (gen_schematic.py)")
 	)
 	(lib_symbols
 		(symbol "74xGxx:74AHCT1G125"
@@ -997,11 +997,12 @@
 		(stroke (width 0) (type default))
 		(uuid "c4a56c6b-9267-5b37-a288-d407f011fe88")
 	)
-	(label "LED1_5V"
+	(global_label "LED1_5V"
+		(shape passive)
 		(at 71.12 64.77 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "0f9e2a9f-0760-5619-a579-66cf181685e0")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "f68ede9f-3e0e-5f04-97a1-22ca8b741f36")
 	)
 	(wire
 		(pts (xy 50.8 54.61) (xy 50.8 52.07))
@@ -1094,22 +1095,24 @@
 		(stroke (width 0) (type default))
 		(uuid "06776dce-5f9f-55ea-9e5b-569bb5d5462e")
 	)
-	(label "LED1_5V"
+	(global_label "LED1_5V"
+		(shape passive)
 		(at 104.14 49.53 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "71838075-6a28-56f2-b6b9-b36ab7f3eb35")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "d356cbc4-b7c4-5ed1-a870-41ed5fb25002")
 	)
 	(wire
 		(pts (xy 104.14 59.69) (xy 104.14 62.23))
 		(stroke (width 0) (type default))
 		(uuid "fc85cb21-bff8-5e4e-a62e-ec8b4bbdc7c4")
 	)
-	(label "LED1_DIN"
+	(global_label "LED1_DIN"
+		(shape passive)
 		(at 104.14 62.23 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "e273ed1d-7947-5235-beea-39f08c76e6ef")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "3cffcb1c-6d0d-5fb6-9e71-0d833ac95ff0")
 	)
 	(symbol
 		(lib_id "LED:WS2812B-2020")
@@ -1151,11 +1154,12 @@
 		(stroke (width 0) (type default))
 		(uuid "35379d22-100f-5726-8b78-7e55d096c67f")
 	)
-	(label "LED_EXT_DATA"
+	(global_label "LED_EXT_DATA"
+		(shape passive)
 		(at 147.32 62.23 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "5443b236-a6cd-520c-af71-2520f615460b")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "f2af8b74-adb8-513f-b36c-7012914d4538")
 	)
 	(wire
 		(pts (xy 137.16 69.85) (xy 137.16 72.39))
@@ -1174,11 +1178,12 @@
 		(stroke (width 0) (type default))
 		(uuid "071701f8-4d8d-5415-a778-3bd9058ac7c9")
 	)
-	(label "LED1_DIN"
+	(global_label "LED1_DIN"
+		(shape passive)
 		(at 127 62.23 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "ed889e65-8111-5c3f-817f-b1f2b2f404f5")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "ead944e1-01ac-5c93-be55-12a9e1bfc82b")
 	)
 	(wire
 		(pts (xy 137.16 54.61) (xy 137.16 52.07))
@@ -1321,11 +1326,12 @@
 		(stroke (width 0) (type default))
 		(uuid "5818e639-934a-5eb4-a87e-21ee90598264")
 	)
-	(label "LED2_5V"
+	(global_label "LED2_5V"
+		(shape passive)
 		(at 87.63 113.03 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "675df4a0-186e-5464-ba5a-20cb66f42256")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "6252de9a-1426-5d16-bb75-157f7842a38c")
 	)
 	(wire
 		(pts (xy 67.31 102.87) (xy 67.31 100.33))
@@ -1418,22 +1424,24 @@
 		(stroke (width 0) (type default))
 		(uuid "0c8db9ca-8b49-5503-a828-5f15932739c1")
 	)
-	(label "LED2_5V"
+	(global_label "LED2_5V"
+		(shape passive)
 		(at 120.65 97.79 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "6ca9af63-0748-52b9-b7ea-ed301a109a9f")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "a4823530-f8bd-5e56-9884-c04fc4993d4d")
 	)
 	(wire
 		(pts (xy 120.65 107.95) (xy 120.65 110.49))
 		(stroke (width 0) (type default))
 		(uuid "938a1728-553f-5bfa-bfcf-e6119e53c5d8")
 	)
-	(label "LED2_DIN"
+	(global_label "LED2_DIN"
+		(shape passive)
 		(at 120.65 110.49 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "b19a94df-c54d-5af8-a029-f652dfdd63d7")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "f532b9b3-2bbf-5756-8c05-f3212836e98d")
 	)
 	(symbol
 		(lib_id "LED:WS2812B-2020")
@@ -1491,11 +1499,12 @@
 		(stroke (width 0) (type default))
 		(uuid "cb29d90f-d5d4-52e7-ad96-5c605c81cbe4")
 	)
-	(label "LED2_DIN"
+	(global_label "LED2_DIN"
+		(shape passive)
 		(at 144.78 110.49 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "863c9429-f12c-5241-93eb-a49443d39829")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "e4af4d5b-aa90-5473-95c9-029620671169")
 	)
 	(wire
 		(pts (xy 154.94 102.87) (xy 154.94 100.33))
@@ -1608,11 +1617,12 @@
 		(stroke (width 0) (type default))
 		(uuid "08ec6daf-ccd3-5677-a422-7ead1cdcfbf1")
 	)
-	(label "LED_EXT_DATA"
+	(global_label "LED_EXT_DATA"
+		(shape passive)
 		(at 58.42 143.51 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "58dfa643-ef4c-5b7b-b058-64e49475a2a7")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "3792545a-ff6d-57c1-9641-89f492ddbe15")
 	)
 	(wire
 		(pts (xy 60.96 146.05) (xy 58.42 146.05))
@@ -1686,11 +1696,12 @@
 		(stroke (width 0) (type default))
 		(uuid "748b5eb1-fb58-564e-a4bf-179b0ef289d7")
 	)
-	(label "BZ_NEG"
+	(global_label "BZ_NEG"
+		(shape passive)
 		(at 187.96 48.26 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "47681e70-4fc4-5b9a-8176-317591f2e79c")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "a31a3e54-82dd-5db0-8978-e409ee169b58")
 	)
 	(symbol
 		(lib_id "Device:D")
@@ -1735,11 +1746,12 @@
 		(stroke (width 0) (type default))
 		(uuid "dfd8cb8f-a589-5cf1-8f1e-0bc69d437cb1")
 	)
-	(label "BZ_NEG"
+	(global_label "BZ_NEG"
+		(shape passive)
 		(at 218.44 44.45 0)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "870fa4cb-0a1f-519b-8fb5-23bc0bc8cb92")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "c27f7f17-f57f-54b5-950b-e308e714bc34")
 	)
 	(symbol
 		(lib_id "Transistor_FET:AO3400A")
@@ -1779,11 +1791,12 @@
 		(stroke (width 0) (type default))
 		(uuid "d5c020b3-936a-51b5-a5d3-ea9e51ae62aa")
 	)
-	(label "BZ_G"
+	(global_label "BZ_G"
+		(shape passive)
 		(at 238.76 59.69 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "c56666b1-6154-5531-9078-1d22932fc52c")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "23e8b720-b872-58a4-bae9-70b51d811431")
 	)
 	(wire
 		(pts (xy 248.92 64.77) (xy 248.92 67.31))
@@ -1802,11 +1815,12 @@
 		(stroke (width 0) (type default))
 		(uuid "c83dbaf9-19f8-59bb-b0eb-47d85c401d55")
 	)
-	(label "BZ_NEG"
+	(global_label "BZ_NEG"
+		(shape passive)
 		(at 248.92 52.07 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "eccbd691-55ba-57fd-a241-e7b480a844d1")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "008a2021-e869-5274-9976-5c9b5b10feea")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -1850,11 +1864,12 @@
 		(stroke (width 0) (type default))
 		(uuid "f4217d51-a4eb-54d1-a29a-81c8e5ce18c0")
 	)
-	(label "BZ_G"
+	(global_label "BZ_G"
+		(shape passive)
 		(at 256.54 60.96 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "5c336f58-89a3-5381-ac61-1577e3a01910")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "624322fb-e3f4-5b26-8c7d-1a22448ef6e7")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -1886,11 +1901,12 @@
 		(stroke (width 0) (type default))
 		(uuid "30022e80-dbbb-5dea-9776-55b07cf75bb3")
 	)
-	(label "BZ_G"
+	(global_label "BZ_G"
+		(shape passive)
 		(at 270.51 45.72 90)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "c2884df3-2455-5392-9bcd-b03760107562")
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "79ec6d1a-9b25-5b31-b385-1a05a84924e4")
 	)
 	(wire
 		(pts (xy 270.51 55.88) (xy 270.51 58.42))
@@ -1963,11 +1979,12 @@
 		(stroke (width 0) (type default))
 		(uuid "7cfa9635-4605-5eb7-a47d-657065774fa0")
 	)
-	(label "CAM_TRIG_OUT"
+	(global_label "CAM_TRIG_OUT"
+		(shape passive)
 		(at 294.64 63.5 270)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "b4a08e2f-06f8-57a7-978a-1e284f9a8c6c")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "d6386d7b-0476-5f31-bc78-b77ffe48e5d2")
 	)
 	(symbol
 		(lib_id "Connector_Generic:Conn_01x03")
@@ -2019,11 +2036,12 @@
 		(stroke (width 0) (type default))
 		(uuid "aeb87836-6568-5632-aa5f-08aa2e7d5c5e")
 	)
-	(label "CAM_TRIG_OUT"
+	(global_label "CAM_TRIG_OUT"
+		(shape passive)
 		(at 323.85 46.99 180)
 		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "d8da1761-e36f-594e-a4fb-efa2a43d1af3")
+		(effects (font (size 1.27 1.27)) (justify right))
+		(uuid "4653a059-300c-5bc0-a211-ce8c7e687c1f")
 	)
 	(wire
 		(pts (xy 326.39 49.53) (xy 323.85 49.53))

@@ -6,6 +6,7 @@ afterwards. Figures: hardware/mainboard/figures.py and outline.py must have run 
 
 Run:  python docs/build_design_guide.py
 """
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -56,6 +57,7 @@ def main():
         cmd = [str(browser), "--headless=new", "--disable-gpu", "--no-first-run", f"--user-data-dir={profile}",
                "--no-pdf-header-footer", "--virtual-time-budget=10000", f"--print-to-pdf={PDF}", HTML.as_uri()]
         subprocess.run(cmd, check=False, timeout=180, capture_output=True)
+        shutil.rmtree(profile, ignore_errors=True)
         if PDF.exists():
             break
     if not PDF.exists():

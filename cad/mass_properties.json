@@ -1,0 +1,63 @@
+{
+ "source": "cad/mass_model.py aus cad/params.py, Stabmodell (Zylinderschalen, Kegelschale, Quader, Stäbe, Punktmassen)",
+ "date": "2026-10-21",
+ "axes": "z Längsachse (+z zur Spitze), Ursprung Düsenebene; x zum Servo des Innenrahmens, y zum Lagerohr des Außenrahmens",
+ "pivot_from_nozzle_m": 0.0765,
+ "legs": "eingeklappt (Flugzustand)",
+ "configurations": {
+  "liftoff": {
+   "label": "Start, voller Motor",
+   "mass_kg": 0.981,
+   "cg_from_nozzle_m": 0.4483,
+   "cg_lateral_m": [
+    0.00024,
+    -0.00065
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.109616,
+    "Iyy": 0.109623,
+    "Izz": 0.001053,
+    "Ixy": -0.0,
+    "Ixz": 8.7e-05,
+    "Iyz": -9.7e-05
+   },
+   "lever_arm_m": 0.3718
+  },
+  "burnout": {
+   "label": "Brennschluss, Treibstoff verbraucht",
+   "mass_kg": 0.953,
+   "cg_from_nozzle_m": 0.4605,
+   "cg_lateral_m": [
+    0.00025,
+    -0.00067
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.104685,
+    "Iyy": 0.104693,
+    "Izz": 0.001051,
+    "Ixy": -0.0,
+    "Ixz": 9e-05,
+    "Iyz": -0.000105
+   },
+   "lever_arm_m": 0.384
+  },
+  "no_motor": {
+   "label": "Ohne Motor (Adapter bleibt)",
+   "mass_kg": 0.917,
+   "cg_from_nozzle_m": 0.4767,
+   "cg_lateral_m": [
+    0.00026,
+    -0.0007
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.098276,
+    "Iyy": 0.098283,
+    "Izz": 0.001047,
+    "Ixy": -0.0,
+    "Ixz": 9.4e-05,
+    "Iyz": -0.000115
+   },
+   "lever_arm_m": 0.4002
+  }
+ }
+}

@@ -50,7 +50,8 @@ Maximum 33 N) ist ein anderer Motor und kommt nur zum Vergleich in die Python-Si
 | Rollmotor + H-Brücke | 1 | Motor-Typ `[?]`, Brücke `[?]` (Code: zwei PWM-Pins 2/3, 20 kHz) | `Control.cpp` |
 | Schwungrad | `[?]` | `flywheelV2.blend` | CAD |
 | MOSFET-Modul für Pyro-Test | 1 `[?]` | Pin 23 | `examples/pyro_mosfet_test` |
-| Akku 2S LiPo 7,4 V | `[?]` | Kapazität, Stecker `[?]`; CAD rechnet mit 56 × 25,5 × 8 mm | `flight_computer.blend` |
+| Akku 2S LiPo 7,4 V (Servos, Rollmotor, Pyro) | `[?]` | Kapazität, Stecker `[?]`; CAD rechnet mit 56 × 25,5 × 8 mm | `flight_computer.blend` |
+| Akku 1S LiPo 3,7 V (Elektronik, Entscheidung 21.10.2026) | 0 | 450–600 mAh, JST-PH; noch zu kaufen | `docs/Plan_2026-10-21.md` §2.5 |
 | GPS-Modul | `[?]` | früherer TinyGPSPlus-Testsketch | Git-Historie |
 
 ### 1.4 Gedruckte Teile

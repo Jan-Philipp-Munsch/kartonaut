@@ -8,6 +8,11 @@ which ERC cannot check). The LCSC parts themselves are fetched once with
     python -m easyeda2kicad --full --lcsc_id C1850418 C5124834 C109322 C2903765 \
         --output lib/lcsc --project-relative
 
+TPS63070RNMR (C109322): the datasheet has VOUT on pins 7 and 8 and VIN on 12 and 13. The LCSC symbol
+lists only 7 and 12, and the LCSC footprint draws pads 8 and 13 as extra pads numbered 7 and 12, so
+both pins are connected. When this footprint is swapped (e.g. for a KiCad standard VQFN-15), add pins
+8 (5V_SYS) and 13 (VSYS_IN) in circuit.py.
+
 Teensy 4.1 pinout (PJRC card, top view, USB at the top):
     left row,  top to bottom: GND, 0..12, 3.3V, 24..32
     right row, top to bottom: VIN, GND, 3.3V, 23..13, GND, 41..33

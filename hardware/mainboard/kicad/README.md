@@ -203,6 +203,15 @@ automatisch weg). Das ist kosmetisch und wird beim Review bereinigt.
    - A5: Kelvin-Abgriff am Shunt.
 
    Die B-Punkte nach Aufwand.
+
+   In derselben Runde gehen die Punkte aus `../review_netlist_2026-10-21.md` mit:
+   - TPS63070 FB2 (Pin 6) offen statt an GND.
+   - E22 NRST (Pin 1) über 10 k an 3V3_RF, zusätzlich an einen freien Teensy-Pin (Review B9 nennt Pin 31).
+   - Am Bestelltag prüfen, dass die LCSC-Nummer C1850418 wirklich ein TDK-InvenSense-Teil ist. LCSC
+     verlinkt ein Datenblatt der Marke Tokmas.
+
+   Die RESV-Belegung des ICM-42688-P ist gegen DS-000347 Tab. 9 bestätigt: Pin 7 „Connect to GND“,
+   Pins 2, 3, 10, 11 „No Connect or Connect to GND“, FSYNC an GND, wenn unbenutzt.
 1. In KiCad die dann noch offenen Verbindungen ziehen (heute drei, §5.4) und den Bestückungsdruck
    bereinigen. Danach `./make.sh drc`.
 2. Review mit dem Kollegen anhand von Schaltplan-PDF, `img/layers.pdf` und Design Guide (Tor 1 und 2 in

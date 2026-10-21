@@ -4,7 +4,7 @@ Die zentrale Übersicht über das Raketenprojekt: was es gibt, wo es liegt, wie 
 und was als Nächstes kommt. **Bei jedem Arbeitsschritt hier den Fortschritt und das
 Änderungsprotokoll nachtragen.**
 
-Stand: 2026-10-20
+Stand: 2026-10-21
 
 <img src="docs/img/model_rocket.png" width="260" align="right" alt="model_rocket.blend">
 
@@ -19,11 +19,11 @@ programmierter Flugcomputer (Teensy 4.1) mit Funk-Telemetrie zur Bodenstation.
 
 | Größe | Wert | Quelle |
 |---|---|---|
-| Rumpf | Ø 75 mm außen, 1000 mm lang (2× 0,5 m + Koppler) | `model_rocket.blend`, `Gewicht.csv` |
+| Rumpf | Klima-Rohr Ø 75 mm außen, **72,6 mm innen**, 120 g je 0,5 m; 1000 mm lang (2× 0,5 m + Kuppler 72,4/70,2 × 150 mm) | Bestellungen Klima/SRT 2025, `docs/BUILD.md` §1 |
 | Spitze | Ø 80 mm, 99 mm hoch, federgelagert, Gewindestange M2,5 | `rocket nose.blend` |
-| Motor | Estes E12 (24 mm) im 29→24-mm-Adapter. Schubkurven E12 und F35 liegen vor. | `TVC.blend`, MATLAB `6DOF_model` |
+| Motor | **TSP E12-0** (24 mm, 39 Ns, 28 g Treibstoff, 64 g, Brennschluss 3,55 s, ohne Ausstoßladung), 4 Stück vorhanden, im 29→24-mm-Adapter. Die E12-Schubkurve der Simulation ist diese TSP-Kurve; F35 liegt daneben. | SRT 28.04.2025, thrustcurve.org, `TVC.blend`, MATLAB `6DOF_model` |
 | Masse | 902 g geplant (2× E12, Landesystem 200 g) | `Gewicht.csv` |
-| TVC | Kardan mit 2× SG90, Servofenster Yaw 70–115°, Pitch 60–105° | `dual_tvc.blend`, `Control.cpp` |
+| TVC | Kardan mit 2× SG90 (Servofenster Yaw 70–115°, Pitch 60–105°). Ersatz bestellt: FrSky Xact W5652H (10 g, 3,7–8,4 V, Hall-Sensor, 15-Zahn-Abtrieb), Kardan muss dafür angepasst werden. | `dual_tvc.blend`, `Control.cpp`, `docs/Plan_2026-10-21.md` §2.2 |
 | Hebelarm TVC–Schwerpunkt | 0,30 m | `Config.h`, `TVC6DOF.m` |
 | Flugcomputer | Ring-Stack Ø 69 mm, 8 M2-Stangen, Ringe für Teensy, Sensorik, Akku und Roll | `flight_computer.blend` |
 | Akku | 2S LiPo 7,4 V | `flight_computer.blend` („Battery 7.4V“) |
@@ -35,7 +35,9 @@ programmierter Flugcomputer (Teensy 4.1) mit Funk-Telemetrie zur Bodenstation.
 |---|---|---|
 | Flug-Firmware | `spacecode/` (dieses Repo) | PlatformIO, Teensy 4.1. `src/` ist modular: main, Config, Sensors, KalmanZ, Control, SDLogger, Timing, Indicators. `examples/` enthält Test-Sketches als eigene PlatformIO-Umgebungen (Funk-Beacon, I²C-Scan, Pyro-MOSFET). Die alten Monolithe (`sketches/`) sind seit dem 20.10.2026 nur noch in der Git-Historie (bis Commit `3b152c9`). Doku: `spacecode/README.md`. |
 | Bodenstation | `groundcode/` | Eigenes Repo (`git.rwth-aachen.de:jan_philipp.munsch/space`), hier per `.gitignore` ausgeklammert. Arduino Nano mit HC-12-Empfänger, MPU6050-Test, Fan-ESC-Test. |
-| Mainboard | `hardware/mainboard/` | Spezifikation rev A, Umriss-DXF, Platzierungsplan |
+| Mainboard | `hardware/mainboard/` | Spezifikation rev A, Umriss-DXF, Platzierungsplan. Review und Vorschläge für rev B: `docs/Plan_2026-10-21.md` §2 |
+| Baudokumentation | `docs/BUILD.md` | Inventar (Bestellungen, Elektronik, Drucke), Mechanik, Verdrahtung as-built, Software-Stand, Tests, Bautagebuch, Regeln. Angelegt 21.10.2026, viele `[?]` |
+| Planung 21.10.2026 | `docs/Plan_2026-10-21.md` | Platinen-Review mit Kosten, Portierung der Simulation nach Python, Baudokumentation, offene Fragen |
 | Elektronik-Notizen | `eLab/` (lokal, per `.gitignore` ausgeklammert) | OneNote-Abschnitt (HC-12-Modul, 14.10.2025) |
 | Simulation | lokal, MATLAB-Projekt `6DOF_model` (nicht im Repo) | Simulink-6DOF mit Monte-Carlo (`TVC6DOF.m`), PID-Suche (`pid_tuner.m`), Servo-Systemidentifikation, Schubkurven E12/F35 |
 | Simulation (Vorlage) | lokal, MATLAB-Projekt `BPS_TVC` (nicht im Repo) | MathWorks-Beispiel „simpleTVCRocketModel“ |
@@ -86,7 +88,7 @@ Das ist beim Einlesen aufgefallen. Was die Aufräumrunde vom 20.10.2026 davon er
 ## 6. Nächste Schritte
 
 1. KiCad installieren und ein Projekt `hardware/mainboard/kicad/` anlegen. `mainboard_outline.dxf` als Edge.Cuts importieren.
-2. Die offenen Fragen aus `hardware/mainboard/README.md` §9 klären, vor allem Rohr-Innendurchmesser, Länge der Avionik-Sektion, IMU-Bus und die Lage der TVC-Servoachsen zum Schlitten.
+2. Die offenen Fragen aus `hardware/mainboard/README.md` §9 klären: Länge der Avionik-Sektion, IMU-Bus und die Lage der TVC-Servoachsen zum Schlitten. Der Rohr-Innendurchmesser ist seit dem 21.10.2026 bekannt (72,6 mm). Dazu die Fragen in `docs/Plan_2026-10-21.md` §6.
 3. Schaltplan nach der Spezifikation zeichnen, Review, dann Layout und Bestellung bei JLCPCB mit SMD-Bestückung.
 4. Parallel in der Firmware: Pinbelegung in `Config.h` übernehmen, IMU auf SPI1 umstellen, Flugzustandsautomat und Pyro-Logik mit Arming.
 5. Befunde 1–4 aus §5 angehen, bevor das erste Mal mit aktiver Regelung geflogen wird.
@@ -100,3 +102,4 @@ Das ist beim Einlesen aufgefallen. Was die Aufräumrunde vom 20.10.2026 davon er
 | 2025-10-12 bis 31 | Git-Repo angelegt, Firmware modularisiert, Kalman, SD-Logger, HC-12-Test, Regler. `flight_computer.blend` überarbeitet. |
 | 2026-10-15 | `groundcode/` als eigenes Repo ausgeklammert. Projektdatei angelegt. Mainboard rev A spezifiziert (`hardware/mainboard/`), erst rund, dann als Längs-Schlitten neu ausgelegt. Befund 3 korrigiert: Lage nur aus dem Gyro ist richtig. |
 | 2026-10-20 | Aufräumrunde für die Veröffentlichung. Repo: `README.md` angelegt, `eLab/` und die maschinenabhängige VS-Code-Datei aus dem Index genommen, PlatformIO-Platzhalter und die auskommentierten Monolithe in `sketches/` gelöscht. Firmware: `Main.ino` → `main.cpp` mit wiederhergestellter Flugschleife, alle Gewinne, Servo-Geometrie, Fenster und Gyro-Offsets in `Config.h`, Regler-Schnittstelle ohne doppelte Integration (`RollOutput`), Slack an den Logger, Gyro-Bit-Fix (Befund 9), CSV-Format-Fix (Befund 10), `lib_deps` auf die genutzten Bibliotheken gekürzt. Test-Sketches als Umgebungen unter `examples/` (`radio_beacon`, `i2c_scanner`, `pyro_mosfet_test`). Alle vier Umgebungen bauen warnungsfrei. Nicht am Gerät getestet. Danach: MIT-Lizenz, englisches `README.md` (deutsch als `README.de.md`), lokale Pfade aus dieser Datei entfernt, Repo auf GitHub öffentlich geschaltet. |
+| 2026-10-21 | Planungsrunde: `docs/Plan_2026-10-21.md` (Review Mainboard rev A, Bauteilalternativen ICM-42688-P / BMP390 / LoRa E22-400T22D, Kostenschätzung, Portierungsplan der Simulink-Simulation nach Python, Konzept Baudokumentation, Fragen). `docs/BUILD.md` angelegt mit dem Inventar aus den Bestellungen bei Klima (09.06. und 23.10.2025) und Space Rocket Technology (28.04.2025). Dabei geklärt: Rohr innen 72,6 mm, Motor ist der TSP E12-0 (4 Stück), die E12-Schubkurve der Simulation ist die TSP-Kurve. Jan: Funk wird LoRa, Servos FrSky W5652H bestellt. |

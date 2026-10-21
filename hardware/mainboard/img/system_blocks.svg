@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="560" viewBox="0 0 940 560" font-family="Helvetica,Arial,sans-serif">
+<defs><marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#333"/></marker><marker id="arrg" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#888"/></marker></defs>
+<rect width="100%" height="100%" fill="white"/>
+<text x="20" y="26" font-size="15" font-weight="bold" text-anchor="start" fill="#222">Mainboard rev B: Blockschaltbild</text>
+<text x="20" y="44" font-size="10" text-anchor="start" fill="#555">Alles auf einer Platine 54 × 120 mm; extern nur Akkus, Schalter, Servos, Motor, E-Matches, GPS und Antenne.</text>
+<rect x="360" y="190" width="220" height="180" rx="4" fill="#9fc0e0" stroke="#333" stroke-width="1.2"/>
+<text x="470.0" y="252.5" font-size="14" font-weight="bold" text-anchor="middle">Teensy 4.1</text>
+<text x="470.0" y="269.5" font-size="10" text-anchor="middle" fill="#222">i.MX RT1062, 600 MHz</text>
+<text x="470.0" y="282.5" font-size="10" text-anchor="middle" fill="#222">microSD (SDIO), USB</text>
+<text x="470.0" y="295.5" font-size="10" text-anchor="middle" fill="#222">W25Q128 Flash (LittleFS)</text>
+<text x="470.0" y="308.5" font-size="10" text-anchor="middle" fill="#222">100-Hz-Flugschleife</text>
+<text x="470.0" y="321.5" font-size="10" text-anchor="middle" fill="#222">Watchdog, Zustandsspeicher</text>
+<rect x="30" y="80" width="150" height="70" rx="4" fill="#f4d6a0" stroke="#333" stroke-width="1.2"/>
+<text x="105.0" y="106.0" font-size="12" font-weight="bold" text-anchor="middle">1S LiPo</text>
+<text x="105.0" y="121.0" font-size="10" text-anchor="middle" fill="#222">3,0–4,2 V, 450–600 mAh</text>
+<text x="105.0" y="134.0" font-size="10" text-anchor="middle" fill="#222">JST-PH</text>
+<rect x="30" y="170" width="150" height="70" rx="4" fill="#f6c4c4" stroke="#333" stroke-width="1.2"/>
+<text x="105.0" y="196.0" font-size="12" font-weight="bold" text-anchor="middle">2S LiPo</text>
+<text x="105.0" y="211.0" font-size="10" text-anchor="middle" fill="#222">6,0–8,4 V, 450–850 mAh</text>
+<text x="105.0" y="224.0" font-size="10" text-anchor="middle" fill="#222">XT30</text>
+<rect x="30" y="270" width="150" height="60" rx="4" fill="#eee" stroke="#333" stroke-width="1.2"/>
+<text x="105.0" y="291.0" font-size="12" font-weight="bold" text-anchor="middle">Hauptschalter</text>
+<text x="105.0" y="306.0" font-size="10" text-anchor="middle" fill="#222">zweipolig, J_SW</text>
+<text x="105.0" y="319.0" font-size="10" text-anchor="middle" fill="#222">JP1/JP2 am Tisch</text>
+<rect x="30" y="350" width="150" height="60" rx="4" fill="#f6c4c4" stroke="#333" stroke-width="1.2"/>
+<text x="105.0" y="371.0" font-size="12" font-weight="bold" text-anchor="middle">Arming</text>
+<text x="105.0" y="386.0" font-size="10" text-anchor="middle" fill="#222">Schalter J_ARM</text>
+<text x="105.0" y="399.0" font-size="10" text-anchor="middle" fill="#222">ARM_SENSE → Pin 24</text>
+<rect x="210" y="80" width="120" height="70" rx="4" fill="#f4d6a0" stroke="#333" stroke-width="1.2"/>
+<text x="270.0" y="106.0" font-size="12" font-weight="bold" text-anchor="middle">TPS63070</text>
+<text x="270.0" y="121.0" font-size="10" text-anchor="middle" fill="#222">Buck-Boost 5 V / 2 A</text>
+<text x="270.0" y="134.0" font-size="10" text-anchor="middle" fill="#222">5V_SYS</text>
+<rect x="210" y="170" width="120" height="70" rx="4" fill="#f6c4c4" stroke="#333" stroke-width="1.2"/>
+<text x="270.0" y="196.0" font-size="12" font-weight="bold" text-anchor="middle">INA219 + 20 mΩ</text>
+<text x="270.0" y="211.0" font-size="10" text-anchor="middle" fill="#222">Strom, Spannung 2S</text>
+<text x="270.0" y="224.0" font-size="10" text-anchor="middle" fill="#222">I²C 0x40</text>
+<rect x="210" y="260" width="120" height="60" rx="4" fill="#f6c4c4" stroke="#333" stroke-width="1.2"/>
+<text x="270.0" y="281.0" font-size="12" font-weight="bold" text-anchor="middle">TPS563201</text>
+<text x="270.0" y="296.0" font-size="10" text-anchor="middle" fill="#222">Buck 5 V / 3 A</text>
+<text x="270.0" y="309.0" font-size="10" text-anchor="middle" fill="#222">5V_SERVO</text>
+<rect x="210" y="340" width="120" height="60" rx="4" fill="#f4d6a0" stroke="#333" stroke-width="1.2"/>
+<text x="270.0" y="361.0" font-size="12" font-weight="bold" text-anchor="middle">AP2112K</text>
+<text x="270.0" y="376.0" font-size="10" text-anchor="middle" fill="#222">LDO 3,3 V / 0,6 A</text>
+<text x="270.0" y="389.0" font-size="10" text-anchor="middle" fill="#222">3V3_RF</text>
+<path d="M180,115 L210,115" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
+<path d="M180,205 L210,205" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
+<path d="M270,150 L270,160" fill="none" stroke="#888" stroke-width="1.4"/>
+<path d="M330,115 L360,115 L360,190" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
+<text x="345" y="108" font-size="9" text-anchor="start" fill="#444">5V_SYS → VIN</text>
+<path d="M270,240 L270,260" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
+<path d="M330,290 L348,290 L348,470 L380,470" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
+<path d="M330,205 L348,205 L348,290" fill="none" stroke="#333" stroke-width="1.4"/>
+<text x="300" y="332" font-size="8" text-anchor="start" fill="#444">VSERVO (Akku direkt)</text>
+<path d="M270,150 L195,150 L195,370 L210,370" fill="none" stroke="#888" stroke-width="1.4" marker-end="url(#arrg)"/>
+<rect x="640" y="80" width="150" height="70" rx="4" fill="#c9e4c5" stroke="#333" stroke-width="1.2"/>
+<text x="715.0" y="106.0" font-size="12" font-weight="bold" text-anchor="middle">ICM-42688-P</text>
+<text x="715.0" y="121.0" font-size="10" text-anchor="middle" fill="#222">IMU auf der Rollachse</text>
+<text x="715.0" y="134.0" font-size="10" text-anchor="middle" fill="#222">SPI1 7 MHz, INT Pin 4</text>
+<rect x="640" y="170" width="150" height="60" rx="4" fill="#c9e4c5" stroke="#333" stroke-width="1.2"/>
+<text x="715.0" y="191.0" font-size="12" font-weight="bold" text-anchor="middle">BMP390</text>
+<text x="715.0" y="206.0" font-size="10" text-anchor="middle" fill="#222">Barometer, I²C 0x77</text>
+<text x="715.0" y="219.0" font-size="10" text-anchor="middle" fill="#222">unter Schaum</text>
+<rect x="640" y="250" width="150" height="60" rx="4" fill="#c9e4c5" stroke="#333" stroke-width="1.2"/>
+<text x="715.0" y="271.0" font-size="12" font-weight="bold" text-anchor="middle">Qwiic / J_EXP</text>
+<text x="715.0" y="286.0" font-size="10" text-anchor="middle" fill="#222">I²C-Erweiterung</text>
+<text x="715.0" y="299.0" font-size="10" text-anchor="middle" fill="#222">11 freie Pins</text>
+<path d="M580,115 L640,115" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
+<text x="610" y="108" font-size="8" text-anchor="middle" fill="#444">SPI1</text>
+<path d="M580,200 L640,200" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
+<text x="610" y="193" font-size="8" text-anchor="middle" fill="#444">I²C0</text>
+<path d="M610,200 L610,280 L640,280" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
+<rect x="640" y="395" width="150" height="70" rx="4" fill="#cfe0f5" stroke="#333" stroke-width="1.2"/>
+<text x="715.0" y="414.5" font-size="12" font-weight="bold" text-anchor="middle">LoRa E22-400T22S</text>
+<text x="715.0" y="429.5" font-size="10" text-anchor="middle" fill="#222">SX1268, 433 MHz, 22 dBm</text>
+<text x="715.0" y="442.5" font-size="10" text-anchor="middle" fill="#222">Serial8, M0/M1/AUX, 3V3_RF</text>
+<text x="715.0" y="455.5" font-size="10" text-anchor="middle" fill="#222">IPEX → Antenne in der Spitze</text>
+<rect x="820" y="395" width="100" height="70" rx="4" fill="#cfe0f5" stroke="#333" stroke-width="1.2"/>
+<text x="870.0" y="414.5" font-size="12" font-weight="bold" text-anchor="middle">GPS-Modul</text>
+<text x="870.0" y="429.5" font-size="10" text-anchor="middle" fill="#222">u-blox M9/M10, 3V3_RF</text>
+<text x="870.0" y="442.5" font-size="10" text-anchor="middle" fill="#222">in der Spitze</text>
+<text x="870.0" y="455.5" font-size="10" text-anchor="middle" fill="#222">Serial1, J_GPS</text>
+<path d="M560,370 L560,430 L640,430" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
+<text x="600" y="423" font-size="8" text-anchor="middle" fill="#444">UART8</text>
+<path d="M560,430 L560,500 L870,500 L870,465" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
+<text x="715" y="494" font-size="8" text-anchor="middle" fill="#444">UART1 über J_GPS</text>
+<rect x="380" y="440" width="110" height="60" rx="4" fill="#f6c4c4" stroke="#333" stroke-width="1.2"/>
+<text x="435.0" y="461.0" font-size="12" font-weight="bold" text-anchor="middle">2× W5652H</text>
+<text x="435.0" y="476.0" font-size="10" text-anchor="middle" fill="#222">TVC-Servos</text>
+<text x="435.0" y="489.0" font-size="10" text-anchor="middle" fill="#222">an VSERVO (8,4 V)</text>
+<rect x="500" y="440" width="110" height="60" rx="4" fill="#f6c4c4" stroke="#333" stroke-width="1.2"/>
+<text x="555.0" y="461.0" font-size="12" font-weight="bold" text-anchor="middle">DRV8833</text>
+<text x="555.0" y="476.0" font-size="10" text-anchor="middle" fill="#222">Rollmotor</text>
+<text x="555.0" y="489.0" font-size="10" text-anchor="middle" fill="#222">an 5V_SERVO</text>
+<path d="M420,370 L420,440" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
+<text x="432" y="410" font-size="8" text-anchor="start" fill="#444">PWM 28/29</text>
+<path d="M540,370 L540,440" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
+<text x="548" y="410" font-size="8" text-anchor="start" fill="#444">PWM 2/3</text>
+<rect x="640" y="320" width="150" height="60" rx="4" fill="#f6c4c4" stroke="#333" stroke-width="1.2"/>
+<text x="715.0" y="341.0" font-size="12" font-weight="bold" text-anchor="middle">2× Pyro-Kanal</text>
+<text x="715.0" y="356.0" font-size="10" text-anchor="middle" fill="#222">AO3400A low-side, TVS</text>
+<text x="715.0" y="369.0" font-size="10" text-anchor="middle" fill="#222">Durchgang → ADC 20/21</text>
+<path d="M580,340 L640,340" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
+<text x="610" y="333" font-size="8" text-anchor="middle" fill="#444">22 / 23</text>
+<path d="M180,380 L195,380 L195,520 L715,520 L715,380" fill="none" stroke="#b03a2e" stroke-width="1.4" marker-end="url(#arr)"/>
+<text x="455" y="514" font-size="8" text-anchor="middle" fill="#b03a2e">VBAT_ARMED nur mit Arming-Schalter</text>
+<rect x="820" y="80" width="100" height="70" rx="4" fill="#e3d9f2" stroke="#333" stroke-width="1.2"/>
+<text x="870.0" y="99.5" font-size="12" font-weight="bold" text-anchor="middle">Signale</text>
+<text x="870.0" y="114.5" font-size="10" text-anchor="middle" fill="#222">2× WS2812B</text>
+<text x="870.0" y="127.5" font-size="10" text-anchor="middle" fill="#222">Summer</text>
+<text x="870.0" y="140.5" font-size="10" text-anchor="middle" fill="#222">Reset-Taster</text>
+<path d="M470,190 L470,60 L870,60 L870,80" fill="none" stroke="#888" stroke-width="1.4" marker-end="url(#arrg)"/>
+<text x="680" y="54" font-size="8" text-anchor="middle" fill="#888">Pins 5, 6, 13</text>
+<rect x="820" y="250" width="100" height="60" rx="4" fill="#e3d9f2" stroke="#333" stroke-width="1.2"/>
+<text x="870.0" y="271.0" font-size="12" font-weight="bold" text-anchor="middle">J_CAM, J_LED</text>
+<text x="870.0" y="286.0" font-size="10" text-anchor="middle" fill="#222">Kamera-Auslöser</text>
+<text x="870.0" y="299.0" font-size="10" text-anchor="middle" fill="#222">externe LEDs</text>
+<text x="30" y="432" font-size="10" font-weight="bold" text-anchor="start" fill="#222">Farben</text>
+<rect x="30" y="440" width="14" height="12" rx="0" fill="#f4d6a0" stroke="#777" stroke-width="1"/>
+<text x="50" y="450" font-size="9" text-anchor="start" fill="#222">1S-Pfad: Elektronik</text>
+<rect x="30" y="458" width="14" height="12" rx="0" fill="#f6c4c4" stroke="#777" stroke-width="1"/>
+<text x="50" y="468" font-size="9" text-anchor="start" fill="#222">2S-Pfad: Aktoren, Pyro</text>
+<rect x="30" y="476" width="14" height="12" rx="0" fill="#c9e4c5" stroke="#777" stroke-width="1"/>
+<text x="50" y="486" font-size="9" text-anchor="start" fill="#222">Sensorik</text>
+<rect x="30" y="494" width="14" height="12" rx="0" fill="#cfe0f5" stroke="#777" stroke-width="1"/>
+<text x="50" y="504" font-size="9" text-anchor="start" fill="#222">Funk, GPS</text>
+<rect x="30" y="512" width="14" height="12" rx="0" fill="#e3d9f2" stroke="#777" stroke-width="1"/>
+<text x="50" y="522" font-size="9" text-anchor="start" fill="#222">Anzeige, Erweiterung</text>
+</svg>

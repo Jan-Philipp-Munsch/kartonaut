@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="470" viewBox="0 0 940 470" font-family="Helvetica,Arial,sans-serif">
+<defs><marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#333"/></marker><marker id="arrg" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#888"/></marker></defs>
+<rect width="100%" height="100%" fill="white"/>
+<text x="20" y="26" font-size="15" font-weight="bold" text-anchor="start" fill="#222">Einbau: Längsschnitt durch die Avionik-Sektion (Kuppler 150 mm, innen 70,2 mm)</text>
+<text x="20" y="44" font-size="10" text-anchor="start" fill="#555">Blick von der Seite, Platinenebene senkrecht zur Zeichenebene. Links TVC-Ende (v = 0), rechts Spitze. Maße in mm.</text>
+<rect x="25.0" y="97.5" width="735.0" height="5.04" rx="0" fill="#e9e1d2" stroke="#bbb" stroke-width="1"/>
+<rect x="25.0" y="407.46000000000004" width="735.0" height="5.04" rx="0" fill="#e9e1d2" stroke="#bbb" stroke-width="1"/>
+<text x="655.0" y="89.1" font-size="9" text-anchor="start" fill="#999">Rohr 75 / 72,6</text>
+<rect x="67.0" y="102.95999999999998" width="630.0" height="4.620000000000001" rx="0" fill="#c8b89a" stroke="#8a7a5a" stroke-width="1"/>
+<rect x="67.0" y="402.42" width="630.0" height="4.620000000000001" rx="0" fill="#c8b89a" stroke="#8a7a5a" stroke-width="1"/>
+<text x="151.0" y="423.42" font-size="9" text-anchor="start" fill="#6a5a3a">Kuppler 72,4 / 70,2 × 150</text>
+<rect x="67.0" y="110.1" width="63.0" height="289.8" rx="0" fill="#d9d9d9" stroke="#777" stroke-width="1"/>
+<text x="98.5" y="318.0" font-size="8" text-anchor="middle" fill="#444" transform="rotate(-90 98.5 318.0)">Endring</text>
+<rect x="634.0" y="110.1" width="63.0" height="289.8" rx="0" fill="#d9d9d9" stroke="#777" stroke-width="1"/>
+<text x="665.5" y="318.0" font-size="8" text-anchor="middle" fill="#444" transform="rotate(-90 665.5 318.0)">Endring</text>
+<path d="M67.0,131.1 L697.0,131.1" fill="none" stroke="#222" stroke-width="2"/>
+<path d="M67.0,225.6 L697.0,225.6" fill="none" stroke="#222" stroke-width="2"/>
+<path d="M67.0,284.4 L697.0,284.4" fill="none" stroke="#222" stroke-width="2"/>
+<path d="M67.0,378.9 L697.0,378.9" fill="none" stroke="#222" stroke-width="2"/>
+<text x="625.6" y="122.69999999999999" font-size="8" text-anchor="end" fill="#222">8× M2-Stange</text>
+<rect x="130.0" y="251.64" width="504.0" height="6.720000000000001" rx="0" fill="#2f6b3a" stroke="#1d4a26" stroke-width="1"/>
+<text x="382.0" y="268.44" font-size="9" text-anchor="middle" fill="#1d4a26">Platine 54 × 120 × 1,6</text>
+<rect x="138.4" y="269.7" width="487.20000000000005" height="42.0" rx="0" fill="#eee" stroke="#999" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="382.0" y="322.2" font-size="8" text-anchor="middle" fill="#777">gedruckter Träger, zwei Fächer mit Klettband, 4× M3 zur Platine</text>
+<rect x="163.6" y="273.9" width="235.20000000000002" height="33.6" rx="0" fill="#f6c4c4" stroke="#a55" stroke-width="1"/>
+<text x="281.20000000000005" y="292.8" font-size="8" text-anchor="middle" fill="#222">2S LiPo 56 × 25,5 × 8</text>
+<rect x="415.6" y="273.9" width="210.0" height="29.400000000000002" rx="0" fill="#f4d6a0" stroke="#a85" stroke-width="1"/>
+<text x="520.6" y="290.7" font-size="8" text-anchor="middle" fill="#222">1S LiPo ca. 50 × 30 × 7</text>
+<rect x="256.0" y="198.3" width="256.2" height="53.339999999999996" rx="0" fill="#9fc0e0" stroke="#1d3d63" stroke-width="1"/>
+<text x="314.8" y="213.0" font-size="9" font-weight="bold" text-anchor="middle" fill="#222">Teensy 4.1</text>
+<text x="314.8" y="223.5" font-size="8" text-anchor="middle" fill="#222">auf Buchsenleisten</text>
+<text x="453.40000000000003" y="213.0" font-size="8" text-anchor="middle" fill="#222">USB →</text>
+<text x="272.8" y="242.4" font-size="8" text-anchor="middle" fill="#222">SD</text>
+<rect x="378.1" y="239.04" width="12" height="6" rx="0" fill="#c0392b" stroke="#333" stroke-width="1"/>
+<text x="384.1" y="183.6" font-size="8" text-anchor="middle" fill="#c0392b">IMU auf der Rollachse, v = 60,5</text>
+<path d="M384.1,189.89999999999998 L384.1,234.0" fill="none" stroke="#c0392b" stroke-width="0.8" stroke-dasharray="2 2"/>
+<rect x="529.0" y="236.1" width="100.80000000000001" height="15.540000000000001" rx="0" fill="#cfe0f5" stroke="#36c" stroke-width="1"/>
+<text x="579.4000000000001" y="247.44" font-size="8" text-anchor="middle" fill="#222">LoRa E22</text>
+<rect x="134.2" y="225.6" width="84.0" height="26.040000000000003" rx="0" fill="#ddd" stroke="#777" stroke-width="1"/>
+<text x="176.2" y="240.3" font-size="8" text-anchor="middle" fill="#222">XT30, Servos</text>
+<text x="176.2" y="215.1" font-size="8" text-anchor="middle" fill="#555">Stecker axial</text>
+<path d="M629.8,240.3 L718.0,240.3 L823.0,204.6" fill="none" stroke="#36c" stroke-width="1.6" marker-end="url(#arr)"/>
+<text x="638.2" y="282.3" font-size="8" text-anchor="start" fill="#36c">Pigtail 10 cm → λ/4-Antenne (17 cm) in der Spitze</text>
+<rect x="449.2" y="238.2" width="42.0" height="12.600000000000001" rx="0" fill="#fff2a8" stroke="#c9a800" stroke-width="1" stroke-dasharray="2 2"/>
+<text x="470.2" y="166.8" font-size="8" text-anchor="middle" fill="#8a7000">BMP390 (rechter Streifen) unter Schaum</text>
+<path d="M470.2,173.1 L470.2,238.2" fill="none" stroke="#c9a800" stroke-width="0.8" stroke-dasharray="2 2"/>
+<circle cx="470.2" cy="105.47999999999999" r="3" fill="white" stroke="#c9a800" stroke-width="1.5"/>
+<circle cx="470.2" cy="404.52" r="3" fill="white" stroke="#c9a800" stroke-width="1.5"/>
+<text x="470.2" y="431.82000000000005" font-size="8" text-anchor="middle" fill="#8a7000">3–4 Druckausgleichsbohrungen Ø 2 mm auf dieser Höhe</text>
+<path d="M235.0,92.88 L550.0,92.88" fill="none" stroke="#c0392b" stroke-width="3"/>
+<text x="390.40000000000003" y="80.27999999999997" font-size="8" text-anchor="middle" fill="#c0392b">Luke in Kuppler und Rohr (USB, SD, Reset), v ≈ 25 bis 100</text>
+<text x="46.0" y="259" font-size="9" font-weight="bold" text-anchor="end" fill="#222">TVC</text>
+<text x="713.8000000000001" y="259" font-size="9" font-weight="bold" text-anchor="start" fill="#222">Spitze</text>
+<text x="20" y="455" font-size="9" text-anchor="start" fill="#444">Die Avionik-Sektion ist gegen den Fallschirmraum dicht (Ausstoßdruck). Alles sitzt steif: keine Gummipuffer, Vibration wird digital gefiltert.</text>
+</svg>

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="330" viewBox="0 0 940 330" font-family="Helvetica,Arial,sans-serif">
+<defs><marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#333"/></marker><marker id="arrg" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#888"/></marker></defs>
+<rect width="100%" height="100%" fill="white"/>
+<text x="20" y="26" font-size="15" font-weight="bold" text-anchor="start" fill="#222">Weg zur Platine: fünf Tore bis zur Inbetriebnahme</text>
+<rect x="20" y="60" width="140" height="110" rx="4" fill="#eee" stroke="#333" stroke-width="1.2"/>
+<text x="90.0" y="94.0" font-size="12" font-weight="bold" text-anchor="middle">0  Jetzt</text>
+<text x="90.0" y="109.0" font-size="9.5" text-anchor="middle" fill="#222">Vorab bestellen:</text>
+<text x="90.0" y="121.5" font-size="9.5" text-anchor="middle" fill="#222">ICM-42688-Breakout,</text>
+<text x="90.0" y="134.0" font-size="9.5" text-anchor="middle" fill="#222">1S-Akku, LoRa DIP,</text>
+<text x="90.0" y="146.5" font-size="9.5" text-anchor="middle" fill="#222">Stecker, Pigtail</text>
+<path d="M160,115 L172,115" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
+<rect x="172" y="60" width="140" height="110" rx="4" fill="#c9e4c5" stroke="#333" stroke-width="1.2"/>
+<text x="242.0" y="100.2" font-size="12" font-weight="bold" text-anchor="middle">1  Schaltplan</text>
+<text x="242.0" y="115.2" font-size="9.5" text-anchor="middle" fill="#222">KiCad 9 installieren</text>
+<text x="242.0" y="127.8" font-size="9.5" text-anchor="middle" fill="#222">Schaltplan nach README</text>
+<text x="242.0" y="140.2" font-size="9.5" text-anchor="middle" fill="#222">ERC, Review (Kollege)</text>
+<path d="M312,115 L324,115" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
+<rect x="324" y="60" width="140" height="110" rx="4" fill="#c9e4c5" stroke="#333" stroke-width="1.2"/>
+<text x="394.0" y="94.0" font-size="12" font-weight="bold" text-anchor="middle">2  Layout</text>
+<text x="394.0" y="109.0" font-size="9.5" text-anchor="middle" fill="#222">Edge.Cuts aus DXF</text>
+<text x="394.0" y="121.5" font-size="9.5" text-anchor="middle" fill="#222">Zonen nach Plan</text>
+<text x="394.0" y="134.0" font-size="9.5" text-anchor="middle" fill="#222">DRC (JLC-Regeln), 3D</text>
+<text x="394.0" y="146.5" font-size="9.5" text-anchor="middle" fill="#222">1:1-Ausdruck im Kuppler</text>
+<path d="M464,115 L476,115" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
+<rect x="476" y="60" width="140" height="110" rx="4" fill="#f4d6a0" stroke="#333" stroke-width="1.2"/>
+<text x="546.0" y="94.0" font-size="12" font-weight="bold" text-anchor="middle">3  Bestellung</text>
+<text x="546.0" y="109.0" font-size="9.5" text-anchor="middle" fill="#222">Gerber, BOM, CPL</text>
+<text x="546.0" y="121.5" font-size="9.5" text-anchor="middle" fill="#222">JLCPCB 4 Lagen, ENIG</text>
+<text x="546.0" y="134.0" font-size="9.5" text-anchor="middle" fill="#222">5 Stück, 2 bestückt</text>
+<text x="546.0" y="146.5" font-size="9.5" text-anchor="middle" fill="#222">Teile-Check am Tag</text>
+<path d="M616,115 L628,115" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
+<rect x="628" y="60" width="140" height="110" rx="4" fill="#f4d6a0" stroke="#333" stroke-width="1.2"/>
+<text x="698.0" y="100.2" font-size="12" font-weight="bold" text-anchor="middle">4  Aufbau</text>
+<text x="698.0" y="115.2" font-size="9.5" text-anchor="middle" fill="#222">THT selbst löten</text>
+<text x="698.0" y="127.8" font-size="9.5" text-anchor="middle" fill="#222">Sichtprüfung, Kurzschluss</text>
+<text x="698.0" y="140.2" font-size="9.5" text-anchor="middle" fill="#222">Firmware rev B flashen</text>
+<path d="M768,115 L780,115" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
+<rect x="780" y="60" width="140" height="110" rx="4" fill="#f6c4c4" stroke="#333" stroke-width="1.2"/>
+<text x="850.0" y="94.0" font-size="12" font-weight="bold" text-anchor="middle">5  Inbetrieb.</text>
+<text x="850.0" y="109.0" font-size="9.5" text-anchor="middle" fill="#222">Testplan §9:</text>
+<text x="850.0" y="121.5" font-size="9.5" text-anchor="middle" fill="#222">Labornetzteil, I²C/SPI,</text>
+<text x="850.0" y="134.0" font-size="9.5" text-anchor="middle" fill="#222">Servos ohne Neustart,</text>
+<text x="850.0" y="146.5" font-size="9.5" text-anchor="middle" fill="#222">Pyro mit Lämpchen, LoRa</text>
+<text x="20" y="200" font-size="10" font-weight="bold" text-anchor="start" fill="#222">Tore (nicht weiter ohne):</text>
+<text x="20" y="220" font-size="9.5" text-anchor="start" fill="#333">1 → 2: Schaltplan ohne ERC-Fehler, jede Schiene mit Testpunkt und Sicherung, Review-Punkte des Kollegen eingearbeitet.</text>
+<text x="20" y="238" font-size="9.5" text-anchor="start" fill="#333">2 → 3: DRC sauber, alle Hüllen in outline.py, Papierausdruck passt in den Kuppler, Teile-Verfügbarkeit bei JLC am Bestelltag geprüft.</text>
+<text x="20" y="256" font-size="9.5" text-anchor="start" fill="#333">3 → 4: Lieferung geprüft (Lagen, Maße, Bohrungen, Bestückungsfotos), keine Brücken unter LGA-Gehäusen.</text>
+<text x="20" y="274" font-size="9.5" text-anchor="start" fill="#333">4 → 5: Beide Versorgungen am Labornetzteil mit Strombegrenzung, erst dann Teensy stecken.</text>
+<text x="20" y="292" font-size="9.5" text-anchor="start" fill="#333">Dauer: Schaltplan und Layout je nach Abenden 2 bis 4 Wochen, JLCPCB mit Bestückung und Versand 2 bis 3 Wochen.</text>
+</svg>

@@ -1,0 +1,278 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="700" viewBox="0 0 940 700" font-family="Helvetica,Arial,sans-serif">
+<defs><marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#333"/></marker><marker id="arrg" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#888"/></marker></defs>
+<rect width="100%" height="100%" fill="white"/>
+<text x="20" y="26" font-size="15" font-weight="bold" text-anchor="start" fill="#222">Teensy 4.1: Pinbelegung rev B (Draufsicht, USB oben)</text>
+<text x="20" y="44" font-size="10" text-anchor="start" fill="#555">★ neu gegenüber Config.h. Alle bisher genutzten Pins bleiben, wo sie sind. Freie Pins liegen auf J_EXP (2×7).</text>
+<rect x="400" y="70" width="140" height="600" rx="6" fill="#2e7d4f" stroke="#1b4d30" stroke-width="1"/>
+<rect x="445" y="62" width="50" height="22" rx="2" fill="#bbb" stroke="#777" stroke-width="1"/>
+<text x="470" y="77" font-size="9" text-anchor="middle" fill="#222">USB</text>
+<rect x="440" y="640" width="60" height="26" rx="2" fill="#444" stroke="#222" stroke-width="1"/>
+<text x="470" y="657" font-size="9" text-anchor="middle" fill="white">microSD</text>
+<text x="470" y="370" font-size="14" font-weight="bold" text-anchor="middle" fill="white" transform="rotate(-90 470 370)">Teensy 4.1</text>
+<text x="490" y="370" font-size="9" text-anchor="middle" fill="#dfe" transform="rotate(-90 490 370)">(Buchsenleisten 2× 1×24)</text>
+<circle cx="410" cy="90.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<text x="392" y="94.0" font-size="9" text-anchor="end" fill="#555">GND</text>
+<circle cx="530" cy="90.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<text x="548" y="94.0" font-size="9" text-anchor="start" fill="#555">VIN</text>
+<circle cx="410" cy="114.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="104.0" width="320" height="20" rx="3" fill="#cfe0f5" stroke="#999" stroke-width="1"/>
+<text x="70" y="118.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">0</text>
+<text x="95" y="118.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">RX1 ★</text>
+<text x="200" y="118.0" font-size="9" text-anchor="start" fill="#333">GPS TX (J_GPS)</text>
+<path d="M380,114.0 L405,114.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="114.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<text x="548" y="118.0" font-size="9" text-anchor="start" fill="#555">GND</text>
+<circle cx="410" cy="138.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="128.0" width="320" height="20" rx="3" fill="#cfe0f5" stroke="#999" stroke-width="1"/>
+<text x="70" y="142.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">1</text>
+<text x="95" y="142.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">TX1 ★</text>
+<text x="200" y="142.0" font-size="9" text-anchor="start" fill="#333">GPS RX (J_GPS)</text>
+<path d="M380,138.0 L405,138.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="138.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<text x="548" y="142.0" font-size="9" text-anchor="start" fill="#555">3V3</text>
+<circle cx="410" cy="162.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="152.0" width="320" height="20" rx="3" fill="#f6c4c4" stroke="#999" stroke-width="1"/>
+<text x="70" y="166.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">2</text>
+<text x="95" y="166.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">MOT_IN1</text>
+<text x="200" y="166.0" font-size="9" text-anchor="start" fill="#333">DRV8833 AIN1 = BIN1</text>
+<path d="M380,162.0 L405,162.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="162.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="152.0" width="350" height="20" rx="3" fill="#f6c4c4" stroke="#999" stroke-width="1"/>
+<text x="570" y="166.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">23</text>
+<text x="595" y="166.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">PYRO1_FIRE</text>
+<text x="720" y="166.0" font-size="9" text-anchor="start" fill="#333">Gate Q_P1</text>
+<path d="M535,162.0 L560,162.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="410" cy="186.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="176.0" width="320" height="20" rx="3" fill="#f6c4c4" stroke="#999" stroke-width="1"/>
+<text x="70" y="190.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">3</text>
+<text x="95" y="190.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">MOT_IN2</text>
+<text x="200" y="190.0" font-size="9" text-anchor="start" fill="#333">DRV8833 AIN2 = BIN2</text>
+<path d="M380,186.0 L405,186.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="186.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="176.0" width="350" height="20" rx="3" fill="#f6c4c4" stroke="#999" stroke-width="1"/>
+<text x="570" y="190.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">22</text>
+<text x="595" y="190.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">PYRO2_FIRE ★</text>
+<text x="720" y="190.0" font-size="9" text-anchor="start" fill="#333">Gate Q_P2</text>
+<path d="M535,186.0 L560,186.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="410" cy="210.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="200.0" width="320" height="20" rx="3" fill="#c9e4c5" stroke="#999" stroke-width="1"/>
+<text x="70" y="214.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">4</text>
+<text x="95" y="214.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">IMU_INT ★</text>
+<text x="200" y="214.0" font-size="9" text-anchor="start" fill="#333">ICM-42688-P INT1</text>
+<path d="M380,210.0 L405,210.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="210.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="200.0" width="350" height="20" rx="3" fill="#f6c4c4" stroke="#999" stroke-width="1"/>
+<text x="570" y="214.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">21</text>
+<text x="595" y="214.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">PYRO2_SENSE ★</text>
+<text x="720" y="214.0" font-size="9" text-anchor="start" fill="#333">Teiler Drain Pyro 2 (A7)</text>
+<path d="M535,210.0 L560,210.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="410" cy="234.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="224.0" width="320" height="20" rx="3" fill="#e3d9f2" stroke="#999" stroke-width="1"/>
+<text x="70" y="238.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">5</text>
+<text x="95" y="238.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">LED1</text>
+<text x="200" y="238.0" font-size="9" text-anchor="start" fill="#333">74AHCT1G125 → WS2812B</text>
+<path d="M380,234.0 L405,234.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="234.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="224.0" width="350" height="20" rx="3" fill="#f6c4c4" stroke="#999" stroke-width="1"/>
+<text x="570" y="238.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">20</text>
+<text x="595" y="238.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">PYRO1_SENSE ★</text>
+<text x="720" y="238.0" font-size="9" text-anchor="start" fill="#333">Teiler Drain Pyro 1 (A6)</text>
+<path d="M535,234.0 L560,234.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="410" cy="258.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="248.0" width="320" height="20" rx="3" fill="#e3d9f2" stroke="#999" stroke-width="1"/>
+<text x="70" y="262.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">6</text>
+<text x="95" y="262.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">LED2</text>
+<text x="200" y="262.0" font-size="9" text-anchor="start" fill="#333">74AHCT1G125 → WS2812B, J_LED</text>
+<path d="M380,258.0 L405,258.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="258.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="248.0" width="350" height="20" rx="3" fill="#c9e4c5" stroke="#999" stroke-width="1"/>
+<text x="570" y="262.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">19</text>
+<text x="595" y="262.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">SCL0</text>
+<text x="720" y="262.0" font-size="9" text-anchor="start" fill="#333">BMP390, INA219, J_QWIIC</text>
+<path d="M535,258.0 L560,258.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="410" cy="282.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="272.0" width="320" height="20" rx="3" fill="#e3d9f2" stroke="#999" stroke-width="1"/>
+<text x="70" y="286.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">7</text>
+<text x="95" y="286.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">CAM_TRIG ★</text>
+<text x="200" y="286.0" font-size="9" text-anchor="start" fill="#333">1 kΩ → J_CAM</text>
+<path d="M380,282.0 L405,282.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="282.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="272.0" width="350" height="20" rx="3" fill="#c9e4c5" stroke="#999" stroke-width="1"/>
+<text x="570" y="286.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">18</text>
+<text x="595" y="286.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">SDA0</text>
+<text x="720" y="286.0" font-size="9" text-anchor="start" fill="#333">BMP390, INA219, J_QWIIC</text>
+<path d="M535,282.0 L560,282.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="410" cy="306.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="296.0" width="320" height="20" rx="3" fill="#eee" stroke="#999" stroke-width="1"/>
+<text x="70" y="310.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">8</text>
+<text x="95" y="310.0" font-size="10" text-anchor="start" fill="#222">frei</text>
+<text x="200" y="310.0" font-size="9" text-anchor="start" fill="#333">J_EXP</text>
+<path d="M380,306.0 L405,306.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="306.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="296.0" width="350" height="20" rx="3" fill="#eee" stroke="#999" stroke-width="1"/>
+<text x="570" y="310.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">17</text>
+<text x="595" y="310.0" font-size="10" text-anchor="start" fill="#222">frei</text>
+<text x="720" y="310.0" font-size="9" text-anchor="start" fill="#333">J_EXP</text>
+<path d="M535,306.0 L560,306.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="410" cy="330.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="320.0" width="320" height="20" rx="3" fill="#f6c4c4" stroke="#999" stroke-width="1"/>
+<text x="70" y="334.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">9</text>
+<text x="95" y="334.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">SERVO_CHUTE</text>
+<text x="200" y="334.0" font-size="9" text-anchor="start" fill="#333">J_SERVO3 (5V_SERVO)</text>
+<path d="M380,330.0 L405,330.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="330.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="320.0" width="350" height="20" rx="3" fill="#eee" stroke="#999" stroke-width="1"/>
+<text x="570" y="334.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">16</text>
+<text x="595" y="334.0" font-size="10" text-anchor="start" fill="#222">frei</text>
+<text x="720" y="334.0" font-size="9" text-anchor="start" fill="#333">J_EXP</text>
+<path d="M535,330.0 L560,330.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="410" cy="354.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="344.0" width="320" height="20" rx="3" fill="#eee" stroke="#999" stroke-width="1"/>
+<text x="70" y="358.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">10</text>
+<text x="95" y="358.0" font-size="10" text-anchor="start" fill="#222">frei</text>
+<text x="200" y="358.0" font-size="9" text-anchor="start" fill="#333">J_EXP</text>
+<path d="M380,354.0 L405,354.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="354.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="344.0" width="350" height="20" rx="3" fill="#eee" stroke="#999" stroke-width="1"/>
+<text x="570" y="358.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">15</text>
+<text x="595" y="358.0" font-size="10" text-anchor="start" fill="#222">frei</text>
+<text x="720" y="358.0" font-size="9" text-anchor="start" fill="#333">J_EXP</text>
+<path d="M535,354.0 L560,354.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="410" cy="378.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="368.0" width="320" height="20" rx="3" fill="#eee" stroke="#999" stroke-width="1"/>
+<text x="70" y="382.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">11</text>
+<text x="95" y="382.0" font-size="10" text-anchor="start" fill="#222">frei</text>
+<text x="200" y="382.0" font-size="9" text-anchor="start" fill="#333">J_EXP</text>
+<path d="M380,378.0 L405,378.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="378.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="368.0" width="350" height="20" rx="3" fill="#eee" stroke="#999" stroke-width="1"/>
+<text x="570" y="382.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">14</text>
+<text x="595" y="382.0" font-size="10" text-anchor="start" fill="#222">frei</text>
+<text x="720" y="382.0" font-size="9" text-anchor="start" fill="#333">J_EXP</text>
+<path d="M535,378.0 L560,378.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="410" cy="402.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="392.0" width="320" height="20" rx="3" fill="#eee" stroke="#999" stroke-width="1"/>
+<text x="70" y="406.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">12</text>
+<text x="95" y="406.0" font-size="10" text-anchor="start" fill="#222">frei</text>
+<text x="200" y="406.0" font-size="9" text-anchor="start" fill="#333">J_EXP</text>
+<path d="M380,402.0 L405,402.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="402.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="392.0" width="350" height="20" rx="3" fill="#e3d9f2" stroke="#999" stroke-width="1"/>
+<text x="570" y="406.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">13</text>
+<text x="595" y="406.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">BUZZER</text>
+<text x="720" y="406.0" font-size="9" text-anchor="start" fill="#333">AO3400A → Summer</text>
+<path d="M535,402.0 L560,402.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="410" cy="426.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<text x="392" y="430.0" font-size="9" text-anchor="end" fill="#555">3V3</text>
+<circle cx="530" cy="426.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<text x="548" y="430.0" font-size="9" text-anchor="start" fill="#555">GND</text>
+<circle cx="410" cy="450.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="440.0" width="320" height="20" rx="3" fill="#f6c4c4" stroke="#999" stroke-width="1"/>
+<text x="70" y="454.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">24</text>
+<text x="95" y="454.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">ARM_SENSE ★</text>
+<text x="200" y="454.0" font-size="9" text-anchor="start" fill="#333">Teiler VBAT_ARMED (A10)</text>
+<path d="M380,450.0 L405,450.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="450.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="440.0" width="350" height="20" rx="3" fill="#f4d6a0" stroke="#999" stroke-width="1"/>
+<text x="570" y="454.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">41</text>
+<text x="595" y="454.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">VBAT1_SENSE ★</text>
+<text x="720" y="454.0" font-size="9" text-anchor="start" fill="#333">Teiler VSYS_IN 1S (A17)</text>
+<path d="M535,450.0 L560,450.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="410" cy="474.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="464.0" width="320" height="20" rx="3" fill="#eee" stroke="#999" stroke-width="1"/>
+<text x="70" y="478.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">25</text>
+<text x="95" y="478.0" font-size="10" text-anchor="start" fill="#222">frei</text>
+<text x="200" y="478.0" font-size="9" text-anchor="start" fill="#333">J_EXP</text>
+<path d="M380,474.0 L405,474.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="474.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="464.0" width="350" height="20" rx="3" fill="#f6c4c4" stroke="#999" stroke-width="1"/>
+<text x="570" y="478.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">40</text>
+<text x="595" y="478.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">VBAT2_SENSE ★</text>
+<text x="720" y="478.0" font-size="9" text-anchor="start" fill="#333">Teiler VBAT_PROT 2S (A16)</text>
+<path d="M535,474.0 L560,474.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="410" cy="498.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="488.0" width="320" height="20" rx="3" fill="#c9e4c5" stroke="#999" stroke-width="1"/>
+<text x="70" y="502.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">26</text>
+<text x="95" y="502.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">MOSI1 ★</text>
+<text x="200" y="502.0" font-size="9" text-anchor="start" fill="#333">ICM-42688-P SDI</text>
+<path d="M380,498.0 L405,498.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="498.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="488.0" width="350" height="20" rx="3" fill="#c9e4c5" stroke="#999" stroke-width="1"/>
+<text x="570" y="502.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">39</text>
+<text x="595" y="502.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">MISO1 ★</text>
+<text x="720" y="502.0" font-size="9" text-anchor="start" fill="#333">ICM-42688-P SDO</text>
+<path d="M535,498.0 L560,498.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="410" cy="522.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="512.0" width="320" height="20" rx="3" fill="#c9e4c5" stroke="#999" stroke-width="1"/>
+<text x="70" y="526.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">27</text>
+<text x="95" y="526.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">SCK1 ★</text>
+<text x="200" y="526.0" font-size="9" text-anchor="start" fill="#333">ICM-42688-P SCLK</text>
+<path d="M380,522.0 L405,522.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="522.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="512.0" width="350" height="20" rx="3" fill="#c9e4c5" stroke="#999" stroke-width="1"/>
+<text x="570" y="526.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">38</text>
+<text x="595" y="526.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">CS1 ★</text>
+<text x="720" y="526.0" font-size="9" text-anchor="start" fill="#333">ICM-42688-P CS</text>
+<path d="M535,522.0 L560,522.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="410" cy="546.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="536.0" width="320" height="20" rx="3" fill="#f6c4c4" stroke="#999" stroke-width="1"/>
+<text x="70" y="550.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">28</text>
+<text x="95" y="550.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">SERVO_YAW</text>
+<text x="200" y="550.0" font-size="9" text-anchor="start" fill="#333">J_SERVO1 (VSERVO)</text>
+<path d="M380,546.0 L405,546.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="546.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="536.0" width="350" height="20" rx="3" fill="#eee" stroke="#999" stroke-width="1"/>
+<text x="570" y="550.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">37</text>
+<text x="595" y="550.0" font-size="10" text-anchor="start" fill="#222">frei</text>
+<text x="720" y="550.0" font-size="9" text-anchor="start" fill="#333">J_EXP</text>
+<path d="M535,546.0 L560,546.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="410" cy="570.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="560.0" width="320" height="20" rx="3" fill="#f6c4c4" stroke="#999" stroke-width="1"/>
+<text x="70" y="574.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">29</text>
+<text x="95" y="574.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">SERVO_PITCH</text>
+<text x="200" y="574.0" font-size="9" text-anchor="start" fill="#333">J_SERVO2 (VSERVO)</text>
+<path d="M380,570.0 L405,570.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="570.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="560.0" width="350" height="20" rx="3" fill="#cfe0f5" stroke="#999" stroke-width="1"/>
+<text x="570" y="574.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">36</text>
+<text x="595" y="574.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">LORA_AUX ★</text>
+<text x="720" y="574.0" font-size="9" text-anchor="start" fill="#333">E22 AUX</text>
+<path d="M535,570.0 L560,570.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="410" cy="594.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="584.0" width="320" height="20" rx="3" fill="#eee" stroke="#999" stroke-width="1"/>
+<text x="70" y="598.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">30</text>
+<text x="95" y="598.0" font-size="10" text-anchor="start" fill="#222">frei</text>
+<text x="200" y="598.0" font-size="9" text-anchor="start" fill="#333">J_EXP</text>
+<path d="M380,594.0 L405,594.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="594.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="584.0" width="350" height="20" rx="3" fill="#cfe0f5" stroke="#999" stroke-width="1"/>
+<text x="570" y="598.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">35</text>
+<text x="595" y="598.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">TX8</text>
+<text x="720" y="598.0" font-size="9" text-anchor="start" fill="#333">E22 RXD</text>
+<path d="M535,594.0 L560,594.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="410" cy="618.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="608.0" width="320" height="20" rx="3" fill="#eee" stroke="#999" stroke-width="1"/>
+<text x="70" y="622.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">31</text>
+<text x="95" y="622.0" font-size="10" text-anchor="start" fill="#222">frei</text>
+<text x="200" y="622.0" font-size="9" text-anchor="start" fill="#333">J_EXP</text>
+<path d="M380,618.0 L405,618.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="618.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="608.0" width="350" height="20" rx="3" fill="#cfe0f5" stroke="#999" stroke-width="1"/>
+<text x="570" y="622.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">34</text>
+<text x="595" y="622.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">RX8</text>
+<text x="720" y="622.0" font-size="9" text-anchor="start" fill="#333">E22 TXD</text>
+<path d="M535,618.0 L560,618.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="410" cy="642.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="60" y="632.0" width="320" height="20" rx="3" fill="#cfe0f5" stroke="#999" stroke-width="1"/>
+<text x="70" y="646.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">32</text>
+<text x="95" y="646.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">LORA_M1 ★</text>
+<text x="200" y="646.0" font-size="9" text-anchor="start" fill="#333">E22 M1</text>
+<path d="M380,642.0 L405,642.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<circle cx="530" cy="642.0" r="4" fill="#ddd" stroke="#333" stroke-width="1"/>
+<rect x="560" y="632.0" width="350" height="20" rx="3" fill="#cfe0f5" stroke="#999" stroke-width="1"/>
+<text x="570" y="646.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">33</text>
+<text x="595" y="646.0" font-size="10" font-weight="bold" text-anchor="start" fill="#222">LORA_M0 ★</text>
+<text x="720" y="646.0" font-size="9" text-anchor="start" fill="#333">E22 M0</text>
+<path d="M535,642.0 L560,642.0" fill="none" stroke="#777" stroke-width="0.8"/>
+<text x="60" y="684" font-size="9" text-anchor="start" fill="#444">SPI1: MISO liegt auf Pin 39 (SPI1.setMISO(39)), weil Pin 1 das GPS braucht. Rückseite des Teensy: W25Q128 (SOIC-8) für LittleFS.</text>
+</svg>

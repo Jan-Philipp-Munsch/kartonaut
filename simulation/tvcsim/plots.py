@@ -12,11 +12,28 @@ import numpy as np  # noqa: E402
 from .dynamics import euler_deg  # noqa: E402
 from .sim import SimResult  # noqa: E402
 
+DPI = 150
+WIDTH_IN = 10.7   # etwa 1600 px bei 150 dpi
 
-def plot_nominal(res: SimResult, path: Path, title: str = "") -> Path:
+
+def _titles(fig, ax0, title: str, subtitle: str = "") -> None:
+    """Titel in einer Zeile, Parameter darunter in kleinerer Schrift."""
+    fig.suptitle(title, fontsize=13)
+    if subtitle:
+        ax0.set_title(subtitle, fontsize=8.5, color="0.35", wrap=True)
+
+
+def _save(fig, path: Path) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path, dpi=DPI, facecolor="white")
+    plt.close(fig)
+    return path
+
+
+def plot_nominal(res: SimResult, path: Path, title: str = "", subtitle: str = "") -> Path:
     t = res.t
-    fig, ax = plt.subplots(4, 1, figsize=(9, 12), sharex=True)
-    fig.suptitle(title or f"Nominallauf, Regler {res.params.controller}")
+    fig, ax = plt.subplots(4, 1, figsize=(WIDTH_IN, 12), sharex=True, layout="constrained")
+    _titles(fig, ax[0], title or f"Nominallauf, Regler {res.params.controller}", subtitle)
 
     ax[0].plot(t, res.r[:, 0], label="Hoehe x")
     ax[0].plot(t, res.r[:, 1], label="Downrange y")
@@ -55,51 +72,46 @@ def plot_nominal(res: SimResult, path: Path, title: str = "") -> Path:
 
     for a in ax:
         a.grid(alpha=0.3)
-    fig.tight_layout()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=130)
-    plt.close(fig)
-    return path
+    return _save(fig, path)
 
 
-def plot_montecarlo_3d(results: list[SimResult], path: Path, title: str | None = None) -> Path:
-    fig = plt.figure(figsize=(9, 10))
+def plot_montecarlo_3d(results, path: Path, title: str | None = None, subtitle: str = "") -> Path:
+    """3D-Plot wie in TVC6DOF.m. ``results``: SimResult-Liste oder Liste von Positionsarrays (N, 3)."""
+    positions = [r.r if isinstance(r, SimResult) else np.asarray(r) for r in results]
+    fig = plt.figure(figsize=(WIDTH_IN, 10.5), layout="constrained")
     ax = fig.add_subplot(111, projection="3d")
-    for res in results:
-        ax.plot(res.r[:, 1], res.r[:, 2], res.r[:, 0], lw=0.8)
-    ax.set_title(title or f"{len(results)} Simulated Monte-Carlo Flight Trajectories")
-    ax.set_xlabel("Downrange (m)")
-    ax.set_ylabel("Crossrange (m)")
-    ax.set_zlabel("Altitude (m)")
-    # Achsen am 90. Perzentil der seitlichen Auslenkung, damit Ausreisser das Bild nicht plattdruecken
-    lim = max(1.0, float(np.percentile([np.abs(r.r[:, 1:]).max() for r in results], 90)))
-    zmax = max(float(r.r[:, 0].max()) for r in results)
-    ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim); ax.set_zlim(0, max(zmax, 1.0))
-    try:
-        ax.set_box_aspect((1, 1, max(zmax, 1.0) / (2 * lim)))
-    except Exception:
-        pass
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=130)
-    plt.close(fig)
-    return path
+    # Achsen am 90. Perzentil der seitlichen Auslenkung, damit Ausreisser das Bild nicht plattdruecken,
+    # und gleiche Skalierung aller drei Achsen (wie "axis equal" in MATLAB)
+    lim = max(1.0, float(np.percentile([np.abs(r[:, 1:]).max() for r in positions], 90)))
+    zmax = max(1.0, max(float(r[:, 0].max()) for r in positions))
+    for r in positions:
+        r = r.copy()
+        outside = (np.abs(r[:, 1]) > lim) | (np.abs(r[:, 2]) > lim) | (r[:, 0] < 0)
+        r[outside] = np.nan          # Ausreisser enden am Kastenrand statt ausserhalb weiterzulaufen
+        ax.plot(r[:, 1], r[:, 2], r[:, 0], lw=0.8)
+    _titles(fig, ax, title or f"{len(positions)} Monte-Carlo-Trajektorien", subtitle)
+    ax.set_xlabel("Downrange (m)", labelpad=12)
+    ax.set_ylabel("Crossrange (m)", labelpad=12)
+    ax.set_zlabel("Altitude (m)", labelpad=8)
+    ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim); ax.set_zlim(0, zmax)
+    ax.set_box_aspect((2 * lim, 2 * lim, zmax), zoom=0.9)
+    ax.view_init(elev=18, azim=-55)
+    return _save(fig, path)
 
 
 def plot_servo_fit(t, u, y, y_fit, fit: dict, path: Path) -> Path:
-    fig, ax = plt.subplots(2, 1, figsize=(10, 7), sharex=True)
+    fig, ax = plt.subplots(2, 1, figsize=(WIDTH_IN, 7), sharex=True, layout="constrained")
+    _titles(fig, ax[0], "Servo-Identifikation: SG90 im Kardan, Sprungantworten",
+            "Eingang Servo-Soll relativ zur Mitte (95 Grad), Ausgang gemessener Kardanwinkel; Fit PT2 mit Totzeit")
     ax[0].plot(t, u, color="0.5", label="Servo-Soll - 95 (Grad)")
     ax[0].set_ylabel("Soll (Grad)")
     ax[0].legend()
     ax[1].plot(t, y, "k", label="Kardan gemessen")
-    ax[1].plot(t, y_fit, "r", lw=1, label=f"PT2+Totzeit: K={fit['K']:.4f}, wn={fit['wn']:.1f} rad/s, "
-                                        f"zeta={fit['zeta']:.2f}, tau={fit['tau']*1000:.0f} ms, RMS {fit['rms_deg']:.2f} Grad")
+    ax[1].plot(t, y_fit, "r", lw=1, label=f"Fit: K={fit['K']:.4f} (1/{1 / fit['K']:.1f}), wn={fit['wn']:.1f} rad/s, "
+                                        f"zeta={fit['zeta']:.2f}, Totzeit {fit['tau']*1000:.0f} ms, RMS {fit['rms_deg']:.2f} Grad")
     ax[1].set_ylabel("Kardan (Grad)")
     ax[1].set_xlabel("Zeit (s)")
     ax[1].legend()
     for a in ax:
         a.grid(alpha=0.3)
-    fig.tight_layout()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=130)
-    plt.close(fig)
-    return path
+    return _save(fig, path)

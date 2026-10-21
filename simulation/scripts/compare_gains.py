@@ -46,7 +46,7 @@ def main():
     veh = VehicleParams.nominal() if args.vehicle == "nominal" else VehicleParams.preload()
     veh = replace(veh, static_error_y=args.static_error_y, static_error_z=args.static_error_z)
 
-    fig, ax = plt.subplots(3, 1, figsize=(10, 11), sharex=True)
+    fig, ax = plt.subplots(3, 1, figsize=(10.7, 11), sharex=True, layout="constrained")
     print(f"Fahrzeug {args.vehicle}: m_dry={veh.m_dry} kg, I={veh.Ix:.4f}, l={veh.l} m, "
           f"static_error y/z = {veh.static_error_y}/{veh.static_error_z} Grad, Rauschen an, "
           f"Beschleunigung = {args.accel}, 12 s")
@@ -71,12 +71,13 @@ def main():
     for a in ax:
         a.grid(alpha=0.3)
     ax[0].legend(fontsize=8)
-    fig.suptitle(f"Reglervergleich, Fahrzeug {args.vehicle}, static_error {veh.static_error_y}/{veh.static_error_z} Grad, "
-                 f"Beschleunigung {args.accel}")
-    fig.tight_layout()
+    fig.suptitle("Reglervergleich: Firmware-Gewinne gegen pid_tuner.m", fontsize=13)
+    ax[0].set_title(f"Fahrzeug {args.vehicle} (m_dry {veh.m_dry:g} kg, I {veh.Ix:.3g} kg m2, l {veh.l:g} m), "
+                    f"statischer Fehler {veh.static_error_y:g}/{veh.static_error_z:g} Grad, Rauschen an, "
+                    f"Beschleunigungssensor: {args.accel}", fontsize=8.5, color="0.35")
     OUT_DIR.mkdir(exist_ok=True)
     path = OUT_DIR / (args.out or f"compare_gains_{args.vehicle}_{args.accel}.png")
-    fig.savefig(path, dpi=130)
+    fig.savefig(path, dpi=150, facecolor="white")
     print(f"geschrieben: {path}")
 
 

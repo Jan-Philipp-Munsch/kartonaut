@@ -86,7 +86,7 @@ def main():
     print(describe(p))
     res = simulate(p)
     name = args.out or f"nominal_{p.controller}_{args.gains if p.controller == 'simulink' else 'fw'}_{args.vehicle}.png"
-    path = plot_nominal(res, OUT_DIR / name, title=describe(p))
+    path = plot_nominal(res, OUT_DIR / name, title=f"Nominallauf, Regler {p.controller}", subtitle=describe(p))
     print(f"maxHeight = {res.max_height:.2f} m, Kippwinkel max {res.tilt_deg.max():.1f} Grad, "
           f"Ende {res.tilt_deg[-1]:.1f} Grad, seitlich {np.hypot(res.r[-1, 1], res.r[-1, 2]):.1f} m, "
           f"|th_com| max {max(np.abs(res.th_y_com).max(), np.abs(res.th_z_com).max()):.2f} Grad")

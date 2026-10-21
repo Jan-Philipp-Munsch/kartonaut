@@ -7,6 +7,9 @@
 import argparse
 import csv
 import time
+from pathlib import Path
+
+import numpy as np
 
 import _path  # noqa: F401
 from run_nominal import add_common_args, build_params, describe
@@ -21,9 +24,18 @@ def main():
     ap.add_argument("--runs", type=int, default=100)
     ap.add_argument("--mc-t-end", type=float, default=7.0, help="Simulationsdauer je Lauf (TVC6DOF.m: 7 s)")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--replot", default=None, metavar="NPZ",
+                    help="nur neu plotten aus einer frueher geschriebenen out/montecarlo_*.npz")
     args = ap.parse_args()
     base = build_params(args)
     mc = MonteCarloParams(runs=args.runs, t_end=args.mc_t_end)
+    if args.replot:
+        d = np.load(args.replot)
+        path = plot_montecarlo_3d(list(d["positions"]), OUT_DIR / (args.out or (Path(args.replot).stem + ".png")),
+                                  title=f"{len(d['positions'])} Monte-Carlo-Trajektorien, {float(d['t_end']):g} s je Lauf",
+                                  subtitle=str(d["subtitle"]))
+        print(f"geschrieben: {path}")
+        return
     print(describe(base))
     t0 = time.time()
 
@@ -36,8 +48,12 @@ def main():
     s = summarize(results)
     print("Zusammenfassung:", ", ".join(f"{k}={v:.3g}" if isinstance(v, float) else f"{k}={v}" for k, v in s.items()))
     tag = f"{base.controller}_{args.gains if base.controller == 'simulink' else 'fw'}_{args.vehicle}"
+    OUT_DIR.mkdir(exist_ok=True)
+    np.savez_compressed(OUT_DIR / f"montecarlo_{tag}.npz", positions=np.array([r.r for r in results]),
+                        t=results[0].t, t_end=mc.t_end, subtitle=describe(base))
     path = plot_montecarlo_3d(results, OUT_DIR / (args.out or f"montecarlo_{tag}.png"),
-                              title=f"{len(results)} Monte-Carlo-Trajektorien, {describe(base)}")
+                              title=f"{len(results)} Monte-Carlo-Trajektorien, {mc.t_end:g} s je Lauf",
+                              subtitle=describe(base))
     with open(OUT_DIR / f"montecarlo_{tag}.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["run", "maxHeight_m", "tilt_end_deg", "lateral_end_m", "Ix", "m_dry", "l", "servo_delay",

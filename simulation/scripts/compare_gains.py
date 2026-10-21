@@ -35,7 +35,7 @@ def cases(veh: VehicleParams, seed: int, accel: str):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--vehicle", choices=["nominal", "preload"], default="nominal")
+    ap.add_argument("--vehicle", choices=["nominal", "preload", "cad"], default="nominal")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--static-error-y", type=float, default=1.0)
     ap.add_argument("--static-error-z", type=float, default=0.6)
@@ -43,11 +43,11 @@ def main():
                     help="was der Beschleunigungssensor misst (rdd = wie Simulink)")
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
-    veh = VehicleParams.nominal() if args.vehicle == "nominal" else VehicleParams.preload()
+    veh = {"nominal": VehicleParams.nominal, "preload": VehicleParams.preload, "cad": VehicleParams.cad}[args.vehicle]()
     veh = replace(veh, static_error_y=args.static_error_y, static_error_z=args.static_error_z)
 
     fig, ax = plt.subplots(3, 1, figsize=(10.7, 11), sharex=True, layout="constrained")
-    print(f"Fahrzeug {args.vehicle}: m_dry={veh.m_dry} kg, I={veh.Ix:.4f}, l={veh.l} m, "
+    print(f"Fahrzeug {args.vehicle}: m_dry={veh.m_dry:.3f} kg, Ix={veh.Ix:.4g}, Iy={veh.Iy:.4g}, l={veh.l:.4g} m, "
           f"static_error y/z = {veh.static_error_y}/{veh.static_error_z} Grad, Rauschen an, "
           f"Beschleunigung = {args.accel}, 12 s")
     print("Brennphase 1 = 0 bis 3,55 s (Brennschluss), danach Freiflug ohne Stellmoeglichkeit.")
@@ -72,7 +72,7 @@ def main():
         a.grid(alpha=0.3)
     ax[0].legend(fontsize=8)
     fig.suptitle("Reglervergleich: Firmware-Gewinne gegen pid_tuner.m", fontsize=13)
-    ax[0].set_title(f"Fahrzeug {args.vehicle} (m_dry {veh.m_dry:g} kg, I {veh.Ix:.3g} kg m2, l {veh.l:g} m), "
+    ax[0].set_title(f"Fahrzeug {args.vehicle} (m_dry {veh.m_dry:.3g} kg, I quer {veh.Iy:.3g} kg m2, l {veh.l:.3g} m), "
                     f"statischer Fehler {veh.static_error_y:g}/{veh.static_error_z:g} Grad, Rauschen an, "
                     f"Beschleunigungssensor: {args.accel}", fontsize=8.5, color="0.35")
     OUT_DIR.mkdir(exist_ok=True)

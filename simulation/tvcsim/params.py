@@ -7,14 +7,20 @@ Werte wiedererkennt. Es gibt zwei Nominalsaetze (siehe README, Abschnitt Paramet
 * ``VehicleParams.preload()`` - die Werte aus dem PreLoadFcn-Callback der ``.slx``.
   Die gelten, wenn das Modell geoeffnet wird, ohne vorher ``TVC6DOF.m`` auszufuehren,
   also vermutlich bei ``pid_tuner.m``.
+* ``VehicleParams.cad()`` - Masse, Hebelarm und Traegheitsmomente aus dem CAD-Massenmodell
+  ``cad/mass_properties.json`` (Startzustand mit vollem Motor).
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 OUT_DIR = Path(__file__).resolve().parent.parent / "out"
+REPO_DIR = Path(__file__).resolve().parent.parent.parent
+CAD_MASS_FILE = REPO_DIR / "cad" / "mass_properties.json"
+FUEL_PER_MOTOR_KG = 0.028   # TSP E12: 28 g Treibstoff
 
 
 @dataclass
@@ -45,6 +51,25 @@ class VehicleParams:
         return cls(Ix=3 / 800 + 1 / 24, Iy=3 / 800 + 1 / 24, Iz=3 / 800 + 1 / 24,
                    l=0.5, m_dry=0.7, static_error_y=1.0, static_error_z=0.6,
                    l_meas=0.5)
+
+    @classmethod
+    def cad(cls, config: str = "liftoff", path: Path | None = None) -> "VehicleParams":
+        """Massenmodell aus ``cad/mass_properties.json`` (CadQuery-Stabmodell, 21.10.2026).
+
+        CAD-Achsen: z = Laengsachse, x/y quer. Simulink: x = Laengsachse, y/z quer. Also
+        ``Ix = Izz``, ``Iy = Ixx``, ``Iz = Iyy``; ``l`` ist der Hebelarm Kardan-Drehpunkt bis
+        Schwerpunkt; ``m_dry`` = Masse der Konfiguration minus 28 g Treibstoff eines Motors
+        (die Treibstoffmasse kommt zur Laufzeit ueber ``MotorParams.fuel_model`` dazu).
+        Die seitliche Schwerpunktlage wird als Fehlplatzierung ``mis_y/mis_z`` uebernommen.
+        """
+        with open(path or CAD_MASS_FILE, encoding="utf-8") as f:
+            cfg = json.load(f)["configurations"][config]
+        I = cfg["inertia_kgm2"]
+        lat = cfg.get("cg_lateral_m", [0.0, 0.0])
+        return cls(Ix=I["Izz"], Iy=I["Ixx"], Iz=I["Iyy"],
+                   l=cfg["lever_arm_m"], l_meas=cfg["lever_arm_m"],
+                   m_dry=cfg["mass_kg"] - FUEL_PER_MOTOR_KG,
+                   mis_y=float(lat[0]), mis_z=float(lat[1]))
 
     @property
     def l_ctrl(self) -> float:

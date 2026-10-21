@@ -30,7 +30,7 @@ Wichtige Schalter von `run_nominal.py` (gelten auch für Monte-Carlo und Tuning)
 | Schalter | Bedeutung |
 |---|---|
 | `--controller simulink\|firmware` | Simulink-Regler oder Port von `Control.cpp` |
-| `--vehicle nominal\|preload` | Fahrzeugparameter aus `TVC6DOF.m` oder aus dem PreLoadFcn der `.slx` (siehe unten) |
+| `--vehicle nominal\|preload\|cad` | Fahrzeugparameter aus `TVC6DOF.m`, aus dem PreLoadFcn der `.slx` oder aus `cad/mass_properties.json` (siehe unten) |
 | `--gains nominal\|tuner\|preload`, `--kp --ki --kd` | Gewinne des Simulink-Reglers |
 | `--fw-kp --fw-ki --fw-kd --fw-mass --fw-servo-gain` | Konstanten des Firmware-Reglers (`Config.h`) |
 | `--servo-gain 6` | Gain-Block hinter `tf5` (Servo-Grad je TVC-Grad; 23 laut `Config.h`) |
@@ -173,7 +173,14 @@ Tischtest zeigen; die Simulation kann es nicht entscheiden.
    Mit `m_dry = 0,94` (plus 60 g Treibstoff) hebt die E12 kaum ab (Gipfel 9..10 m, mittleres
    Schub-Gewichts-Verhältnis 1,2); das Bild `Images/Monte-Carlo (1).png` mit 45 m Gipfelhöhe
    passt zum PreLoadFcn-Satz mit 0,7 kg.
-6. **Trägheitsmomente** 0,1 kg m² sind Platzhalter (Plan §3.3), das Blender-Modell kann bessere liefern.
+6. **Trägheitsmomente** 0,1 kg m² sind Platzhalter (Plan §3.3). Ein dritter Satz
+   `VehicleParams.cad()` (`--vehicle cad`) liest das CAD-Massenmodell `cad/mass_properties.json`
+   (Startzustand mit vollem Motor): 981 g, Hebelarm Drehpunkt–Schwerpunkt 0,372 m,
+   quer `Ixx = Iyy = 0,110 kg m²`, längs `Izz = 0,00105 kg m²`. Achsentausch: CAD z (längs)
+   wird Simulink x, also `Ix = Izz`, `Iy = Ixx`, `Iz = Iyy`; `m_dry` = 981 g minus 28 g
+   Treibstoff = 953 g, die Treibstoffmasse kommt über `fuel_model` dazu (mit `signalbuilder`
+   also 1,013 kg beim Start); die seitliche Schwerpunktlage (0,2 / −0,7 mm) geht als
+   `mis_y/mis_z` ein.
 7. **Beschleunigungssensor.** Das Simulink-Modell verrauscht `rdd`, die inertiale
    Beschleunigung samt g, und bildet daraus `T_est = |rdd| m`. Ein echter Sensor misst die
    spezifische Kraft `Tb/m`. Folge im Modell: bei T = 0 ist `T_est = m g` statt 0, und wenn der
@@ -223,6 +230,27 @@ Fahrzeug `nominal` (m_dry 0,94 kg, I 0,1, l 0,3 m), Beschleunigung `rdd`:
 Mit `--accel specific_force` (physikalisch richtige Schubschätzung) bleibt das Bild gleich,
 die Firmware-Gewinne werden eher noch besser (preload: Kipp max 5,3°, bei 3,55 s 1,0°).
 
+Fahrzeug `cad` (CAD-Massenmodell: m_dry 0,953 kg, 1,013 kg beim Start, I quer 0,110, längs 0,00105,
+l 0,372 m), Beschleunigung `specific_force`:
+
+| Fall | maxHeight | Kipp max Brennphase | Kipp bei 3,55 s | seitlich bei 3,55 s |
+|---|---|---|---|---|
+| Simulink-Regler, Firmware-Gewinne | 9,0 m | 3,7° | 0,9° | 1,8 m |
+| Simulink-Regler, Tuner | 8,1 m | 7,1° | 6,2° | 4,0 m |
+| Simulink-Regler, TVC6DOF.m | 8,2 m | 6,8° | 6,4° | 3,9 m |
+| Firmware 1:1 (Gain 23) | 8,9 m | 4,4° | 0,5° | 2,2 m |
+| Firmware, Servo-Gain 6 | 9,0 m | 1,8° | 0,5° | 1,0 m |
+| Firmware, Servo-Gain 6, Kd = 38,5 | 8,4 m | 7,4° | 7,1° | 3,6 m |
+
+Mit `--accel rdd` (wie Simulink) dieselbe Reihenfolge (Firmware-Gewinne: Kipp max 1,9°, bei
+3,55 s 0,6°). Einordnung: mit 1,0 kg Startmasse liegt das mittlere Schub-Gewichts-Verhältnis
+der E12 bei 1,1 (11 N gegen 9,9 N), die Rakete steigt in 3,5 s nur auf 9 m und erreicht beim
+Brennschluss etwa 2 m/s; die Brennphase ist mit den Firmware-Gewinnen trotzdem geregelt
+(Kippwinkel unter 4°, seitlich unter 2 m), weil der Schub von 11 N mit dem Hebelarm 0,37 m
+gegen die Querträgheit 0,11 kg m² genug Stellmoment liefert. Ein Flug ist das nicht: der
+Gipfel liegt bei 9 m, und jede Störung über die 1° statischen Fehler hinaus zehrt am
+knappen Überschuss. Die schwere Rakete braucht einen stärkeren Motor (F35) oder weniger Masse.
+
 Monte-Carlo (`run_montecarlo.py`, 100 Läufe à 7 s, Streuungen aus `TVC6DOF.m`, Seed 0):
 
 | Fahrzeug, Gewinne | maxHeight (Mittel ± Std) | Kipp bei 7 s (Median) | seitlich bei 7 s (Median) | Anteil Kipp < 30° |
@@ -269,8 +297,9 @@ entspricht in Gipfelhöhe (48 m gegen 45 m) und Streuung dem MATLAB-Bild `Images
 - Neue Servos (W5652H) vermessen und `ServoParams` aktualisieren; Ratenbegrenzung des Servos
   ins Modell nehmen, falls die Messung sie bestätigt.
 - Servo-Grad je TVC-Grad (6 oder 23) und die Polung beider Achsen am Tisch messen.
-- Masse und Trägheitsmomente aus `Gewicht.csv` und dem Blender-Modell; mit 0,9..1,0 kg trägt
-  die E12 die Rakete nur knapp (Gipfel 10 m).
+- Das CAD-Massenmodell (981 g) bestätigt: mit 0,9..1,0 kg trägt die E12 die Rakete nur knapp
+  (Gipfel 9..10 m). Masse senken oder F35 rechnen (`--vehicle cad`, Schubkurve `MotorParams(curve="F35")`;
+  dann aber Beschleunigungsbereich ±4 g der IMU prüfen, PROJECT.md §5 Punkt 4).
 - Kein Boden und zweite Zündung im Fall sind Eigenheiten des Simulink-Modells; für eine
   Flugvorhersage gehört ein Bodenkontakt und ein Flugzustandsautomat hinein.
 - Der Vergleich mit dem Simulink-Nominallauf ist nur über das Bild

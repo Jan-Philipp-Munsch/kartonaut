@@ -49,7 +49,7 @@ station. The whole system is simulated in a six-degree-of-freedom model before i
 1. KiCad schematic and layout of rev B, order at JLCPCB with SMD assembly.
 2. Firmware for rev B: ICM-42688-P driver, quaternion attitude, flight state machine, pyro logic, watchdog, LoRa telemetry.
 3. Weigh the rocket and settle the mass budget against the thrust of the E12.
-4. Ground tests: thrust stand with active control, pyro test, radio range.
+4. Ground tests: TVC test rig with a propeller motor in the gimbal (parts bought, rig to be built), pyro test, radio range.
 5. First flight: controlled ascent on one motor, parachute recovery.
 
 The full list of work packages, the findings from the reviews and the changelog are in
@@ -158,6 +158,16 @@ python -m pip install --user cadquery
 python cad/build.py              # STEP/STL to cad/export/, renders to docs/img/cad/
 python cad/mass_model.py         # mass_properties.md and .json
 ```
+
+## Ground testing
+
+Before anything flies, the attitude control gets tested on the ground with real thrust and
+without a rocket motor: the rocket hangs in a rig that lets it pitch and yaw about its centre
+of gravity, and a brushless motor (Racerstar BR2814, 1000 KV, 11-inch propeller, 4S LiPo) sits
+in the gimbal in place of the rocket motor. At part throttle it delivers the 12 N of the E12,
+and the Teensy can even drive the ESC along the E12 thrust curve. Motor, ESC, propellers,
+battery and chargers are bought; the rig itself is the next mechanical job. The parachute
+ejection has already been tested with about 1 g of black powder.
 
 ## Firmware
 

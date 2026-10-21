@@ -50,7 +50,7 @@ SD-Logger und 433-MHz-LoRa-Funk zur Bodenstation. Das Gesamtsystem wird vor dem 
 1. KiCad-Schaltplan und Layout von rev B, Bestellung bei JLCPCB mit SMD-Bestückung.
 2. Firmware für rev B: Treiber ICM-42688-P, Quaternion-Lage, Flugzustandsautomat, Pyro-Logik, Watchdog, LoRa-Telemetrie.
 3. Rakete wiegen und das Massenbudget gegen den Schub des E12 prüfen.
-4. Bodentests: Schubstand mit aktiver Regelung, Pyro-Test, Funkreichweite.
+4. Bodentests: TVC-Prüfstand mit Propellermotor im Kardan (Teile gekauft, Gestell zu bauen), Pyro-Test, Funkreichweite.
 5. Erstflug: geregelter Aufstieg mit einem Motor, Fallschirmbergung.
 
 Die vollständige Liste der Arbeitspakete, die Befunde aus den Durchsichten und das
@@ -159,6 +159,16 @@ python -m pip install --user cadquery
 python cad/build.py              # STEP/STL nach cad/export/, Bilder nach docs/img/cad/
 python cad/mass_model.py         # mass_properties.md und .json
 ```
+
+## Bodentests
+
+Bevor etwas fliegt, wird die Lageregelung am Boden mit echtem Schub und ohne Treibsatz
+getestet: Die Rakete hängt in einem Gestell, das sie um den Schwerpunkt nicken und gieren
+lässt, und an Stelle des Raketenmotors sitzt ein Brushless-Motor (Racerstar BR2814, 1000 KV,
+11-Zoll-Propeller, 4S-LiPo) im Kardan. Bei Teilgas liefert er die 12 N des E12, und der Teensy
+kann den Regler sogar entlang der E12-Schubkurve fahren. Motor, Regler, Propeller, Akku und
+Ladegeräte sind gekauft; das Gestell ist die nächste mechanische Aufgabe. Der
+Fallschirmausstoß ist mit etwa 1 g Schwarzpulver schon getestet.
 
 ## Firmware
 

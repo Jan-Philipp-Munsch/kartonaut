@@ -66,6 +66,25 @@ Maximum 33 N) ist ein anderer Motor und kommt nur zum Vergleich in die Python-Si
 | Akkuhalter | `battery7.stl` | `[?]` | `[?]` |
 | 29→24-mm-Motoradapter | `TVC.blend` | `[?]` | `[?]` |
 
+### 1.5 Landebeine und Prüfstand (gekauft)
+
+| Teil | Stück | Daten | Zweck | Quelle, Datum |
+|---|---|---|---|---|
+| Carbonrundstab 5,0 × 1000 mm (Conrad 275230) | 2 | | Landebeine, Hauptstreben | Conrad 10.06.2025 |
+| Carbonrundstab 3,0 × 1000 mm (Conrad 275228) | 4 | | Landebeine, obere Streben | Conrad 10.06.2025 (2), 24.06.2025 (2) |
+| Reely V-Charge Eco NiMH 1000 | 1 | NiMH-Ladegerät | `[?]` (Bodenstation, Startbox?) | Conrad 24.06.2025 |
+| Racerstar BR2814 1000KV, 3–4S | 1 | Brushless-Außenläufer, Ø 28 mm | **Prüfstand:** ersetzt den Raketenmotor im Kardan, liefert den Schub elektrisch und regelbar | Banggood 23.06.2025 |
+| keyiuav Brushless-ESC 60 A, Two-Way, T-Stecker | 1 | | Prüfstand, Drehzahlsteller | Banggood 23.06.2025 |
+| GEMFAN 11 × 7 APC-Form CCW | 2 | | Prüfstand, Propeller | Banggood 23.06.2025 |
+| GEMFAN PFGN 12 × 6 Glasfaser, CW + CCW | 1 Paar | | Prüfstand, Propeller (gegenläufiges Paar) | Banggood 23.06.2025 |
+| ZOP Power 4S 1500 mAh 100 C, XT60 | 1 | 14,8 V | Prüfstand, Antriebsakku | Banggood 23.06.2025 |
+| HTRC H4AC 20 W / 2 A Balancer-Lader 2–4S | 1 | LiPo/LiFe/LiHV | Prüfstand- und Flugakkus laden | Banggood 23.06.2025 |
+| Amass XT60/T-Adapter | – | erstattet, nicht geliefert | | Banggood 23.06.2025 |
+
+**Prüfstand, Idee (Jan, 21.10.2026):** Die Rakete hängt dreh- und schwenkbar in einem Gestell,
+der Propellermotor sitzt an Stelle des Raketenmotors im Kardan und liefert den Schub. So lässt
+sich die Lageregelung mit TVC am Boden testen, ohne Treibsatz. Siehe `PROJECT.md` §4, Paket 15.
+
 ## 2. Mechanik
 
 - **Rohr:** Klima 75 mm, innen 72,6 mm. **Der Flugcomputer sitzt im Kuppler** (innen 70,2 mm,
@@ -132,6 +151,8 @@ Ein Eintrag je Arbeitssitzung am Gerät. Rekonstruiert, soweit möglich; ab jetz
 | 2025-04-28 | Bestellung SRT: 1× Rohr 75/500, 2× 2er-Pack TSP E12-0 | – | |
 | 2025-04 bis 06 | MATLAB-6DOF, PID-Tuning, Servo-Systemidentifikation (18.05.), TVC V2 und dual TVC, Landebeine, Gesamtmodell | `Images/Monte-Carlo*.png` (lokal) | |
 | 2025-06-09 | Bestellung Klima: Rohr 75/500, Kuppler, Fallschirm 125 cm | – | |
+| 2025-06-10 | Bestellung Conrad: 2× Carbonstab 5 mm, 2× Carbonstab 3 mm (Landebeine) | – | |
+| 2025-06-23/24 | Bestellung Banggood (Prüfstand: BR2814, ESC 60 A, Propeller 11×7 und 12×6, 4S-LiPo, Lader) und Conrad (2× Carbonstab 3 mm, NiMH-Lader) | – | Prüfstand-Gestell konstruieren |
 | 2025-10-12 bis 31 | Git-Repo, Firmware modularisiert, Kalman, SD-Logger, HC-12-Test, Regler; `flight_computer.blend` überarbeitet | – | |
 | 2025-10-23 | Bestellung Klima: 2× Kuppler, Rohr 50/500, Spitze 75 mm, Kevlar- und Gummischnur | – | Zweck des 50-mm-Rohrs `[?]` |
 | 2026-10-15 | Mainboard rev A spezifiziert (am Rechner) | – | |

@@ -77,8 +77,8 @@ Maximum 33 N) ist ein anderer Motor und kommt nur zum Vergleich in die Python-Si
   Schwarzpulver haben funktioniert (Datum `[?]`).
 - **Gesamtlänge:** 2 × 500 mm Rohr + Spitze (99 mm gedruckt oder Klima-Spitze `[?]`) `[?]`
 - **Sektionen von unten:** TVC-Kardan mit Motor `[?]` mm, Flugcomputer `[?]` mm, Fallschirmraum `[?]` mm, Spitze.
-- **Schwerpunkt:** `[?]` mm ab Düse, ohne/mit Motor. Hebelarm Kardan–Schwerpunkt bisher mit 0,30 m angenommen.
-- **Masse:** geplant 902 g (`Gewicht.csv`), gewogen `[?]`.
+- **Schwerpunkt:** gemessen `[?]`; Massenmodell (`cad/mass_properties.md`): 448 mm ab Düse mit vollem Motor, 477 mm ohne. Hebelarm Kardan–Schwerpunkt 0,37 m (bisher 0,30 m angenommen).
+- **Masse:** Massenmodell 981 g mit einem Motor (`cad/mass_properties.md`; Budget Juni 2025: 902 g), gewogen `[?]`. Laut Simulation zu schwer für einen E12 (PROJECT.md Befund 12).
 - **Luke** für USB und SD-Karte: `[?]`
 - **Druckausgleichsbohrungen** für das Barometer: `[?]`
 
@@ -136,7 +136,7 @@ Ein Eintrag je Arbeitssitzung am Gerät. Rekonstruiert, soweit möglich; ab jetz
 | 2025-10-23 | Bestellung Klima: 2× Kuppler, Rohr 50/500, Spitze 75 mm, Kevlar- und Gummischnur | – | Zweck des 50-mm-Rohrs `[?]` |
 | 2026-10-15 | Mainboard rev A spezifiziert (am Rechner) | – | |
 | 2026-10-20 | Firmware-Aufräumrunde, Veröffentlichung (am Rechner, nicht geflasht) | – | flashen und am Gerät prüfen |
-| 2026-10-21 | Planungsrunde, diese Datei angelegt; Servos FrSky W5652H bestellt | – | Inventar am Gerät prüfen, Fotos |
+| 2026-10-21 | Planungsrunde, diese Datei angelegt; Servos FrSky W5652H bestellt. Rev B spezifiziert, Design Guide und Bestellplan, Simulation nach Python, Blender-Inventur und parametrisches CAD mit Massenmodell (alles am Rechner) | `docs/img/cad/` (Renders) | Inventar am Gerät prüfen, Fotos; Teile wiegen (Spitze, Kuppler, Rohr, Motor, Kardan-Drucke); Rohr-Innen- und Kuppler-Außenmaß messen |
 
 ## 7. Regeln
 

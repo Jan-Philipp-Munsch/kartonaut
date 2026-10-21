@@ -36,17 +36,19 @@ station. The whole system is simulated in a six-degree-of-freedom model before i
 - 6DOF simulation: MATLAB/Simulink model ported to Python with a 1:1 copy of the flight controller, 21 tests.
 - Firmware modules: sensors, altitude Kalman filter, SD logger with CSV export, pitch/yaw and roll controllers, timing, indicators.
 - Mainboard rev B specified: power architecture, pin map, bill of materials, placement plan, test plan; design guide with figures and order plan.
+- KiCad project for rev B generated from code: schematic with seven sheets, ERC clean; board generator with outline, four layers, net classes and keep-outs.
 - Parametric CAD model in code (CadQuery) with a mass model: mass, centre of gravity and moments of inertia for the simulation; the 16 Blender files inventoried and superseded.
 - Build documentation and project file with findings and changelog.
 
 **In progress**
 
+- Board layout: placement draft with overlaps to resolve, then autorouting, DRC and fabrication files.
 - Gimbal redesign for the new servos; servo step response to be measured again.
 - Mass budget: weigh the parts, lighten the airframe or choose a stronger motor.
 
 **Next**
 
-1. KiCad schematic and layout of rev B, order at JLCPCB with SMD assembly.
+1. Finish the rev B layout (placement, routing, DRC), export Gerber, BOM and CPL, order at JLCPCB with SMD assembly.
 2. Firmware for rev B: ICM-42688-P driver, quaternion attitude, flight state machine, pyro logic, watchdog, LoRa telemetry.
 3. Weigh the rocket and settle the mass budget against the thrust of the E12.
 4. Ground tests: TVC test rig with a propeller motor in the gimbal (parts bought, rig to be built), pyro test, radio range.
@@ -108,6 +110,13 @@ power tree, pyro channel and pin map; the [order plan](hardware/mainboard/ORDER.
 parts to buy now, the gates before the PCB order, the JLCPCB parameters and the costs.
 
 <img src="hardware/mainboard/img/system_blocks.svg" width="100%" alt="Block diagram of mainboard rev B">
+
+The KiCad project in [hardware/mainboard/kicad/](hardware/mainboard/kicad/README.md) is generated
+from a single Python description of the circuit (`circuit.py`): seven schematic sheets with a net label on
+every pin, grouped into function blocks, ERC with zero errors and warnings
+([schematic PDF](hardware/mainboard/kicad/out/mainboard_schematic.pdf)), plus a board generator that
+draws the outline, four layers, net classes and keep-outs and places the parts. The placement is still a
+draft; routing, DRC and the fabrication files come next.
 
 Design decisions worth knowing:
 

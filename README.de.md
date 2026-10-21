@@ -37,17 +37,19 @@ SD-Logger und 433-MHz-LoRa-Funk zur Bodenstation. Das Gesamtsystem wird vor dem 
 - 6DOF-Simulation: MATLAB/Simulink-Modell nach Python portiert, mit 1:1-Kopie des Flugreglers, 21 Tests.
 - Firmware-Module: Sensorik, Höhen-Kalman, SD-Logger mit CSV-Export, Pitch/Yaw- und Rollregler, Takt, Signalgeber.
 - Mainboard rev B spezifiziert: Versorgungsarchitektur, Pinbelegung, Stückliste, Platzierungsplan, Testplan; Design Guide mit Abbildungen und Bestellplan.
+- KiCad-Projekt für rev B aus Code erzeugt: Schaltplan mit sieben Blättern, ERC sauber; Platinen-Generator mit Umriss, vier Lagen, Netzklassen und Sperrflächen.
 - Parametrisches CAD-Modell als Code (CadQuery) mit Massenmodell: Masse, Schwerpunkt und Trägheitsmomente für die Simulation; die 16 Blender-Dateien inventarisiert und abgelöst.
 - Baudokumentation und Projektdatei mit Befunden und Änderungsprotokoll.
 
 **In Arbeit**
 
+- Platinen-Layout: Platzierungsentwurf mit Überschneidungen, danach Autorouting, DRC und Fertigungsdaten.
 - Kardan-Anpassung für die neuen Servos; Servo-Sprungantwort neu messen.
 - Massenbudget: Teile wiegen, Rumpf leichter machen oder stärkeren Motor wählen.
 
 **Als Nächstes**
 
-1. KiCad-Schaltplan und Layout von rev B, Bestellung bei JLCPCB mit SMD-Bestückung.
+1. Layout von rev B fertigstellen (Platzierung, Routing, DRC), Gerber, BOM und CPL exportieren, Bestellung bei JLCPCB mit SMD-Bestückung.
 2. Firmware für rev B: Treiber ICM-42688-P, Quaternion-Lage, Flugzustandsautomat, Pyro-Logik, Watchdog, LoRa-Telemetrie.
 3. Rakete wiegen und das Massenbudget gegen den Schub des E12 prüfen.
 4. Bodentests: TVC-Prüfstand mit Propellermotor im Kardan (Teile gekauft, Gestell zu bauen), Pyro-Test, Funkreichweite.
@@ -110,6 +112,13 @@ Versorgungsbaum, Pyro-Kanal, Pinbelegung, Einbau; der [Bestellplan](hardware/mai
 listet die Vorab-Bestellung, die Tore vor der Platinenbestellung, die JLCPCB-Parameter und die Kosten.
 
 <img src="hardware/mainboard/img/system_blocks.svg" width="100%" alt="Blockschaltbild Mainboard rev B">
+
+Das KiCad-Projekt in [hardware/mainboard/kicad/](hardware/mainboard/kicad/README.md) wird aus einer
+einzigen Python-Beschreibung der Schaltung erzeugt (`circuit.py`): sieben Schaltplanblätter mit Netzlabel an
+jedem Pin, in Funktionsblöcke gegliedert, ERC ohne Fehler und Warnungen
+([Schaltplan-PDF](hardware/mainboard/kicad/out/mainboard_schematic.pdf)), dazu ein Platinen-Generator, der
+Umriss, vier Lagen, Netzklassen und Sperrflächen zeichnet und die Teile setzt. Die Platzierung ist noch ein
+Entwurf; Routing, DRC und die Fertigungsdaten folgen.
 
 Entscheidungen, die man kennen sollte:
 

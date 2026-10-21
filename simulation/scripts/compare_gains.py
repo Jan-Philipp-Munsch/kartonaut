@@ -17,13 +17,14 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
 import _path  # noqa: F401
-from tvcsim.params import (ControlParams, FirmwareParams, NoiseParams, OUT_DIR, ServoParams, SimParams,  # noqa: E402
-                           VehicleParams)
+from tvcsim.params import (ControlParams, FirmwareParams, MotorParams, NoiseParams, OUT_DIR, ServoParams,  # noqa: E402
+                           SimParams, VehicleParams)
 from tvcsim.sim import simulate  # noqa: E402
 
 
-def cases(veh: VehicleParams, seed: int, accel: str, ground: bool = True):
-    sim = SimParams(vehicle=veh, noise=NoiseParams(enabled=True, accel_model=accel), t_end=12.0, seed=seed, ground=ground)
+def cases(veh: VehicleParams, seed: int, accel: str, ground: bool = True, second_motor: bool = True):
+    sim = SimParams(vehicle=veh, noise=NoiseParams(enabled=True, accel_model=accel), t_end=12.0, seed=seed, ground=ground,
+                    motor=MotorParams(second_motor=second_motor))
     yield "Simulink, Firmware-Gewinne (kp5 ki0 kd0,01)", replace(sim, control=ControlParams(kp=5, ki=0, kd=0.01))
     yield "Simulink, Tuner (kp3,1 ki5 kd0,385)", replace(sim, control=ControlParams.tuner())
     yield "Simulink, TVC6DOF.m (kp1 ki1 kd0,1)", replace(sim, control=ControlParams())
@@ -44,6 +45,7 @@ def main():
                     help="was der Beschleunigungssensor misst (rdd = wie Simulink)")
     ap.add_argument("--out", default=None)
     ap.add_argument("--no-ground", action="store_true", help="ohne Boden rechnen (wie Simulink)")
+    ap.add_argument("--single-motor", action="store_true", help="nur ein Motor, keine zweite Zuendung bei 7,3 s (Erstflug)")
     args = ap.parse_args()
     veh = {"nominal": VehicleParams.nominal, "preload": VehicleParams.preload, "cad": VehicleParams.cad}[args.vehicle]()
     veh = replace(veh, static_error_y=args.static_error_y, static_error_z=args.static_error_z)
@@ -51,12 +53,13 @@ def main():
     fig, ax = plt.subplots(3, 1, figsize=(10.7, 11), sharex=True, layout="constrained")
     print(f"Fahrzeug {args.vehicle}: m_dry={veh.m_dry:.3f} kg, Ix={veh.Ix:.4g}, Iy={veh.Iy:.4g}, l={veh.l:.4g} m, "
           f"static_error y/z = {veh.static_error_y}/{veh.static_error_z} Grad, Rauschen an, "
-          f"Beschleunigung = {args.accel}, {'ohne Boden, 12 s' if args.no_ground else 'bis zur Landung'}")
+          f"Beschleunigung = {args.accel}, {'ohne Boden, 12 s' if args.no_ground else 'bis zur Landung'}, "
+          f"{'ein Motor' if args.single_motor else 'zwei Motoren (zweite Zuendung 7,3 s)'}")
     print("Brennphase 1 = 0 bis 3,55 s (Brennschluss), danach Freiflug ohne Stellmoeglichkeit.")
     print(f"{'Fall':40s} {'maxHeight':>9s} {'Kipp max':>9s} {'Kipp 3,5s':>9s} {'seitl 3,5s':>10s} "
           f"{'Kipp max':>9s} {'Kipp Ende':>9s} {'|th| max':>9s} {'Landung':>8s}")
     print(f"{'':40s} {'':>9s} {'Brenn 1':>9s} {'':>9s} {'':>10s} {'gesamt':>9s} {'Ende':>9s} {'Brenn 1':>9s} {'s':>8s}")
-    for name, p in cases(veh, args.seed, args.accel, not args.no_ground):
+    for name, p in cases(veh, args.seed, args.accel, not args.no_ground, not args.single_motor):
         res = simulate(p)
         burn = res.t <= 3.55
         ib = int(np.argmin(np.abs(res.t - 3.55)))
@@ -78,9 +81,9 @@ def main():
     fig.suptitle("Reglervergleich: Firmware-Gewinne gegen pid_tuner.m", fontsize=13)
     ax[0].set_title(f"Fahrzeug {args.vehicle} (m_dry {veh.m_dry:.3g} kg, I quer {veh.Iy:.3g} kg m2, l {veh.l:.3g} m), "
                     f"statischer Fehler {veh.static_error_y:g}/{veh.static_error_z:g} Grad, Rauschen an, "
-                    f"Beschleunigungssensor: {args.accel}", fontsize=8.5, color="0.35")
+                    f"Beschleunigungssensor: {args.accel}, {'ein Motor' if args.single_motor else 'zwei Motoren'}", fontsize=8.5, color="0.35")
     OUT_DIR.mkdir(exist_ok=True)
-    path = OUT_DIR / (args.out or f"compare_gains_{args.vehicle}_{args.accel}.png")
+    path = OUT_DIR / (args.out or f"compare_gains_{args.vehicle}_{args.accel}{'_single' if args.single_motor else ''}.png")
     fig.savefig(path, dpi=150, facecolor="white")
     print(f"geschrieben: {path}")
 

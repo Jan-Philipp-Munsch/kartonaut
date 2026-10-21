@@ -39,6 +39,7 @@ def add_common_args(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--mis-y", type=float, default=None); ap.add_argument("--mis-z", type=float, default=None)
     ap.add_argument("--t-end", type=float, default=12.0)
     ap.add_argument("--no-ground", action="store_true", help="ohne Boden rechnen (wie Simulink)")
+    ap.add_argument("--single-motor", action="store_true", help="nur ein Motor, keine zweite Zuendung")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--substeps", type=int, default=10)
 
@@ -65,7 +66,7 @@ def build_params(args) -> SimParams:
     if args.fw_servo_gain is not None:
         fw = replace(fw, SERVO_YAW_GAIN=-abs(args.fw_servo_gain), SERVO_PITCH_GAIN=abs(args.fw_servo_gain))
     return SimParams(vehicle=veh, control=ctrl, firmware=fw,
-                     motor=MotorParams(fuel_model=args.fuel),
+                     motor=MotorParams(fuel_model=args.fuel, second_motor=not args.single_motor),
                      servo=ServoParams(servo_deg_per_tvc_deg=args.servo_gain),
                      noise=NoiseParams(enabled=not args.no_noise, accel_model=args.accel),
                      controller=args.controller, t_end=args.t_end, seed=args.seed, substeps=args.substeps,

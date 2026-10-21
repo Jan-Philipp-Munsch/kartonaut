@@ -1,6 +1,6 @@
 # Flugcomputer-Mainboard rev B – Design Guide
 
-<p class="subtitle">Mission Space, Modellrakete mit Schubvektorsteuerung · Jan-Philipp Munsch · Stand 21.10.2026 abends · Schaltplan als KiCad-Projekt (ERC sauber), Layout im Entwurf</p>
+<p class="subtitle">Mission Space, Modellrakete mit Schubvektorsteuerung · Jan-Philipp Munsch · Stand 21.10.2026 nachts · Schaltplan und Layout als KiCad-Projekt (ERC und DRC sauber), Review vom 21.10. wird eingearbeitet</p>
 
 Dieses Dokument stellt die Elektronik der Rakete vor: was sie tun muss, wie die Platine aufgebaut ist und
 warum die Entscheidungen so gefallen sind. Es ist für drei Leser geschrieben. Für den Kollegen, der den
@@ -249,9 +249,13 @@ Die vollständige Prüfliste steht in `docs/Plan_2026-10-21.md` §2.6.
 
 **Stand des KiCad-Projekts** (`hardware/mainboard/kicad/`, KiCad 10.0.6): Die Schaltung ist als Code in
 `circuit.py` beschrieben, daraus werden Schaltplan (7 Blätter, ERC 0/0, PDF in `kicad/out/`) und Platine
-erzeugt. Die Platzierung ist im Entwurf; die 16-mm-Streifen neben dem Teensy sind knapp, einige 0603-Teile
-werden wohl auf 0402 schrumpfen oder unter den Teensy wandern. Entscheidungen, die das Projekt über die
-Spezifikation hinaus getroffen hat, stehen in `kicad/README.md` §4: eigenes Netz GND_PWR mit Sternpunkt,
+erzeugt. Die Platine ist komplett platziert und auf vier Lagen geroutet (DRC 0 Fehler, drei Verbindungen
+von Hand zu ziehen; Renders und Lagenbilder in `kicad/img/`). Ein Zweitmeinung-Review
+(`hardware/mainboard/review_kicad_2026-10-21.md`) hat Schaltung und Layout gegen Datenblätter und
+Spezifikation geprüft; seine acht A-Punkte (Ausgangskapazität des TPS63070, 1S-Unterspannungsschwelle,
+Hauptschalter über FETs, Sicherung je Akku, Kelvin-Shunt, Stromnetze auf den Außenlagen und weg von der IMU,
+Breite von VSYS_IN und 5V_SERVO) kommen vor den Fertigungsdaten hinein. Entscheidungen, die das Projekt über
+die Spezifikation hinaus getroffen hat, stehen in `kicad/README.md` §6: eigenes Netz GND_PWR mit Sternpunkt,
 Unterspannungsschutz über den EN-Teiler des TPS63070 (an ab 3,44 V, aus unter 3,01 V), 220 Ω in den
 Servoleitungen, stehende Stecker an den Stirnseiten, Stromnetze 1,2 mm statt 2 mm.
 
@@ -285,6 +289,15 @@ neue Pins und Grenzen in `Config.h`.
 ## 13. Fragen an den Reviewer
 
 Das sind die Punkte, bei denen mir ein zweites Paar Augen am meisten hilft, bevor der Schaltplan entsteht.
+
+*Stand 21.10.2026 nachts:* Das Zweitmeinung-Review (`hardware/mainboard/review_kicad_2026-10-21.md`) hat die
+Fragen 1, 2, 3, 4, 7, 8, 9 und 10 beantwortet (dort A1 bis A5, B1, B2, B5, B9, B10, C3); die Antworten in Kürze:
+Trennung 1S/2S ist sauber, aber der Hauptschalter gehört aus dem Strompfad (A3); 1,5 µH reichen, der
+1000-µF-Elko muss hinter die Schottky (A1); Shunt vor beiden Verbrauchern ist richtig, aber Kelvin fehlt (A5);
+Pyro-Kanal in Ordnung, Zündpuls auf 50 bis 100 ms kürzen (A4); Stecker im Strompfad auf JST-XH (A3); Economic
+ist möglich, die WS2812B-2020 sind das Risiko (C3); Sicherung je Akku ja (A4), CS-Pull-up vorhanden, LoRa-Pins
+haben interne Pull-ups, ESD am USB nicht nötig (B9); PS/SYNC hoch bleibt, NRST an einen Teensy-Pin, RESV-Pins
+stimmen (B2, B9, B10). Offen für den Kollegen bleiben 5 (IMU unter dem Teensy) und 6 (Funk/GPS-Abstand).
 
 1. **Versorgung.** Ist die Trennung 1S/2S so sauber, oder übersehe ich einen Pfad, über den eine
    Servo- oder Pyro-Spitze doch beim Teensy ankommt (Masseführung, Sternpunkt am Shunt, gemeinsame Masse
@@ -355,6 +368,8 @@ Auszug aus `hardware/mainboard/README.md` §7; die LCSC-Nummern und ihr Status s
 | `hardware/mainboard/Fertiger_2026-10-21.md` | Vergleich der Fertiger (JLCPCB, PCBWay, Aisler, Eurocircuits), Zoll seit 07/2026 |
 | `hardware/mainboard/kicad/` | KiCad-Projekt: `circuit.py` als Quelle, Schaltplan, Platinen-Generator, `kicad/README.md` mit Entscheidungen |
 | `hardware/mainboard/review_netlist_2026-10-21.md` | Tor-1-Prüfung der Netzliste gegen die Spezifikation |
+| `hardware/mainboard/review_kicad_2026-10-21.md` | Zweitmeinung-Review von Schaltung und Layout (A1 bis A8 vor der Bestellung), Prüfskript `review_check_layout.py` |
+| `hardware/mainboard/Fertiger_2026-10-21.md` | Fertigervergleich und Entscheidung (JLCPCB Economic, Aisler als Rückfall) |
 | `hardware/mainboard/outline.py` | Umriss (DXF) und Platzierungsplan (SVG), Hüllenprüfung |
 | `hardware/mainboard/figures.py` | die Abbildungen dieses Guides |
 | `docs/Plan_2026-10-21.md` | Planungsrunde mit Bewertung von rev A, Versorgungsrechnung, Layout-Checkliste |

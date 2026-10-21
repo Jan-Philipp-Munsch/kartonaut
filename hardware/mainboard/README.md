@@ -242,6 +242,9 @@ Seit dem 21.10.2026 liegt die Schaltung als KiCad-Projekt in `kicad/` (Schaltpla
 `circuit.py`, siehe `kicad/README.md`). Abweichungen von dieser Spezifikation, die das Projekt
 begründet trifft, stehen dort in §4; die Prüfung der Netzliste gegen §4 dieser Datei steht in
 `review_netlist_2026-10-21.md` (Ergebnis: konform; Hinweise zu TPS63070-Doppelpins, FB2, ICM-Hersteller und E22-NRST).
+Das Zweitmeinung-Review von Schaltung und Layout steht in `review_kicad_2026-10-21.md`; seine A-Punkte ändern
+diese Spezifikation an fünf Stellen (§3: Hold-up-Elko hinter D1, Sicherung je Akku, Hauptschalter über FETs,
+EN-Schwelle des TPS63070; §6: Kelvin-Shunt) und werden mit dem Einarbeiten hier nachgezogen.
 
 ## 12. Offen
 

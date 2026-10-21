@@ -27,7 +27,7 @@ SD-Logger und 433-MHz-LoRa-Funk zur Bodenstation. Das Gesamtsystem wird vor dem 
 | Aktoren | 2 × FrSky Xact W5652H im Kardan (direkt am 2S), Rollmotor an einem DRV8833, Pyro-Kolbenausstoß |
 | Regelung | Lage nur aus dem Gyro, PID auf Pitch/Yaw → Moment → Kardanwinkel über `M = l · T · sin δ`, PID auf Roll; 100 Hz |
 | Simulation | Python-6DOF (Port des Simulink-Modells): Starrkörper mit Quaternionen, Schubkurve, Servodynamik, Sensorrauschen, Monte-Carlo, Gewinnsuche |
-| Status | am Tisch mit Breakouts getestet, noch kein Flug; Mainboard rev B und Python-Simulation am 21.10.2026 fertig |
+| Status | am Tisch mit Breakouts getestet, noch kein Flug; Mainboard rev B am 21.10.2026 geroutet und reviewt, die Review-Punkte kommen vor der Platinenbestellung hinein |
 
 ## Projektstand
 
@@ -37,19 +37,20 @@ SD-Logger und 433-MHz-LoRa-Funk zur Bodenstation. Das Gesamtsystem wird vor dem 
 - 6DOF-Simulation: MATLAB/Simulink-Modell nach Python portiert, mit 1:1-Kopie des Flugreglers, 21 Tests.
 - Firmware-Module: Sensorik, Höhen-Kalman, SD-Logger mit CSV-Export, Pitch/Yaw- und Rollregler, Takt, Signalgeber.
 - Mainboard rev B spezifiziert: Versorgungsarchitektur, Pinbelegung, Stückliste, Platzierungsplan, Testplan; Design Guide mit Abbildungen und Bestellplan.
-- KiCad-Projekt für rev B aus Code erzeugt: Schaltplan mit sieben Blättern, ERC sauber; Platinen-Generator mit Umriss, vier Lagen, Netzklassen und Sperrflächen.
+- KiCad-Projekt für rev B aus Code erzeugt: Schaltplan mit sieben Blättern, ERC sauber; Platine auf vier Lagen platziert und geroutet, DRC ohne Fehler.
+- Zweitmeinung-Review von Schaltung und Layout gegen Datenblätter und Spezifikation: acht Punkte vor der Bestellung, Fertiger-Entscheidung, Bestellliste.
 - Parametrisches CAD-Modell als Code (CadQuery) mit Massenmodell: Masse, Schwerpunkt und Trägheitsmomente für die Simulation; die 16 Blender-Dateien inventarisiert und abgelöst.
 - Baudokumentation und Projektdatei mit Befunden und Änderungsprotokoll.
 
 **In Arbeit**
 
-- Platinen-Layout: Platzierungsentwurf mit Überschneidungen, danach Autorouting, DRC und Fertigungsdaten.
+- Platine: Review-Punkte in die Schaltung (Ausgangskapazität des Buck-Boost, 1S-Unterspannungsschwelle, Hauptschalter über FETs, Sicherung je Akku, Kelvin-Shunt) und in den Generator (Strompfade als Kupferflächen auf den Außenlagen) einarbeiten, dann neu routen, DRC, Fertigungsdaten.
 - Kardan-Anpassung für die neuen Servos; Servo-Sprungantwort neu messen.
 - Massenbudget: Teile wiegen, Rumpf leichter machen oder stärkeren Motor wählen.
 
 **Als Nächstes**
 
-1. Layout von rev B fertigstellen (Platzierung, Routing, DRC), Gerber, BOM und CPL exportieren, Bestellung bei JLCPCB mit SMD-Bestückung.
+1. Review in rev B einarbeiten, Platine neu erzeugen, letzte Verbindungen schließen, Gerber, BOM und CPL exportieren, Bestellung bei JLCPCB mit SMD-Bestückung (Aisler als EU-Rückfall); die Tischteile jetzt bestellen.
 2. Firmware für rev B: Treiber ICM-42688-P, Quaternion-Lage, Flugzustandsautomat, Pyro-Logik, Watchdog, LoRa-Telemetrie.
 3. Rakete wiegen und das Massenbudget gegen den Schub des E12 prüfen.
 4. Bodentests: TVC-Prüfstand mit Propellermotor im Kardan (Teile gekauft, Gestell zu bauen), Pyro-Test, Funkreichweite.
@@ -117,8 +118,20 @@ Das KiCad-Projekt in [hardware/mainboard/kicad/](hardware/mainboard/kicad/README
 einzigen Python-Beschreibung der Schaltung erzeugt (`circuit.py`): sieben Schaltplanblätter mit Netzlabel an
 jedem Pin, in Funktionsblöcke gegliedert, ERC ohne Fehler und Warnungen
 ([Schaltplan-PDF](hardware/mainboard/kicad/out/mainboard_schematic.pdf)), dazu ein Platinen-Generator, der
-Umriss, vier Lagen, Netzklassen und Sperrflächen zeichnet und die Teile setzt. Die Platzierung ist noch ein
-Entwurf; Routing, DRC und die Fertigungsdaten folgen.
+Umriss, vier Lagen, Netzklassen und Sperrflächen zeichnet, die Teile setzt, die Flächen füllt und das
+Freerouting-Ergebnis übernimmt: alle 134 Teile platziert und geroutet, DRC ohne Fehler
+([Renders und Lagenbilder](hardware/mainboard/kicad/img/)).
+
+<img src="hardware/mainboard/kicad/img/render_top.png" width="100%" alt="Mainboard rev B, geroutet, Render von oben">
+
+Ein [Zweitmeinung-Review](hardware/mainboard/review_kicad_2026-10-21.md) hat die Schaltung gegen die Datenblätter und das
+Layout gegen die Spezifikation geprüft. Seine acht A-Punkte kommen vor den Fertigungsdaten hinein: Der
+Buck-Boost sieht mehr Ausgangskapazität, als sein Datenblatt erlaubt, die 1S-Unterspannungsabschaltung
+würde den Rechner im Flug abschalten, der Hauptschalter sitzt im Hochstrompfad, nur die Servo-Schiene ist
+abgesichert, der Shunt hat keinen Kelvin-Anschluss, und der Autorouter hat die 2S-Ströme auf die dünne
+Innenlage und an der IMU vorbei gelegt. Der [Fertigervergleich](hardware/mainboard/Fertiger_2026-10-21.md) entscheidet für JLCPCB
+mit Economic-Bestückung und Aisler als EU-Rückfall; der [Bestellplan](hardware/mainboard/ORDER.md) sagt,
+was jetzt gekauft wird.
 
 Entscheidungen, die man kennen sollte:
 
@@ -241,7 +254,9 @@ portiert.
 | [docs/Plan_2026-10-21.md](docs/Plan_2026-10-21.md) | Platinen-Review mit Bauteilalternativen und Kostenschätzung, Versorgungsarchitektur, Layout-Checkliste, Portierungsplan, Entscheidungen |
 | [hardware/mainboard/README.md](hardware/mainboard/README.md) | Spezifikation Mainboard rev B |
 | [docs/DesignGuide_Mainboard_revB.md](docs/DesignGuide_Mainboard_revB.md) | der Entwurf rev B mit Abbildungen, zum Review ([PDF](docs/DesignGuide_Mainboard_revB.pdf)) |
-| [hardware/mainboard/ORDER.md](hardware/mainboard/ORDER.md) | Bestellplan: Vorab-Bestellung, Tore vor der Platinenbestellung, JLCPCB-Parameter, Kosten |
+| [hardware/mainboard/ORDER.md](hardware/mainboard/ORDER.md) | Bestellplan: Vorab-Bestellung, Tore vor der Platinenbestellung, JLCPCB-Parameter, Kosten, Bestellliste nach Händlern |
+| [hardware/mainboard/review_kicad_2026-10-21.md](hardware/mainboard/review_kicad_2026-10-21.md) | Zweitmeinung-Review des KiCad-Projekts: Schaltung gegen Datenblätter, Layout gegen Spezifikation, Zukunft, Kosten |
+| [hardware/mainboard/Fertiger_2026-10-21.md](hardware/mainboard/Fertiger_2026-10-21.md) | Fertigervergleich (JLCPCB, PCBWay, Aisler, Eurocircuits) und Entscheidung |
 | [simulation/README.md](simulation/README.md) | Modell, Koordinaten, Annahmen, Ergebnis des Gewinnvergleichs |
 | [spacecode/README.md](spacecode/README.md) | Firmware-Module, Log-Format, Test-Sketches |
 | [cad/README.md](cad/README.md) | parametrisches Modell, Parameter, Wartungskonzept |

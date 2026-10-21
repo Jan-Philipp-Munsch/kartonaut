@@ -26,7 +26,7 @@ station. The whole system is simulated in a six-degree-of-freedom model before i
 | Actuators | 2 × FrSky Xact W5652H in the gimbal (direct on 2S), roll motor on a DRV8833, pyro piston ejection |
 | Control | attitude from the gyro only, PID on pitch/yaw → torque → gimbal angle via `M = l · T · sin δ`, PID on roll; 100 Hz |
 | Simulation | Python 6DOF (port of the Simulink model): rigid body with quaternions, thrust curve, servo dynamics, sensor noise, Monte Carlo, gain search |
-| Status | bench-tested on breakout boards, no flight yet; mainboard rev B and the Python simulation finished on 21 Oct 2026 |
+| Status | bench-tested on breakout boards, no flight yet; mainboard rev B routed and reviewed on 21 Oct 2026, the review's changes go in before the PCB order |
 
 ## Project status
 
@@ -36,19 +36,20 @@ station. The whole system is simulated in a six-degree-of-freedom model before i
 - 6DOF simulation: MATLAB/Simulink model ported to Python with a 1:1 copy of the flight controller, 21 tests.
 - Firmware modules: sensors, altitude Kalman filter, SD logger with CSV export, pitch/yaw and roll controllers, timing, indicators.
 - Mainboard rev B specified: power architecture, pin map, bill of materials, placement plan, test plan; design guide with figures and order plan.
-- KiCad project for rev B generated from code: schematic with seven sheets, ERC clean; board generator with outline, four layers, net classes and keep-outs.
+- KiCad project for rev B generated from code: schematic with seven sheets, ERC clean; board placed and routed on four layers, DRC without errors.
+- Second-opinion review of schematic and layout against the datasheets and the specification: eight points to change before ordering, manufacturer decision, order list.
 - Parametric CAD model in code (CadQuery) with a mass model: mass, centre of gravity and moments of inertia for the simulation; the 16 Blender files inventoried and superseded.
 - Build documentation and project file with findings and changelog.
 
 **In progress**
 
-- Board layout: placement draft with overlaps to resolve, then autorouting, DRC and fabrication files.
+- Board: working the review into the circuit (buck-boost output capacitance, 1S undervoltage threshold, main switch via FETs, fuse per battery, Kelvin shunt) and into the generator (power paths as copper pours on the outer layers), then re-route, DRC, fabrication files.
 - Gimbal redesign for the new servos; servo step response to be measured again.
 - Mass budget: weigh the parts, lighten the airframe or choose a stronger motor.
 
 **Next**
 
-1. Finish the rev B layout (placement, routing, DRC), export Gerber, BOM and CPL, order at JLCPCB with SMD assembly.
+1. Work the review into rev B, regenerate the board, close the last connections, export Gerber, BOM and CPL, order at JLCPCB with SMD assembly (Aisler as the EU fallback); order the bench parts now.
 2. Firmware for rev B: ICM-42688-P driver, quaternion attitude, flight state machine, pyro logic, watchdog, LoRa telemetry.
 3. Weigh the rocket and settle the mass budget against the thrust of the E12.
 4. Ground tests: TVC test rig with a propeller motor in the gimbal (parts bought, rig to be built), pyro test, radio range.
@@ -115,8 +116,19 @@ The KiCad project in [hardware/mainboard/kicad/](hardware/mainboard/kicad/README
 from a single Python description of the circuit (`circuit.py`): seven schematic sheets with a net label on
 every pin, grouped into function blocks, ERC with zero errors and warnings
 ([schematic PDF](hardware/mainboard/kicad/out/mainboard_schematic.pdf)), plus a board generator that
-draws the outline, four layers, net classes and keep-outs and places the parts. The placement is still a
-draft; routing, DRC and the fabrication files come next.
+draws the outline, four layers, net classes and keep-outs, places the parts, pours the planes and imports the
+Freerouting result: all 134 parts placed and routed, DRC without errors
+([renders and layer images](hardware/mainboard/kicad/img/)).
+
+<img src="hardware/mainboard/kicad/img/render_top.png" width="100%" alt="Mainboard rev B, routed, rendered from above">
+
+A [second-opinion review](hardware/mainboard/review_kicad_2026-10-21.md) checked the circuit against the datasheets
+and the layout against the specification. Its eight A points go in before the fabrication files: the
+buck-boost sees more output capacitance than its datasheet allows, the 1S undervoltage cut-off would
+switch the computer off in flight, the main switch sits in the high-current path, only the servo rail is
+fused, the shunt has no Kelvin connection, and the autorouter put the 2S currents on the thin inner layer
+and past the IMU. The [manufacturer comparison](hardware/mainboard/Fertiger_2026-10-21.md) settles on JLCPCB with economic
+assembly and Aisler as the EU fallback; the [order plan](hardware/mainboard/ORDER.md) lists what to buy now.
 
 Design decisions worth knowing:
 
@@ -239,7 +251,9 @@ the simulation and the Blender files stay outside this repository; their content
 | [docs/Plan_2026-10-21.md](docs/Plan_2026-10-21.md) | board review with component alternatives and cost estimate, power architecture, layout checklist, simulation port plan, decisions |
 | [hardware/mainboard/README.md](hardware/mainboard/README.md) | mainboard rev B specification |
 | [docs/DesignGuide_Mainboard_revB.md](docs/DesignGuide_Mainboard_revB.md) | the rev B design presented with figures, for review ([PDF](docs/DesignGuide_Mainboard_revB.pdf)) |
-| [hardware/mainboard/ORDER.md](hardware/mainboard/ORDER.md) | order plan: parts to buy now, gates before the PCB order, JLCPCB parameters, costs |
+| [hardware/mainboard/ORDER.md](hardware/mainboard/ORDER.md) | order plan: parts to buy now, gates before the PCB order, JLCPCB parameters, costs, order list by shop |
+| [hardware/mainboard/review_kicad_2026-10-21.md](hardware/mainboard/review_kicad_2026-10-21.md) | second-opinion review of the KiCad project: circuit against datasheets, layout against the specification, future-proofing, costs |
+| [hardware/mainboard/Fertiger_2026-10-21.md](hardware/mainboard/Fertiger_2026-10-21.md) | manufacturer comparison (JLCPCB, PCBWay, Aisler, Eurocircuits) and decision |
 | [simulation/README.md](simulation/README.md) | model, coordinates, assumptions, results of the gain comparison |
 | [spacecode/README.md](spacecode/README.md) | firmware modules, log format, test sketches |
 | [cad/README.md](cad/README.md) | parametric model, parameters, maintenance concept |

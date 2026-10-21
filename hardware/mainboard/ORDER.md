@@ -56,16 +56,23 @@ easyeda2kicad, **ERC 0 Fehler / 0 Warnungen**. Die Netzliste ist gegen die Pin-T
 - Die Hinweise aus der Prüfung einarbeiten: TPS63070 FB2 (Pin 6) offen lassen statt GND; Kommentar zu den
   zusammengefassten Doppelpins 7/8 und 12/13 im Footprint; E22 NRST über 10 k an 3V3_RF oder an einen
   Teensy-Pin; ICM-42688-P RESV-Pins gegen DS-000347 Tabelle 9 halten.
-- **Review durch den Kollegen** anhand des Design Guides und des Schaltplan-PDFs (`kicad/out/`), Punkte
-  eingearbeitet oder begründet abgelehnt.
+- **Zweitmeinung-Review vom 21.10.2026** (`review_kicad_2026-10-21.md`): die Punkte A1 bis A5 in `circuit.py`
+  einarbeiten (Hold-up-Elko hinter D1, EN-Teiler des TPS63070 auf 2,7 V, Hauptschalter über FETs, Sicherung je
+  Akku, Kelvin-Shunt), dazu die B-Punkte nach Aufwand; Jan entscheidet A3 (FET-Schalter) und B6 (BMP390 an SPI).
+- **Review durch den Kollegen** anhand des Design Guides, der Blockbilder und der Lagenbilder (der erzeugte
+  Schaltplan ist ein Label-Netz ohne gezeichnete Verbindungen, Review-Punkt B15), Punkte eingearbeitet oder
+  begründet abgelehnt.
 
 ### Tor 2: Layout fertig
 
 - Umriss und Bohrungen kommen aus `gen_pcb.py` (geometrisch gleich `mainboard_outline.dxf`), Zonen wie
   `mainboard_placement.svg`. Stand 21.10.: Platzierung im Entwurf, 12 Überschneidungen und 9 Teile ohne Platz
   (`kicad/README.md` §6); die Fläche in den 16-mm-Streifen neben dem Teensy ist knapp.
-- Bahnbreiten der Stromnetze sind im Projekt mit 1,2 mm statt 2 mm angelegt (passen sonst nicht zwischen die
-  Steckerpins); beim Layout-Review gegen die Pyro-Spitze von 5 A prüfen.
+- Stand 21.10. nachts: alle 134 Teile platziert und geroutet, DRC 0 Fehler, 3 offene Verbindungen. Vor den
+  Fertigungsdaten die Layout-Punkte A6 bis A8 des Reviews: Stromnetze nur auf den Außenlagen (heute zur Hälfte auf
+  In2 mit 0,5 oz und 4,5 mm an der IMU vorbei), `VSYS_IN` ≥ 0,6 mm statt 0,25 mm, `5V_SERVO` ohne 0,15-mm-Stücke,
+  Kelvin-Weg des INA219, Sperrfläche 5 mm um die IMU, Funkmodul 0,5 mm vom Rand. Prüfung mit
+  `review_check_layout.py` wiederholen.
 - DRC mit den JLC-Regeln für 4 Lagen (0,09 mm Bahn/Abstand minimal, hier 0,127 mm; Via 0,3/0,45 mm),
   Bahnbreiten nach `README.md` §8.
 - 3D-Ansicht gegen die Hüllen aus `outline.py`; nichts höher als 5 mm bei |u| > 25 mm; unten nur
@@ -114,7 +121,7 @@ Quelle seit Dezember 2025 1,50 USD).
 | Bauteil | LCSC | Klasse | Stand 21.10. | Falls nicht lieferbar |
 |---|---|---|---|---|
 | ICM-42688-P | C1850418 | Extended | ca. 5500 Stück, ab 2,1 USD bei 1000 (Einzelpreis höher). **Achtung:** das bei LCSC verlinkte Datenblatt trägt die Marke Tokmas, nicht TDK; Hersteller im JLC-Teileprogramm prüfen, nur TDK InvenSense nehmen | keine Alternative auf der Achse; dann warten, Breakout oder anderer Anbieter |
-| BMP390 | C5124834 | Extended | **0 Stück** in der letzten Momentaufnahme, 6,7 USD | **BMP388 (C779278, gleiches LGA-10, gleiche Bibliothek)**, war bei LCSC gelistet, aber bei JLC nicht bestellbar; sonst Breakout per Qwiic anschließen |
+| BMP390 | C5124834 | Extended | LCSC am 21.10. nachts: **„Not available now“**, kein Bestand, kein Preis | **BMP388 (C779278, gleiches LGA-10, gleiche Bibliothek): 7362 Stück auf Lager, 7,67 USD (ab 10: 7,06)**, bei Bosch abgekündigt, für einen Lauf von 5 Platinen egal; ob JLC ihn bestückt, am Bestelltag prüfen, sonst Breakout an J_QWIIC oder BMP390 bei Mouser/DigiKey (Lieferzeit 4 bis 13 Wochen) |
 | INA219AIDR | C138706 | prüfen | ca. 1200–4400 Stück, 0,76 USD | INA219BIDR |
 | TPS63070RNMR | C109322 | Extended | Bestand schwankte zwischen 0 und 18 000, 1,37 USD | TPS63020DSJR (1,8–5,5 V ein, 2 A; dann kein Schutz gegen versehentlich 2S) |
 | TPS563201DDCR | C116592 | Basic | bewährt | TPS562201 |
@@ -128,11 +135,17 @@ Quelle seit Dezember 2025 1,50 USD).
 | SS14 | C2480 | Basic | | |
 | SMBJ12CA (bidirektional, Entscheidung KiCad-Projekt) | prüfen | | | SMBJ12A |
 | 20 mΩ 2512 1 % 1 W | prüfen | | | 2× 40 mΩ 2512 parallel |
-| Polyfuse 3 A 1812 | prüfen | | | |
+| Polyfuse 3 A 1812 (2S) und 2 A 1812 (1S), Review A4 | prüfen | Extended | | Nano2-Schmelzsicherung mit Halter |
+| Polymer-Elko 7343: 470 µF/6,3 V (2×), 330 µF/16 V (2×), 470 µF/10 V (1×), Review B3 | prüfen | meist Extended | | THT-Elkos selbst löten |
+| AO3401A ×2 zusätzlich als FET-Hauptschalter, Review A3 | C15127 | Basic | | |
+| SN74LV1T34DBVR statt 2× 74AHCT1G125, Review B8 | C100024 | Basic | | |
+| Shunt 20 mΩ 2512 mit Kelvin-Footprint (vier Pads), Review A5 | prüfen | | | 2-Pad-Shunt mit Netzbrücken an den Pads |
+| Ferritperle 0603 600 Ω + 10 µF (3V3_SENS), Review B4 | Basic | | | |
 | W25Q128JVSIQ | C97521 (prüfen) | Basic | | kommt unter den Teensy, nicht auf die Platine |
 | Passive 0402/0603, 4,7 k, 100 k, 33 k, 100 Ω, 100 n, 10 n, 10 µ | Basic | | | |
 
-Zählung: etwa **8 bis 10 Extended-Typen**, also 12 bis 30 USD Rüstgebühr. Wer sparen will, ersetzt den
+Zählung nach dem Review: etwa **10 bis 13 Extended-Typen** (dazu kommen Polyfuse und Polymer-Elkos, der
+74AHCT1G125 entfällt), also 15 bis 40 USD Rüstgebühr. Wer sparen will, ersetzt den
 74AHCT1G125 durch den SN74LV1T34 (Basic) und lässt die WS2812B selbst löten; die IMU, der Baro, der
 Buck-Boost und das Funkmodul bleiben Extended.
 
@@ -147,7 +160,7 @@ Buck-Boost und das Funkmodul bleiben Extended.
 | Versand (Euro-Packet/DHL) | 15–25 USD | |
 | Einfuhrumsatzsteuer 19 % auf Ware plus Versand | 20–30 EUR | |
 | Zoll seit 01.07.2026: 3 € je Warenposition (HS-Code), die 150-€-Freigrenze ist entfallen | 5–15 EUR | `Fertiger_2026-10-21.md` |
-| **Summe Platinenlauf** | **ca. 130–200 EUR** | für 5 Platinen, 2 bestückt; Röntgen der LGA/QFN und Versandart können dazukommen |
+| **Summe Platinenlauf** | **ca. 150–220 EUR** | für 5 Platinen, 2 bestückt; nach dem Review etwa 15 USD mehr (Sicherungen, Polymer-Elkos, zwei FETs); Röntgen der LGA/QFN und Versandart können dazukommen |
 
 `Fertiger_2026-10-21.md` vergleicht JLCPCB mit PCBWay, Aisler, Eurocircuits, Multi-CB und Beta Layout und
 kommt für den JLC-Auftrag auf 320–380 €, also deutlich mehr als diese Tabelle; die Differenz steckt in den
@@ -177,7 +190,7 @@ also **2 bis 3 Wochen** ab Upload. Die DHL-Option ist eine Woche schneller und 1
 
 | Risiko | Folge | Vorsorge |
 |---|---|---|
-| BMP390 bei JLC nicht lieferbar | kein Barometer auf der Platine | Footprint LGA-10 bleibt; BMP388 ist pinkompatibel; sonst Breakout an J_QWIIC |
+| BMP390 bei JLC nicht lieferbar (21.10.: LCSC „Not available now“) | kein Barometer auf der Platine | **Entscheidung: BMP388 (C779278, 7362 auf Lager) für diesen Lauf**, gleicher Footprint und gleiche Bibliothek; sonst Breakout an J_QWIIC oder an SPI1 (Review B6) |
 | TPS63070 nicht lieferbar | kein 5V_SYS aus 1S | Footprint zusätzlich für TPS63020 vorsehen? Nein, zu viel Fläche; Bestand vor dem Layout prüfen und notfalls 10 Stück bei LCSC vorbestellen |
 | E22-400T22S falsch gedreht oder Pads unter dem Modul nicht benetzt | Funk tot | CPL-Vorschau prüfen; das Modul hat nur Randpads, Nachlöten ist möglich |
 | WS2812B erzwingt Standard-PCBA | +17 USD Setup | LEDs als DNP, selbst löten (2020-Gehäuse, Heißluft) oder 5050-Gehäuse nehmen |
@@ -189,9 +202,68 @@ also **2 bis 3 Wochen** ab Upload. Die DHL-Option ist eine Woche schneller und 1
 ## 6. Wer macht was, Reihenfolge der nächsten Wochen
 
 1. Jetzt: §1 bestellen (0.1 bis 0.6, 0.9 bis 0.16 mindestens). Parallel Firmware auf dem Breakout.
-2. Schaltplan steht (`kicad/`, ERC sauber, Netzliste geprüft). Hinweise der Tor-1-Prüfung einarbeiten,
-   Design Guide und Schaltplan-PDF an den Kollegen, Review einarbeiten → Tor 1.
-3. Platzierung fertigstellen, Freerouting, DRC, Papierprobe → Tor 2.
+2. Schaltplan und Layout stehen (`kicad/`, ERC und DRC sauber). Review-Punkte A1 bis A8 einarbeiten
+   (`review_kicad_2026-10-21.md` §6 nennt die Reihenfolge), Platine neu erzeugen → Tor 1.
+3. Letzte Verbindungen schließen, `review_check_layout.py` und DRC, Papierprobe, Kollegen-Review → Tor 2.
 4. Am Bestelltag §3.3 durchgehen, dann hochladen → Tor 3. Während der Lieferzeit: Träger drucken, Kabel
    konfektionieren, Antenne in die Spitze.
 5. Tor 4 und Testplan. Erst danach die Firmware auf die Platine.
+
+## 7. Bestellliste nach Händlern (Stand 21.10.2026 nachts)
+
+Konkrete Fassung von §1 nach dem Review (`review_kicad_2026-10-21.md`) und dem Inventar in `docs/BUILD.md` §1.3.
+Preise sind aus Händlerseiten und Suchtreffern vom 21.10.2026, **keine Angebote**; beim Bestellen prüfen. Was schon da
+ist: Teensy 4.1, Breakouts ICM-20948, BMP280, INA219, 2× HC-12, SG90, WS2812B, Summer, HTRC-H4AC-Lader (2 bis 4S,
+**kein 1S**), 4S-Akku für den Prüfstand, W5652H bestellt. Der 2S-Flugakku steht in `BUILD.md` mit `[?]`.
+
+### 7.1 Jetzt bestellen (Tischaufbau und Firmware, unabhängig von der Platine)
+
+| Nr. | Teil | Stück | Quelle | ca. | Hinweis |
+|---|---|---|---|---|---|
+| 0.1 | ICM-42688-P-Breakout (SPI herausgeführt) | 1 | AliExpress/Amazon („ICM-42688-P module“); kein deutscher Händler gefunden, Eval-Board DK-42688-P bei DigiKey 53 Wochen | 8–15 € | wichtigstes Teil: IMU-Treiber ohne DMP am Tisch |
+| 0.2 | BMP390-Breakout Adafruit 4816 | 1 | Kiwi Electronics (NL) 9,99 € netto, eBay paradisetronic 16,97 €; Berrybase/Eckstein prüfen | 12–17 € | auch als Rückfall an J_QWIIC, falls der Chip nicht bestückt wird |
+| 0.3 | LoRa E22-400T22D (DIP, SMA) | 2 | Ebyte über AliExpress, eBay (Ebyte-Shop) oder Tindie | 2 × 8–12 € | Bodenstation und Tisch-Gegenstelle |
+| 0.4 | 433-MHz-Stabantenne SMA | 2 | dieselbe Bestellung | 2 × 2–4 € | |
+| 0.5 | Pigtail IPEX (u.FL) → SMA-Buchse, 10 cm | 2 | Berrybase, AliExpress | 2 × 2–3 € | Rakete; Review B17: Lage der IPEX-Buchse am Modul prüfen |
+| 0.6 | **1S-LiPo 450–600 mAh mit JST-PH 2.0, ohne Schutzschaltung** (RC-Zelle, 25–30 C) | 2 | Modellbau (E-flite 500 mAh 25 C ca. 11 €; BetaFPV/HappyModel 1S 450–550 mAh mit PH2.0 ca. 5–7 €) | 2 × 5–11 € | **nicht** die Elektronik-Zellen mit PCM (Berrybase LP503035): deren Überstromschutz liegt bei 1 bis 1,5 A, der Buck-Boost zieht bei 3,0 V bis 1,6 A |
+| 0.7 | 2S-LiPo 450–850 mAh 50 C, XT30 | 1–2, falls nicht vorhanden | Modellbau-Händler | 12–20 € | für die Landung mit zweitem Motor eher 850 mAh (Review C1) |
+| 0.8 | 1S-USB-Lader für JST-PH (der HTRC H4AC kann kein 1S) | 1 | Modellbau (BetaFPV 1S-Lader) oder Berrybase | 10–20 € | |
+| 0.9 | Zweipoliger Mini-Schiebeschalter (DPDT) | 2 | Reichelt | 2 × 1–2 € | mit Review A3 (FET-Schalter) genügt ein kleiner Schalter, kein 3-A-Typ |
+| 0.10 | Schlüsselschalter oder Kippschalter mit Schutzkappe für Arming, ≥ 3 A | 1 | Reichelt | 3–8 € | führt den Pyro-Puls (Review A3: Arming bleibt im Strompfad) |
+| 0.11 | JST-XH 2-, 3- und 4-polig: Platinenstecker liegend und stehend, Gehäuse, Crimpkontakte; JST-PH 2-polig ebenso; JST-GH 3/4 und JST-SH 4 **konfektioniert** (10–15 cm) | Sortiment | Reichelt (einzeln), AliExpress/Amazon (Sortiment) | 15–25 € | Review A3: J_SW als XH 4-polig, J_ARM und J_MOT als XH 2-polig |
+| 0.12 | Crimpzange JST-XH/PH (Engineer PA-09 ca. 45 €, IWISS SN-01BM ca. 20–25 €) | 1 | Amazon, Reichelt | 20–45 € | |
+| 0.13 | XT30PW-M liegend | 3 | Hobbyking, AliExpress | 3 × 1 € | |
+| 0.14 | Buchsenleiste 1×24, 2,54 mm, 8,5 mm | 4 | Reichelt | 4 × 0,5 € | Stifte nach dem Löten kürzen (Review B18) |
+| 0.15 | Stiftleiste 2×7, 2,54 mm | 2 | Reichelt | 1 € | |
+| 0.16 | Aktiver Summer 5 V, 12 mm, THT | 2 | Reichelt | 2 × 1 € | |
+| 0.17 | Polymer-Elkos: nur noch als Rückfall, wenn JLC die 7343-Typen nicht bestückt (Review B3: 2× 470 µF/6,3 V, 2× 330 µF/16 V, 1× 470 µF/10 V, SMD) | – | Reichelt | – | THT-Elkos entfallen |
+| 0.19 | W25Q128JVSIQ (SOIC-8) | 2 | Reichelt, LCSC | 2 × 1,5 € | unter den Teensy |
+| 0.20 | GPS-Modul u-blox MAX-M10S oder NEO-M9N (Breakout) | 1, optional | Berrybase, Mateksys-Händler | 17–30 € | |
+| 0.21 | Silikonlitze AWG 20, 22, 26 (rot/schwarz) | je 2 m | Reichelt | 8–10 € | |
+| 0.22 | Elektrozünder (E-Matches) und Glühlämpchen 6 V als Dummy-Last | 10 + 5 | Raketenmodellbau Klima, Modellbau | 10–15 € | Tischtest nur mit Lämpchen |
+| 0.23 | Isolierplatte 1 mm (Kapton oder PE-Schaum) zwischen Platine und Akkuträger | 1 | Baumarkt, Amazon | 3–5 € | Review B18 |
+| 0.24 | Isolierter 2-mm-Draht oder Stab für die λ/4-Antenne, 17 cm | – | vorhanden? | – | in der Spitze |
+
+Summe ohne GPS und Crimpzange etwa **110–170 €**, mit beiden **150–245 €**. Entfallen gegenüber §1: 0.18 (Taster
+SW_RST, der Reset ist entfallen), die THT-Elkos unter 0.17.
+
+### 7.2 Mit der Platine (JLCPCB, Tor 3)
+
+Die SMD-Teile kommen von JLC/LCSC über BOM und CPL (§3.2, §3.3). Neu nach dem Review: 2× Polyfuse 1812 (3 A und
+2 A), 2 weitere AO3401A (FET-Hauptschalter) mit 4 Widerständen, 5 Polymer-Elkos 7343, SN74LV1T34 statt 2× 74AHCT1G125,
+Kelvin-Shunt-Footprint, Ferritperle 0603 mit 10 µF für die Sensor-3,3-V, zwei weitere Pyro-Kanäle als DNP, 100 nF
+am INA219-Eingang. Die Stückliste in `README.md` §7 wird beim Einarbeiten nachgezogen.
+
+### 7.3 Reserve-Chips bei LCSC (eine Bestellung, ca. 10 € Versand)
+
+Für Nachlöten und eine dritte Platine: 2× ICM-42688-P (C1850418, ca. 3,4 USD), 2× E22-400T22S (C2903765, ca. 4,2 USD),
+2× TPS63070RNMR (C109322, ca. 1,4 USD), 2× BMP388 (C779278, 7,67 USD, 7362 auf Lager am 21.10.) oder BMP390, sobald
+wieder gelistet; dazu 2× DRV8833PWPR, 2× INA219AIDR. Zusammen etwa 40 USD plus Versand und Einfuhrabgaben. Lohnt nur,
+wenn die zweite bestückte Platine nicht als Reserve reicht; sonst weglassen.
+
+### 7.4 Reihenfolge
+
+1. Heute: 7.1 bestellen, mindestens 0.1 bis 0.6, 0.8, 0.11, 0.12, 0.14. Lieferzeit aus China 2 bis 4 Wochen, deshalb zuerst.
+2. Nach dem Einarbeiten des Reviews (Tor 1 und 2): BOM/CPL und §3.3 am Bestelltag im JLC-Teileprogramm prüfen, Platine
+   bestellen (Tor 3, `Fertiger_2026-10-21.md`), gegebenenfalls 7.3.
+3. Während der Lieferzeit: Träger drucken, Kabel crimpen, Antenne in die Spitze, Firmware am Breakout.

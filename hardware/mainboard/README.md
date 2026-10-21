@@ -110,6 +110,7 @@ Alle Pins aus `Config.h` bleiben. ★ = neu gegenüber `Config.h`, ☆ = anders 
 | 4 | IMU_INT | ICM-42688-P INT1 | ★ |
 | 5 / 6 | LED1 / LED2 | 74AHCT1G125 → WS2812B auf dem Board und J_LED | wie bisher |
 | 7 | CAM_TRIG | 1 kΩ → J_CAM (JST-GH 3) | ★ |
+| 8 | MOT_FAULT | DRV8833 nFAULT, 10 kΩ nach 3V3 | ★ (KiCad-Projekt 21.10.2026) |
 | 9 | SERVO_CHUTE | J_SERVO3 (5V_SERVO) | wie bisher, Reserve |
 | 13 | BUZZER | AO3400A → aktiver 5-V-Summer | wie bisher |
 | 18 / 19 | SDA0 / SCL0 | BMP390 (0x77), INA219 (0x40), J_QWIIC | wie bisher, 4,7 kΩ Pull-ups |
@@ -190,7 +191,7 @@ LCSC-Nummern mit „prüfen“ beim Bestellen verifizieren; Verfügbarkeit bei J
 | J_EXP | Stiftleiste 2×7 | THT | 1 | – | freie Pins |
 | JP1, JP2 | Lötbrücke | – | 2 | – | Schalter überbrücken (Tisch) |
 | TP1..6 | Testpunkte VBAT2, VSYS_IN, 5V_SYS, VSERVO, 5V_SERVO, 3V3_RF | – | 6 | – | Inbetriebnahme |
-| SW_RST | Taster 6 × 6 mm | SMD | 1 | prüfen | Teensy-Reset, durch die Luke erreichbar |
+| ~~SW_RST~~ | Taster 6 × 6 mm | SMD | 0 | – | entfallen (KiCad 21.10.2026): der Teensy 4.1 hat am Sockel keinen Reset-Pin, der Program-Taster auf dem Teensy ist durch die Luke erreichbar |
 
 Dazu die üblichen Abblock- und Teiler-Bauteile (0402/0603) und ein W25Q128 (SOIC-8) unter dem Teensy.
 
@@ -232,7 +233,14 @@ Die vollständige Prüfliste steht in `docs/Plan_2026-10-21.md` §2.6. Kurzfassu
   in der laufenden Phase weitermacht.
 - Rampenkalibrierung des Gyro-Bias (Befund 5).
 
-## 11. Offen
+## 11. KiCad-Projekt und Tor-1-Prüfung
+
+Seit dem 21.10.2026 liegt die Schaltung als KiCad-Projekt in `kicad/` (Schaltplan und Platine aus
+`circuit.py`, siehe `kicad/README.md`). Abweichungen von dieser Spezifikation, die das Projekt
+begründet trifft, stehen dort in §4; die Prüfung der Netzliste gegen §4 dieser Datei steht in
+`review_netlist_2026-10-21.md` (Ergebnis: konform; Hinweise zu TPS63070-Doppelpins, FB2, ICM-Hersteller und E22-NRST).
+
+## 12. Offen
 
 - Lage der TVC-Servoachsen zum Schlitten (Achsentausch in der Firmware). Der Kardan wird für die
   W5652H neu konstruiert (`cad/`), dabei festlegen.

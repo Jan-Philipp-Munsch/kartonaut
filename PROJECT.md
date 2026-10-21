@@ -20,12 +20,12 @@ programmierter Flugcomputer (Teensy 4.1) mit Funk-Telemetrie zur Bodenstation.
 | Größe | Wert | Quelle |
 |---|---|---|
 | Rumpf | Klima-Rohr Ø 75 mm außen, **72,6 mm innen**, 120 g je 0,5 m; 1000 mm lang (2× 0,5 m + Kuppler 72,4/70,2 × 150 mm) | Bestellungen Klima/SRT 2025, `docs/BUILD.md` §1 |
-| Spitze | Ø 80 mm, 99 mm hoch, federgelagert, Gewindestange M2,5 | `rocket nose.blend` |
+| Spitze | Klima-Kunststoffspitze 75 mm (Artikel 8539), lose aufgesteckt, Fallschirm darin; ersetzt die gedruckte, federgelagerte Spitze (Ø 80 mm, 99 mm) aus `rocket nose.blend` | Klima 23.10.2025, Jan 21.10.2026 |
 | Motor | **TSP E12-0** (24 mm, 39 Ns, 28 g Treibstoff, 64 g, Brennschluss 3,55 s, ohne Ausstoßladung), 4 Stück vorhanden, im 29→24-mm-Adapter. Die E12-Schubkurve der Simulation ist diese TSP-Kurve; F35 liegt daneben. | SRT 28.04.2025, thrustcurve.org, `TVC.blend`, MATLAB `6DOF_model` |
 | Masse | 902 g geplant (2× E12, Landesystem 200 g) | `Gewicht.csv` |
 | TVC | Kardan mit 2× SG90 (Servofenster Yaw 70–115°, Pitch 60–105°). Ersatz bestellt: FrSky Xact W5652H (10 g, 3,7–8,4 V, Hall-Sensor, 15-Zahn-Abtrieb), Kardan muss dafür angepasst werden. | `dual_tvc.blend`, `Control.cpp`, `docs/Plan_2026-10-21.md` §2.2 |
 | Hebelarm TVC–Schwerpunkt | 0,30 m | `Config.h`, `TVC6DOF.m` |
-| Flugcomputer | Ring-Stack Ø 69 mm, 8 M2-Stangen, Ringe für Teensy, Sensorik, Akku und Roll | `flight_computer.blend` |
+| Flugcomputer | Ring-Stack Ø 69 mm, 8 M2-Stangen, **im Kuppler (innen 70,2 mm)**, als Modul herausziehbar. Mainboard rev B als Längs-Schlitten 54 × 120 mm | `flight_computer.blend`, `hardware/mainboard/` |
 | Akku | **Zwei Akkus (entschieden 21.10.2026):** 2S LiPo für Servos, Rollmotor und Pyro; 1S LiPo für Teensy, Sensorik, Funk und GPS über einen Buck-Boost. Ein zweipoliger Hauptschalter schaltet beide. | `docs/Plan_2026-10-21.md` §2.5, `flight_computer.blend` („Battery 7.4V“) |
 | Funk | HC-12 (433 MHz), 9600 Bd | `Config.h`, `Radio_test.cpp` |
 
@@ -57,7 +57,7 @@ Status: ✅ fertig · 🟡 in Arbeit · ⬜ offen
 | 2 | 6DOF-Simulation und PID-Auslegung | ✅ | Monte-Carlo und PID-Raster (Mai/Juni 2025), Servo-Systemidentifikation |
 | 3 | TVC-Kardan (CAD) | 🟡 | Mehrere Generationen bis `dual_tvc` (Juni 2025). Druck- und Funktionstest nicht dokumentiert. |
 | 4 | Rumpf, Spitze, Landebeine (CAD) | 🟡 | `model_rocket.blend` (Juni 2025) |
-| 5 | Bergung (Piston Ejection) | 🟡 | Bulkheads heruntergeladen (Juni 2025). Fallschirm-Servo im Code. Pyro-Auslösung fehlt. |
+| 5 | Bergung (Piston Ejection) | 🟡 | Entschieden 21.10.2026: Pyro-Ausstoß, Kolben aus einem Kuppler, Fallschirm in der Klima-Spitze. Pyro-Tests mit ca. 1 g Schwarzpulver erfolgreich. Fallschirm (125 cm), Kevlar- und Gummischnur gekauft. Pyro-Logik in der Firmware fehlt. |
 | 6 | Flugcomputer-Mechanik (Ring-Stack) | 🟡 | `flight_computer.blend` (13.10.2025), `battery7.stl` |
 | 7 | Sensorik: IMU (DMP), Barometer, INA219 | ✅ | `Sensors.cpp` (Okt. 2025) |
 | 8 | Höhenschätzung (Kalman z/vz) | ✅ | `KalmanZ.cpp`, Commit „kalman filter optimization“ |
@@ -66,9 +66,9 @@ Status: ✅ fertig · 🟡 in Arbeit · ⬜ offen
 | 11 | Funkstrecke HC-12 | 🟡 | Beacon-Test Teensy → Nano (Okt. 2025). Ein echtes Telemetrieprotokoll fehlt. |
 | 12 | GPS | ⬜ | Nur ein früherer Testsketch (TinyGPSPlus-Beispiel, Git-Historie bis `3b152c9`) |
 | 13 | Flugzustandsautomat (Pad → Boost → Coast → Apogäum → Bergung → Landung) | ⬜ | Gibt es noch nicht. Die Flugschleife in `main.cpp` läuft wieder (seit 20.10.2026), der MOSFET-Test ist nach `examples/pyro_mosfet_test/` gewandert. |
-| 14 | **Mainboard rev A (Platine statt Breakouts)** | 🟡 | Spezifikation, Pinbelegung, Stückliste und Umriss fertig (15.10.2026) → `hardware/mainboard/`. Bauform: Längs-Schlitten 54 × 120 mm zwischen den Endringen des Stacks, Akku im Träger darunter. Die runde Ø-68-Variante ist verworfen. Als Nächstes: Schaltplan in KiCad. |
+| 14 | **Mainboard rev B (Platine statt Breakouts)** | 🟡 | Rev A spezifiziert 15.10.2026 (Längs-Schlitten 54 × 120 mm, Akku im Träger darunter). Rev B entschieden 21.10.2026: zwei Akkus (1S Elektronik über TPS63070, 2S Aktoren und Pyro), ICM-42688-P an SPI1, BMP390, LoRa E22-400T22D, W5652H direkt am 2S, 20-mΩ-Shunt, beide Pyro-Kanäle → `hardware/mainboard/README.md`. Als Nächstes: KiCad. |
 | 15 | Bodentests (Servo-Schubstand, Pyro-Test, Funkreichweite) | ⬜ | |
-| 16 | Erstflug | ⬜ | |
+| 16 | Erstflug | ⬜ | Entschieden 21.10.2026: erst geregelter Aufstieg mit einem Motor und Fallschirm; Landung mit zweitem Motor danach. |
 
 ## 5. Befunde aus der Durchsicht vom 15.10.2026
 
@@ -92,6 +92,8 @@ Das ist beim Einlesen aufgefallen. Was die Aufräumrunde vom 20.10.2026 davon er
 3. Schaltplan nach der Spezifikation zeichnen, Review, dann Layout und Bestellung bei JLCPCB mit SMD-Bestückung.
 4. Parallel in der Firmware: Pinbelegung in `Config.h` übernehmen, IMU auf SPI1 umstellen, Flugzustandsautomat und Pyro-Logik mit Arming.
 5. Befunde 1–4 aus §5 angehen, bevor das erste Mal mit aktiver Regelung geflogen wird.
+6. Firmware für rev B: Treiber ICM-42688-P (SPI, ohne DMP), Gyro-Quaternion, BMP390, LoRa-Konfiguration, zwei Akkuspannungen, Watchdog und Zustandsspeicher, Pyro-Logik mit Arming.
+7. Parametrisches CAD in `cad/` mit Trägheitsmomenten (Session vom 21.10.2026), danach Kardan für die W5652H anpassen und die Servo-Übertragungsfunktion neu messen.
 
 ## 7. Änderungsprotokoll
 
@@ -102,4 +104,4 @@ Das ist beim Einlesen aufgefallen. Was die Aufräumrunde vom 20.10.2026 davon er
 | 2025-10-12 bis 31 | Git-Repo angelegt, Firmware modularisiert, Kalman, SD-Logger, HC-12-Test, Regler. `flight_computer.blend` überarbeitet. |
 | 2026-10-15 | `groundcode/` als eigenes Repo ausgeklammert. Projektdatei angelegt. Mainboard rev A spezifiziert (`hardware/mainboard/`), erst rund, dann als Längs-Schlitten neu ausgelegt. Befund 3 korrigiert: Lage nur aus dem Gyro ist richtig. |
 | 2026-10-20 | Aufräumrunde für die Veröffentlichung. Repo: `README.md` angelegt, `eLab/` und die maschinenabhängige VS-Code-Datei aus dem Index genommen, PlatformIO-Platzhalter und die auskommentierten Monolithe in `sketches/` gelöscht. Firmware: `Main.ino` → `main.cpp` mit wiederhergestellter Flugschleife, alle Gewinne, Servo-Geometrie, Fenster und Gyro-Offsets in `Config.h`, Regler-Schnittstelle ohne doppelte Integration (`RollOutput`), Slack an den Logger, Gyro-Bit-Fix (Befund 9), CSV-Format-Fix (Befund 10), `lib_deps` auf die genutzten Bibliotheken gekürzt. Test-Sketches als Umgebungen unter `examples/` (`radio_beacon`, `i2c_scanner`, `pyro_mosfet_test`). Alle vier Umgebungen bauen warnungsfrei. Nicht am Gerät getestet. Danach: MIT-Lizenz, englisches `README.md` (deutsch als `README.de.md`), lokale Pfade aus dieser Datei entfernt, Repo auf GitHub öffentlich geschaltet. |
-| 2026-10-21 | Planungsrunde: `docs/Plan_2026-10-21.md` (Review Mainboard rev A, Bauteilalternativen ICM-42688-P / BMP390 / LoRa E22-400T22D, Kostenschätzung, Portierungsplan der Simulink-Simulation nach Python, Konzept Baudokumentation, Fragen). `docs/BUILD.md` angelegt mit dem Inventar aus den Bestellungen bei Klima (09.06. und 23.10.2025) und Space Rocket Technology (28.04.2025). Dabei geklärt: Rohr innen 72,6 mm, Motor ist der TSP E12-0 (4 Stück), die E12-Schubkurve der Simulation ist die TSP-Kurve. Jan: Funk wird LoRa, Servos FrSky W5652H bestellt. Danach Plan §2.5 (Versorgung: ein 2S-Akku mit Buck-Boost, 20-mΩ-Shunt und Hold-up gegen Neustart im Flug, Platine lässt einen zweiten 1S-Akku zu; Watchdog und Zustandsspeicher in der Firmware) und §2.6 (Layout-Checkliste: Leiterbahnbreiten, verriegelte Stecker, IMU-Platzierung, Funk/GPS-Antennen, Kabel). Portierung der Simulation nach `simulation/` in eigener Session gestartet. Jan entscheidet Variante B: 1S-Akku für die Elektronik, 2S für Servos, Rollmotor und Pyro; Schaltungsstruktur und Strombudget in Plan §2.5. |
+| 2026-10-21 | Planungsrunde: `docs/Plan_2026-10-21.md` (Review Mainboard rev A, Bauteilalternativen ICM-42688-P / BMP390 / LoRa E22-400T22D, Kostenschätzung, Portierungsplan der Simulink-Simulation nach Python, Konzept Baudokumentation, Fragen). `docs/BUILD.md` angelegt mit dem Inventar aus den Bestellungen bei Klima (09.06. und 23.10.2025) und Space Rocket Technology (28.04.2025). Dabei geklärt: Rohr innen 72,6 mm, Motor ist der TSP E12-0 (4 Stück), die E12-Schubkurve der Simulation ist die TSP-Kurve. Jan: Funk wird LoRa, Servos FrSky W5652H bestellt. Danach Plan §2.5 (Versorgung: ein 2S-Akku mit Buck-Boost, 20-mΩ-Shunt und Hold-up gegen Neustart im Flug, Platine lässt einen zweiten 1S-Akku zu; Watchdog und Zustandsspeicher in der Firmware) und §2.6 (Layout-Checkliste: Leiterbahnbreiten, verriegelte Stecker, IMU-Platzierung, Funk/GPS-Antennen, Kabel). Portierung der Simulation nach `simulation/` in eigener Session gestartet. Jan entscheidet Variante B: 1S-Akku für die Elektronik, 2S für Servos, Rollmotor und Pyro; Schaltungsstruktur und Strombudget in Plan §2.5. Weitere Entscheidungen: ICM-42688-P, erster Flug mit einem Motor, Pyro-Bergung mit Kolben und Klima-Spitze, Flugcomputer im Kuppler (70,2 mm), CAD-Neuaufbau in eigener Session (`cad/`). |

@@ -1,9 +1,10 @@
-"""Board outline (DXF for KiCad Edge.Cuts) and placement plan (SVG) of the mainboard rev A, sled version.
+"""Board outline (DXF for KiCad Edge.Cuts) and placement plan (SVG) of the mainboard rev B, sled version.
 
 The board is a sled lying lengthwise in the airframe, its plane through the roll axis, between the
 end rings of the existing flight-computer stack (flight_computer.blend, not in this repo: rings of
-69 mm diameter, eight 2 mm threaded rods at (+-29.5, +-7) and (+-7, +-29.5) mm). The rods run past
-the board edges; the 2S LiPo lies in the printed carrier underneath the board.
+69 mm diameter, eight 2 mm threaded rods at (+-29.5, +-7) and (+-7, +-29.5) mm), which sits inside a
+Klima 75-mm coupler (ID 70.2 mm). The rods run past the board edges; the 2S LiPo (actuators) and the
+1S LiPo (electronics, rev B) lie one behind the other in the printed carrier underneath the board.
 
 Coordinates: u across the board (mm, 0 on the roll axis), v along the rocket axis (mm, 0 at the
 TVC end, growing towards the nose). In the cross-section y is the board normal (component side +).
@@ -15,7 +16,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 
-TUBE_ID = 69.0            # mm, conservative: the stack rings are 69 mm, the tube ID still has to be measured
+TUBE_ID = 70.2            # mm, inner diameter of the Klima 75-mm coupler the flight computer sits in (rings 69 mm, tube itself 72.6 mm)
 BOARD_W, BOARD_L = 54.0, 120.0
 BOARD_T = 1.6
 CORNER_R = 2.0
@@ -29,13 +30,13 @@ IMU = (0.0, 60.5)                                          # under the Teensy, o
 
 # Placement zones (label, u0, u1, v0, v1, colour, items)
 ZONES = [
-    ("AKKU / SCHALTER", -27, 0, 0, 22, "#f4d6a0", ["XT30, Kabel nach unten", "J_SW, JP1", "Verpolschutz"]),
+    ("AKKUS / SCHALTER", -27, 0, 0, 22, "#f4d6a0", ["XT30 (2S), JST-PH (1S)", "J_SW 2-polig, JP1/JP2", "2x Verpolschutz"]),
     ("SERVOS / MOTOR", 0, 27, 0, 22, "#f6c4c4", ["3x Servo (90°-Leiste)", "J_MOT Rollmotor"]),
     ("WANDLER", -27, -10, 22, 92, "#f4d6a0",
-     ["INA219", "+ Shunt", "", "Buck", "5V_SERVO", "", "Buck", "5V_SYS", "", "DRV8833", "", "Elkos"]),
+     ["INA219", "+ 20 mOhm", "", "Buck", "5V_SERVO", "", "Buck-Boost", "5V_SYS (1S)", "", "DRV8833", "", "Elkos"]),
     ("SENSOR /", 10, 27, 22, 92, "#c9e4c5",
-     ["LOGIK", "", "BMP280", "(oben, weg", "von Spulen)", "", "AP2112 3V3", "2x 74AHCT", "Teiler", "Summer-FET", "", "J_EXP 2x7"]),
-    ("FUNK", -27, -9, 92, 120, "#c9e4c5", ["HC-12 liegend", "Antenne", "zur Spitze", "J_GPS"]),
+     ["LOGIK", "", "BMP390", "(oben, weg", "von Spulen)", "", "AP2112 3V3", "2x 74AHCT", "Teiler", "Summer-FET", "", "J_EXP 2x7"]),
+    ("FUNK", -27, -9, 92, 120, "#c9e4c5", ["E22-400T22S", "(SMD, IPEX)", "Pigtail zur", "Spitze, J_GPS"]),
     ("SIGNAL", -8, 8, 103, 120, "#cfd8f0", ["2x LED", "Qwiic, CAM"]),
     ("PYRO", 9, 27, 92, 120, "#cfd8f0", ["2x Klemme", "J_ARM", "Summer"]),
 ]
@@ -45,10 +46,11 @@ KEEPOUTS = [("SD", -8, 8, 24, 30), ("USB-Stecker", -8, 8, 91, 103)]
 ENVELOPES = [
     ("Teensy auf Buchsenleisten", -8.9, 8.9, BOARD_T / 2, 13.5),
     ("Elko 470 uF stehend", -24.0, -16.0, BOARD_T / 2, 11.8),
-    ("HC-12 auf Abstandshalter", -26.0, -12.0, BOARD_T / 2, 11.6),
+    ("LoRa E22-400T22S SMD", -26.0, -10.0, BOARD_T / 2, 4.5),
     ("Pyro-Klemmen / Summer", 12.0, 25.0, BOARD_T / 2, 11.0),
     ("Servo-Stecker liegend", 4.0, 26.0, BOARD_T / 2, 7.0),
     ("LiPo 2S im Traeger", -12.75, 12.75, -12.5, -3.5),
+    ("LiPo 1S im Traeger (hinter dem 2S)", -15.0, 15.0, -11.0, -3.5),
 ]
 
 

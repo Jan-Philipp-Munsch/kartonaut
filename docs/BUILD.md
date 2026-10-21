@@ -16,8 +16,8 @@ Fotos liegen unter `docs/img/build/` und heißen `JJJJ-MM-TT_<thema>.jpg`.
 |---|---|---|---|---|
 | Körperrohr 75 mm / 500 mm (Klima 207550000) | 3 | außen 75,0 mm, **innen 72,6 mm**, 120 g | SRT 28.04.2025 (1), Klima 09.06.2025 (1), Klima 23.10.2025 (1, als Ersatz/Verlängerung?) `[?]` | `[?]` |
 | Kuppler 75 mm / 150 mm (Klima 207315000) | 3 | außen 72,4 mm, innen 70,2 mm | Klima 09.06.2025 (1), Klima 23.10.2025 (2) | `[?]` |
-| Körperrohr 50 mm / 500 mm (Klima 205050000) | 1 | `[?]` Zweck: Kolben der Piston Ejection oder Motorschacht? | Klima 23.10.2025 | `[?]` |
-| Spitze komplett 75 mm weiß (Klima 8539) | 1 | Kunststoff | Klima 23.10.2025 | `[?]` ersetzt sie die gedruckte Spitze aus `rocket nose.blend`? |
+| Körperrohr 50 mm / 500 mm (Klima 205050000) | 1 | vermutlich als Motorhalterung gedacht (Jan, 21.10.2026) | Klima 23.10.2025 | `[?]` |
+| Spitze komplett 75 mm weiß (Klima 8539) | 1 | Kunststoff. **Ersetzt die gedruckte Spitze.** Der Fallschirm liegt in der Spitze, die lose sitzt und per Pyro-Kolben (Kuppler) abgestoßen wird | Klima 23.10.2025 | `[?]` |
 | Fallschirm 125 cm (Klima 8594) | 1 | | Klima 09.06.2025 | `[?]` |
 | Kevlarschnur geflochten 2,0 mm | 1 m | Schockschnur | Klima 23.10.2025 | `[?]` |
 | Elastische Schnur 1,5 mm / 1,8 m | 1 | | Klima 23.10.2025 | `[?]` |
@@ -68,8 +68,13 @@ Maximum 33 N) ist ein anderer Motor und kommt nur zum Vergleich in die Python-Si
 
 ## 2. Mechanik
 
-- **Rohr:** Klima 75 mm, innen 72,6 mm. Damit ist der offene Punkt aus `hardware/mainboard/README.md` §9
-  beantwortet: Die Platine kann breiter als 54 mm werden, der Ring-Stack hat mit Ø 69 mm 1,8 mm Luft je Seite.
+- **Rohr:** Klima 75 mm, innen 72,6 mm. **Der Flugcomputer sitzt im Kuppler** (innen 70,2 mm,
+  150 mm lang), daher der Ring-Stack mit Ø 69 mm und 0,6 mm Luft je Seite. Der Platinenschlitten
+  (54 × 120 mm) bleibt bei diesem Maß. Vorteil: Der Kuppler mit dem Flugcomputer lässt sich als
+  Modul herausziehen, das passt zu Jans Ziel einer leicht wartbaren Rakete.
+- **Bergung:** Fallschirm in der Klima-Spitze, Spitze lose aufgesteckt, Ausstoß durch einen
+  Kolben aus einem Kuppler mit Schwarzpulver-Ladung (BPS-Prinzip). Pyro-Tests mit etwa 1 g
+  Schwarzpulver haben funktioniert (Datum `[?]`).
 - **Gesamtlänge:** 2 × 500 mm Rohr + Spitze (99 mm gedruckt oder Klima-Spitze `[?]`) `[?]`
 - **Sektionen von unten:** TVC-Kardan mit Motor `[?]` mm, Flugcomputer `[?]` mm, Fallschirmraum `[?]` mm, Spitze.
 - **Schwerpunkt:** `[?]` mm ab Düse, ohne/mit Motor. Hebelarm Kardan–Schwerpunkt bisher mit 0,30 m angenommen.
@@ -113,6 +118,7 @@ Servo- und Motorversorgung: `[?]` (direkt aus dem LiPo, UBEC, Buck-Modul?). Haup
 | 2025-10 | HC-12-Beacon Teensy → Nano | funktioniert, Reichweite `[?]` | Commit „Gyro integration and radio test“ |
 | 2025-10 | Kalman-Höhe am Tisch, SD-Log mit CSV-Export | funktioniert | Commits „kalman filter optimization“, „Logger Implementation“ |
 | `[?]` | Pyro-MOSFET mit Lämpchen | `[?]` | `examples/pyro_mosfet_test` |
+| `[?]` | Pyro-Ausstoß mit ca. 1 g Schwarzpulver | hat gut funktioniert (Jan, 21.10.2026); Aufbau, Zünder und Ladungsmenge `[?]` | – |
 | `[?]` | Kardan-Fenster Yaw 70–115°, Pitch 60–105° | aus CAD oder gemessen? `[?]` | `Config.h` |
 | – | Schubstand, Flug | nicht durchgeführt | |
 

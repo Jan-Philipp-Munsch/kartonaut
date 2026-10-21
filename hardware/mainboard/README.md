@@ -1,204 +1,244 @@
-# Mainboard rev A – Spezifikation
+# Mainboard rev B – Spezifikation
 
-Stand 2026-10-15. Ziel: ein einziges Board, das den Teensy 4.1 trägt und alles enthält, was heute
-als Breakout mit Dupont-Kabeln am Teensy hängt. Es ist als **Längs-Schlitten** ausgelegt, der im
-Rumpf entlang der Rollachse liegt. Das ist die Schaltungs- und Mechanik-Vorgabe für den
-KiCad-Entwurf. Schaltplan und Layout gibt es noch nicht.
+Stand 2026-10-21. Rev B ersetzt rev A (`rev_a_2026-10-15.md`, dort stehen die Begründungen,
+die hier unverändert gelten). Die Planungsrunde vom 21.10.2026 (`docs/Plan_2026-10-21.md`, §2)
+hat die Sensorik, den Funk, die Servos und vor allem die Versorgung neu entschieden. Ziel bleibt:
+ein Board, das den Teensy 4.1 trägt und alles enthält, was heute als Breakout mit Dupont-Kabeln
+am Teensy hängt. Schaltplan und Layout gibt es noch nicht; das ist die Vorgabe für KiCad.
 
 ![Platzierungsplan](mainboard_placement.svg)
 
-`outline.py` erzeugt zwei Dateien:
+`outline.py` erzeugt `mainboard_outline.dxf` (Edge.Cuts) und `mainboard_placement.svg` und prüft,
+dass alle Bauteil-Hüllen im Kuppler bleiben und die M2-Stangen nicht berühren.
 
-- `mainboard_outline.dxf`: Edge.Cuts für KiCad, ein Rechteck mit 2 mm Eckradius und 4 M3-Bohrungen.
-- `mainboard_placement.svg`: Draufsicht und Querschnitt.
+## 1. Was sich gegenüber rev A ändert
 
-Dabei prüft das Skript, dass alle Bauteil-Hüllen im Rohr bleiben und die M2-Stangen nicht berühren.
+| Thema | rev A | rev B | Grund |
+|---|---|---|---|
+| Versorgung | ein 2S-LiPo, zwei 5-V-Bucks | **zwei Akkus**: 1S für die Elektronik über Buck-Boost, 2S für Servos, Rollmotor, Pyro | Servo- und Pyro-Spitzen dürfen den Teensy nie in den Neustart ziehen (Plan §2.5) |
+| IMU | ICM-20948 an SPI1 | **ICM-42688-P** an SPI1 | ICM-20948 ist *Not For New Designs*; der 42688-P rauscht weniger, misst ±16 g, braucht keinen DMP |
+| Barometer | BMP280 | **BMP390** | halbes Rauschen, gleiche Bibliotheksfamilie |
+| Funk | HC-12 gesteckt | **LoRa E22-400T22S** (SMD, SX1268, 433 MHz, 22 dBm) auf dem Board, IPEX-Pigtail zur Spitze | Reichweite; die SMD-Variante passt in den Funk-Streifen, die DIP-Variante (24 × 43 mm) nicht |
+| TVC-Servos | SG90 an 5V_SERVO | **FrSky Xact W5652H direkt am 2S-Akku** (bis 8,4 V) | bestellt; am Akku doppelt so schnell wie an 5 V |
+| Shunt | 0,1 Ω | **20 mΩ** | spart 0,24 V Einbruch bei 3 A; INA219 misst damit bis 16 A |
+| Schalter | ein Hauptschalter, ein Arming | **zweipoliger Hauptschalter** (beide Akkus), Arming getrennt | kein Akku wird vergessen |
+| Stecker | Stiftleisten für Servos, Klemmen für Pyro | alle verriegelt (XT30, JST-PH/GH/XH), Pyro als JST-XH 2 mit Zugentlastung | Vibration |
+| Bergung | Servo und Pyro | **Pyro** (beide Kanäle), Servo-Ausgang bleibt als Reserve | Pyro-Tests mit ca. 1 g Schwarzpulver erfolgreich |
+| Einbau | Rohr-Innenmaß unbekannt (69 mm angenommen) | **Kuppler, innen 70,2 mm**; die Platine bleibt 54 × 120 mm | der Flugcomputer sitzt im Kuppler und ist als Modul herausziehbar |
 
-Die erste Variante war eine runde Scheibe mit Ø 68 mm im Ring-Stack. Sie ist am 15.10.2026
-verworfen worden: Sie bot nur ~36 cm² Fläche, davon 11 cm² unter dem Teensy, und alle Stecker
-hätten am Rand gesessen. Der Grund für die Scheibe war, dass die IMU waagerecht und auf der
-Achse liegen sollte. Das ist nicht nötig, siehe §2.
-
-## 1. Entwurfsentscheidungen
-
-| Frage | Entscheidung | Grund |
-|---|---|---|
-| Bauform | Längs-Schlitten 54 × 120 mm, Platinenebene durch die Rollachse | Knapp doppelte Fläche wie die Scheibe. Die Stecker sitzen an den Stirnseiten, wo die Kabel ohnehin hinlaufen: Servos und Rollmotor nach unten zum TVC, Pyro, Funk und GPS nach oben zur Spitze. Die IMU liegt trotzdem genau auf der Achse. |
-| Mikrocontroller | Teensy 4.1 bleibt als Modul auf 2× 1×24 Buchsenleisten | Firmware, SDIO-SD-Slot und USB bleiben unverändert. Der i.MX RT1062 ist BGA und für ein Hobby-Board nicht sinnvoll selbst zu bestücken. |
-| Sensoren | ICM-20948 und BMP280 als Chips direkt aufs Board, INA219 ebenso | Gleiche Bauteile wie bisher, also gleicher Code. |
-| IMU-Bus | ICM-20948 an **SPI1** statt I²C | I²C ist beim ICM-20948 bis 400 kHz spezifiziert. Der DMP-FIFO-Drain kostet daran pro Frame rund 1 ms und damit einen guten Teil der 10-ms-Schleife (Commit „loop time problems“). SPI bis 7 MHz ist etwa 15× schneller. Ein früherer Testsketch (Git-Historie, `sketches/side.cpp` bis Commit `3b152c9`) hatte SPI schon einmal ausprobiert. |
-| Pinbelegung | Alle heute benutzten Pins bleiben, wo sie sind | `Config.h` gilt weiter, nur die IMU-Anbindung und neue Funktionen kommen dazu. |
-| Versorgung | 2S-LiPo, zwei getrennte 5-V-Buck-Wandler | Servo- und Motor-Stromspitzen sollen den Teensy nicht in den Brownout ziehen. |
-| Bergung | Servo-Ausgang **und** 2 Pyro-Kanäle | Der Piston-Ejection-Bulkhead (Joe Barnard, `Space Mission/files`) hat zwei Pyro-Ladungen. |
-| Fertigung | JLCPCB, 4 Lagen, 1,6 mm, SMD-Bestückung durch JLC | ICM-20948 (LGA-24, 3×3 mm) und BMP280 (LGA-8, 2×2,5 mm) lassen sich ohne Heißluft und Schablone nicht von Hand löten. Lage 2 als durchgehende Masse. |
+Unverändert aus rev A: Teensy 4.1 als gestecktes Modul, Längs-Schlitten mit der Platinenebene durch
+die Rollachse, IMU auf der Achse unter dem Teensy, Stecker an den Stirnseiten, 4 Lagen bei JLCPCB
+mit SMD-Bestückung, Pyro-Konzept mit Low-Side-FETs, externem Arming und Durchgangsprüfung,
+zwei WS2812B und Summer, W25Q128 unter dem Teensy.
 
 ## 2. Mechanik
 
-**Maße und Lage**
-- **54 × 120 mm, 1,6 mm.** Die Platinenebene geht durch die Rollachse. Koordinaten: u quer (0 auf der Achse), v längs (0 am TVC-Ende).
-- **Einbau:** Der Schlitten liegt zwischen zwei Endringen des bestehenden Stacks (Ø 69 mm, `flight_computer.blend`). Die 8 M2-Stangen laufen an den Platinenkanten vorbei. Die Kante bei u = ±27 mm hat 5,7 mm Abstand zur nächsten Stange.
-- **Träger:** Die Platine ist mit 4× M3 (bei u = ±23,5, v = 3,5 / 116,5) auf einen gedruckten Träger geschraubt, der zwischen den Endringen sitzt. Der Träger hält den 2S-LiPo (56 × 25,5 × 8 mm) unter der Platine.
-- **Bestückung nur oben.** Unten stehen nur THT-Lötstifte (≤ 2 mm), darunter liegt der Akku.
-- **Bauhöhe:** Mitten auf der Platine passen über 30 mm. Am Rand (|u| > 25 mm) sind es wegen der Stangen höchstens 5 mm.
-- **Hüllen im Querschnitt:** Der größte Radius liegt bei 28,5 mm (HC-12 auf Abstandshalter). Bis Ø 69 mm bleibt also Luft, auch wenn das Rohr innen knapper ausfällt.
-
-**Teensy und IMU**
-- Der **Teensy** liegt mittig in Längsrichtung (v = 30 bis 91). Der SD-Slot zeigt zum TVC, USB zur Spitze. Vor beiden bleibt eine Freifläche: 6 mm vor dem SD-Slot, 12 mm für den USB-Stecker. Eine Luke im Rumpf auf Höhe v ≈ 25 bis 100 mm macht beide erreichbar.
-- Die **IMU (ICM-20948)** sitzt unter der Teensy-Mitte (u = 0, v = 60,5), also genau auf der Rollachse. Unter dem Teensy ist Platz für maximal ~3 mm Bauhöhe, bei 8,5 mm hohen Buchsenleisten reicht das.
-
-**Wo die Kabel hinlaufen**
-- **TVC-Ende:** XT30 und Servo-Stecker (90°-Stiftleisten) liegen flach und zeigen axial nach unten.
-- **Spitzen-Ende:** Pyro-Klemmen, HC-12 und GPS. Die Antenne zeigt in die gedruckte Spitze, die kein Funkschatten ist (beim Pappe- oder CFK-Rumpf wichtig).
-
-**Barometer**
-- Der BMP280 sitzt oben im rechten Streifen (v ≈ 80). Auf dieser Höhe kommen 3 bis 4 Druckausgleichsbohrungen (Ø 2 mm) gleichmäßig um den Rumpf. Die Avionik-Sektion muss sonst dicht sein.
-
-**IMU-Einbaulage.** Die IMU muss weder waagerecht liegen noch die Schwerkraft „unten“ sehen. Es reicht, dass sie fest sitzt und ihre Lage einmal als fester Achsentausch in der Firmware steht. Der Gyro misst an jedem Punkt eines starren Körpers dieselbe Drehrate. Der Beschleunigungssensor ist ohnehin genau auf der Achse.
-
-Den Chip so drehen, dass seine X-Achse quer liegt (+u) und seine Y-Achse zur Spitze zeigt (+v). Seine Z-Achse steht dann senkrecht auf der Platine. Die Firmware rechnet mit z = Rollachse. Jeder Gyro- und Beschleunigungsvektor wird darum direkt nach dem Lesen umgesetzt:
-
-```cpp
-// Chip (X quer, Y zur Spitze, Z aus der Platine) -> Körper (x, y quer, z = Rollachse)
-inline Vec3 chipToBody(const Vec3& c) { return Vec3(c.x, -c.z, c.y); }   // rechtshändig
-```
-
-Körper-x ist damit die Querrichtung der Platine, Körper-y die Plattennormale. Der Schlitten wird so eingebaut, dass diese beiden Achsen zu den Kippachsen der TVC-Servos passen. Sonst kommt noch eine feste Drehung um z dazu.
-
-**Offen:** Den Innendurchmesser des echten Rumpfrohrs nachmessen. Gerechnet ist mit 69 mm, das ist der Ring-Durchmesser. Das Blender-Rohr hat 75 mm außen. Außerdem fehlt die Länge der Avionik-Sektion: Der Schlitten braucht etwa 120 mm plus die Endringe.
+- **54 × 120 mm, 1,6 mm, 4 Lagen, ENIG.** Koordinaten wie rev A: u quer (0 auf der Achse), v längs
+  (0 am TVC-Ende). Platinenebene durch die Rollachse.
+- **Einbau** zwischen den Endringen des Ring-Stacks (Ø 69 mm) im Kuppler (innen 70,2 mm, 150 mm
+  lang). Die 8 M2-Stangen laufen an den Längskanten vorbei (5,7 mm Abstand). Die Platine sitzt mit
+  4× M3 (u = ±23,5, v = 3,5 / 116,5) auf dem gedruckten Träger.
+- **Akkus im Träger unter der Platine, hintereinander:** 2S (56 × 25,5 × 8 mm) bei v ≈ 8 bis 64,
+  1S (ca. 50 × 30 × 7 mm, 450–600 mAh) bei v ≈ 68 bis 118. Beide liegen in Fächern des Trägers mit
+  Klettband, Kabel nach unten (2S, zum XT30 am TVC-Ende) bzw. zur Seite (1S, JST-PH).
+- **Bestückung nur oben.** Unten nur THT-Lötstifte unter 2 mm.
+- **Bauhöhe:** mittig über 30 mm, am Rand (|u| > 25 mm) höchstens 5 mm.
+- **Teensy** mittig (v = 30 bis 91), SD-Slot zum TVC, USB zur Spitze; Freiflächen 6 mm vor dem SD-Slot,
+  12 mm vor USB. Luke im Kuppler und Rohr auf Höhe v ≈ 25 bis 100 mm.
+- **IMU** bei (u = 0, v = 60,5) unter der Teensy-Mitte, maximal 3 mm hoch, Chip so gedreht, dass X quer
+  (+u) und Y zur Spitze (+v) zeigt. Firmware: `chipToBody(c) = (c.x, -c.z, c.y)` wie rev A §2.
+  Pfeile im Bestückungsdruck.
+- **Barometer** oben im rechten Streifen (v ≈ 80), Schaum darüber, 3 bis 4 Bohrungen Ø 2 mm im Rohr
+  auf dieser Höhe. Die Avionik-Sektion ist gegen den Fallschirmraum dicht (Ausstoßdruck).
+- **Funk** im linken Streifen am Spitzen-Ende, IPEX-Buchse zeigt zur Spitze, Pigtail (10 cm) zu einer
+  λ/4-Antenne (17 cm Draht oder Stab) in der Klima-Spitze, frei von Kupfer und Akku.
+- **GPS** nicht auf dem Board: Modul (u-blox M9/M10) in der Spitze, Patchantenne nach oben,
+  mindestens 10 cm von der LoRa-Antenne, Kabel über J_GPS.
 
 ## 3. Stromversorgung
 
 ```
-2S LiPo (6,0–8,4 V) ─ XT30 ─ J_SW (externer Schalter, JP1 brückt ihn auf dem Tisch)
-   └─ Q1 Verpolschutz (P-FET, AO3401A) ─ VBAT_PROT
-         ├─ J_ARM (externer Arming-Schalter) ─ VBAT_ARMED ─ Pyro 1/2 (+)
-         └─ R_SHUNT 0,1 Ω (INA219) ─ VBAT_MEAS
-               ├─ U1 Buck TPS563201 → 5V_SERVO (3 A): 3 Servos, DRV8833, 470 µF Bulk
-               └─ U2 Buck TPS563201 → 5V_SYS  (3 A): Teensy VIN (über Schottky D1), LEDs, Summer
-                     └─ U3 LDO AP2112K-3.3 → 3V3_RF (600 mA): HC-12, GPS
-Teensy 3V3 (≤ 250 mA) → ICM-20948, BMP280, INA219, I²C-Pull-ups
+1S LiPo (3,0–4,2 V) ─ J_BAT1 (JST-PH 2) ─ Q2 Verpolschutz AO3401A ─ SW1a (J_SW) ─ VSYS_IN
+   ├─ 100 k / 33 k → Pin 41 (VBAT1_SENSE)
+   └─ U2 TPS63070 Buck-Boost (2–16 V ein, 5 V / 2 A, 1,5 µH) → 5V_SYS, 1000 µF Polymer
+         ├─ D1 Schottky SS14 → Teensy VIN (USB darf gleichzeitig stecken)
+         ├─ 2× WS2812B über 74AHCT1G125, Summer über AO3400A
+         └─ U3 AP2112K-3.3 → 3V3_RF (100 µF): LoRa E22, GPS (J_GPS)
+   Teensy 3V3 (≤ 250 mA) → ICM-42688-P, BMP390, INA219, I²C-Pull-ups
+
+2S LiPo (6,0–8,4 V) ─ J_BAT2 (XT30) ─ Q1 Verpolschutz AO3401A ─ SW1b (J_SW) ─ VBAT_PROT
+   ├─ 100 k / 33 k → Pin 40 (VBAT2_SENSE)
+   ├─ J_ARM (Arming-Schalter) ─ VBAT_ARMED ─ Pyro 1/2 (+), TVS, 100 k / 33 k → Pin 24 (ARM_SENSE)
+   └─ R_SHUNT 20 mΩ 2512 (INA219, Kelvin) ─ VBAT_MEAS
+         ├─ F1 Polyfuse 3 A → VSERVO (= Akku direkt), 1000 µF Low-ESR: J_SERVO1/2 (W5652H)
+         └─ U1 TPS563201 Buck → 5V_SERVO (3 A), 470 µF: J_SERVO3 (Fallschirm, Reserve), DRV8833 (Rollmotor)
+
+GND beider Akkus an einem Sternpunkt am 2S-Minus neben dem Shunt.
 ```
 
-- **D1 Schottky von 5V_SYS nach Teensy-VIN.** USB und Board können gleichzeitig stecken, ohne dass USB rückwärts ins Board speist. Die VUSB-VIN-Brücke am Teensy muss deshalb nicht aufgetrennt werden. Am USB allein laufen Teensy und Sensoren, Servos, Funk und GPS nicht.
-- **Pyro hinter dem Verpolschutz, aber vor dem Shunt.** Zündströme von einigen Ampere laufen nicht durch den INA219, dessen Messbereich mit 0,1 Ω bei 3,2 A endet. Die Firmware-Kalibrierung (0,1 Ω, PGA 320 mV) bleibt damit gültig.
-- **Brownout beim Zünden:** Eine durchgebrannte E-Match kann kurzschließen. Die Firmware begrenzt den Zündpuls deshalb auf ≤ 1 s. Zusätzlich puffern 220 µF an 5V_SYS.
+- **J_SW** ist ein vierpoliger JST-PH für einen zweipoligen Schiebeschalter am Rumpf. Zwei
+  Lötbrücken **JP1 (1S)** und **JP2 (2S)** überbrücken ihn auf dem Tisch.
+- **TPS63070** statt eines reinen Boosts, weil er 2 bis 16 V nimmt: Ein versehentlich an J_BAT1
+  gesteckter 2S-Akku zerstört nichts. Falls JLC ihn nicht bestücken kann: TPS63020 (1,8–5,5 V ein,
+  2 A) als 1S-Variante.
+- **Pyro** liegt vor dem Shunt, Zündströme laufen nicht durch den INA219. Die Firmware begrenzt den
+  Zündpuls auf ≤ 1 s. Bei 20 mΩ Shunt und PGA 320 mV misst der INA219 bis 16 A mit 2 mA Auflösung;
+  `INA219_WE::setShuntSizeInOhms(0.02)` (Funktion beim Bibliotheks-Update prüfen).
+- **Was die Firmware loggt und meldet:** beide Akkuspannungen (ADC), Strom und Spannung des
+  2S-Pfads (INA219), ARM-Zustand. Warnton bei 1S < 3,5 V oder 2S < 6,6 V; kein Start-Freigabeton
+  ohne beide Akkus.
 
-**Strombudget (Spitze):**
+**Strombudget**
 
-| Schiene | Verbraucher | Spitze |
-|---|---|---|
-| 5V_SERVO | 2× TVC-SG90 + Fallschirm-SG90 (Blockierstrom je ~0,65 A), Rollmotor ~1 A | ~2,9 A, nur kurzzeitig |
-| 5V_SYS | Teensy 600 MHz ~0,1 A, 2× WS2812B 0,12 A, Summer 0,03 A, 3V3_RF ~0,15 A | ~0,4 A |
-| 3V3_RF | HC-12 Senden mit 20 dBm ~0,1 A, GPS ~0,03 A | ~0,13 A |
-| Teensy 3V3 | ICM-20948, BMP280, INA219 | < 10 mA |
+| Akku / Schiene | Verbraucher | Dauer | Spitze |
+|---|---|---|---|
+| 1S → 5V_SYS | Teensy 600 MHz 0,1 A, 2× WS2812B 0,12 A, Summer 0,03 A, 3V3_RF 0,15 A | 0,4 A an 5 V (0,6 A aus dem 1S) | 0,8 A (LoRa-Sendepuls 110 mA an 3,3 V plus Summer) |
+| 2S → VSERVO | 2× W5652H, Blockierstrom je ca. 1 A bei 8,4 V | 0,2 A | 2 A |
+| 2S → 5V_SERVO | Fallschirm-Servo 0,65 A, Rollmotor ca. 1 A | 0,3 A | 1,7 A |
+| 2S → Pyro | E-Match 3–5 A für 20 ms | – | 5 A |
 
-Das Strombudget in `Übersicht.ods` kommt auf 780 mA. Das passt zum Normalbetrieb, die Blockierströme der Servos sind darin aber nicht enthalten.
+Akku-Vorschlag: 1S 450–600 mAh 20 C mit JST-PH (10–12 g), 2S 450–850 mAh 50 C mit XT30 (30–55 g).
 
 ## 4. Pinbelegung Teensy 4.1
 
-Alle Pins aus dem heutigen `Config.h` bleiben gleich. Neu sind die mit ★ markierten.
+Alle Pins aus `Config.h` bleiben. ★ = neu gegenüber `Config.h`, ☆ = anders als rev A.
 
 | Pin | Signal | Ziel | Status |
 |---|---|---|---|
-| 0 / 1 | RX1 / TX1 | GPS (JST-GH 4-polig) | ★ (ein früherer GPS-Testsketch nutzte schon 0/1) |
+| 0 / 1 | RX1 / TX1 | GPS (J_GPS, JST-GH 4: 3V3_RF, GND, TX, RX) | ★ |
 | 2 / 3 | MOT_IN1 / MOT_IN2 | DRV8833 AIN1=BIN1 / AIN2=BIN2 (Brücken parallel) | wie bisher |
-| 4 | IMU_INT | ICM-20948 INT1 | ★ für späteres Lesen per Interrupt |
-| 5 / 6 | LED1 / LED2 | über 74AHCT1G125 (5 V) → WS2812B auf dem Board und Stiftleiste | wie bisher |
-| 7 | CAM_TRIG | 1 kΩ → J_CAM | ★ (Kamera-Test) |
-| 9 | SERVO_CHUTE | J_SERVO3 | wie bisher |
-| 13 | BUZZER | AO3400A → aktiver 5-V-Summer | wie bisher. Die Teensy-LED blinkt mit. |
-| 18 / 19 | SDA0 / SCL0 | BMP280 (0x76), INA219 (0x40), Qwiic-Buchse | wie bisher, 4,7 kΩ Pull-ups |
-| 20 (A6) | PYRO1_SENSE | Spannungsteiler am Drain von Pyro 1 | ★ |
-| 21 (A7) | PYRO2_SENSE | Spannungsteiler am Drain von Pyro 2 | ★ |
+| 4 | IMU_INT | ICM-42688-P INT1 | ★ |
+| 5 / 6 | LED1 / LED2 | 74AHCT1G125 → WS2812B auf dem Board und J_LED | wie bisher |
+| 7 | CAM_TRIG | 1 kΩ → J_CAM (JST-GH 3) | ★ |
+| 9 | SERVO_CHUTE | J_SERVO3 (5V_SERVO) | wie bisher, Reserve |
+| 13 | BUZZER | AO3400A → aktiver 5-V-Summer | wie bisher |
+| 18 / 19 | SDA0 / SCL0 | BMP390 (0x77), INA219 (0x40), J_QWIIC | wie bisher, 4,7 kΩ Pull-ups |
+| 20 (A6) | PYRO1_SENSE | Teiler am Drain Pyro 1 | ★ |
+| 21 (A7) | PYRO2_SENSE | Teiler am Drain Pyro 2 | ★ |
 | 22 | PYRO2_FIRE | Gate Q_P2 | ★ |
-| 23 | PYRO1_FIRE | Gate Q_P1 | ★ `PIN_PYRO1 = 23` in `Config.h` ist schon dieser Kanal. |
-| 26 / 27 / 39 / 38 | MOSI1 / SCK1 / MISO1 / CS1 | ICM-20948 SPI | ★ ersetzt die IMU an Wire |
-| 28 / 29 | SERVO_YAW / SERVO_PITCH | J_SERVO1 / J_SERVO2 | wie bisher |
-| 33 | HC12_SET | HC-12 SET (Konfigurationsmodus) | ★ |
-| 34 / 35 | RX8 / TX8 | HC-12 TXD / RXD | wie bisher |
-| 40 (A16) | VBAT_SENSE | 100 k / 33 k von VBAT_PROT | ★ redundant zum INA219 |
-| 41 (A17) | ARM_SENSE | 100 k / 33 k von VBAT_ARMED | ★ |
-| 10, 11, 12, 14, 15, 16, 17, 24, 25 | frei | Erweiterungsleiste 2×7 mit 3V3, 5V_SYS, GND | – |
+| 23 | PYRO1_FIRE | Gate Q_P1 | wie `PIN_PYRO1` |
+| 24 (A10) | ARM_SENSE | 100 k / 33 k von VBAT_ARMED | ★ ☆ (rev A: 41) |
+| 26 / 27 / 39 / 38 | MOSI1 / SCK1 / MISO1 / CS1 | ICM-42688-P SPI, `SPI1.setMISO(39)`, bis 24 MHz | ★ |
+| 28 / 29 | SERVO_YAW / SERVO_PITCH | J_SERVO1 / J_SERVO2 (VSERVO) | wie bisher |
+| 32 / 33 | LORA_M1 / LORA_M0 | E22 Betriebsart (00 = Normal, 11 = Konfiguration) | ★ ☆ (33 war HC12_SET) |
+| 34 / 35 | RX8 / TX8 | E22 TXD / RXD | wie bisher (Serial8) |
+| 36 | LORA_AUX | E22 AUX (Sendepuffer frei, Modul bereit) | ★ |
+| 40 (A16) | VBAT2_SENSE | 100 k / 33 k von VBAT_PROT (2S) | ★ |
+| 41 (A17) | VBAT1_SENSE | 100 k / 33 k von VSYS_IN (1S) | ★ ☆ |
+| 10, 11, 12, 14, 15, 16, 17, 25, 30, 31, 37 | frei | J_EXP 2×7 mit 3V3, 5V_SYS, GND | – |
 
-Firmware-Änderungen für die IMU:
+## 5. Pyro-Kanäle
 
-- `Sensors.cpp`: `ICM_20948_SPI imu;`
-- `SPI1.setMISO(39);`
-- `imu.begin(PIN_IMU_CS, SPI1, 7000000);`
-- `Config.h` bekommt die neuen ★-Pins.
+Wie rev A §5: je Kanal ein AO3400A low-side mit 100 Ω Gate-Widerstand und 100 kΩ Pull-down, Plus an
+VBAT_ARMED, Durchgangsprüfung über 100 k / 33 k am Drain, SMBJ12A über dem Ausgang. Stecker
+**JST-XH 2-polig** statt Schraubklemme, Kabel mit Kabelbinder an der Platine gesichert.
+Firmware: Zünden nur im Zustand *Apogäum* bzw. *Landung*, Puls ≤ 1 s, jeder Kanal höchstens einmal,
+ohne ARM_SENSE keine Freigabe, Durchgang vor dem Start per Summer gemeldet.
 
-Teensy 4.1 nutzt für SPI1 standardmäßig MISO = Pin 1. Pin 1 ist hier aber TX1 für das GPS, deshalb wird MISO auf Pin 39 umgelegt.
+## 6. Sensorik und Funk
 
-## 5. Pyro-Kanäle (Sicherheitskonzept)
+**ICM-42688-P (LGA-14, 2,5 × 3 mm).** SPI1 mit 7 MHz (bis 24 MHz möglich), VDD und VDDIO an Teensy-3V3,
+100 nF + 10 nF an jedem Versorgungspin, INT1 an Pin 4. Betrieb: Gyro ±2000 °/s, Accel ±16 g, ODR
+1 kHz, interner Tiefpass (UI-Filter) auf ca. 50 Hz, Firmware mittelt auf die 100-Hz-Schleife.
+Bibliothek: `finani/ICM42688` (Arduino, SPI) oder eigener Registertreiber. Kein DMP, keine
+Quaternion vom Chip; die Lage entsteht in der Firmware aus dem Gyro (Plan, Befund 3).
 
-- Low-Side-N-FET pro Kanal: AO3400A (30 V, 5,7 A, Ansteuerung mit 3,3 V am Gate). 100 Ω Gate-Widerstand und 100 kΩ Pull-down. Beim Booten sind die Teensy-Pins hochohmig, dann hält der Pull-down den FET sicher aus.
-- Pyro (+) liegt an **VBAT_ARMED**. Spannung kommt dort nur an, wenn der externe Arming-Schalter (J_ARM) geschlossen ist. Ohne Arming kann die Firmware also nichts zünden.
-- Durchgangsprüfung: Drain über 100 k / 33 k an den ADC. Mit Arming und eingesteckter E-Match liegt der Drain auf VBAT, ohne E-Match ziehen ihn 100 kΩ nach GND. Durchgang lässt sich so nur im scharfen Zustand prüfen. Das ist bei Hobby-Flugcomputern üblich und wird über den Summer gemeldet.
-- Pro Kanal eine TVS-Diode (SMBJ12A) über dem Ausgang. Schraubklemme 3,5 mm, zweipolig.
-- Firmware-Regeln: Zünden nur in einem expliziten Flugzustand, Puls ≤ 1 s, jeder Kanal höchstens einmal.
+**BMP390 (LGA-10, 2 × 2 mm).** I²C 0x77 (SDO an VDDIO), VDD/VDDIO an Teensy-3V3, Oversampling
+Druck ×8, Temperatur ×1, IIR-Koeffizient 3, ODR 50 Hz. Bibliothek: Adafruit `BMP3XX`.
 
-## 6. Stückliste rev A (Entwurf)
+**LoRa E22-400T22S (SMD, 16 × 26 mm, SX1268).** VCC an 3V3_RF mit 100 µF, TXD/RXD an Serial8 (3,3-V-Pegel,
+keine Widerstände nötig), M0/M1/AUX an Pins 33/32/36, IPEX-Buchse zum Pigtail. Konfiguration
+(Adresse, Kanal 433 MHz, 9600 Bd UART, Luftrate 2,4 kbps, 22 dBm) einmalig per M0=M1=1 aus der
+Firmware. Die Bodenstation bekommt das DIP-Modul E22-400T22D mit SMA-Antenne.
 
-LCSC-Nummern und Verfügbarkeit erst beim Bestellen bei JLC prüfen. Hier stehen nur Hersteller-Teilenummern.
+**INA219 (SOIC-8)** mit 20-mΩ-Shunt (2512, 1 %, 1 W), Kelvin-Anschluss, Adresse 0x40.
 
-| Ref | Bauteil | Gehäuse | Anz. | Funktion |
-|---|---|---|---|---|
-| U_TEENSY | Teensy 4.1 + 2× Buchsenleiste 1×24, 2,54 mm | THT | 1 | MCU (vorhanden) |
-| U4 | TDK ICM-20948 | LGA-24 3×3 | 1 | IMU 9-Achsen + DMP |
-| U5 | Bosch BMP280 | LGA-8 2×2,5 | 1 | Barometer. Zum Schutz vor Licht und Fahrtwind mit Schaumstoff abdecken. |
-| U6 | TI INA219AID | SOIC-8 | 1 | Strom- und Spannungsmessung |
-| R_SHUNT | 0,1 Ω 1 % 1 W | 2512 | 1 | Shunt |
-| U1, U2 | TI TPS563201 + 2,2 µH (≥ 4 A Sättigung) | SOT-23-6 | 2 | 5 V / 3 A Buck |
-| U3 | Diodes AP2112K-3.3 | SOT-23-5 | 1 | 3V3_RF |
-| U7 | TI DRV8833 | HTSSOP-16 | 1 | Rollmotor-H-Brücke, beide Kanäle parallel |
-| U8, U9 | 74AHCT1G125 | SOT-23-5 | 2 | 3,3 → 5 V Pegelwandler für die WS2812B |
-| LED1, LED2 | WS2812B-2020 | 2020 | 2 | Status-LEDs auf dem Board |
-| Q1 | AO3401A | SOT-23 | 1 | Verpolschutz |
-| Q_P1, Q_P2, Q_BZ | AO3400A | SOT-23 | 3 | Pyro 1/2, Summer |
-| D1 | SS14 oder B5819W | SMA / SOD-123 | 1 | VIN-Entkopplung |
-| D_TVS | SMBJ12A | SMB | 2 | Pyro-Ausgänge |
-| BZ1 | Aktiver Summer 5 V, 12 mm | THT | 1 | Signalgeber |
-| C_BULK | 470 µF / 16 V Low-ESR (8 × 10,5 mm), 220 µF / 10 V | Elko stehend | 1+1 | 5V_SERVO, 5V_SYS, im Streifen WANDLER |
-| J_BAT | XT30PW-M (liegend) | THT | 1 | Akku |
-| J_SW, J_ARM | JST-XH 2-polig | THT | 2 | Hauptschalter, Arming |
-| J_SERVO1..3 | Stiftleiste 1×3, 2,54 mm, 90° gewinkelt | THT | 3 | Servos (S / + / –), Stecker liegen axial zum TVC |
-| J_MOT | JST-PH 2-polig | THT | 1 | Rollmotor |
-| J_PYRO1, J_PYRO2 | Schraubklemme 2-polig, 3,5 mm | THT | 2 | E-Matches |
-| J_HC12 | Buchsenleiste 1×5 + Abstandshalter M2 | THT | 1 | HC-12 liegend gesteckt, Antenne zur Spitze |
-| J_GPS, J_QWIIC | JST-GH 4-polig / JST-SH 4-polig | SMD | 1+1 | GPS, I²C-Erweiterung |
-| J_CAM, J_LED | JST-GH 3-polig | SMD | 1+1 | Kamera-Trigger, externe LEDs |
-| J_EXP | Stiftleiste 2×7 | THT | 1 | freie Pins |
-| JP1 | Lötbrücke | – | 1 | Hauptschalter überbrücken, nur auf dem Tisch |
+## 7. Stückliste rev B (Entwurf)
 
-Dazu kommen die üblichen Abblock- und Teiler-Bauteile (0402/0603).
+LCSC-Nummern mit „prüfen“ beim Bestellen verifizieren; Verfügbarkeit bei JLC schwankt.
 
-Empfehlung ohne Platinenänderung: Auf die Unterseite des Teensy 4.1 einen W25Q128-Flash (SOIC-8) löten. LittleFS steht schon in `lib_deps`. Dann gibt es neben der SD-Karte ein erschütterungsfestes Log.
+| Ref | Bauteil | Gehäuse | Anz. | LCSC | Funktion |
+|---|---|---|---|---|---|
+| U_TEENSY | Teensy 4.1 + 2× Buchsenleiste 1×24 | THT | 1 | – | MCU (vorhanden) |
+| U4 | TDK ICM-42688-P | LGA-14 | 1 | C1850418 | IMU |
+| U5 | Bosch BMP390 | LGA-10 | 1 | prüfen | Barometer |
+| U6 | TI INA219AIDR | SOIC-8 | 1 | prüfen | Strom/Spannung 2S |
+| R_SHUNT | 20 mΩ 1 % 1 W | 2512 | 1 | prüfen | Shunt |
+| U1 | TI TPS563201DDCR + 2,2 µH (≥ 4 A) | SOT-23-6 | 1 | C116592 | 5V_SERVO |
+| U2 | TI TPS63070RNMR + 1,5 µH (≥ 3 A) | VQFN-15 | 1 | prüfen | 5V_SYS aus 1S |
+| U3 | Diodes AP2112K-3.3 | SOT-23-5 | 1 | C51118 | 3V3_RF |
+| U7 | TI DRV8833PWPR | HTSSOP-16 | 1 | C50506 | Rollmotor |
+| U8, U9 | 74AHCT1G125 | SOT-23-5 | 2 | prüfen | Pegel 3,3 → 5 V für WS2812B |
+| U10 | Ebyte E22-400T22S | SMD-Modul | 1 | C2903765 | LoRa |
+| LED1, LED2 | WS2812B-2020 | 2020 | 2 | prüfen | Status |
+| Q1, Q2 | AO3401A | SOT-23 | 2 | C15127 | Verpolschutz 2S / 1S |
+| Q_P1, Q_P2, Q_BZ | AO3400A | SOT-23 | 3 | C20917 | Pyro 1/2, Summer |
+| D1 | SS14 | SMA | 1 | C2480 | VIN-Entkopplung |
+| D_TVS | SMBJ12A | SMB | 2 | prüfen | Pyro-Ausgänge |
+| F1 | Polyfuse 3 A | 1812 | 1 | prüfen | VSERVO |
+| BZ1 | aktiver Summer 5 V, 12 mm | THT | 1 | – | Signalgeber |
+| C_BULK | 1000 µF/10 V Polymer (5V_SYS), 1000 µF/16 V Low-ESR (VSERVO), 470 µF/10 V (5V_SERVO) | Elko stehend ≤ 12 mm | 3 | prüfen | Puffer |
+| J_BAT2 | XT30PW-M liegend | THT | 1 | prüfen | 2S |
+| J_BAT1 | JST-PH 2 liegend | THT | 1 | prüfen | 1S |
+| J_SW | JST-PH 4 | THT | 1 | prüfen | zweipoliger Hauptschalter |
+| J_ARM | JST-PH 2 | THT | 1 | prüfen | Arming |
+| J_SERVO1..3 | JST-XH 3 liegend (S / + / −) | THT | 3 | prüfen | Servos; Servokabel auf XH umcrimpen |
+| J_MOT | JST-PH 2 | THT | 1 | prüfen | Rollmotor |
+| J_PYRO1, J_PYRO2 | JST-XH 2 | THT | 2 | prüfen | E-Matches |
+| J_GPS, J_QWIIC | JST-GH 4 / JST-SH 4 | SMD | 1+1 | prüfen | GPS, I²C |
+| J_CAM, J_LED | JST-GH 3 | SMD | 1+1 | prüfen | Kamera, externe LEDs |
+| J_EXP | Stiftleiste 2×7 | THT | 1 | – | freie Pins |
+| JP1, JP2 | Lötbrücke | – | 2 | – | Schalter überbrücken (Tisch) |
+| TP1..6 | Testpunkte VBAT2, VSYS_IN, 5V_SYS, VSERVO, 5V_SERVO, 3V3_RF | – | 6 | – | Inbetriebnahme |
+| SW_RST | Taster 6 × 6 mm | SMD | 1 | prüfen | Teensy-Reset, durch die Luke erreichbar |
 
-## 7. Layout-Regeln
+Dazu die üblichen Abblock- und Teiler-Bauteile (0402/0603) und ein W25Q128 (SOIC-8) unter dem Teensy.
 
-- Lage 2 ist durchgehend GND, Lage 3 Versorgungsflächen.
-- Die Buck-Wandler mit Spulen liegen im Streifen WANDLER links neben dem Teensy, mindestens 15 mm vom ICM-20948 und dessen Magnetometer entfernt. Die Spulen sitzen am TVC-Ende des Streifens, weg vom BMP280.
-- Unter dem ICM-20948 keine schnellen Leitungen. Seine Entkopplung (100 nF + 10 nF auf REGOUT) direkt an den Pins.
-- Der BMP280 kommt nicht neben die Spulen und den Teensy-Prozessor, denn Wärme verfälscht die Höhe.
-- Hochstrompfade (VBAT, 5V_SERVO, Pyro) mindestens 1 mm breit und auf beiden Außenlagen.
-- Steckverbinder an den Stirnseiten: Akku, Servos und Motor am TVC-Ende, Pyro, Funk, GPS und Signale am Spitzen-Ende. An den Längskanten sitzt nichts höher als 5 mm (Stangen).
-- Strom fließt von unten (Akku) nach oben, und die Hochstromleitungen kreuzen nicht unter der IMU.
+## 8. Layout-Regeln
 
-## 8. Inbetriebnahme rev A (Testplan)
+Die vollständige Prüfliste steht in `docs/Plan_2026-10-21.md` §2.6. Kurzfassung:
 
-1. Ohne Teensy am Labornetzteil mit 7,4 V und 100 mA Strombegrenzung starten: 5V_SERVO, 5V_SYS und 3V3_RF messen.
-2. Teensy stecken, nur USB: I²C-Scan muss 0x40 und 0x76 finden. ICM-20948 per SPI (WHO_AM_I = 0xEA).
-3. Akku, Flug-Firmware (`spacecode/`) im Normalbetrieb: Loop-Timing mit `LOOP_WARNING` prüfen, Teleplot Kalman und INA.
-4. Servos und Rollmotor einzeln, dabei auf Brownout achten (Teensy darf nicht neu starten).
-5. Pyro nur mit Glühlämpchen oder 2-Ω-Widerstand testen, **nie mit echter Ladung auf dem Tisch**. Prüfen: ohne ARM keine Zündung, ARM_SENSE, Durchgang, Pulsdauer.
-6. HC-12-Reichweite und GPS-Fix im Freien.
+- Lage 2 durchgehend GND, Lage 3 Versorgungsflächen. Sternpunkt der beiden Akku-Massen am
+  2S-Minus neben dem Shunt; Servo- und Pyro-Rückleitungen als breite Bahn auf Lage 1 dorthin, nicht
+  durch die Fläche unter IMU und Barometer.
+- VBAT, VSERVO, Pyro 2 mm auf beiden Außenlagen mit ≥ 4 Vias je Übergang; 5V_SYS 0,8 mm; 3V3 0,5 mm.
+- Wandler und Spulen im Streifen WANDLER links neben dem Teensy, mindestens 15 mm von der IMU;
+  5 mm Freiraum um die IMU auf allen Lagen, ruhige Massefläche darunter.
+- BMP390 weg von Spulen und Teensy-CPU. LoRa-Modul auf einer Massefläche, keine Signale darunter.
+- Stecker nur oben, verriegelt, Pin 1 und S/+/− im Bestückungsdruck, Steckrichtung axial.
+- DRC mit JLC-Regeln (0,127 mm, Via 0,3 mm), 3D-Ansicht gegen die Hüllen aus `outline.py`,
+  1:1-Papierausdruck in den Kuppler halten.
 
-## 9. Offen (vor dem Schaltplan zu klären)
+## 9. Inbetriebnahme (Testplan)
 
-- Rohr-Innendurchmesser und Länge der Avionik-Sektion nachmessen. Der Schlitten braucht 120 mm plus die Endringe. Ist das Rohr innen größer als 69 mm, kann die Platine breiter werden; dann wandern die Stangen mit.
-- Wie liegen die TVC-Servoachsen relativ zum Schlitten? Davon hängt die Achsenumsetzung in §2 ab.
-- Wo sitzt die Rumpf-Luke für USB und SD-Karte?
-- Kommt die IMU an SPI1 (empfohlen) oder bleibt sie an I²C wie bisher?
-- Ist der Rumpf aus Pappe oder CFK? Bei CFK muss die HC-12-Antenne sicher bis in die Spitze reichen.
-- Wird die Kamera mit 3,3 V oder 5 V ausgelöst?
-- Fallschirm über Servo oder Pyro? Das Board kann beides. Pyro bedeutet aber Schwarzpulver-Ladungen, und dafür gelten die örtlichen Regeln (in Deutschland Sprengstoffrecht).
+1. Ohne Teensy, beide Akkupfade am Labornetzteil mit 100 mA Begrenzung: 1S-Pfad mit 3,7 V →
+   5V_SYS und 3V3_RF messen; 2S-Pfad mit 7,4 V → VSERVO und 5V_SERVO messen. Verpolung testen.
+2. Teensy stecken, nur USB: I²C-Scan findet 0x40 und 0x77; ICM-42688-P per SPI (WHO_AM_I = 0x47).
+3. 1S-Akku, Flug-Firmware: Loop-Timing, Teleplot IMU/Baro, beide Akkuspannungen, INA219.
+4. 2S-Akku dazu: Servos einzeln bis zum Blockieren, Rollmotor; der Teensy darf nicht neu starten
+   (Watchdog-Zähler im Log muss 0 bleiben). Einbruch von VBAT2 und 5V_SYS mit dem Oszilloskop.
+5. Pyro nur mit Glühlämpchen oder 2-Ω-Widerstand: ohne ARM keine Zündung, ARM_SENSE, Durchgang,
+   Pulsdauer. **Nie mit Ladung auf dem Tisch.**
+6. LoRa-Strecke zur Bodenstation im Freien (Reichweite, Paketverlust), GPS-Fix in der Spitze.
+
+## 10. Firmware-Änderungen für rev B
+
+- `Config.h`: neue Pins (§4), `INA_SHUNT_OHM = 0.02`, Akkugrenzen, `SERVO_PULSE_*` für die W5652H.
+- `Sensors.cpp`: Treiber ICM-42688-P über SPI1, ohne DMP; Gyro-Quaternion und Oben-Vektor für den
+  Regler (Plan, Befund 3); BMP390 über `BMP3XX`; beide Akkuspannungen über ADC.
+- Neu `Radio.cpp`: E22-Konfiguration über M0/M1, einfaches Telemetrieprotokoll mit AUX-Flusskontrolle.
+- Neu `FlightState.cpp`: Pad → Boost → Coast → Apogäum → Bergung → Landung, Pyro-Logik mit Arming.
+- Watchdog (WDT1 des i.MX RT) und Zustandsspeicher im EEPROM-Emulat, damit ein Neustart im Flug
+  in der laufenden Phase weitermacht.
+- Rampenkalibrierung des Gyro-Bias (Befund 5).
+
+## 11. Offen
+
+- Lage der TVC-Servoachsen zum Schlitten (Achsentausch in der Firmware). Der Kardan wird für die
+  W5652H neu konstruiert (`cad/`), dabei festlegen.
+- Länge der Avionik-Sektion: Schlitten 120 mm plus Endringe im 150-mm-Kuppler. Passt, wenn die
+  Endringe ≤ 15 mm hoch sind.
+- Wo genau die Luke im Kuppler und im Rohr sitzt (USB, SD, Reset, Schalter).
+- Ob der Fallschirm-Servo-Ausgang bestückt wird oder nur als Footprint bleibt.
+- Kamera: 3,3 V oder 5 V am Auslöser.
+- TPS63070 bei JLC verfügbar? Sonst TPS63020.

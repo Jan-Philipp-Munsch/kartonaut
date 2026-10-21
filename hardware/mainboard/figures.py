@@ -145,14 +145,14 @@ def system_blocks():
     g.line([(540, 370), (540, 440)], arrow=True)
     g.label(548, 410, "PWM 2/3", size=8, anchor="start")
 
-    g.box(640, 320, 150, 60, "2× Pyro-Kanal", ["AO3400A low-side, TVS", "Durchgang → ADC 20/21"], fill=C_PWR2)
+    g.box(640, 320, 150, 60, "2× Pyro-Kanal", ["AO3400A low-side, SMBJ12CA", "Durchgang → ADC 20/21"], fill=C_PWR2)
     g.line([(580, 340), (640, 340)], arrow=True)
     g.label(610, 333, "22 / 23", size=8)
     g.line([(180, 380), (195, 380), (195, 520), (715, 520), (715, 380)], arrow=True, stroke="#b03a2e")
     g.label(455, 514, "VBAT_ARMED nur mit Arming-Schalter", size=8, fill="#b03a2e")
 
     # indicators
-    g.box(820, 80, 100, 70, "Signale", ["2× WS2812B", "Summer", "Reset-Taster"], fill=C_SIG)
+    g.box(820, 80, 100, 70, "Signale", ["2× WS2812B", "Summer", "(Program-Taster", "am Teensy)"], fill=C_SIG)
     g.line([(470, 190), (470, 60), (870, 60), (870, 80)], arrow=True, grey=True, stroke=C_GREY)
     g.label(680, 54, "Pins 5, 6, 13", size=8, fill=C_GREY)
     g.box(820, 250, 100, 60, "J_CAM, J_LED", ["Kamera-Auslöser", "externe LEDs"], fill=C_SIG)
@@ -253,7 +253,7 @@ def power_tree():
 def pyro_channel():
     g = SVG(760, 420)
     g.text(20, 26, "Ein Pyro-Kanal: vier Hürden vor der Zündung", 15, bold=True)
-    g.text(20, 44, "Arming-Schalter (Hardware), Flugzustand und Puls ≤ 1 s (Firmware), Pull-down am Gate (Boot), TVS am Ausgang.", 10, fill="#555")
+    g.text(20, 44, "Arming-Schalter (Hardware), Flugzustand und Puls ≤ 1 s (Firmware), Pull-down am Gate (Boot), bidirektionale TVS am Ausgang.", 10, fill="#555")
 
     # rails
     g.line([(60, 100), (640, 100)], stroke=C_LINE, width=1.6)
@@ -285,7 +285,7 @@ def pyro_channel():
     g.raw('<path d="M332,186 L348,186 L340,170 z" fill="white" stroke="#333" stroke-width="1.2"/>')
     g.line([(332, 170), (348, 170)], width=1.4)
     g.line([(340, 186), (340, 220), (400, 220)], width=1.2)
-    g.text(300, 182, "SMBJ12A", 9, anchor="end")
+    g.text(300, 182, "SMBJ12CA", 9, anchor="end")
     # continuity divider from drain
     g.line([(400, 220), (470, 220), (470, 235)], width=1.2)
     g.rect(462, 235, 16, 28, fill="white"); g.text(485, 253, "100 k", 9)
@@ -326,7 +326,7 @@ PINS = {  # pin: (signal, target, domain colour, new?)
     2: ("MOT_IN1", "DRV8833 AIN1 = BIN1", C_PWR2, False), 3: ("MOT_IN2", "DRV8833 AIN2 = BIN2", C_PWR2, False),
     4: ("IMU_INT", "ICM-42688-P INT1", C_SENS, True),
     5: ("LED1", "74AHCT1G125 → WS2812B", C_SIG, False), 6: ("LED2", "74AHCT1G125 → WS2812B, J_LED", C_SIG, False),
-    7: ("CAM_TRIG", "1 kΩ → J_CAM", C_SIG, True), 8: ("frei", "J_EXP", "#eee", False),
+    7: ("CAM_TRIG", "1 kΩ → J_CAM", C_SIG, True), 8: ("MOT_FAULT", "DRV8833 nFAULT, 10 k → 3V3", C_PWR2, True),
     9: ("SERVO_CHUTE", "J_SERVO3 (5V_SERVO)", C_PWR2, False),
     10: ("frei", "J_EXP", "#eee", False), 11: ("frei", "J_EXP", "#eee", False), 12: ("frei", "J_EXP", "#eee", False),
     13: ("BUZZER", "AO3400A → Summer", C_SIG, False),
@@ -352,7 +352,7 @@ RIGHT = ["VIN", "GND", "3V3", 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, "GND",
 def teensy_pinmap():
     g = SVG(940, 700)
     g.text(20, 26, "Teensy 4.1: Pinbelegung rev B (Draufsicht, USB oben)", 15, bold=True)
-    g.text(20, 44, "★ neu gegenüber Config.h. Alle bisher genutzten Pins bleiben, wo sie sind. Freie Pins liegen auf J_EXP (2×7).", 10, fill="#555")
+    g.text(20, 44, "★ neu gegenüber Config.h. Alle bisher genutzten Pins bleiben, wo sie sind. Zehn freie Pins liegen auf J_EXP (2×7). Stand: Spezifikation §4 nach der Tor-1-Prüfung vom 21.10.2026.", 10, fill="#555")
     bx, by, bw, bh = 400, 70, 140, 600
     g.rect(bx, by, bw, bh, fill="#2e7d4f", stroke="#1b4d30", rx=6)
     g.rect(bx + 45, by - 8, 50, 22, fill="#bbb", stroke="#777", rx=2)
@@ -463,8 +463,8 @@ def order_flow():
     g = SVG(940, 330)
     g.text(20, 26, "Weg zur Platine: fünf Tore bis zur Inbetriebnahme", 15, bold=True)
     steps = [("0  Jetzt", ["Vorab bestellen:", "ICM-42688-Breakout,", "1S-Akku, LoRa DIP,", "Stecker, Pigtail"], "#eee"),
-             ("1  Schaltplan", ["KiCad 9 installieren", "Schaltplan nach README", "ERC, Review (Kollege)"], C_SENS),
-             ("2  Layout", ["Edge.Cuts aus DXF", "Zonen nach Plan", "DRC (JLC-Regeln), 3D", "1:1-Ausdruck im Kuppler"], C_SENS),
+             ("1  Schaltplan", ["KiCad 10, circuit.py ✔", "ERC 0/0 ✔, Netzliste ✔", "Review (Kollege) offen"], C_SENS),
+             ("2  Layout", ["gen_pcb.py: Umriss ✔", "Platzierung im Entwurf", "Freerouting, DRC, 3D", "1:1-Ausdruck im Kuppler"], C_SENS),
              ("3  Bestellung", ["Gerber, BOM, CPL", "JLCPCB 4 Lagen, ENIG", "5 Stück, 2 bestückt", "Teile-Check am Tag"], C_PWR1),
              ("4  Aufbau", ["THT selbst löten", "Sichtprüfung, Kurzschluss", "Firmware rev B flashen"], C_PWR1),
              ("5  Inbetrieb.", ["Testplan §9:", "Labornetzteil, I²C/SPI,", "Servos ohne Neustart,", "Pyro mit Lämpchen, LoRa"], C_PWR2)]

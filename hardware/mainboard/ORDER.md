@@ -1,9 +1,11 @@
 # Mainboard rev B – Bestellplan
 
-Stand 2026-10-21. Gehört zur Spezifikation `README.md` (rev B) und zum Design Guide
-`docs/DesignGuide_Mainboard_revB.md`. Dieser Plan sagt, **was in welcher Reihenfolge bestellt wird,
-welche Tore vorher passiert sein müssen und was es kostet**. Schaltplan und Layout gibt es noch nicht,
-die Platine selbst kann also erst nach den Toren 1 und 2 bestellt werden. Einiges lässt sich aber jetzt
+Stand 2026-10-21, abends ergänzt um den KiCad-Stand, die Tor-1-Prüfung und die Fertigerübersicht. Gehört zur
+Spezifikation `README.md` (rev B) und zum Design Guide `docs/DesignGuide_Mainboard_revB.md`; der Vergleich
+der Fertiger steht in `Fertiger_2026-10-21.md`, die Netzlistenprüfung in `review_netlist_2026-10-21.md`. Dieser Plan sagt, **was in welcher Reihenfolge bestellt wird,
+welche Tore vorher passiert sein müssen und was es kostet**. Der Schaltplan existiert seit dem Abend des 21.10. als KiCad-Projekt
+(`kicad/`, aus `circuit.py` erzeugt, ERC sauber), das Layout ist im Entwurf; die Platine kann also erst nach den
+Toren 1 und 2 bestellt werden. Einiges lässt sich aber jetzt
 schon kaufen, damit Firmware und Mechanik nicht auf die Platine warten.
 
 ![Weg zur Platine](img/order_flow.svg)
@@ -46,18 +48,24 @@ größte Firmware-Brocken, und er lässt sich ohne Platine fertig machen.
 
 ### Tor 1: Schaltplan fertig
 
-- KiCad 9 installiert, Projekt `hardware/mainboard/kicad/` angelegt, Bibliotheken: KiCad-Standard plus
-  Footprints/Symbole aus dem JLCPCB-Plugin (`kicad-jlcpcb-tools`) oder von Ultra Librarian für
-  ICM-42688-P, BMP390, TPS63070 und E22-400T22S.
-- Jede Schiene mit Testpunkt (TP1–6) und Sicherung (F1 3 A VSERVO; 5V_SYS und 3V3_RF bekommen eine
-  Polyfuse 1 A bzw. 0,5 A, wenn Platz ist).
-- Jeder Stecker mit Pin-1-Markierung und Netznamen im Schaltplan, Lötbrücken JP1/JP2 eingezeichnet.
-- ERC ohne Fehler; Netzliste gegen die Pin-Tabelle in `README.md` §4 geprüft (Skript oder von Hand).
-- **Review durch den Kollegen** anhand des Design Guides, Punkte eingearbeitet oder begründet abgelehnt.
+Stand 21.10.2026 abends: KiCad 10.0.6 installiert, Projekt `hardware/mainboard/kicad/` angelegt, Schaltung als
+Code in `circuit.py` (134 Bauteile, 89 Netze, 7 Blätter), Symbole und Footprints der vier LCSC-Teile über
+easyeda2kicad, **ERC 0 Fehler / 0 Warnungen**. Die Netzliste ist gegen die Pin-Tabelle in `README.md` §4 geprüft
+(`review_netlist_2026-10-21.md`: konform, vier Hinweise). Offen für Tor 1:
+
+- Die Hinweise aus der Prüfung einarbeiten: TPS63070 FB2 (Pin 6) offen lassen statt GND; Kommentar zu den
+  zusammengefassten Doppelpins 7/8 und 12/13 im Footprint; E22 NRST über 10 k an 3V3_RF oder an einen
+  Teensy-Pin; ICM-42688-P RESV-Pins gegen DS-000347 Tabelle 9 halten.
+- **Review durch den Kollegen** anhand des Design Guides und des Schaltplan-PDFs (`kicad/out/`), Punkte
+  eingearbeitet oder begründet abgelehnt.
 
 ### Tor 2: Layout fertig
 
-- `mainboard_outline.dxf` als Edge.Cuts importiert, Bohrungen und Zonen wie `mainboard_placement.svg`.
+- Umriss und Bohrungen kommen aus `gen_pcb.py` (geometrisch gleich `mainboard_outline.dxf`), Zonen wie
+  `mainboard_placement.svg`. Stand 21.10.: Platzierung im Entwurf, 12 Überschneidungen und 9 Teile ohne Platz
+  (`kicad/README.md` §6); die Fläche in den 16-mm-Streifen neben dem Teensy ist knapp.
+- Bahnbreiten der Stromnetze sind im Projekt mit 1,2 mm statt 2 mm angelegt (passen sonst nicht zwischen die
+  Steckerpins); beim Layout-Review gegen die Pyro-Spitze von 5 A prüfen.
 - DRC mit den JLC-Regeln für 4 Lagen (0,09 mm Bahn/Abstand minimal, hier 0,127 mm; Via 0,3/0,45 mm),
   Bahnbreiten nach `README.md` §8.
 - 3D-Ansicht gegen die Hüllen aus `outline.py`; nichts höher als 5 mm bei |u| > 25 mm; unten nur
@@ -105,7 +113,7 @@ Quelle seit Dezember 2025 1,50 USD).
 
 | Bauteil | LCSC | Klasse | Stand 21.10. | Falls nicht lieferbar |
 |---|---|---|---|---|
-| ICM-42688-P | C1850418 | Extended | ca. 5500 Stück, ab 2,1 USD bei 1000 (Einzelpreis höher) | keine Alternative auf der Achse; dann warten oder ICM-42605 (gleiches Gehäuse, prüfen) |
+| ICM-42688-P | C1850418 | Extended | ca. 5500 Stück, ab 2,1 USD bei 1000 (Einzelpreis höher). **Achtung:** das bei LCSC verlinkte Datenblatt trägt die Marke Tokmas, nicht TDK; Hersteller im JLC-Teileprogramm prüfen, nur TDK InvenSense nehmen | keine Alternative auf der Achse; dann warten, Breakout oder anderer Anbieter |
 | BMP390 | C5124834 | Extended | **0 Stück** in der letzten Momentaufnahme, 6,7 USD | **BMP388 (C779278, gleiches LGA-10, gleiche Bibliothek)**, war bei LCSC gelistet, aber bei JLC nicht bestellbar; sonst Breakout per Qwiic anschließen |
 | INA219AIDR | C138706 | prüfen | ca. 1200–4400 Stück, 0,76 USD | INA219BIDR |
 | TPS63070RNMR | C109322 | Extended | Bestand schwankte zwischen 0 und 18 000, 1,37 USD | TPS63020DSJR (1,8–5,5 V ein, 2 A; dann kein Schutz gegen versehentlich 2S) |
@@ -118,7 +126,7 @@ Quelle seit Dezember 2025 1,50 USD).
 | AO3401A | C15127 | Basic | | |
 | AO3400A | C20917 | Basic | | |
 | SS14 | C2480 | Basic | | |
-| SMBJ12A | prüfen | | | SMAJ12A |
+| SMBJ12CA (bidirektional, Entscheidung KiCad-Projekt) | prüfen | | | SMBJ12A |
 | 20 mΩ 2512 1 % 1 W | prüfen | | | 2× 40 mΩ 2512 parallel |
 | Polyfuse 3 A 1812 | prüfen | | | |
 | W25Q128JVSIQ | C97521 (prüfen) | Basic | | kommt unter den Teensy, nicht auf die Platine |
@@ -138,11 +146,18 @@ Buck-Boost und das Funkmodul bleiben Extended.
 | SMD-Bauteile für 2 Platinen (IMU ca. 4, BMP390 ca. 7, E22 ca. 4, Rest ca. 8 je Platine) | 40–55 USD | LCSC-Preise vom 21.10., Mindestabnahme je Rolle eingerechnet |
 | Versand (Euro-Packet/DHL) | 15–25 USD | |
 | Einfuhrumsatzsteuer 19 % auf Ware plus Versand | 20–30 EUR | |
-| **Summe Platinenlauf** | **ca. 120–180 EUR** | für 5 Platinen, 2 bestückt |
+| Zoll seit 01.07.2026: 3 € je Warenposition (HS-Code), die 150-€-Freigrenze ist entfallen | 5–15 EUR | `Fertiger_2026-10-21.md` |
+| **Summe Platinenlauf** | **ca. 130–200 EUR** | für 5 Platinen, 2 bestückt; Röntgen der LGA/QFN und Versandart können dazukommen |
+
+`Fertiger_2026-10-21.md` vergleicht JLCPCB mit PCBWay, Aisler, Eurocircuits, Multi-CB und Beta Layout und
+kommt für den JLC-Auftrag auf 320–380 €, also deutlich mehr als diese Tabelle; die Differenz steckt in den
+Annahmen zu Bauteilpreisen, Röntgen, Versandart und Abgaben. Beides sind keine Angebote. Verbindlich wird es am
+Bestelltag mit BOM und CPL im JLC-Kalkulator; Aisler (Aachen, kein Zoll, Beistellung des E22) ist der Rückfall in
+der EU, etwa 100 € teurer.
 
 Dazu die Teile aus §1 (90–140 €) und der Teensy (vorhanden). Die ganze Elektronik rev B liegt damit
-bei **ca. 210–320 EUR**, was die Planungsrunde (170–280 €) um den BMP390-Preis und den zweiten Akku
-übertrifft.
+bei **ca. 220–340 EUR**, was die Planungsrunde (170–280 €) um den BMP390-Preis, den zweiten Akku und den
+neuen Zoll übertrifft.
 
 ### 3.5 Lieferzeit
 
@@ -166,16 +181,17 @@ also **2 bis 3 Wochen** ab Upload. Die DHL-Option ist eine Woche schneller und 1
 | TPS63070 nicht lieferbar | kein 5V_SYS aus 1S | Footprint zusätzlich für TPS63020 vorsehen? Nein, zu viel Fläche; Bestand vor dem Layout prüfen und notfalls 10 Stück bei LCSC vorbestellen |
 | E22-400T22S falsch gedreht oder Pads unter dem Modul nicht benetzt | Funk tot | CPL-Vorschau prüfen; das Modul hat nur Randpads, Nachlöten ist möglich |
 | WS2812B erzwingt Standard-PCBA | +17 USD Setup | LEDs als DNP, selbst löten (2020-Gehäuse, Heißluft) oder 5050-Gehäuse nehmen |
-| Teensy-Sockelreihen 0,1 mm versetzt | Teensy klemmt | Footprint aus der offiziellen Teensy-KiCad-Bibliothek, Papierausdruck mit echtem Teensy |
+| Teensy-Sockelreihen 0,1 mm versetzt | Teensy klemmt | Footprint `Teensy41_Socket` aus `build_lib.py`, Papierausdruck mit echtem Teensy |
+| ICM-42688-P von einem Zweithersteller (Tokmas-Datenblatt bei LCSC) | anderes Rauschen, andere Register | Hersteller im JLC-Teileprogramm prüfen, sonst Chip selbst beschaffen |
 | Drehung der VQFN-15 (TPS63070) in der CPL | Wandler kaputt beim ersten Einschalten | Pin-1-Punkt in der JLC-Vorschau, erster Start am Netzteil mit 100 mA |
 | Servo-Achsenlage zum Schlitten noch offen (`README.md` §11) | Achsentausch in der Firmware | kein Platinenrisiko, Stecker sind gleich |
 
 ## 6. Wer macht was, Reihenfolge der nächsten Wochen
 
 1. Jetzt: §1 bestellen (0.1 bis 0.6, 0.9 bis 0.16 mindestens). Parallel Firmware auf dem Breakout.
-2. KiCad installieren, Schaltplan zeichnen (ein bis zwei Wochen Abende), Design Guide an den Kollegen,
-   Review einarbeiten → Tor 1.
-3. Layout (ein bis zwei Wochen), DRC, Papierprobe → Tor 2.
+2. Schaltplan steht (`kicad/`, ERC sauber, Netzliste geprüft). Hinweise der Tor-1-Prüfung einarbeiten,
+   Design Guide und Schaltplan-PDF an den Kollegen, Review einarbeiten → Tor 1.
+3. Platzierung fertigstellen, Freerouting, DRC, Papierprobe → Tor 2.
 4. Am Bestelltag §3.3 durchgehen, dann hochladen → Tor 3. Während der Lieferzeit: Träger drucken, Kabel
    konfektionieren, Antenne in die Spitze.
 5. Tor 4 und Testplan. Erst danach die Firmware auf die Platine.

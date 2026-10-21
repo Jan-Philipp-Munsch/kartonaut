@@ -11,15 +11,15 @@
 <path d="M160,115 L172,115" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
 <rect x="172" y="60" width="140" height="110" rx="4" fill="#c9e4c5" stroke="#333" stroke-width="1.2"/>
 <text x="242.0" y="100.2" font-size="12" font-weight="bold" text-anchor="middle">1  Schaltplan</text>
-<text x="242.0" y="115.2" font-size="9.5" text-anchor="middle" fill="#222">KiCad 9 installieren</text>
-<text x="242.0" y="127.8" font-size="9.5" text-anchor="middle" fill="#222">Schaltplan nach README</text>
-<text x="242.0" y="140.2" font-size="9.5" text-anchor="middle" fill="#222">ERC, Review (Kollege)</text>
+<text x="242.0" y="115.2" font-size="9.5" text-anchor="middle" fill="#222">KiCad 10, circuit.py ✔</text>
+<text x="242.0" y="127.8" font-size="9.5" text-anchor="middle" fill="#222">ERC 0/0 ✔, Netzliste ✔</text>
+<text x="242.0" y="140.2" font-size="9.5" text-anchor="middle" fill="#222">Review (Kollege) offen</text>
 <path d="M312,115 L324,115" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
 <rect x="324" y="60" width="140" height="110" rx="4" fill="#c9e4c5" stroke="#333" stroke-width="1.2"/>
 <text x="394.0" y="94.0" font-size="12" font-weight="bold" text-anchor="middle">2  Layout</text>
-<text x="394.0" y="109.0" font-size="9.5" text-anchor="middle" fill="#222">Edge.Cuts aus DXF</text>
-<text x="394.0" y="121.5" font-size="9.5" text-anchor="middle" fill="#222">Zonen nach Plan</text>
-<text x="394.0" y="134.0" font-size="9.5" text-anchor="middle" fill="#222">DRC (JLC-Regeln), 3D</text>
+<text x="394.0" y="109.0" font-size="9.5" text-anchor="middle" fill="#222">gen_pcb.py: Umriss ✔</text>
+<text x="394.0" y="121.5" font-size="9.5" text-anchor="middle" fill="#222">Platzierung im Entwurf</text>
+<text x="394.0" y="134.0" font-size="9.5" text-anchor="middle" fill="#222">Freerouting, DRC, 3D</text>
 <text x="394.0" y="146.5" font-size="9.5" text-anchor="middle" fill="#222">1:1-Ausdruck im Kuppler</text>
 <path d="M464,115 L476,115" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
 <rect x="476" y="60" width="140" height="110" rx="4" fill="#f4d6a0" stroke="#333" stroke-width="1.2"/>

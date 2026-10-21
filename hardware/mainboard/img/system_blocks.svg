@@ -97,17 +97,18 @@
 <text x="548" y="410" font-size="8" text-anchor="start" fill="#444">PWM 2/3</text>
 <rect x="640" y="320" width="150" height="60" rx="4" fill="#f6c4c4" stroke="#333" stroke-width="1.2"/>
 <text x="715.0" y="341.0" font-size="12" font-weight="bold" text-anchor="middle">2× Pyro-Kanal</text>
-<text x="715.0" y="356.0" font-size="10" text-anchor="middle" fill="#222">AO3400A low-side, TVS</text>
+<text x="715.0" y="356.0" font-size="10" text-anchor="middle" fill="#222">AO3400A low-side, SMBJ12CA</text>
 <text x="715.0" y="369.0" font-size="10" text-anchor="middle" fill="#222">Durchgang → ADC 20/21</text>
 <path d="M580,340 L640,340" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
 <text x="610" y="333" font-size="8" text-anchor="middle" fill="#444">22 / 23</text>
 <path d="M180,380 L195,380 L195,520 L715,520 L715,380" fill="none" stroke="#b03a2e" stroke-width="1.4" marker-end="url(#arr)"/>
 <text x="455" y="514" font-size="8" text-anchor="middle" fill="#b03a2e">VBAT_ARMED nur mit Arming-Schalter</text>
 <rect x="820" y="80" width="100" height="70" rx="4" fill="#e3d9f2" stroke="#333" stroke-width="1.2"/>
-<text x="870.0" y="99.5" font-size="12" font-weight="bold" text-anchor="middle">Signale</text>
-<text x="870.0" y="114.5" font-size="10" text-anchor="middle" fill="#222">2× WS2812B</text>
-<text x="870.0" y="127.5" font-size="10" text-anchor="middle" fill="#222">Summer</text>
-<text x="870.0" y="140.5" font-size="10" text-anchor="middle" fill="#222">Reset-Taster</text>
+<text x="870.0" y="93.0" font-size="12" font-weight="bold" text-anchor="middle">Signale</text>
+<text x="870.0" y="108.0" font-size="10" text-anchor="middle" fill="#222">2× WS2812B</text>
+<text x="870.0" y="121.0" font-size="10" text-anchor="middle" fill="#222">Summer</text>
+<text x="870.0" y="134.0" font-size="10" text-anchor="middle" fill="#222">(Program-Taster</text>
+<text x="870.0" y="147.0" font-size="10" text-anchor="middle" fill="#222">am Teensy)</text>
 <path d="M470,190 L470,60 L870,60 L870,80" fill="none" stroke="#888" stroke-width="1.4" marker-end="url(#arrg)"/>
 <text x="680" y="54" font-size="8" text-anchor="middle" fill="#888">Pins 5, 6, 13</text>
 <rect x="820" y="250" width="100" height="60" rx="4" fill="#e3d9f2" stroke="#333" stroke-width="1.2"/>

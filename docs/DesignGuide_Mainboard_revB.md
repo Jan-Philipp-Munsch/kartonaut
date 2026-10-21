@@ -1,6 +1,6 @@
 # Flugcomputer-Mainboard rev B – Design Guide
 
-<p class="subtitle">Mission Space, Modellrakete mit Schubvektorsteuerung · Jan-Philipp Munsch · Stand 21.10.2026 · Entwurfsstand vor Schaltplan und Layout</p>
+<p class="subtitle">Mission Space, Modellrakete mit Schubvektorsteuerung · Jan-Philipp Munsch · Stand 21.10.2026 abends · Schaltplan als KiCad-Projekt (ERC sauber), Layout im Entwurf</p>
 
 Dieses Dokument stellt die Elektronik der Rakete vor: was sie tun muss, wie die Platine aufgebaut ist und
 warum die Entscheidungen so gefallen sind. Es ist für drei Leser geschrieben. Für den Kollegen, der den
@@ -30,7 +30,7 @@ regelt mit 100 Hz, loggt, funkt und zündet die Bergung.
 | Aktoren | 2× FrSky W5652H direkt am 2S-Akku, Rollmotor über DRV8833, Fallschirm-Servo als Reserve | die W5652H sind am Akku doppelt so schnell wie an 5 V |
 | Bergung | zwei Pyro-Kanäle mit externem Arming, Durchgangsprüfung, TVS | Pyro-Ausstoß ist getestet; zwei Kanäle für Kolben und Reserve |
 | Versorgung | **zwei Akkus**: 1S für die Elektronik über Buck-Boost, 2S für Servos, Rollmotor und Pyro | ein Neustart des Rechners im Flug ist das Ende des Flugs |
-| Anzeige | 2× WS2812B, Summer, Reset-Taster durch die Luke | Zustand ohne Laptop erkennbar |
+| Anzeige | 2× WS2812B, Summer; der Program-Taster des Teensy ist durch die Luke erreichbar | Zustand ohne Laptop erkennbar |
 | Mechanik | Längs-Schlitten 54 × 120 mm, 4 Lagen, im Kuppler (innen 70,2 mm), Akkus im Träger darunter | der Flugcomputer ist als Modul herausziehbar |
 | Fertigung | JLCPCB, 4 Lagen, ENIG, SMD-Bestückung oben, THT selbst | LGA-Gehäuse sind nicht von Hand zu löten |
 
@@ -209,8 +209,8 @@ Pull-down, damit der FET beim Booten, wenn die Teensy-Pins hochohmig sind, siche
 kommt von **VBAT_ARMED**, das nur hinter dem externen Arming-Schalter Spannung führt; ohne Arming kann die
 Firmware nichts zünden, egal was sie tut. Die Durchgangsprüfung misst den Drain über einen Teiler: Mit
 Arming und eingesteckter E-Match liegt er auf VBAT, ohne E-Match ziehen ihn 100 kΩ nach GND. Eine
-TVS (SMBJ12A) fängt die Abschaltspitze der Zuleitung ab. Die Stecker sind JST-XH 2-polig mit
-Zugentlastung.
+bidirektionale TVS (SMBJ12CA, im KiCad-Projekt statt der SMBJ12A gewählt, damit die Bestückrichtung keine Rolle
+spielt) fängt die Abschaltspitze der Zuleitung ab. Die Stecker sind JST-XH 2-polig mit Zugentlastung.
 
 Die Firmware ergänzt vier Regeln: Zünden nur in den Zuständen *Apogäum* oder *Landung*, Puls ≤ 1 s, jeder
 Kanal höchstens einmal, ohne ARM_SENSE keine Freigabe. Vor dem Start meldet der Summer den Durchgang.
@@ -221,8 +221,9 @@ Kanal höchstens einmal, ohne ARM_SENSE keine Freigabe. Vor dem Start meldet der
 ## 9. Pinbelegung Teensy 4.1
 
 Alle heute in `Config.h` benutzten Pins bleiben, wo sie sind; neu kommen SPI1, Pyro, Arming, LoRa-Steuerung,
-GPS, die zweite Akkuspannung und ein Kamera-Trigger dazu. Elf Pins bleiben frei und liegen auf einer
-2×7-Erweiterungsleiste.
+GPS, die zweite Akkuspannung, ein Kamera-Trigger und die Fehlermeldung des Motortreibers (Pin 8, aus dem
+KiCad-Projekt) dazu. Zehn Pins bleiben frei und liegen auf einer 2×7-Erweiterungsleiste. Die Netzliste des
+KiCad-Projekts ist am 21.10.2026 gegen diese Tabelle geprüft (`hardware/mainboard/review_netlist_2026-10-21.md`).
 
 ![Pinbelegung](../hardware/mainboard/img/teensy_pinmap.svg)
 
@@ -246,13 +247,24 @@ Die vollständige Prüfliste steht in `docs/Plan_2026-10-21.md` §2.6.
 
 ![Weg zur Platine](../hardware/mainboard/img/order_flow.svg)
 
+**Stand des KiCad-Projekts** (`hardware/mainboard/kicad/`, KiCad 10.0.6): Die Schaltung ist als Code in
+`circuit.py` beschrieben, daraus werden Schaltplan (7 Blätter, ERC 0/0, PDF in `kicad/out/`) und Platine
+erzeugt. Die Platzierung ist im Entwurf; die 16-mm-Streifen neben dem Teensy sind knapp, einige 0603-Teile
+werden wohl auf 0402 schrumpfen oder unter den Teensy wandern. Entscheidungen, die das Projekt über die
+Spezifikation hinaus getroffen hat, stehen in `kicad/README.md` §4: eigenes Netz GND_PWR mit Sternpunkt,
+Unterspannungsschutz über den EN-Teiler des TPS63070 (an ab 3,44 V, aus unter 3,01 V), 220 Ω in den
+Servoleitungen, stehende Stecker an den Stirnseiten, Stromnetze 1,2 mm statt 2 mm.
+
 JLCPCB, 4 Lagen, 54 × 120 mm, ENIG, 5 Platinen, davon 2 mit Economic-PCBA auf der Oberseite bestückt;
 THT-Teile (Stecker, Buchsenleisten, Elkos, Summer) löte ich selbst. Geschätzte Kosten des Platinenlaufs
 120 bis 180 €, dazu 90 bis 140 € für Akkus, Stecker, LoRa-Gegenstelle und Breakouts, die schon vor der
 Platine bestellt werden. Lieferzeit 2 bis 3 Wochen ab Upload. Teileverfügbarkeit, Extended-Gebühren und
-die Tore vor der Bestellung stehen in [`ORDER.md`](../hardware/mainboard/ORDER.md); zwei Punkte sind
+die Tore vor der Bestellung stehen in [`ORDER.md`](../hardware/mainboard/ORDER.md); drei Punkte sind
 dort als Risiko markiert: Der BMP390 war bei LCSC zuletzt ohne Bestand (Rückfall BMP388, gleiches
-Gehäuse), und der TPS63070-Bestand schwankt.
+Gehäuse), der TPS63070-Bestand schwankt, und das bei LCSC zum ICM-42688-P verlinkte Datenblatt trägt die
+Marke Tokmas statt TDK, der Hersteller ist also am Bestelltag zu prüfen. Seit dem 1.7.2026 fallen zudem 3 €
+Zoll je Warenposition an. Der Vergleich mit PCBWay, Aisler, Eurocircuits und anderen steht in
+`hardware/mainboard/Fertiger_2026-10-21.md`; Aisler ist der Rückfall in der EU.
 
 ## 12. Inbetriebnahme
 
@@ -295,6 +307,10 @@ Das sind die Punkte, bei denen mir ein zweites Paar Augen am meisten hilft, bevo
    erzwingt oder das man besser von Hand bestückt?
 9. **Was fehlt?** ESD am USB (der Teensy hat keinen eigenen Schutz), Pull-ups an CS und den
    LoRa-Steuerleitungen während des Boots, eine Sicherung im 1S-Pfad?
+10. **Aus der Netzlistenprüfung.** TPS63070 PS/SYNC liegt auf high (Stromsparbetrieb bei Teillast,
+    mehr Ripple im Leerlauf): so lassen oder forced PWM? E22 NRST offen oder über 10 k hochziehen?
+    ICM-42688-P RESV-Pins 2, 3, 7, 10, 11 an GND: stimmt das mit DS-000347 Tabelle 9, ist Pin 7 „do not
+    connect“?
 
 ## Anhang A: Stückliste (Entwurf)
 
@@ -327,7 +343,7 @@ Auszug aus `hardware/mainboard/README.md` §7; die LCSC-Nummern und ihr Status s
 | J_PYRO1, J_PYRO2 | JST-XH 2 | THT | 2 | E-Matches |
 | J_GPS, J_QWIIC, J_CAM, J_LED | JST-GH 4 / SH 4 / GH 3 / GH 3 | SMD | 4 | GPS, I²C, Kamera, LEDs |
 | J_EXP | Stiftleiste 2×7 | THT | 1 | freie Pins |
-| JP1, JP2, TP1..6, SW_RST | Lötbrücken, Testpunkte, Taster | – | | Tisch, Inbetriebnahme, Reset |
+| JP1, JP2, TP1..6 | Lötbrücken, Testpunkte | – | | Tisch, Inbetriebnahme (Reset-Taster entfallen: der Teensy-Sockel führt keinen Reset) |
 
 ## Anhang B: Dateien
 
@@ -336,6 +352,9 @@ Auszug aus `hardware/mainboard/README.md` §7; die LCSC-Nummern und ihr Status s
 | `hardware/mainboard/README.md` | Spezifikation rev B (verbindlich) |
 | `hardware/mainboard/rev_a_2026-10-15.md` | rev A mit den Begründungen, die weiter gelten |
 | `hardware/mainboard/ORDER.md` | Bestellplan, Teilestatus, Kosten, Tore |
+| `hardware/mainboard/Fertiger_2026-10-21.md` | Vergleich der Fertiger (JLCPCB, PCBWay, Aisler, Eurocircuits), Zoll seit 07/2026 |
+| `hardware/mainboard/kicad/` | KiCad-Projekt: `circuit.py` als Quelle, Schaltplan, Platinen-Generator, `kicad/README.md` mit Entscheidungen |
+| `hardware/mainboard/review_netlist_2026-10-21.md` | Tor-1-Prüfung der Netzliste gegen die Spezifikation |
 | `hardware/mainboard/outline.py` | Umriss (DXF) und Platzierungsplan (SVG), Hüllenprüfung |
 | `hardware/mainboard/figures.py` | die Abbildungen dieses Guides |
 | `docs/Plan_2026-10-21.md` | Planungsrunde mit Bewertung von rev A, Versorgungsrechnung, Layout-Checkliste |

@@ -2,7 +2,7 @@
 <defs><marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#333"/></marker><marker id="arrg" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#888"/></marker></defs>
 <rect width="100%" height="100%" fill="white"/>
 <text x="20" y="26" font-size="15" font-weight="bold" text-anchor="start" fill="#222">Ein Pyro-Kanal: vier Hürden vor der Zündung</text>
-<text x="20" y="44" font-size="10" text-anchor="start" fill="#555">Arming-Schalter (Hardware), Flugzustand und Puls ≤ 1 s (Firmware), Pull-down am Gate (Boot), TVS am Ausgang.</text>
+<text x="20" y="44" font-size="10" text-anchor="start" fill="#555">Arming-Schalter (Hardware), Flugzustand und Puls ≤ 1 s (Firmware), Pull-down am Gate (Boot), bidirektionale TVS am Ausgang.</text>
 <path d="M60,100 L640,100" fill="none" stroke="#333" stroke-width="1.6"/>
 <text x="60" y="92" font-size="10" font-weight="bold" text-anchor="start" fill="#222">VBAT_PROT (2S, 6–8,4 V)</text>
 <circle cx="250" cy="100" r="4" fill="white" stroke="#333" stroke-width="1"/>
@@ -31,7 +31,7 @@
 <path d="M332,186 L348,186 L340,170 z" fill="white" stroke="#333" stroke-width="1.2"/>
 <path d="M332,170 L348,170" fill="none" stroke="#333" stroke-width="1.4"/>
 <path d="M340,186 L340,220 L400,220" fill="none" stroke="#333" stroke-width="1.2"/>
-<text x="300" y="182" font-size="9" text-anchor="end" fill="#222">SMBJ12A</text>
+<text x="300" y="182" font-size="9" text-anchor="end" fill="#222">SMBJ12CA</text>
 <path d="M400,220 L470,220 L470,235" fill="none" stroke="#333" stroke-width="1.2"/>
 <rect x="462" y="235" width="16" height="28" rx="0" fill="white" stroke="#333" stroke-width="1"/>
 <text x="485" y="253" font-size="9" text-anchor="start" fill="#222">100 k</text>

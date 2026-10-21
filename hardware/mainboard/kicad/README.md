@@ -193,15 +193,22 @@ automatisch weg). Das ist kosmetisch und wird beim Review bereinigt.
 
 ## 8. Nächste Schritte
 
-0. **Review-Punkte A1 bis A5 aus `../review_kicad_2026-10-21.md` einarbeiten**, bevor von Hand
-   geroutet wird. Sie ändern die Schaltung, danach wird die Platine mit `./make.sh` neu erzeugt.
+0. **Review-Punkte A1 bis A8 aus `../review_kicad_2026-10-21.md` einarbeiten**, bevor von Hand
+   geroutet wird. Die Punkte A1 bis A5 ändern die Schaltung, A6 bis A8 die Art, wie die Strompfade
+   geroutet werden. Danach wird die Platine mit `./make.sh` neu erzeugt und mit
+   `../review_check_layout.py` nachgemessen.
    - **A1 ist ein Datenblattverstoß**: 1066 µF am Ausgang des TPS63070, erlaubt sind 470 µF. Der
      1000-µF-Elko kommt hinter D1 an TEENSY_VIN.
    - A2: Unterspannungsschwelle des 1S-Akkus tiefer legen.
    - A3: Hauptschalter schaltet über FETs statt im Strompfad.
    - A4: Sicherungen je Akku.
-   - A5: Kelvin-Abgriff am Shunt.
+   - A5: Kelvin-Abgriff am Shunt, etwa mit Netzbrücken, sodass nur der INA219 die Sense-Netze sieht.
+   - A6: 2S-Netze nur auf den Außenlagen, nicht auf In2 (0,5 oz), und mit Abstand zur IMU.
+   - A7: VSYS_IN nach dem Pin-Austritt auf ≥ 0,6 mm aufweiten.
+   - A8: keine 0,15-mm-Stücke in 5V_SERVO.
 
+   Für A6 bis A8 genügt der Autorouter mit Netzklassen nicht. Der Generator legt den 2S-Pfad, VSYS_IN
+   und 5V_SERVO vorab als F.Cu-Flächen an (Review B13). Freerouting routet danach nur noch die Signale.
    Die B-Punkte nach Aufwand.
 
    In derselben Runde gehen die Punkte aus `../review_netlist_2026-10-21.md` mit:

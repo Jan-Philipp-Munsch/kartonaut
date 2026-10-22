@@ -6,4 +6,5 @@ export/*
 # Druckteile der Modulbauweise (cad/modular.py): STL zum Drucken und die Massenrechnung bleiben im Repo
 !export/modular/
 export/modular/*.step
+!export/modular/Kartonaut1_Stand2b.step
 __pycache__/

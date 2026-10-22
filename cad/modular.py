@@ -262,7 +262,8 @@ def check(parts):
 def export(parts):
     EXPORT.mkdir(parents=True, exist_ok=True)
     for f in EXPORT.glob("*.st*"):
-        f.unlink()
+        if not f.name.startswith("Kartonaut1"):
+            f.unlink()
     by = {n: s for n, s, _, _ in parts}
     rows = []
     for key, fn in (("Schlitten mit Spant", "Schlitten_mit_Spant"), ("Untere Scheibe", "Untere_Scheibe"),
@@ -273,6 +274,17 @@ def export(parts):
         v = by[key].Volume() / 1000
         rows.append({"teil": key, "datei": f"cad/export/modular/{fn}.stl", "cm3": round(v, 1), "g": round(v * M.PRINT_RHO * M.PRINT_FILL, 1)})
     return rows
+
+
+def export_assembly(parts):
+    """Ganze Rakete als farbige Baugruppe: STEP (FreeCAD, Fusion) und GLB (Windows-3D-Viewer, Doppelklick). Rohre halb durchsichtig."""
+    assy = cq.Assembly(name="Kartonaut1_Stand2b")
+    for i, (name, shape, col, grp) in enumerate(parts):
+        r, g, b = P.COLORS.get(col, (0.7, 0.7, 0.7))
+        a = 0.35 if grp == "rumpf" and name.startswith(("Rohr", "Kuppler")) else 1.0
+        assy.add(shape, name=f"{i:02d} {name}".replace("/", "-"), color=cq.Color(r, g, b, a))
+    for ext in ("step", "glb"):
+        assy.save(str(EXPORT / f"Kartonaut1_Stand2b.{ext}"))
 
 
 def renders(parts):
@@ -310,6 +322,7 @@ def main():
     (EXPORT / "masses.json").write_text(json.dumps({"druckteile": rows, "druckteile_g": round(printed, 1), "rohre_g": tubes,
                                                     "start_g": round(total, 1), "laenge_mm": M.NOSE_TIP_Z},
                                                    indent=1, ensure_ascii=False), encoding="utf-8")
+    export_assembly(parts)
     if "--no-render" not in sys.argv:
         renders(parts)
     return 1 if bad or missing else 0

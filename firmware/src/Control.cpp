@@ -40,15 +40,17 @@ void Control_setup() {
   Chute_servo_deg(CHUTE_SERVO_CLOSED_DEG);
 }
 
-static inline float clampDeg(float d) { return d < 0.0f ? 0.0f : (d > 180.0f ? 180.0f : d); }
+// PWMServo::write() nimmt ganze Grad; runden statt abschneiden, sonst sitzt die
+// Mitte im Mittel einen halben Servo-Grad (bei Gain 6: 0,08° TVC) daneben.
+static inline int servoDeg(float d) { return int(lroundf(d < 0.0f ? 0.0f : (d > 180.0f ? 180.0f : d))); }
 
 void Apply_servos_deg(float yaw_deg, float pitch_deg) {
-  yawServo.write(clampDeg(yaw_deg));
-  pitchServo.write(clampDeg(pitch_deg));
+  yawServo.write(servoDeg(yaw_deg));
+  pitchServo.write(servoDeg(pitch_deg));
 }
 
 void Chute_servo_deg(int deg) {
-  chuteServo.write(clampDeg(float(deg)));
+  chuteServo.write(servoDeg(float(deg)));
 }
 
 void Motor_coast() {

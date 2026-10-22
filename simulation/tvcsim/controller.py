@@ -143,9 +143,14 @@ class FirmwareController:
         return th_y, th_z
 
 
-def make_controller(name: str, control: ControlParams, firmware: FirmwareParams, l_ctrl: float):
+def make_controller(name: str, control: ControlParams, firmware: FirmwareParams, l_ctrl: float,
+                    sil=None, seed: int | None = None):
     if name == "simulink":
         return SimulinkController(control, l_ctrl)
     if name == "firmware":
         return FirmwareController(firmware, control.dt)
+    if name == "sil":
+        # C++-Flugkern der Firmware (tvcsim.sil); erst hier importiert, weil er einen Compiler braucht
+        from .sil import SilController
+        return SilController(sil, control.dt, seed=seed)
     raise ValueError(f"unbekannter Regler {name!r}")

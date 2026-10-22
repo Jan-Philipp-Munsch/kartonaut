@@ -22,7 +22,21 @@ python scripts/tune_pid.py --kp-values 2 3.1 5 --ki-values 0 5 --kd-values 0.01 
 python scripts/compare_gains.py --vehicle preload   # Firmware- gegen Tuner-Gewinne
 python scripts/export_flight_csv.py                 # Erstflug als Sensordatei -> firmware/test/data/flight_e12.csv
 python scripts/analyze_imu_noise.py <calib_imu.csv> # Allan-Abweichung aus dem CSV-Strom von examples/calib_imu
+python scripts/run_sil.py                           # Software-in-the-Loop: C++-Flugkern der Firmware fliegt mit
+python scripts/run_sil.py --runs 50                 # SIL-Monte-Carlo -> out/sil_montecarlo.csv
+python scripts/run_sil.py --apogee-sweep            # Apogäum-Schwellen gegen Auslöseverzug
+python scripts/recovery.py --from-sil --plot        # Fallschirm: Sinkrate, Drift, Öffnungsstoß
 ```
+
+**Software-in-the-Loop** (`tvcsim/sil.py`, seit 22.10.2026): `--controller sil` bzw. `run_sil.py`
+übersetzt `firmware/lib/flightcore` mit `firmware/sil/kartonaut_sil.cpp` (g++ oder clang++, beim
+ersten Aufruf automatisch nach `out/sil/`) und lädt es über ctypes. Der Regler ist dann nicht mehr ein
+Python-Port, sondern der Firmware-Code selbst: Quaternion aus dem Gyro, Kalman aus spezifischer Kraft
+und Barometer (50 Hz, 0,3 m Rauschen), Zustandsautomat, Pyro-Logik, TVC-Regler mit Servo-Rundung;
+alle Konstanten aus `firmware/src/Config.h`. Vor dem Start laufen 5 s Rampe (Kalibrierung gemittelt,
+Kalman und Lage laufen ein). Die Simulation reicht dafür die spezifische Kraft im Körpersystem
+(`Tb/m`, auf der Rampe `g`) und die wahre Höhe an den Regler durch; die anderen Regler ignorieren
+das, ihre Ergebnisse bleiben gleich. Tests: `tests/test_sil.py` (übersprungen ohne Compiler).
 
 Alle Ausgaben landen in `simulation/out/` (per `.gitignore` ausgeschlossen). Ein Lauf über
 12 s dauert etwa 3 s, Monte-Carlo mit 100 Läufen à 7 s etwa 4 Minuten.

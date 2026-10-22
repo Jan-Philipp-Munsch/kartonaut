@@ -108,11 +108,35 @@ ESC-Signal auf `PIN_THROTTLE` (rev B: `PWM_EXT` am Stapelstecker, Breakout: Pin 
 5. Zünder erst am Pad einstecken, Schlüssel erst nach dem Rückzug, Countdown vom Handy.
 6. Nach dem Flug: Schlüssel ziehen, `x` am USB oder SD-Karte lesen, Log und Video sichern.
 
-## 8. Offen in der Firmware (nicht am Gerät prüfbar, am Rechner weiter)
+## 8. Software-in-the-Loop und offene Punkte der Firmware
 
-- Software-in-the-loop: `TvcController` und `Attitude` als Python-Erweiterung oder über eine
-  C-Schnittstelle in `tvcsim` einhängen, dann rechnet die Simulation mit dem echten Code
-  (heute: `FirmwareController` als Port).
+**SIL steht (22.10.2026):** `python simulation/scripts/run_sil.py` fliegt den echten C++-Flugkern
+(Lage, Kalman, Zustandsautomat, Pyro, Regler, Servo-Rundung, Konstanten aus `Config.h`) in der
+6DOF-Simulation; `--runs 50` streut Kardanfehler, Masse, Trägheit, Schwerpunkt und Servo-Totzeit,
+`--apogee-sweep` vergleicht Apogäum-Schwellen. Tests: `simulation/tests/test_sil.py`. Nach jeder
+Messung aus §3/§4 (Servo-Fit, Masse, Trägheit) dort neu rechnen, bevor der Regler freigegeben wird.
+
+Ergebnisse vom 22.10. (Erstflug, Regler an): Kippwinkel im Boost im Median 2,7°, 95 % unter 5,3°;
+Gipfel 48–69 m; Fallschirm 0,6–0,8 s nach dem Gipfel bei 6–8 m/s; kein Abbruch, keine Zündung
+vor dem Gipfel. Ohne Regler kippt die Rakete nach 1,1 s über 70° (ABORT). Details:
+`docs/Bergung_Fallschirm_2026-10-22.md` §4.
+
+**Zur Entscheidung (Jan):**
+
+1. **Apogäum-Schwellen** 1,0 m / 300 ms → 0,5 m / 200 ms: Öffnen bei 4,5 statt 7 m/s. Vorher einen
+   echten Barometer-Mitschnitt (Prüfstand oder Flug) in die Simulation nehmen.
+2. **Starterkennung** 2 g / 50 ms → z. B. 1,3 g / 20 ms: Regler 0,1 s früher, schlimmster
+   Monte-Carlo-Fall 15° → 6°. Dagegen: ein Stoß auf der Rampe löst leichter aus.
+3. **Sicherheitslücke bei falscher Starterkennung:** Erkennt der Automat auf der Rampe fälschlich
+   einen Start, läuft er über die Zeit-Rückfälle (4,5 s Brennschluss, 6 s Coast) bis APOGEE und gibt
+   die Zündung frei, ca. 10,5 s später **auf der Rampe**. Vorschlag: Bergungszündung nur, wenn
+   Kalman oder Barometer mindestens 10 m Steigen gesehen haben; sonst zurück nach SAFE ohne Zündung.
+   Für die Tischtests (§2) bleibt ein USB-Befehl, der die Sperre aufhebt.
+
+**Weiter offen:**
+
 - Bodenstation: `KartonautProtocol.h` übernehmen, `KnEvent` und `KnStatus` anzeigen.
 - Zweites Barometer (DNP) und Kanal 3/4 in `SensorsRevB.cpp`, wenn bestückt.
 - GPS: Baudrate des Moduls (9600/38400) und ggf. UBX statt NMEA.
+- Luftwiderstand fehlt in `tvcsim` (Simulink-Erbe): Gipfelhöhen sind etwas zu hoch, die Freifallphase
+  nach dem Gipfel etwas zu schnell.

@@ -220,7 +220,8 @@ class SimParams:
     control: ControlParams = field(default_factory=ControlParams)
     firmware: FirmwareParams = field(default_factory=FirmwareParams)
     noise: NoiseParams = field(default_factory=NoiseParams)
-    controller: str = "simulink"   # "simulink" oder "firmware"
+    controller: str = "simulink"   # "simulink", "firmware" (Python-Port) oder "sil" (C++-Flugkern, tvcsim.sil)
+    sil: object | None = None      # tvcsim.sil.SilParams; None = Werte aus firmware/src/Config.h
     t_end: float = 12.0            # s, StopTime des Modells (Monte-Carlo: 7 s)
     substeps: int = 10             # RK4-Teilschritte je Regelschritt (dt/substeps = 1 ms)
     ground: bool = True            # Boden: auf der Rampe keine Bewegung nach unten, der Lauf endet bei der

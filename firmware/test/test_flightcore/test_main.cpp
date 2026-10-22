@@ -17,6 +17,7 @@
 #include "Attitude.h"
 #include "Crc16.h"
 #include "FlightState.h"
+#include "KalmanZ.h"
 #include "KartonautProtocol.h"
 #include "Pyro.h"
 #include "Telemetry.h"
@@ -363,6 +364,42 @@ static void test_flightstate_on_simulated_flight() {
   TEST_ASSERT_LESS_THAN(1.0f, max_tilt_err);
 }
 
+// ===================== Kalman =====================
+
+static void test_kalman_tracks_constant_accel() {
+  // 2 m/s² aus dem Stand, 5 s, Barometer 50 Hz mit ±0,5 m Rauschen (gleichverteilt, Pseudozufall)
+  KalmanZ k;
+  k.setDt(0.01f, 3.0f); k.setMeasStd(2.0f); k.setState(0, 0); k.setPDiag(100, 100);
+  uint32_t s = 7;
+  float z_true = 0, v_true = 0;
+  for (int i = 1; i <= 500; ++i) {
+    v_true += 2.0f * 0.01f;
+    z_true = 0.5f * 2.0f * (i * 0.01f) * (i * 0.01f);
+    k.predict(2.0f);
+    if (i % 2 == 0) {
+      s = s * 1664525u + 1013904223u;
+      const float n = (float((s >> 8) & 0xFFFF) / 65535.0f - 0.5f);
+      k.update(z_true + n);
+    }
+  }
+  TEST_ASSERT_FLOAT_WITHIN(0.3f, z_true, k.z());
+  TEST_ASSERT_FLOAT_WITHIN(0.2f, v_true, k.vz());
+  // Kovarianz bleibt positiv
+  TEST_ASSERT_TRUE(k.p00_ > 0 && k.p11_ > 0 && k.p00_ * k.p11_ > k.p01_ * k.p01_);
+}
+
+static void test_kalman_baro_pulls_wrong_accel() {
+  // Beschleunigung mit 0,5 m/s² Fehler, Rakete in Wahrheit in Ruhe: das Barometer hält die Höhe,
+  // vz behält einen stationären Fehler (das Filter hat keinen Bias-Zustand). Mit σa = 3, σb = 2 und
+  // Barometer bei 50 Hz sind das ca. 1,4 s × Bias; nach der Rampenkalibrierung ist der Bias < 0,1 m/s²,
+  // also < 0,15 m/s gegen die Apogäum-Schwelle −0,5 m/s.
+  KalmanZ k;
+  k.setDt(0.01f, 3.0f); k.setMeasStd(2.0f); k.setState(0, 0); k.setPDiag(100, 100);
+  for (int i = 1; i <= 2000; ++i) { k.predict(0.5f); if (i % 2 == 0) k.update(0.0f); }
+  TEST_ASSERT_FLOAT_WITHIN(0.5f, 0.0f, k.z());
+  TEST_ASSERT_FLOAT_WITHIN(0.8f, 0.0f, k.vz());
+}
+
 // ===================== Pyro =====================
 
 static void test_pyro_rules() {
@@ -488,6 +525,8 @@ int main(int, char**) {
   RUN_TEST(test_flightstate_synthetic_sequence);
   RUN_TEST(test_flightstate_abort_and_timeouts);
   RUN_TEST(test_flightstate_on_simulated_flight);
+  RUN_TEST(test_kalman_tracks_constant_accel);
+  RUN_TEST(test_kalman_baro_pulls_wrong_accel);
   RUN_TEST(test_pyro_rules);
   RUN_TEST(test_tvc_controller);
   return UNITY_END();

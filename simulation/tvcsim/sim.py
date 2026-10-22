@@ -19,7 +19,7 @@ import numpy as np
 
 from .actuator import Actuator
 from .controller import make_controller
-from .dynamics import eom, tilt_deg
+from .dynamics import body_to_inertial, conjugate, eom, tilt_deg
 from .estimator import estimate
 from .motors import ThrustModel
 from .params import SimParams
@@ -71,7 +71,7 @@ def simulate(p: SimParams) -> SimResult:
     thrust = ThrustModel(p.motor)
     act = Actuator(p.servo, p.vehicle, dt)
     avionics = Avionics(p.noise, rng)
-    ctrl = make_controller(p.controller, p.control, p.firmware, p.vehicle.l_ctrl)
+    ctrl = make_controller(p.controller, p.control, p.firmware, p.vehicle.l_ctrl, sil=p.sil, seed=p.seed)
     eom_params = p.vehicle.as_eom_params()
     rad2deg = 57.2957  # Gain "rad to deg" im Modell
 
@@ -104,7 +104,15 @@ def simulate(p: SimParams) -> SimResult:
         accel = rdd if p.noise.accel_model == "rdd" else Tb / m
         q_n, w_n, a_n = avionics.sample(q, w * rad2deg, accel)
         w_est, q_est, T_est = estimate(a_n, w_n, q_n, m)
-        th_y_com, th_z_com = ctrl.step(t, w_est, q_est, T_est, a_norm=float(np.linalg.norm(a_n)))
+        # Spezifische Kraft im Koerpersystem, wie ein echter Beschleunigungssensor sie misst:
+        # im Flug Schub/Masse (kein Luftwiderstand im Modell), auf der Rampe die Stuetzkraft g.
+        # Nur der SIL-Regler nutzt sie; die anderen ignorieren die Schluesselwoerter.
+        if p.ground and not lifted:
+            f_body = body_to_inertial(conjugate(q), np.array([p.vehicle.g, 0.0, 0.0]))
+        else:
+            f_body = Tb / m
+        th_y_com, th_z_com = ctrl.step(t, w_est, q_est, T_est, a_norm=float(np.linalg.norm(a_n)),
+                                       f_body=f_body, alt_true=float(r[0]))
         act.push_command(th_y_com, th_z_com)
 
         log["r"][k] = r; log["rd"][k] = rd; log["rdd"][k] = rdd; log["w_dps"][k] = w * rad2deg
@@ -149,4 +157,5 @@ def simulate(p: SimParams) -> SimResult:
                      q=log["q"], m=log["m"], T=log["T"], th_y=log["th_y"], th_z=log["th_z"],
                      th_y_com=log["th_y_com"], th_z_com=log["th_z_com"], u=log["u"], rot=log["rot"],
                      tilt_deg=log["tilt"], T_est=log["T_est"],
-                     extra={"t_land": t_land, "landed": t_land is not None})
+                     extra={"t_land": t_land, "landed": t_land is not None,
+                            "trace": getattr(ctrl, "trace", None), "rd_all": log["rd"]})

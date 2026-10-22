@@ -107,6 +107,12 @@ constexpr uint32_t FS_LIFTOFF_HOLD_MS = 50;
 constexpr float    FS_BURNOUT_G       = 0.5f;
 constexpr uint32_t FS_BURN_MAX_MS     = 4500;     // E12 brennt 3,55 s
 constexpr uint32_t FS_COAST_MAX_MS    = 6000;     // Simulation: Gipfel 1,9 s nach Brennschluss
+// Apogäum: Kalman-vz unter FS_APOGEE_VZ_MS UND Barometer FS_APOGEE_BARO_DROP_M unter seinem Maximum,
+// beides FS_APOGEE_HOLD_MS lang. SIL (simulation/scripts/run_sil.py --apogee-sweep) zeigt den Preis:
+// mit 1 m / 300 ms kommt die Auslösung ca. 0,9 s nach dem Gipfel bei ca. 8–9 m/s.
+constexpr float    FS_APOGEE_VZ_MS    = -0.5f;
+constexpr uint32_t FS_APOGEE_HOLD_MS  = 300;
+constexpr float    FS_APOGEE_BARO_DROP_M = 1.0f;
 constexpr float    FS_ABORT_TILT_DEG  = 70.0f;
 constexpr float    FS_PAD_MAX_TILT_DEG = 10.0f;
 

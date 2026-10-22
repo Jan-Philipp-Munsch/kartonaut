@@ -12,13 +12,15 @@ pio run -e teensy41 -t upload      # flashen (teensy-cli)
 pio device monitor                 # 115200 Bd, 'h' zeigt die Tasten; Teleplot-kompatibel
 pio test -e native                 # Tests des Flugkerns ohne Hardware
 tools/run_native_tests.sh          # dieselben Tests mit g++, ohne PlatformIO
+python ../simulation/scripts/run_sil.py   # Software-in-the-Loop: dieser Code in der 6DOF-Simulation
 pio run -e calib_imu -t upload     # einen Kalibrier-Sketch flashen
 ```
 
 ## Aufbau
 
 ```
-lib/flightcore/      hardwareunabhängig, nativ getestet: Lage, Zustandsautomat, Pyro, Protokoll, Regler
+lib/flightcore/      hardwareunabhängig, nativ getestet: Lage, Höhen-Kalman, Zustandsautomat, Pyro, Protokoll, Regler
+sil/                 C-Schnittstelle des Flugkerns für die Simulation (Software-in-the-Loop)
 lib/mainboard_revb/  Pins und SPI-Treiber des Mainboards rev B (ICM-42688-P, BMP390, INA239, Decoder, Mux)
 src/                 Flug-Firmware: Schleife und alles, was Hardware anfasst
 examples/            Test- und Kalibrier-Sketches, je eine PlatformIO-Umgebung
@@ -35,6 +37,7 @@ tools/               run_native_tests.sh, check_board_pins.py
 | `Pyro.*` | Vier Regeln je Zündung: Zustand erlaubt, ARM und Durchgang, höchstens einmal, Puls 80 ms mit Abbruch bei Durchgangsverlust. Schaltet nichts selbst. |
 | `KartonautProtocol.h` | Rahmen `A5 5A, Typ, Länge, Nutzlast, CRC-16/CCITT`; Telemetrie 22 Byte bei 10 Hz, GPS, Status, Ereignis, Kommando/ACK. Reines C, wird in die Bodenstation kopiert. |
 | `Telemetry.*`, `Crc16.*` | Rahmen bauen, byteweise zerlegen, nach Müll neu synchronisieren. |
+| `KalmanZ.*` | 2-Zustands-Kalman (Höhe, vz), `predict()` jeden Takt, `update()` bei frischer Barometermessung. Seit 22.10.2026 ohne Matrixbibliothek (2 × 2 von Hand), damit er nativ und im SIL läuft. Stationärer vz-Fehler ≈ 1,4 s × Accel-Bias (Test). |
 | `TvcController.*` | PID Pitch/Yaw → Moment → `δ = asin(M/(l·m·|a|))` → Servo-Grad, wie bisher `Control.cpp`, mit Anti-Windup und Kardanbegrenzung ±7°. |
 | `MathTypes.h` | `Vec3`, `Quaternion`, Drehung. |
 
@@ -46,7 +49,6 @@ tools/               run_native_tests.sh, check_board_pins.py
 | `Config.h` | Physik (Erstflug 0,761 kg, 0,242 m), Gewinne, Servo-Umsetzung, Schwellen des Automaten, Pyro, Akkugrenzen, Funk, Schalter. Keine Pins. |
 | `Board.h` | Pins und Eigenschaften je Rückende: ohne Flag Breakouts, mit `-DBOARD_REVB` das Mainboard aus `BoardRevB.h`. Auch `chipToBody()` für die IMU-Lage. |
 | `Sensors.h`, `SensorsBreakout.cpp`, `SensorsRevB.cpp` | Gemeinsame Schnittstelle: spezifische Kraft und Drehrate im Körpersystem (bias-korrigiert), Barometerhöhe, Versorgung (Akkus, ARM, Durchgang). Gyro-Bias-Kalibrierung, Bodendruck. |
-| `KalmanZ.*` | 2-Zustands-Kalman (Höhe, vz), `predict()` jeden Takt, `update()` bei frischer Barometermessung |
 | `Control.*` | Servos (PWMServo, alle drei), Rollmotor-H-Brücke mit nSLEEP (rev B), Rollregler |
 | `Radio.*` | E22 (rev B: Konfiguration über M0/M1, AUX-Flusskontrolle) bzw. HC-12 an Serial8; sendet Rahmen, parst Kommandos |
 | `Persist.*` | Watchdog WDOG1 (1 s) und Zustandsspeicher im DMAMEM: nach einem Watchdog-Neustart im Flug geht es in der laufenden Phase weiter |
@@ -163,6 +165,15 @@ Zustandsautomat mit synthetischen Eingaben und auf dem simulierten Erstflug
 APOGEE 6,09 s, LANDED 11,8 s; die Quaternion liegt über den ganzen Flug unter 0,1° neben der Wahrheit),
 Pyro-Regeln, TVC-Regler (Momente, Sättigung, Anti-Windup).
 
+## Software-in-the-Loop (`sil/`, `simulation/tvcsim/sil.py`)
+
+`sil/kartonaut_sil.cpp` verpackt den Flugkern (Attitude, KalmanZ, FlightState, PyroLogic,
+TvcController) hinter eine C-Schnittstelle; ein Aufruf von `sil_step()` entspricht einem Durchlauf
+von `loop()` ohne Hardware, mit derselben Servo-Rundung. `simulation/tvcsim/sil.py` übersetzt das
+mit g++/clang++ beim ersten Aufruf selbst, lädt es über ctypes und hängt es als Regler in die
+6DOF-Simulation; alle Konstanten liest es aus `src/Config.h`. Läufe, Monte-Carlo und die Untersuchung
+der Apogäum-Schwellen: `simulation/scripts/run_sil.py`, Tests in `simulation/tests/test_sil.py`.
+
 ## Mainboard rev B
 
 `lib/mainboard_revb/` enthält Pinbelegung und SPI-Treiber (`BoardRevB.h`, `BusRevB.*`, `ICM42688.*`,
@@ -179,6 +190,6 @@ ist nicht gefertigt.
 
 ## Bibliotheken
 
-PlatformIO holt sie über `lib_deps`: BasicLinearAlgebra, SdFat (Adafruit-Fork), FastLED, PWMServo;
+PlatformIO holt sie über `lib_deps`: SdFat (Adafruit-Fork), FastLED, PWMServo;
 Breakouts zusätzlich Adafruit BMP280, SparkFun ICM-20948, INA219_WE. Rev B braucht keine
-Sensorbibliotheken (eigene SPI-Treiber).
+Sensorbibliotheken (eigene SPI-Treiber). BasicLinearAlgebra ist seit dem Kalman ohne Matrixbibliothek entfallen.

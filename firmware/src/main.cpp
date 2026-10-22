@@ -37,6 +37,7 @@ static FlightStateConfig fsConfig() {
   c.liftoff_g = FS_LIFTOFF_G; c.liftoff_hold_ms = FS_LIFTOFF_HOLD_MS;
   c.burnout_g = FS_BURNOUT_G; c.burn_max_ms = FS_BURN_MAX_MS;
   c.coast_max_ms = FS_COAST_MAX_MS;
+  c.apogee_vz_ms = FS_APOGEE_VZ_MS; c.apogee_hold_ms = FS_APOGEE_HOLD_MS; c.apogee_baro_drop_m = FS_APOGEE_BARO_DROP_M;
   c.abort_tilt_deg = FS_ABORT_TILT_DEG; c.pad_max_tilt_deg = FS_PAD_MAX_TILT_DEG;
   c.require_arm = HAS_ARM_SENSE && !TESTRIG_MODE;
   c.require_continuity = HAS_PYRO_SENSE && !TESTRIG_MODE;

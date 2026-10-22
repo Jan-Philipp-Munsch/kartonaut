@@ -34,20 +34,23 @@ void KalmanZ::setPDiag(float pz_var, float pv_var){
         0,      pv_var };
 }
 
-void KalmanZ::step(float accel_z, float z_meas, float& z_est, float& vz_est){
-  // Predict
+void KalmanZ::predict(float accel_z){
   BLA::Matrix<1,1> Acc = {accel_z};
   S = F*S + G*Acc;
   P = F*P*~F + Q;
+}
 
-  // Update
+void KalmanZ::update(float z_meas){
   auto L = H*P*~H + R;          // 1x1
   auto K = P*~H*Inverse(L);     // 2x1
   BLA::Matrix<1,1> M = {z_meas};
   S = S + K*(M - H*S);
   P = (BLA::Matrix<2,2>{1,0,0,1} - K*H)*P;
+}
 
+void KalmanZ::step(float accel_z, float z_meas, float& z_est, float& vz_est){
+  predict(accel_z);
+  update(z_meas);
   z_est  = S(0,0);
   vz_est = S(1,0);
 }
-

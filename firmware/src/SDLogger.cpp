@@ -279,40 +279,53 @@ static inline int16_t q_u(float x, float s){
   return (int16_t)v;
 }
 
+// Kanalbelegung (firmware/README.md, Log-Format): wer hier etwas ändert, zieht
+// den CSV-Header unten und die Tabelle im README nach.
 static void mapFrameToI16(const SDFrame& f, int16_t out[40]){
-  out[0] = q_s(f.kalman_alt_m,   100.0f);
-  out[1] = q_s(f.kalman_vz_ms,   100.0f);
-  out[2] = q_s(f.baro_alt_m,     100.0f);
-  out[3] = q_s(f.a_nav_x_ms2,    100.0f);
-  out[4] = q_s(f.a_nav_y_ms2,    100.0f);
-  out[5] = q_s(f.a_nav_z_ms2,    100.0f);
+  out[0]  = q_s(f.kalman_alt_m,   100.0f);
+  out[1]  = q_s(f.kalman_vz_ms,   100.0f);
+  out[2]  = q_s(f.baro_alt_m,     100.0f);
+  out[3]  = q_s(f.a_nav_x_ms2,    100.0f);
+  out[4]  = q_s(f.a_nav_y_ms2,    100.0f);
+  out[5]  = q_s(f.a_nav_z_ms2,    100.0f);
+  out[6]  = q_s(f.omega_x_dps,    100.0f);
+  out[7]  = q_s(f.omega_y_dps,    100.0f);
+  out[8]  = q_s(f.omega_z_dps,    100.0f);
+  out[9]  = q_s(f.a_body_x_ms2,   100.0f);
+  out[10] = q_s(f.a_body_y_ms2,   100.0f);
+  out[11] = q_s(f.a_body_z_ms2,   100.0f);
 
-  out[6] = q_s(f.omega_x_dps,    100.0f);
-  out[7] = q_s(f.omega_y_dps,    100.0f);
-  out[8] = q_s(f.omega_z_dps,    100.0f);
+  out[12] = q_s(f.q_w, 32767.0f);
+  out[13] = q_s(f.q_x, 32767.0f);
+  out[14] = q_s(f.q_y, 32767.0f);
+  out[15] = q_s(f.q_z, 32767.0f);
+  out[16] = q_s(f.tilt_deg,      100.0f);
+  out[17] = q_s(f.yaw_err_deg,   100.0f);
+  out[18] = q_s(f.pitch_err_deg, 100.0f);
+  out[19] = q_s(f.roll_deg,      100.0f);
 
-  out[9]  = q_s(f.roll_angle_deg, 100.0f);
-  out[10] = q_s(f.roll_rate_dps,  100.0f);
-  out[11] = q_u((float)f.yaw_deg,   100.0f);
-  out[12] = q_u((float)f.pitch_deg, 100.0f);
-  out[13] = q_u((float)f.roll_pwm,    1.0f);
-  out[14] = q_s((float)f.roll_dir, 1000.0f);
+  out[20] = q_s(f.yaw_moment_nm,  1000.0f);
+  out[21] = q_s(f.pitch_moment_nm,1000.0f);
+  out[22] = q_s(f.tvc_yaw_deg,    100.0f);
+  out[23] = q_s(f.tvc_pitch_deg,  100.0f);
+  out[24] = q_u(f.yaw_servo_deg,  100.0f);
+  out[25] = q_u(f.pitch_servo_deg,100.0f);
+  out[26] = q_s(f.roll_cmd,      1000.0f);
+  out[27] = q_u((float)f.roll_pwm,  1.0f);
+  out[28] = q_s((float)f.roll_dir,  1.0f);
 
-  out[15] = q_s(f.bus_V,        1000.0f);
-  out[16] = q_s(f.load_V,       1000.0f);
-  out[17] = q_s(f.current_mA,      1.0f);
-  out[18] = q_s(f.power_mW,        1.0f);
-  out[19] = q_s((float)f.ina_overflow, 1.0f);
+  out[29] = (int16_t)f.phase;
+  out[30] = (int16_t)f.flags;
+  out[31] = (int16_t)f.pyro_state;
+  out[32] = q_u((float)f.loop_us,   1.0f);
+  out[33] = (int16_t)f.boot_count;
 
-  out[20] = q_s(f.rsv1, 100.0f);
-  out[21] = q_s(f.rsv2, 100.0f);
-  out[22] = q_s(f.rsv3, 100.0f);
-  out[23] = q_s(f.rsv4, 100.0f);
-  out[24] = q_s(f.rsv5, 100.0f);
-
-  for (int i=0;i<8;i++) out[25+i] = f.raw_i16[i];
-
-  for (int i=33;i<40;i++) out[i] = 0;
+  out[34] = q_u(f.vbat1_V,       1000.0f);
+  out[35] = q_u(f.vbat2_V,       1000.0f);
+  out[36] = q_u(f.arm_V,         1000.0f);
+  out[37] = q_s(f.current_A,     1000.0f);
+  out[38] = q_s(f.imu_temp_c,      10.0f);
+  out[39] = q_s(f.thrust_cmd_n,   100.0f);
 }
 
 // ===========================
@@ -379,7 +392,6 @@ bool SDLogger_logFrame(const SDFrame& f){
 
 // Decoder passend zum Mapping (q_s und q_u unterscheiden sich nur im Klemmen)
 static inline float d_s(int16_t v, float s){ return float(v) / s; }
-static inline float d_u(int16_t v, float s){ return d_s(v, s); }
 
 static bool findLatestBIN(char* out, size_t outSz){
   if (!ensureSdBegun()) return false;
@@ -428,11 +440,12 @@ SDExportResult SDLogger_exportBINtoCSVx(const char* name, bool scaled){
     "kalman_alt_m,kalman_vz_ms,baro_alt_m,"
     "a_nav_x_ms2,a_nav_y_ms2,a_nav_z_ms2,"
     "omega_x_dps,omega_y_dps,omega_z_dps,"
-    "roll_angle_deg,roll_rate_dps,yaw_deg,pitch_deg,roll_pwm,roll_dir,"
-    "bus_V,load_V,current_mA,power_mW,ina_overflow,"
-    "rsv1,rsv2,rsv3,rsv4,rsv5,"
-    "raw_i16_0,raw_i16_1,raw_i16_2,raw_i16_3,raw_i16_4,raw_i16_5,raw_i16_6,raw_i16_7,"
-    "ch33,ch34,ch35,ch36,ch37,ch38,ch39\n";
+    "a_body_x_ms2,a_body_y_ms2,a_body_z_ms2,"
+    "q_w,q_x,q_y,q_z,tilt_deg,yaw_err_deg,pitch_err_deg,roll_deg,"
+    "yaw_moment_nm,pitch_moment_nm,tvc_yaw_deg,tvc_pitch_deg,yaw_servo_deg,pitch_servo_deg,"
+    "roll_cmd,roll_pwm,roll_dir,"
+    "phase,flags,pyro_state,loop_us,boot_count,"
+    "vbat1_V,vbat2_V,arm_V,current_A,imu_temp_c,thrust_cmd_n\n";
   wf.write(hdr, strlen(hdr));
 
   Record r;
@@ -453,51 +466,19 @@ SDExportResult SDLogger_exportBINtoCSVx(const char* name, bool scaled){
 
     int len = 0;
     if (scaled){
-      float kalman_alt_m   = d_s(r.v[0], 100.0f);
-      float kalman_vz_ms   = d_s(r.v[1], 100.0f);
-      float baro_alt_m     = d_s(r.v[2], 100.0f);
-      float a_nav_x        = d_s(r.v[3], 100.0f);
-      float a_nav_y        = d_s(r.v[4], 100.0f);
-      float a_nav_z        = d_s(r.v[5], 100.0f);
-      float gx             = d_s(r.v[6], 100.0f);
-      float gy             = d_s(r.v[7], 100.0f);
-      float gz             = d_s(r.v[8], 100.0f);
-      float roll_ang       = d_s(r.v[9], 100.0f);
-      float roll_rate      = d_s(r.v[10],100.0f);
-      float yaw_deg        = d_u(r.v[11],100.0f);
-      float pitch_deg      = d_u(r.v[12],100.0f);
-      float roll_pwm       = d_u(r.v[13],1.0f);
-      int   roll_dir       = (int)lroundf(d_s(r.v[14],1000.0f));
-      float bus_V          = d_s(r.v[15],1000.0f);
-      float load_V         = d_s(r.v[16],1000.0f);
-      float current_mA     = d_s(r.v[17],1.0f);
-      float power_mW       = d_s(r.v[18],1.0f);
-      int   ina_overflow   = (int)r.v[19];
-      float rsv1           = d_s(r.v[20],100.0f);
-      float rsv2           = d_s(r.v[21],100.0f);
-      float rsv3           = d_s(r.v[22],100.0f);
-      float rsv4           = d_s(r.v[23],100.0f);
-      float rsv5           = d_s(r.v[24],100.0f);
-
-      len = snprintf(line, sizeof(line),
-        "%.6f,%u,"
-        "%.3f,%.3f,%.3f,"
-        "%.3f,%.3f,%.3f,"
-        "%.2f,%.2f,%.2f,"
-        "%.2f,%.2f,%.0f,%.0f,%.0f,%d,"
-        "%.3f,%.3f,%.0f,%.0f,%d,"
-        "%.2f,%.2f,%.2f,%.2f,%.2f,"
-        "%d,%d,%d,%d,%d,%d,%d,%d,"
-        "%d,%d,%d,%d,%d,%d,%d\n",
-        t_s, r.write_us_prev,
-        kalman_alt_m, kalman_vz_ms, baro_alt_m,
-        a_nav_x, a_nav_y, a_nav_z,
-        gx, gy, gz,
-        roll_ang, roll_rate, yaw_deg, pitch_deg, roll_pwm, roll_dir,
-        bus_V, load_V, current_mA, power_mW, ina_overflow,
-        rsv1, rsv2, rsv3, rsv4, rsv5,
-        r.v[25], r.v[26], r.v[27], r.v[28], r.v[29], r.v[30], r.v[31], r.v[32],
-        r.v[33], r.v[34], r.v[35], r.v[36], r.v[37], r.v[38], r.v[39]);
+      // Skalierung spiegelbildlich zu mapFrameToI16
+      static const float SC[40] = {
+        100,100,100, 100,100,100, 100,100,100, 100,100,100,
+        32767,32767,32767,32767, 100,100,100,100,
+        1000,1000,100,100,100,100, 1000,1,1,
+        1,1,1,1,1,
+        1000,1000,1000,1000,10,100 };
+      len = snprintf(line, sizeof(line), "%.6f,%u", t_s, r.write_us_prev);
+      for (int i = 0; i < 40 && len > 0 && len < (int)sizeof(line) - 16; ++i) {
+        if (i >= 29 && i <= 33) len += snprintf(line + len, sizeof(line) - len, ",%d", (int)r.v[i]);
+        else                    len += snprintf(line + len, sizeof(line) - len, ",%.4g", d_s(r.v[i], SC[i]));
+      }
+      if (len > 0 && len < (int)sizeof(line) - 1) { line[len++] = '\n'; line[len] = 0; }
     } else {
       // exakt 40 Daten (%d) + 2 Kopf (t_s, write_us_prev)
       len = snprintf(line, sizeof(line),

@@ -10,6 +10,7 @@ constexpr uint8_t INTF_CONFIG0   = 0x4C;   // Endianness, UI_SIFS_CFG
 constexpr uint8_t PWR_MGMT0      = 0x4E;
 constexpr uint8_t GYRO_CONFIG0   = 0x4F;
 constexpr uint8_t ACCEL_CONFIG0  = 0x50;
+constexpr uint8_t GYRO_ACCEL_CONFIG0 = 0x52;   // UI-Filter-Bandbreite Accel [7:4], Gyro [3:0]
 constexpr uint8_t INT_CONFIG1    = 0x64;   // bit4 INT_ASYNC_RESET muss 0 sein
 constexpr uint8_t INT_SOURCE0    = 0x65;   // bit3 UI_DRDY_INT1_EN
 constexpr uint8_t WHO_AM_I       = 0x75;
@@ -37,6 +38,7 @@ bool ICM42688::begin() {
   writeReg(INTF_CONFIG0, 0x33);           // Daten big-endian (Default), I²C-Schnittstelle aus
   writeReg(GYRO_CONFIG0, 0x06);           // FS ±2000 °/s (000), ODR 1 kHz (0110)
   writeReg(ACCEL_CONFIG0, 0x06);          // FS ±16 g (000), ODR 1 kHz (0110)
+  writeReg(GYRO_ACCEL_CONFIG0, 0x66);     // UI-Filter ODR/20 = 50 Hz für Gyro und Accel (Spezifikation §6)
   writeReg(INT_CONFIG, 0x03);             // INT1 gepulst, push-pull, aktiv hoch
   writeReg(INT_CONFIG1, 0x00);            // INT_ASYNC_RESET = 0 (Datenblatt-Pflicht), 100-µs-Puls
   writeReg(INT_SOURCE0, 0x08);            // nur "Daten bereit" auf INT1

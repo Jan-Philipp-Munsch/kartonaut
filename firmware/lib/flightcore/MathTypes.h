@@ -9,7 +9,7 @@
 
 struct Vec3 {
   float x, y, z;
-  Vec3(float x_=0, float y_=0, float z_=0): x(x_),y(y_),z(z_) {}
+  constexpr Vec3(float x_=0, float y_=0, float z_=0): x(x_),y(y_),z(z_) {}
 
   Vec3 operator+(const Vec3& o) const { return {x+o.x,y+o.y,z+o.z}; }
   Vec3 operator-(const Vec3& o) const { return {x-o.x,y-o.y,z-o.z}; }
@@ -28,7 +28,7 @@ inline Vec3  normalized(const Vec3& v){ const float n = norm(v); return n > 0.f 
 
 struct Quaternion {
   float w,x,y,z;
-  Quaternion(float w_=1,float x_=0,float y_=0,float z_=0): w(w_),x(x_),y(y_),z(z_) {}
+  constexpr Quaternion(float w_=1,float x_=0,float y_=0,float z_=0): w(w_),x(x_),y(y_),z(z_) {}
 
   Quaternion conjugate() const { return {w,-x,-y,-z}; }
 

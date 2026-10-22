@@ -22,8 +22,13 @@ struct KalmanZ {
   void setState(float z0_m, float vz0_ms);  // initialer Zustand
   void setPDiag(float pz_var, float pv_var);// initiale Unsicherheit
 
-  // Filter-Schritt
+  // Filter-Schritt (Prädiktion + Messung)
   void step(float accel_z, float z_meas, float& z_est, float& vz_est);
+  // getrennt: jeden Takt predict(), update() nur mit einer frischen Barometermessung
+  void predict(float accel_z);
+  void update(float z_meas);
+  float z()  const { return S(0,0); }
+  float vz() const { return S(1,0); }
 };
 
 

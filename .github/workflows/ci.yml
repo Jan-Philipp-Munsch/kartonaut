@@ -1,5 +1,6 @@
 # Prüfungen bei jedem Push und Pull Request:
-#   firmware    alle PlatformIO-Umgebungen aus firmware/platformio.ini bauen
+#   firmware    alle PlatformIO-Umgebungen aus firmware/platformio.ini bauen (außer native)
+#   flightcore  Tests des Flugkerns ohne Hardware (pio test -e native)
 #   simulation  Tests des Python-Pakets tvcsim
 #   pins        Pinbelegung der Firmware (BoardRevB.h) gegen die Schaltung (circuit.py)
 name: CI
@@ -22,8 +23,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - id: list
-        # jede [env:<name>]-Sektion wird gebaut, neue Test-Sketches also ohne Änderung hier
-        run: echo "list=$(sed -n 's/^\[env:\([^]]*\)\].*/\1/p' firmware/platformio.ini | jq -Rcs 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
+        # jede [env:<name>]-Sektion wird gebaut, neue Test-Sketches also ohne Änderung hier;
+        # native ist die Testumgebung und läuft im Job flightcore
+        run: echo "list=$(sed -n 's/^\[env:\([^]]*\)\].*/\1/p' firmware/platformio.ini | jq -Rcs 'split("\n") | map(select(length > 0 and . != "native"))')" >> "$GITHUB_OUTPUT"
 
   firmware:
     name: Firmware (${{ matrix.env }})
@@ -48,6 +50,24 @@ jobs:
       - run: pip install platformio
       - name: pio run -e ${{ matrix.env }}
         run: pio run -d firmware -e ${{ matrix.env }}
+
+  flightcore:
+    name: Flugkern (pio test -e native)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: actions/cache@v6
+        with:
+          path: ~/.platformio
+          key: pio-native-${{ hashFiles('firmware/platformio.ini') }}
+          restore-keys: pio-native-
+      - run: pip install platformio
+      - run: pio test -d firmware -e native
+      - name: dasselbe ohne PlatformIO (g++ mit Unity-Shim)
+        run: firmware/tools/run_native_tests.sh
 
   simulation:
     name: Simulation (pytest)

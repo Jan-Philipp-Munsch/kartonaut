@@ -14,48 +14,37 @@ bool SDLogger_isRecording();
 // ===========================
 struct SDFrame {
   // Navigation / Sensorik
-  float kalman_alt_m;      // z-Estimate
-  float kalman_vz_ms;      // vz-Estimate
-  float baro_alt_m;
+  float kalman_alt_m = 0;    // über Pad
+  float kalman_vz_ms = 0;
+  float baro_alt_m = 0;
+  float a_nav_x_ms2 = 0, a_nav_y_ms2 = 0, a_nav_z_ms2 = 0;   // ohne g
+  float omega_x_dps = 0, omega_y_dps = 0, omega_z_dps = 0;   // Körper, bias-korrigiert
+  float a_body_x_ms2 = 0, a_body_y_ms2 = 0, a_body_z_ms2 = 0; // spezifische Kraft, Körper
 
-  float a_nav_x_ms2;
-  float a_nav_y_ms2;
-  float a_nav_z_ms2;
+  // Lage (Attitude)
+  float q_w = 1, q_x = 0, q_y = 0, q_z = 0;
+  float tilt_deg = 0, yaw_err_deg = 0, pitch_err_deg = 0, roll_deg = 0;
 
-  float omega_x_dps;
-  float omega_y_dps;
-  float omega_z_dps;
+  // Regler / Aktoren
+  float yaw_moment_nm = 0, pitch_moment_nm = 0;
+  float tvc_yaw_deg = 0, tvc_pitch_deg = 0;
+  float yaw_servo_deg = 90, pitch_servo_deg = 90;
+  float roll_cmd = 0;          // -1..+1
+  int   roll_pwm = 0;          // 0..4095
+  int   roll_dir = 0;          // -1/0/+1
 
-  // Aktorik / Regler
-  float roll_angle_deg;
-  float roll_rate_dps;
-  int   yaw_deg;           // 0..180
-  int   pitch_deg;         // 0..180
-  int   roll_pwm;          // 0..4095
-  int   roll_dir;          // -1/0/+1
+  // Flugzustand
+  int   phase = 0;             // KnPhase
+  int   flags = 0;             // KN_FLAG_*
+  int   pyro_state = 0;        // Bit 0..3 Durchgang, Bit 4..7 Puls aktiv
+  int   loop_us = 0;           // Dauer des Durchlaufs
+  int   boot_count = 0;
 
-  // Energie / Versorgung (INA219)
-  float bus_V;
-  float load_V;
-  float current_mA;
-  float power_mW;
-  int   ina_overflow;      // 0/1
-
-  // Reserviert für später
-  float rsv1, rsv2, rsv3, rsv4, rsv5;
-
-  // Optional: 8 rohe i16-Kanäle (werden 1:1 geschrieben)
-  int16_t raw_i16[8];
-
-  SDFrame()
-  : kalman_alt_m(0), kalman_vz_ms(0), baro_alt_m(0),
-    a_nav_x_ms2(0), a_nav_y_ms2(0), a_nav_z_ms2(0),
-    omega_x_dps(0), omega_y_dps(0), omega_z_dps(0),
-    roll_angle_deg(0), roll_rate_dps(0),
-    yaw_deg(90), pitch_deg(90), roll_pwm(0), roll_dir(0),
-    bus_V(0), load_V(0), current_mA(0), power_mW(0), ina_overflow(0),
-    rsv1(0), rsv2(0), rsv3(0), rsv4(0), rsv5(0)
-  { memset(raw_i16, 0, sizeof(raw_i16)); }
+  // Energie / Versorgung
+  float vbat1_V = 0, vbat2_V = 0, arm_V = 0;
+  float bus_V = 0, current_A = 0;
+  float imu_temp_c = 0;
+  float thrust_cmd_n = 0;      // Prüfstand
 };
 
 // Log-Frame schreiben (RAM-seitig packen & page-buffern).

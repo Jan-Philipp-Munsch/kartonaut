@@ -1,48 +1,69 @@
 #pragma once
+// Sensors.h – gemeinsame Schnittstelle der beiden Sensor-Rückenden
+//
+//   SensorsBreakout.cpp   ICM-20948 (DMP-FIFO, rohe Accel/Gyro), BMP280, INA219
+//   SensorsRevB.cpp       ICM-42688-P, BMP390, INA239 an SPI1, Akkus/ARM/Pyro an der Mux
+//
+// Beide liefern dasselbe: spezifische Kraft und Drehrate im Körpersystem
+// (x, y quer, z Rollachse), bias-korrigiert, dazu Barometerhöhe über dem
+// Bodendruck und die Versorgungswerte. Die Lage (Quaternion) rechnet main.cpp
+// mit Attitude aus lib/flightcore; die DMP-Quaternion des ICM-20948 wird nicht
+// mehr benutzt (Befund 3).
 #include "Config.h"
+#include "Board.h"
 #include "MathTypes.h"
-#include <Wire.h>
-#include <Adafruit_BMP280.h>
-#include "ICM_20948.h"
-#include <INA219_WE.h>
-
-// --- Datentypen ---
-struct BaroData { float alt_m = 0.0f; };
 
 struct ImuData {
-  Quaternion q;      // Orientierung (body->nav)
-  Vec3 a_body;       // Accel (m/s^2, Body-Frame, bias-korrigiert)
-  Vec3 a_nav;        // Accel im Nav-Frame (Gravity subtrahiert)
-  Vec3 omega_dps;    // Gyro (°/s) (bereits leicht geglättet)
+  Vec3  a_body;          // spezifische Kraft [m/s²], Körpersystem, bias-korrigiert
+  Vec3  omega_dps;       // Drehrate [°/s], Körpersystem, bias-korrigiert
+  float temp_c = 0;
+  bool  fresh = false;   // mindestens ein neuer Messwert in diesem Loop
+  uint8_t samples = 0;   // wie viele Messwerte gemittelt wurden
+  uint32_t stamp_us = 0; // micros() des letzten Lesens
+};
 
-  // Frische-Flags (true = Wert stammt aus diesem Loop aus FIFO)
-  bool hasQuat  = false;
-  bool hasAccel = false;
-  bool hasGyro  = false;
-
-  // Zeitstempel (us) des zuletzt verarbeiteten FIFO-Frames
-  uint32_t stamp_us = 0;
+struct BaroData {
+  float alt_m = 0;         // über dem Bodendruck
+  float pressure_pa = 0;
+  float temp_c = 0;
+  bool  fresh = false;
 };
 
 struct PowerData {
-  float shunt_mV = 0, bus_V = 0, load_V = 0, current_mA = 0, power_mW = 0;
-  bool  overflow = false;
+  float vbat1_V = 0;       // 1S Elektronik (nur rev B)
+  float vbat2_V = 0;       // 2S Servos/Pyro (rev B: Teiler; Breakout: INA219-Bus)
+  float arm_V = 0;         // VBAT_ARMED hinter dem Schlüsselschalter (nur rev B)
+  float bus_V = 0;         // INA: Bus-Spannung
+  float current_A = 0;     // INA: Strom 2S-Pfad
+  float pyro_V[4] = {0, 0, 0, 0};
+  bool  armed = false;
+  bool  continuity[4] = {false, false, false, false};
+  bool  fresh = false;
 };
 
-// --- API ---
-void Sensors_setup();
-void BMP_calibrate_ground();
-bool Read_Baro(BaroData& out);
+struct SensorStatus {
+  bool imu = false, baro = false, power = false;
+  const char* backend = "";
+};
 
-// Liest die FIFO bis leer (oder cap) und liefert den *letzten* kompletten Satz.
-// Entschärft Interleave/„0-Frames“ und glättet Gyro minimal.
-bool Read_IMU(ImuData& out, float& a_norm_filt);
+// Hardware starten; true, wenn IMU und Barometer da sind
+bool Sensors_setup();
+const SensorStatus& Sensors_status();
 
-bool Read_Power(PowerData& out);
+bool Read_IMU(ImuData& out);     // jeden Loop; ohne neue Daten bleiben die letzten Werte, fresh = false
+bool Read_Baro(BaroData& out);   // jeden Loop; fresh, wenn eine neue Messung vorlag
+bool Read_Power(PowerData& out); // langsam (20 Hz reicht)
 
-// Stationäre Accelerometer-Kalibrierung (Body-Frame, Rakete ruhig ablegen)
-void Accel_calibrate_body(int samples = 200, uint16_t sample_delay_ms = 5);
+// Gyro-Bias auf der Rampe: samples Messwerte mitteln (blockiert samples/ODR, ca. 1–2 s).
+// false, wenn die Rakete nicht ruhig war (Standardabweichung über max_std_dps).
+bool Sensors_calibrateGyro(uint16_t samples, float max_std_dps, Vec3& bias_dps, Vec3& std_dps);
+void Sensors_setGyroBias(const Vec3& bias_dps);
+Vec3 Sensors_gyroBias();
 
-// --- Exporte ---
-extern float gndps_hPa;                 // Bodendruck für Höhenberechnung
-extern Vec3  g_acc_bias_body_ms2;       // Accel-Bias im Body-Frame (m/s^2)
+// Bodendruck neu mitteln (blockiert ca. 0,5 s bei 50 Hz)
+void  Sensors_calibrateBaroGround(uint16_t samples);
+void  Sensors_setGroundPressure(float p0_pa);
+float Sensors_groundPressure();
+
+// Rohwerte ohne Bias-Korrektur (Kalibrier-Sketches)
+bool Read_IMU_raw(Vec3& a_body_ms2, Vec3& omega_dps);

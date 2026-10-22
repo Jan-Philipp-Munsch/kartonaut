@@ -5,6 +5,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include "Config.h"
+#include "Board.h"
 
 void setup(){
   Serial.begin(115200);

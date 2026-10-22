@@ -7,6 +7,7 @@
 //   pio run -e pyro_mosfet_test -t upload
 #include <Arduino.h>
 #include "Config.h"       // src/ liegt über build_flags = -Isrc im Include-Pfad
+#include "Board.h"
 #include "Indicators.h"
 
 void setup(){

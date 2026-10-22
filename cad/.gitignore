@@ -3,4 +3,5 @@ export/*
 !export/rocket.step
 !export/testrig.step
 !export/rocket_erstflug.step
+!export/print_erstflug/
 __pycache__/

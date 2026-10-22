@@ -69,6 +69,57 @@ def export_groups(parts):
     print(f"  {step.name} (Gesamtmodell, im Repo) und rocket.stl")
 
 
+# Druckteile des Erstflugs: Name in der Teileliste -> (Dateiname, Massenansatz im Massenmodell in g)
+PRINT_PARTS = {
+    "Außenrahmen": ("tvc_aussenrahmen", P.OUTER_M),
+    "Innenrahmen": ("tvc_innenrahmen", P.INNER_M),
+    "Motorrohr": ("tvc_motorrohr", P.MOTOR_TUBE_M),
+    "Adapter 29→24": ("tvc_adapter_29_24", P.ADAPTER_M),
+    "Endring unten": ("fc_endring_unten", P.FC_M_RINGS * 0.3),
+    "Endplatte oben (Spant, Ladungsschale)": ("fc_endplatte_oben", P.FC_M_RINGS * 0.7),
+    "Träger (gedruckt)": ("fc_traeger", P.FC_M_CARRIER),
+    "Schalterbrett (Luke B)": ("fc_schalterbrett", None),
+    "Schlüsselschalter-Kragen": ("fc_schluesselschalter_kragen", 8.0),
+    "Spitze Spant mit Öse": ("nose_spant", 3.0),
+}
+PLA_G_CM3 = 1.24
+PRINT_FILL = 0.45     # Anteil massiven Materials bei 3 Wänden + 20 % Füllung, grob für Teile mit 2–6 mm Wand
+
+
+def export_print(parts):
+    """Jedes Druckteil als eigene STL, auf den Ursprung gelegt (x/y mittig, z ab 0), dazu eine Liste mit
+    Volumen und geschätzter Druckmasse gegen den Ansatz im Massenmodell."""
+    out = EXPORT.parent / f"print_{P.CONFIG}"
+    out.mkdir(parents=True, exist_ok=True)
+    rows = []
+    for name, shape, _, _ in parts:
+        if name not in PRINT_PARTS:
+            continue
+        fname, m_model = PRINT_PARTS[name]
+        bb = shape.BoundingBox()
+        moved = shape.translate(cq.Vector(-(bb.xmin + bb.xmax) / 2, -(bb.ymin + bb.ymax) / 2, -bb.zmin))
+        exporters.export(cq.Workplane().add(moved), str(out / f"{fname}.stl"), tolerance=0.02, angularTolerance=0.1)
+        vol = shape.Volume() / 1000.0
+        m_est = vol * PLA_G_CM3 * PRINT_FILL
+        rows.append((name, fname, bb.xlen, bb.ylen, bb.zlen, vol, m_est, m_model))
+    lines = [f"# Druckteile {P.CONFIG} (aus `cad/build.py --config {P.CONFIG} --print`)", "",
+             f"Jede Datei liegt mittig auf der Druckplatte (z ab 0), in Einbaulage; im Slicer drehen, wo es sich besser druckt.",
+             f"Geschätzte Masse = Volumen × {PLA_G_CM3} g/cm³ (PLA) × {PRINT_FILL} (3 Wände, 20 % Füllung). Nach dem Druck wiegen",
+             "und die Masse in `cad/params.py` eintragen; `python cad/mass_model.py` rechnet Schwerpunkt und Trägheit neu.", "",
+             "| Teil | Datei | Außenmaß [mm] | Volumen massiv | geschätzt | im Massenmodell | Abweichung |",
+             "|---|---|---|---|---|---|---|"]
+    for name, fname, x, y, z, vol, m_est, m_model in rows:
+        dm = "" if m_model is None else f"{m_est - m_model:+.0f} g"
+        mm = "–" if m_model is None else f"{m_model:.1f} g"
+        lines.append(f"| {name} | `{fname}.stl` | {x:.1f} × {y:.1f} × {z:.1f} | {vol:.1f} cm³ | {m_est:.0f} g | {mm} | {dm} |")
+    tot_est = sum(r[6] for r in rows)
+    tot_model = sum(r[7] or 0.0 for r in rows)
+    lines += ["", f"Summe: geschätzt {tot_est:.0f} g, im Massenmodell {tot_model:.0f} g ({tot_est - tot_model:+.0f} g)."]
+    (out / "README.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"  {len(rows)} Druckteile -> {out.relative_to(HERE.parent)}/*.stl, Liste in README.md "
+          f"(geschätzt {tot_est:.0f} g gegen {tot_model:.0f} g im Massenmodell)")
+
+
 def export_rig(parts):
     """Prüfstand mit Rakete als testrig.step (im Repo) und das Gestell allein als testrig.stl."""
     EXPORT.mkdir(exist_ok=True)
@@ -279,6 +330,8 @@ def main_erstflug():
     parts = build_all()
     print(f"  {len(parts)} Teile in {time.time() - t0:.0f} s; Gesamtlänge {P.TOTAL_LENGTH:.0f} mm")
     export_groups(parts)
+    if "--print" in sys.argv:
+        export_print(parts)
     check_clearance()
     print("Erstflug-Prüfungen ...")
     check_erstflug(parts)

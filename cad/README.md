@@ -19,7 +19,14 @@ python cad/build.py --no-render             # ohne Blender
 python cad/mass_model.py                    # mass_properties.md und .json neu schreiben (alle Varianten)
 python cad/build.py --config erstflug       # Erstflug-Konfiguration (22.10.2026), Rohr 700 mm
 python cad/build.py --config erstflug --tube-l 665   # kürzestes Rohr (Minimum steht in params.TUBE_MIN)
+python cad/build.py --config erstflug --no-render --print   # zusätzlich jedes Druckteil als STL nach export/print_erstflug/
+python cad/weight_levers.py --sil --md      # Gewichtshebel einzeln und in Paketen, mit SIL-Flug -> weight_levers.md
 ```
+
+**Druckteile des Erstflugs** liegen fertig in [`export/print_erstflug/`](export/print_erstflug/README.md): zehn
+STL-Dateien (Kardan-Rahmen, Motorrohr, Adapter, Endringe, Träger, Schalterbrett, Schlüsselschalter-Kragen,
+Spant der Spitze), mittig auf der Druckplatte, mit Volumen und geschätzter Druckmasse gegen das
+Massenmodell. Das Gesamtmodell bleibt `export/rocket_erstflug.step`.
 
 `build.py` baut die Geometrie (54 Teile, 2 s), exportiert je Baugruppe `export/<gruppe>.step` und `.stl`
 sowie `export/rocket.step` (Gesamtmodell mit Farben, das einzige Export-Artefakt im Repo), prüft dann

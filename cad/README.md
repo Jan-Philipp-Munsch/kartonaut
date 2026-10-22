@@ -169,6 +169,23 @@ nicht herstellbar; Lukenbreite 12 hatte 0 mm Rand zu den Stangen (jetzt Fenster 
 `check_erstflug` prüfte die Wand nicht (jetzt ja); Öse am Spitzenspant hing 8,5 mm in den Schnurraum (jetzt in
 `NOSE_BULKHEAD_BELOW_BASE`); Stangen 20 → 30 g, Schlüsselschalter 6 → 20 g. Ergebnis: 761 g statt 719 g.
 
+## Modulbauweise für den Erstflug (`modular.py`, 22.10.2026)
+
+Variante ohne Ring-Stack und Gewindestangen, Grundlage der Bauanleitung `docs/Bauanleitung_Kartonaut1.md`. Maße in
+`modular_params.py` (übernimmt Rohr, Kuppler, Kardan, Spitze aus `params.py`): Rohr 200 unten + 500 oben, Stoß im
+Avionik-Kuppler (93 mm unten verklebt, 57 mm frei), Schlitten mit Ausstoßspant hängt mit dem Flansch auf der Kupplerkante,
+3 × M3 in Einschmelzmuttern bei 0°/135°/225° für Kardan (T1) und Stoß (T2), dünnwandiger Schlüsselring mit Kabelgitter.
+
+```bash
+MS_CONFIG=erstflug python cad/modular.py        # Druckteile nach export/modular/*.stl, Prüfung, masses.json, Bilder
+python cad/modular_params.py                    # nur die Plausibilitätsprüfung der Zahlen
+```
+
+Die Prüfung in `modular.py` meldet Durchdringungen von Schlitten, Platine, Teensy, Steckern, Akkus und Schalterbrett mit
+Kuppler und Rohren, der Bauteile des Schalterbretts mit Brett und Säulen und des Schlüsselrings mit dem Kardan (Neutralstellung);
+Gegenprobe 22.10.: eine Säule in den Hauptschalter gesetzt wird gemeldet. Die ±7°-Prüfung des Kardans bleibt in `build.py`.
+Noch nicht ins Hauptmodell (`avionics.py`, `airframe.py`, `mass_model.py`) übernommen, siehe Bauanleitung §8 O7.
+
 ## Prüfstand (`testrig.py`, 21.10.2026)
 
 | Rakete im Gestell, 12° genickt, 8° gegiert | Antriebsende: Prop-Adapter, BR2814, Propeller, Schutzkäfig |

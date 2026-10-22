@@ -1,0 +1,84 @@
+{
+ "druckteile": [
+  {
+   "teil": "Schlitten mit Ausstoßspant",
+   "datei": "cad/export/modular/Schlitten_mit_Ausstossspant.stl",
+   "cm3": 52.5,
+   "g": 50.1
+  },
+  {
+   "teil": "Untere Scheibe",
+   "datei": "cad/export/modular/Untere_Scheibe.stl",
+   "cm3": 8.7,
+   "g": 8.2
+  },
+  {
+   "teil": "Ladungsbecher",
+   "datei": "cad/export/modular/Ladungsbecher.stl",
+   "cm3": 0.4,
+   "g": 0.4
+  },
+  {
+   "teil": "Schalterbrett",
+   "datei": "cad/export/modular/Schalterbrett.stl",
+   "cm3": 2.1,
+   "g": 2.0
+  },
+  {
+   "teil": "Schlüsselring mit Kabelgitter",
+   "datei": "cad/export/modular/Schluesselring_mit_Kabelgitter.stl",
+   "cm3": 15.6,
+   "g": 14.9
+  },
+  {
+   "teil": "Kolbenplatte",
+   "datei": "cad/export/modular/Kolbenplatte.stl",
+   "cm3": 13.2,
+   "g": 12.6
+  },
+  {
+   "teil": "Spitze Spant (Ringschraube M4)",
+   "datei": "cad/export/modular/Spitze_Spant.stl",
+   "cm3": 11.7,
+   "g": 11.2
+  },
+  {
+   "teil": "Außenrahmen",
+   "datei": "cad/export/modular/Aussenrahmen.stl",
+   "cm3": 25.0,
+   "g": 23.8
+  },
+  {
+   "teil": "Innenrahmen",
+   "datei": "cad/export/modular/Innenrahmen.stl",
+   "cm3": 17.3,
+   "g": 16.5
+  },
+  {
+   "teil": "Motorrohr",
+   "datei": "cad/export/modular/Motorrohr.stl",
+   "cm3": 13.4,
+   "g": 12.8
+  },
+  {
+   "teil": "Adapter 29→24",
+   "datei": "cad/export/modular/Adapter_29-24.stl",
+   "cm3": 16.5,
+   "g": 15.7
+  }
+ ],
+ "druckteile_neu_g": 99.3,
+ "start_g": 756.8,
+ "alt_druckteile_gleiche_regel": {
+  "Spitze Spant": 14.8,
+  "Endring unten": 13.0,
+  "Endplatte oben": 21.6,
+  "Träger": 22.4,
+  "Schalterbrett": 1.8,
+  "Schlüsselschalter-Kragen": 38.1,
+  "Kolbenplatte (Ø 70,4 × 6)": 22.2
+ },
+ "alt_druckteile_angesetzt_g": 67.0,
+ "alt_start_angesetzt_g": 761.0,
+ "alt_start_gleiche_regel_g": 828.0
+}

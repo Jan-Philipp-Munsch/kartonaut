@@ -1,0 +1,85 @@
+# Prüfungen bei jedem Push und Pull Request:
+#   firmware    alle PlatformIO-Umgebungen aus firmware/platformio.ini bauen
+#   simulation  Tests des Python-Pakets tvcsim
+#   pins        Pinbelegung der Firmware (BoardRevB.h) gegen die Schaltung (circuit.py)
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  envs:
+    name: PlatformIO-Umgebungen finden
+    runs-on: ubuntu-latest
+    outputs:
+      list: ${{ steps.list.outputs.list }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list
+        # jede [env:<name>]-Sektion wird gebaut, neue Test-Sketches also ohne Änderung hier
+        run: echo "list=$(sed -n 's/^\[env:\([^]]*\)\].*/\1/p' firmware/platformio.ini | jq -Rcs 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
+
+  firmware:
+    name: Firmware (${{ matrix.env }})
+    needs: envs
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        env: ${{ fromJSON(needs.envs.outputs.list) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            firmware/.pio/libdeps
+          key: pio-${{ matrix.env }}-${{ hashFiles('firmware/platformio.ini') }}
+          restore-keys: pio-${{ matrix.env }}-
+      - run: pip install platformio
+      - name: pio run -e ${{ matrix.env }}
+        run: pio run -d firmware -e ${{ matrix.env }}
+
+  simulation:
+    name: Simulation (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: simulation/pyproject.toml
+      - run: pip install -e "simulation[test]"
+      - run: python -m pytest -q
+        working-directory: simulation
+        env:
+          MPLBACKEND: Agg
+
+  pins:
+    name: Pin-Abgleich rev B
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: BoardRevB.h gegen circuit.py
+        run: |
+          set +e
+          python firmware/tools/check_board_pins.py
+          code=$?
+          if [ $code -eq 2 ]; then
+            echo "::warning file=hardware/mainboard/kicad/circuit.py::circuit.py hat noch keinen CS-Decoder (Stand vor E10), Pin-Abgleich übersprungen"
+            exit 0
+          fi
+          exit $code

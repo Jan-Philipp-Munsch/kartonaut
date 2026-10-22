@@ -71,6 +71,17 @@ class VehicleParams:
                    m_dry=cfg["mass_kg"] - FUEL_PER_MOTOR_KG,
                    mis_y=float(lat[0]), mis_z=float(lat[1]))
 
+    @classmethod
+    def erstflug(cls, config: str = "liftoff", path: Path | None = None) -> "VehicleParams":
+        """Erstflug-Konfiguration *Kartonaut 1* aus ``cad/mass_properties.json`` (22.10.2026):
+        Rohr 700 mm, ohne Beine, 761 g beim Start, Hebelarm 0,242 m. Achsentausch wie ``cad()``."""
+        with open(path or CAD_MASS_FILE, encoding="utf-8") as f:
+            cfg = json.load(f)["erstflug_2026-10-22"]["variants"]["erstflug_700"]["configurations"][config]
+        I = cfg["inertia_kgm2"]
+        return cls(Ix=I["Izz"], Iy=I["Ixx"], Iz=I["Iyy"],
+                   l=cfg["lever_arm_m"], l_meas=cfg["lever_arm_m"],
+                   m_dry=cfg["mass_kg"] - FUEL_PER_MOTOR_KG)
+
     @property
     def l_ctrl(self) -> float:
         return self.l if self.l_meas is None else self.l_meas

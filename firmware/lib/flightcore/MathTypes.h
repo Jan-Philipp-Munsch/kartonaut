@@ -1,5 +1,10 @@
 #pragma once
-#include <Arduino.h>
+// MathTypes.h – Vektor und Quaternion der Flug-Firmware.
+//
+// Ohne Arduino-Abhängigkeit, damit lib/flightcore auch in der nativen
+// Testumgebung baut. Konvention: Quaternion (w, x, y, z), Hamilton-Produkt,
+// rotateVector(q, v) = q v q* dreht einen Vektor vom Körper- ins Navigationssystem,
+// wenn q die Lage Körper -> Navigation beschreibt.
 #include <math.h>
 
 struct Vec3 {
@@ -15,7 +20,11 @@ struct Vec3 {
 
 inline Vec3 operator*(float s, const Vec3& v) { return v*s; }
 inline float dot(const Vec3& a, const Vec3& b){ return a.x*b.x + a.y*b.y + a.z*b.z; }
+inline Vec3  cross(const Vec3& a, const Vec3& b){
+  return {a.y*b.z - a.z*b.y, a.z*b.x - a.x*b.z, a.x*b.y - a.y*b.x};
+}
 inline float norm(const Vec3& v){ return sqrtf(dot(v,v)); }
+inline Vec3  normalized(const Vec3& v){ const float n = norm(v); return n > 0.f ? v * (1.0f/n) : Vec3(0,0,1); }
 
 struct Quaternion {
   float w,x,y,z;
@@ -32,10 +41,18 @@ struct Quaternion {
     };
   }
 
+  float normSq() const { return w*w + x*x + y*y + z*z; }
+
   void normalize() {
-    const float m = sqrtf(w*w + x*x + y*y + z*z);
+    const float m = sqrtf(normSq());
     if (m > 0.f) { w/=m; x/=m; y/=m; z/=m; }
     else { w=1; x=y=z=0; }
+  }
+
+  // Drehung um eine Einheitsachse (Körper) um angle_rad
+  static Quaternion fromAxisAngle(const Vec3& axis, float angle_rad) {
+    const float h = 0.5f * angle_rad, s = sinf(h);
+    return {cosf(h), axis.x*s, axis.y*s, axis.z*s};
   }
 };
 
@@ -44,4 +61,9 @@ inline Vec3 rotateVector(const Quaternion& q, const Vec3& v) {
   const Quaternion qc = q.conjugate();
   const Quaternion rq = q * vq * qc;
   return Vec3(rq.x, rq.y, rq.z);
+}
+
+// Inverse Drehung: Navigation -> Körper
+inline Vec3 rotateVectorInverse(const Quaternion& q, const Vec3& v) {
+  return rotateVector(q.conjugate(), v);
 }

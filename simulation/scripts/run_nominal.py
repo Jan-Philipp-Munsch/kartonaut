@@ -20,8 +20,8 @@ from tvcsim.sim import simulate
 
 def add_common_args(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--controller", choices=["simulink", "firmware"], default="simulink")
-    ap.add_argument("--vehicle", choices=["nominal", "preload", "cad"], default="nominal",
-                    help="nominal = TVC6DOF.m, preload = PreLoadFcn der .slx, cad = cad/mass_properties.json")
+    ap.add_argument("--vehicle", choices=["nominal", "preload", "cad", "erstflug"], default="nominal",
+                    help="nominal = TVC6DOF.m, preload = PreLoadFcn der .slx, cad = cad/mass_properties.json, erstflug = Erstflug 761 g")
     ap.add_argument("--gains", choices=["nominal", "tuner", "preload"], default="nominal",
                     help="Simulink-Regler: nominal = kp1/ki1/kd0,1, tuner = 3,1/5/0,385, preload = 2/1/0,004")
     ap.add_argument("--kp", type=float); ap.add_argument("--ki", type=float); ap.add_argument("--kd", type=float)
@@ -44,7 +44,8 @@ def add_common_args(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--substeps", type=int, default=10)
 
 
-VEHICLES = {"nominal": VehicleParams.nominal, "preload": VehicleParams.preload, "cad": VehicleParams.cad}
+VEHICLES = {"nominal": VehicleParams.nominal, "preload": VehicleParams.preload, "cad": VehicleParams.cad,
+            "erstflug": VehicleParams.erstflug}
 
 
 def build_params(args) -> SimParams:

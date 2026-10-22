@@ -1,5 +1,6 @@
 # Prüfungen bei jedem Push und Pull Request:
 #   firmware    alle PlatformIO-Umgebungen aus firmware/platformio.ini bauen
+#   native      Firmware-Tests ohne Hardware (pio test -e native, firmware/test/test_native/)
 #   simulation  Tests des Python-Pakets tvcsim
 #   pins        Pinbelegung der Firmware (BoardRevB.h) gegen die Schaltung (circuit.py)
 name: CI
@@ -23,7 +24,8 @@ jobs:
       - uses: actions/checkout@v7
       - id: list
         # jede [env:<name>]-Sektion wird gebaut, neue Test-Sketches also ohne Änderung hier
-        run: echo "list=$(sed -n 's/^\[env:\([^]]*\)\].*/\1/p' firmware/platformio.ini | jq -Rcs 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
+        # native ist die Testumgebung (Job "native"), sie hat kein Programm zum Bauen
+        run: echo "list=$(sed -n 's/^\[env:\([^]]*\)\].*/\1/p' firmware/platformio.ini | grep -v '^native$' | jq -Rcs 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
 
   firmware:
     name: Firmware (${{ matrix.env }})
@@ -48,6 +50,20 @@ jobs:
       - run: pip install platformio
       - name: pio run -e ${{ matrix.env }}
         run: pio run -d firmware -e ${{ matrix.env }}
+
+  native:
+    name: Firmware-Tests (native)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install platformio
+      - name: pio test -e native
+        run: pio test -d firmware -e native
+      - name: dasselbe ohne PlatformIO (g++)
+        run: python firmware/tools/run_native_tests.py
 
   simulation:
     name: Simulation (pytest)

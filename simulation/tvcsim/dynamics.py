@@ -49,12 +49,15 @@ def body_to_inertial(q, v):
     return hamilton(hamilton(q, np.array([0.0, v[0], v[1], v[2]])), conjugate(q))[1:]
 
 
-def eom(params, m_fuel_g, th_y, th_z, T, q_in, w):
+def eom(params, m_fuel_g, th_y, th_z, T, q_in, w, rd=None):
     """``[rdd, wd, qd, Mb, Tb, m] = EOM(params, m_fuel, th_y, th_z, T, q_in, w1, w2, w3)``.
 
-    params = (Ix, Iy, Iz, g, l, mis_y, mis_z, m_dry); Winkel in Grad, w in rad/s.
+    params = (Ix, Iy, Iz, g, l, mis_y, mis_z, m_dry[, cd_a, rho]); Winkel in Grad, w in rad/s.
+    Mit ``cd_a > 0`` und ``rd`` (inertiale Geschwindigkeit) kommt der Luftwiderstand
+    ``D = -1/2 rho cd_a |rd| rd`` dazu (Erweiterung gegenueber Simulink, kein Moment).
     """
-    Ix, Iy, Iz, g, l, mis_y, mis_z, m_dry = params
+    Ix, Iy, Iz, g, l, mis_y, mis_z, m_dry = params[:8]
+    cd_a, rho = (params[8], params[9]) if len(params) > 8 else (0.0, 1.2)
     m = m_dry + m_fuel_g / 1000.0
     wx, wy, wz = w
 
@@ -64,6 +67,9 @@ def eom(params, m_fuel_g, th_y, th_z, T, q_in, w):
 
     Ti = body_to_inertial(q_in, Tb)
     rdd = np.array([Ti[0] / m - g, Ti[1] / m, Ti[2] / m])
+    if cd_a > 0.0 and rd is not None:
+        v = np.asarray(rd, dtype=float)
+        rdd = rdd - 0.5 * rho * cd_a * np.linalg.norm(v) * v / m
 
     wd = np.array([
         (Mb[0] + (Iy - Iz) * wy * wz) / Ix,

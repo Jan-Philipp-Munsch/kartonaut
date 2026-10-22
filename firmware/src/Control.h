@@ -1,49 +1,31 @@
 #pragma once
-// Control.h – Lageregler für Pitch/Yaw (TVC-Kardan) und Roll (Rollmotor)
-// sowie die Ansteuerung der Servos und der H-Brücke.
-//
-// Alle Winkel in Grad. Die Lage kommt als integrierter Gyro-Winkel aus
-// main.cpp (rot_deg: x = Yaw, y = Pitch, z = Roll). Die Regler integrieren
-// selbst nur ihre I-Anteile.
+// Control.h – Regler Pitch/Yaw (TVC-Kardan) und Roll (Rollmotor) mit der Hardware:
+// Servos als 16-Bit-PWM mit SERVO_FRAME_HZ (Grad-zu-Puls wie PWMServo), H-Brücke.
+// Die Reglergleichungen selbst stehen in ControlLaw.h (ohne Hardware, native Tests).
 #include "Config.h"
+#include "ControlLaw.h"
 #include "MathTypes.h"
-#include <PWMServo.h>
-#include <Servo.h>
 
-// Ergebnis der Rollregelung, für Logging und Teleplot
-struct RollOutput {
-  float angle_deg    = 0.0f;   // Roll-Winkel (integriert)
-  float rate_dps     = 0.0f;   // Roll-Rate
-  float corr_deg     = 0.0f;   // Regelabweichung (Soll 0°)
-  float cmd_norm     = 0.0f;   // Stellgröße -1..+1
-  int   pwm          = 0;      // 0..ROLL_PWM_MAX
-  int   dir          = 0;      // -1, 0, +1
-};
-
-// Servos (TVC + Fallschirm) anhängen und auf Mitte stellen
+// Servos (TVC + Fallschirm) einrichten und auf Mitte stellen
 void Control_setup();
 // H-Brücke des Rollmotors konfigurieren (PWM-Frequenz und -Auflösung)
 void Motor_setup();
 
-// PID auf Yaw (x) und Pitch (y). Rechnet das geforderte Moment über
-// M = l * m * |a| * sin(delta) in einen TVC-Winkel um und daraus in
-// Servo-Grad (0..180) innerhalb der mechanischen Fenster.
-void Control_updatePY(const Vec3& rot_deg,
-                      const Vec3& omega_dps,
-                      float dt_s,
-                      float a_norm_filt,
-                      int& yaw_servo_deg,
-                      int& pitch_servo_deg);
+// Pitch/Yaw: Kippwinkel um x (Yaw-Servo) und y (Pitch-Servo) in Grad, Drehraten, |a| gefiltert.
+// Liefert Servo-Grad und Kardanwinkel; stellt die Servos.
+PyOutput Control_updatePY(float tilt_x_deg, float tilt_y_deg, const Vec3& omega_dps, float dt_s, float a_norm_filt);
+void     Control_resetPY();
 
-// PID auf Roll (z) mit Totband und Mindest-PWM, treibt die H-Brücke direkt.
-void Control_updateRoll(const Vec3& rot_deg,
-                        const Vec3& omega_dps,
-                        float dt_s,
-                        RollOutput& out);
+// Roll: treibt die H-Brücke
+RollOutput Control_updateRoll(float roll_deg, float roll_rate_dps, float dt_s);
+void       Control_resetRoll();
 
 // Rollmotor stromlos (beide Halbbrücken 0)
 void Motor_coast();
 
-// Servowinkel setzen (0..180, wird geklemmt)
-void Apply_servos_deg(int yaw_deg, int pitch_deg);
-void Chute_servo_deg(int deg);
+// Servowinkel direkt setzen (0..180 Grad, Fenster wird nicht angewendet)
+void Apply_servos_deg(float yaw_deg, float pitch_deg);
+void Servos_center();
+void Chute_servo_deg(float deg);
+// Schubdrossel: u in [0, 1] (0 = Pads draußen); ohne PIN_SERVO_THROTTLE wirkungslos
+void Throttle_set(float u);

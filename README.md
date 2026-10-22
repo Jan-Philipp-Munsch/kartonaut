@@ -54,7 +54,7 @@ station. The whole system is simulated in a six-degree-of-freedom model before i
 **Next**
 
 1. Work the review into rev B, regenerate the board, close the last connections, export Gerber, BOM and CPL, order at JLCPCB with SMD assembly (Aisler as the EU fallback); order the bench parts now.
-2. Firmware for rev B: ICM-42688-P driver, quaternion attitude, flight state machine, pyro logic, watchdog, LoRa telemetry.
+2. Firmware on the device: first run of the flight state machine on the breakout setup, radio test of the telemetry protocol with the ground station, IMU axes and LoRa parameters for rev B. (Quaternion attitude, state machine, pyro logic, telemetry, watchdog and both sensor back ends exist since 2026-10-22 with 32 hardware-free tests, `pio test -e native`.)
 3. Weigh the rocket and settle the mass budget against the thrust of the E12.
 4. Ground tests: TVC test rig with a propeller motor in the gimbal (parts bought, rig to be built), pyro test, radio range.
 5. First flight: controlled ascent on one motor, parachute recovery.
@@ -207,26 +207,35 @@ ejection has already been tested with about 1 g of black powder.
 PlatformIO project for the Teensy 4.1 in [`firmware/`](firmware/README.md). The main loop runs
 at a fixed 100 Hz:
 
-1. **Read the sensors.** IMU (angular rate, acceleration), barometer, power monitor.
-2. **Integrate attitude.** Gyro only: in flight, magnetometer and accelerometer aiding are useless.
+1. **Read the sensors.** IMU (angular rate, specific force), barometer, power monitor, and on
+   rev B the arming key and igniter continuity; two back ends (breakouts, rev B) behind one interface.
+2. **Attitude.** Gyro-only quaternion, initialised from gravity on the pad; the control error is the
+   up vector in body axes, so rolling no longer leaks tilt into the wrong servo.
 3. **Estimate altitude.** A two-state Kalman filter fuses barometer and vertical acceleration.
-4. **Control.** PID on pitch and yaw outputs a torque that is converted via `M = l · m · |a| · sin δ`
-   into a gimbal angle and then into servo degrees; a second PID drives the roll motor.
-5. **Log.** One 88-byte frame per pass into a page buffer; SD writes only in the spare time before
-   the next deadline. On the ground the binary log is exported as CSV.
+4. **Flight state machine.** SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED, plus
+   ABORT; thresholds in `Config.h`, every transition stamped into log and telemetry.
+5. **Control.** PID on pitch and yaw outputs a torque that is converted via `M = l · m · |a| · sin δ`
+   into a gimbal angle and then into servo degrees (16-bit PWM); a second PID drives the roll motor.
+6. **Recovery.** Pyro fires only at apogee, with the key armed and igniter continuity, as a short pulse.
+7. **Telemetry and log.** 10 Hz frames over the radio (`Telemetry.h`, CRC-16), one 88-byte log frame
+   per pass into a page buffer; SD writes only in the spare time before the next deadline.
+8. **Watchdog.** 250 ms; the flight state survives a reset in uninitialised RAM and is resumed.
 
 ```bash
 cd firmware
 pio run                      # build the flight firmware
 pio run -t upload            # flash the Teensy 4.1
 pio device monitor           # serial console, 115200 baud, Teleplot-compatible
+pio run -e teensy41_revb     # the same firmware for mainboard rev B
+pio test -e native           # 32 tests without hardware
 pio run -e radio_beacon      # one of the test sketches in examples/
 ```
 
-All pins, gains, filter constants and debug switches live in
+All pins, gains, thresholds and debug switches live in
 [`firmware/src/Config.h`](firmware/src/Config.h). The controllers are switched off there until
-the first flight test. Open points: quaternion attitude, gyro calibration on the pad, flight state
-machine with pyro logic, telemetry protocol, driver for the new IMU.
+the test rig clears them. The hardware-independent modules have 32 native tests
+(`pio test -e native`), including a software-in-the-loop check of the control law against the
+Python simulation; none of this has run on the device yet.
 
 ## Repository layout
 
@@ -252,6 +261,7 @@ the simulation and the Blender files stay outside this repository; their content
 |---|---|
 | [PROJECT.md](PROJECT.md) | key data, work packages with status, findings from the reviews, next steps, changelog |
 | [docs/BUILD.md](docs/BUILD.md) | as-built: inventory of bought and printed parts, mechanics, wiring, software on the device, tests, build log |
+| [docs/experiments/README.md](docs/experiments/README.md) | ready-to-run experiments (sketch, evaluation script, instructions, German); E01 servo → gimbal transfer function |
 | [docs/Plan_2026-10-21.md](docs/Plan_2026-10-21.md) | board review with component alternatives and cost estimate, power architecture, layout checklist, simulation port plan, decisions |
 | [hardware/mainboard/README.md](hardware/mainboard/README.md) | mainboard rev B specification |
 | [docs/DesignGuide_Mainboard_revB.md](docs/DesignGuide_Mainboard_revB.md) | the rev B design presented with figures, for review ([PDF](docs/DesignGuide_Mainboard_revB.pdf)) |

@@ -56,14 +56,20 @@ Anforderungen an das Pad:
 | Boden → Rakete | Kommandos mit Quittung: PING, CALIBRATE, PAD_READY_QUERY, ABORT |
 | Rahmen | Vorschlag: `0xA5 0x5A`, Typ (1 Byte), Länge (1 Byte), Nutzlast, CRC-16/CCITT |
 
-Das Telemetrieprotokoll gehört der Flug-Firmware (`firmware/`, Punkt E7: design-unabhängig, wird dort
-gerade entworfen). Die Bodenstation übernimmt die Definition von dort, sobald es sie gibt; bis dahin gilt
-der Vorschlag oben als Platzhalter in einer eigenen Datei, die sich austauschen lässt.
+Das Telemetrieprotokoll gehört der Flug-Firmware und ist seit dem 22.10.2026 abends definiert:
+`firmware/src/Telemetry.h` (Rahmen, Typen, Nutzlasten) und `firmware/src/Crc16.h` (CRC-16/CCITT-FALSE,
+Prüfwert `"123456789"` → `0x29B1`). Die Bodenstation übernimmt beide Dateien unverändert. Zwei
+Abweichungen vom Vorschlag oben: die Lage geht als zwei Kippwinkel (0,5°) plus Rollwinkel (2°) statt als
+Quaternion über Funk, damit der 22-Byte-Rahmen bei 10 Hz in die 2,4 kbit/s passt, und GPS kommt als eigener
+Rahmen `GPS 0x03` mit 1 Hz, sobald ein Modul da ist. Kommandos: `PING 0x20`, `CALIBRATE 0x21`,
+`PAD_READY 0x22` (Freigabe, die Rakete wartet dann auf den Start), `ABORT 0x23`, `SAFE 0x24`, jeweils mit
+1 Byte Folgenummer; die Rakete antwortet mit `ACK 0x10` (Kommando, Folgenummer, Ergebnis, Zustand). Jeder
+Zustandsübergang kommt als `EVT 0x02`. Details und Skalierungen: `firmware/README.md`, Abschnitt Telemetrie.
 
 **Startsperre:** die Bodenstation zündet nur, wenn alle Bedingungen gleichzeitig erfüllt sind:
 1. Der Schlüssel steckt in der Bodenstation und ARM ist eingeschaltet.
 2. Der Anzünder hat Durchgang.
-3. Die Telemetrie der Rakete ist jünger als 1 s, meldet den Zustand PAD_READY und meldet den Schlüsselschalter der Rakete scharf.
+3. Die Telemetrie der Rakete ist jünger als 1 s, meldet den Zustand `PAD_READY` (1) und im Flag-Byte `ARMED` (Bit 0) und `CONT1` (Bit 1).
 4. Der Countdown läuft bis null ohne Abbruch.
 
 ## S4 Handy ↔ Bodenstation

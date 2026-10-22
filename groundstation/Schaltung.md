@@ -81,6 +81,12 @@ Unter 10,5 V sperrt die Firmware den Countdown ohnehin (`VBAT_MIN_FIRE_V`).
 sind; das erledigt die Verdrahtung, keine Software. Q1 schaltet nur der ESP32. Ein Fehler der Firmware
 allein kann ohne ARM nicht zünden, ein klebendes Relais allein nicht ohne Q1.
 
+**Sparvariante (README §7.1):** gleiche Schaltung, andere Bauform. K1 ist ein Kfz-Relais 12 V/30 A
+im Sockel (Spule ca. 90 mA, Typ mit Diode ersetzt D1), Q1 ist ein D4184-Modul (2 × AOD4184A parallel,
+`OUT−` = Drain an LINE−, `VIN−` an GND, Gate-Eingang an GPIO9, 100 k nach GND, falls das Modul keinen
+hat). R1, D2, R2, D3, D4, die Teiler und die Kondensatoren sitzen auf der kleinen Messplatine; F2 und
+LINE+/LINE− laufen in 1,5-mm²-Litze daran vorbei, nur die Messabgriffe gehen auf die Platine.
+
 ### Dimensionierung
 
 | Zustand | Weg | Strom durch den Anzünder | Leitung plus | Leitung minus |

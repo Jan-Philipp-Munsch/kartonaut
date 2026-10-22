@@ -14,7 +14,7 @@ S2 bis S4 in `docs/Schnittstellen_Bodensystem_2026-10-22.md`; Abweichungen stehe
 ## 1. Konzept
 
 - **Ein Gerät, ein Akku.** ESP32-S3-DevKitC-1, E22-400T22D, Zündrelais, MOSFET und Bedienfeld in
-  einem Koffer, versorgt aus einem 3S-LiPo, der auch den Zündstrom liefert.
+  einem Gehäuse (Sparvariante ca. 80 €, ein Abend Bauzeit, §7), versorgt aus einem 3S-LiPo, der auch den Zündstrom liefert.
 - **Die Station entscheidet, das Handy zeigt an.** Startsperre und Zündung laufen im ESP32; das Handy
   ist eine Webseite ohne Sonderrechte. Scharf schalten geht nur mit Schlüssel und ARM-Schalter am Gerät.
 - **Ohne Handy bedienbar.** Start-Taster, LEDs und Summer an der Station reichen für einen Start.
@@ -221,40 +221,93 @@ Stiftleiste und SMA-Buchse statt Lötpads; passt auf Lochraster. Auf der Rakete 
 
 ## 7. Stückliste
 
-Preise sind Richtwerte (Stand Okt. 2026, nicht einzeln geprüft), Bezugsquellen Beispiele.
+Preise sind Richtwerte (Stand Okt. 2026, nicht einzeln geprüft), keine Angebote. Zwei Varianten mit
+**derselben Schaltung** (`Schaltung.md`) und derselben Firmware; sie unterscheiden sich nur in der
+Bauform von Relais, MOSFET und Mikrocontroller-Träger.
+
+**Schon anderswo eingeplant, hier nicht mitgezählt:** E22-400T22D und 433-MHz-Antenne kommen aus der
+Vorab-Bestellung (`hardware/mainboard/ORDER.md` 0.3 und 0.4, je zwei Stück, eins für die Station),
+Summer aus ORDER 0.16 (zweites Stück), Crimpzange aus ORDER 0.12. Der 3S-Akku lädt am vorhandenen
+HTRC H4AC (2 … 4S, `docs/BUILD.md` §1.5).
+
+### 7.1 Sparvariante (empfohlen): Module mit Schraubklemmen und Flachsteckern
+
+Gelötet wird nur eine kleine **Messplatine** (Lochraster ca. 40 × 60 mm) mit den Bauteilen der
+Durchgangsprüfung und den Teilern. Relais, MOSFET und Mikrocontroller sind fertige Module, die mit
+Schraubklemmen und Kfz-Flachsteckern verdrahtet werden.
+
+| Pos. | Teil | Menge | Bezug | ca. € |
+|---|---|---|---|---|
+| 1 | ESP32-S3-DevKitC-1 N16R8, Nachbau | 1 | AliExpress, Amazon | 7 |
+| 2 | Schraubklemmen-Adapter für ESP32-S3-DevKitC (GPIO-Breakout) | 1 | AliExpress, Amazon | 5 |
+| 3 | Buck 5 V: MP1584- oder LM2596-Modul | 1 | AliExpress, Eckstein | 1 … 2 |
+| 4 | 3S-LiPo 1000 mAh, ≥ 20 C, XT60 | 1 | Modellbauhandel | 13 |
+| 5 | Kfz-Relais 12 V, 30 A, Schließer, mit Freilaufdiode, plus Relaissockel mit Kabeln | 1 | Kfz-Bedarf, Reichelt, Amazon | 5 |
+| 6 | MOSFET-Modul „D4184“ (2 × AOD4184A, 40 V, ab 3,3 V Logik), Schraubklemmen | 1 (+1 Reserve) | AliExpress, Amazon | 2 |
+| 7 | Messplatine: Lochraster, R 1k, 2k2 (0,25 W), 3 × 22k, 2 × 6k8, 2 × 7k5, 100k, 27k, 3 × 330 Ω, 1k, BAT54 oder 1N5819, SS54, SMBJ15A, BC547, 6 × 100 nF, 100 µF | Satz | Reichelt | 5 |
+| 8 | Schlüsselschalter, Schlüssel nur in AUS abziehbar | 1 | AliExpress, Reichelt | 3 |
+| 9 | Kippschalter mit Schutzklappe (ARM), Start-Taster 16 … 22 mm, Wippschalter | je 1 | AliExpress, Reichelt | 5 |
+| 10 | LED-Fassungen 5 mm mit LED grün/rot/blau | 3 | AliExpress, Reichelt | 2 |
+| 11 | Flachsicherungshalter fliegend 2 ×, Sicherungen 2 A und 10 A | Satz | Kfz-Bedarf | 3 |
+| 12 | XT60-Buchse (Akku), XT30-Buchse und 2 XT30-Stecker (Zündleitung) | Satz | Modellbauhandel | 4 |
+| 13 | Zündleitung 2 × 0,75 mm², 15 m (Lautsprecherkabel) | 1 | Baumarkt | 9 |
+| 14 | Gehäuse: Abzweigdose IP65 ca. 190 × 140 × 70, Deckel als Bedienfeld | 1 | Baumarkt | 8 |
+| 15 | Kfz-Flachstecker 6,3 mm, Aderendhülsen, Litze 1,5 mm² und 0,25 mm² | Satz | Baumarkt, Reichelt | 5 |
+| | **Summe** | | | **ca. 80** |
+
+**Bauaufwand:** etwa ein Abend. Messplatine löten (ca. 30 min, 25 Lötstellen), Deckel bohren
+(Schalter, Taster, LEDs, XT30, SMA), Module mit Klebepads oder Schrauben in die Dose, verdrahten
+(Schraubklemmen, Flachstecker), Firmware über USB flashen, mit Lastwiderstand prüfen (§9).
+
+Hinweise zu den Modulen:
+- **D4184-Modul:** Ausgang `OUT−` ist der Drain, `VIN−` die Masse; `OUT+` bleibt frei. Ob das Modul
+  einen Pull-down am Gate hat, am Modul messen; sonst 100 k zwischen Gate-Eingang und Masse ergänzen.
+  Der AOD4184A hat bei 4,5 V Gate etwa 10 mΩ, bei 3,3 V mehr; die Strommessung in §9 zeigt, ob 3,3 V reichen.
+- **Kfz-Relais:** Spule ca. 80 … 100 mA, Anzug ab ca. 7 V; Schlüssel- und ARM-Schalter müssen
+  ≥ 0,5 A schalten können. Ein Typ mit eingebauter Diode ersetzt D1.
+- **ESP32-S3-Nachbau:** auf GPIO 1 … 18 und den USB-Anschluss achten (manche Nachbauten führen
+  GPIO 19/20 statt USB-UART heraus); die Pinbelegung bleibt wie in `Schaltung.md` §2.
+
+### 7.2 Lochraster-Variante (Referenz)
+
+Alles auf einer Lochrasterplatine 100 × 80 mit Original-DevKit, Printrelais und TO-220-MOSFET wie in
+`Schaltung.md` §3. Robuster und kompakter, aber zwei bis drei Abende Lötarbeit.
 
 | Pos. | Teil | Menge | Bezug | ca. € |
 |---|---|---|---|---|
 | 1 | ESP32-S3-DevKitC-1-N8R8 (Espressif) | 1 | BerryBase, Reichelt, Mouser | 15 |
-| 2 | Ebyte E22-400T22D (SX1268, 433 MHz, SMA) | 1 | Ebyte-Shop AliExpress, Amazon | 12 |
-| 3 | Antenne 433 MHz ½λ, SMA, ggf. SMA-Durchführung | 1 | AliExpress, Funk24 | 8 |
-| 4 | 3S-LiPo 1300 mAh, ≥ 25 C, XT60 | 1 | Modellbauhandel | 20 |
-| 5 | Buck 5 V, 1 A (Pololu D24V10F5 oder MP1584-Modul) | 1 | Eckstein, BerryBase | 2 … 8 |
-| 6 | Relais 12 V, 1 Schließer 10 A (Finder 40.31.9.012 oder Song Chuan 833H-1C-C 12V) | 1 | Reichelt, Conrad | 3 |
-| 7 | MOSFET IRLB8721PbF (TO-220) | 1 (+1 Reserve) | Reichelt, Mouser | 2 |
-| 8 | Dioden: 1N4007, BAT54, SS54, TVS SMBJ15A | je 1 | Reichelt | 2 |
-| 9 | Widerstände 1/4 W: 1k, 2k2, 3 × 22k, 2 × 6k8, 2 × 7k5, 100k ×2, 27k, 100 Ω, 3 × 330 Ω, 1k (Basis) | Satz | Reichelt | 3 |
-| 10 | Kondensatoren: 6 × 100 nF, 100 µF/10 V | Satz | Reichelt | 2 |
-| 11 | BC547, Summer 5 V aktiv | je 1 | Reichelt | 2 |
-| 12 | Schlüsselschalter 2 Stellungen, Schlüssel nur in AUS abziehbar, ≥ 1 A | 1 | Reichelt, Conrad | 8 |
-| 13 | Kippschalter 1-polig mit Schutzklappe (ARM) | 1 | Reichelt, AliExpress | 6 |
-| 14 | Drucktaster 22 mm, Schließer (Start) | 1 | Reichelt | 5 |
-| 15 | Wippschalter (Hauptschalter) | 1 | Reichelt | 2 |
-| 16 | LEDs 5 mm grün/rot/blau mit Einbaufassung | je 1 | Reichelt | 3 |
-| 17 | Flachsicherungshalter + Sicherungen 2 A und 10 A | 2 | Reichelt, Kfz-Bedarf | 5 |
-| 18 | XT60-Buchse (Akku), XT30-Buchse mit Panelhalter (Zündleitung) | je 1 | Modellbauhandel, AliExpress | 4 |
-| 19 | Zündleitung 2 × 0,75 mm², 15 m (H03VV-F oder Lautsprecherkabel), 2 × XT30-Stecker | 1 | Baumarkt | 15 |
-| 20 | Lochrasterplatine 100 × 80, Stiftleisten, Litze, Schrumpfschlauch | Satz | Reichelt | 6 |
-| 21 | Gehäuse (§8) | 1 | Reichelt, Baumarkt | 20 |
-| | **Summe** | | | **ca. 150** |
+| 2 | Buck 5 V, 1 A (Pololu D24V10F5) | 1 | Eckstein, BerryBase | 8 |
+| 3 | 3S-LiPo 1300 mAh, ≥ 25 C, XT60 | 1 | Modellbauhandel | 20 |
+| 4 | Relais 12 V, 10 A (Finder 40.31.9.012) | 1 | Reichelt | 4 |
+| 5 | IRLB8721PbF, Dioden, Widerstände, Kondensatoren, BC547 | Satz | Reichelt | 8 |
+| 6 | Schlüsselschalter, ARM mit Schutzklappe, Taster 22 mm, Wippschalter, LEDs (Reichelt) | Satz | Reichelt | 24 |
+| 7 | Sicherungshalter, XT60, XT30 mit Panelhalter, Zündleitung 15 m | Satz | Reichelt, Baumarkt | 22 |
+| 8 | Lochraster 100 × 80, Stiftleisten, Litze | Satz | Reichelt | 6 |
+| 9 | Gehäuse Hammond 1554 oder Fibox | 1 | Reichelt | 20 |
+| | **Summe** (ohne E22 und Antenne, die aus ORDER kommen) | | | **ca. 130** |
 
-Für den Abgleich: ein 1,5-Ω-Lastwiderstand (≥ 50 W, kurzzeitig) oder ein Stück Heizdraht als
-Anzünder-Ersatz, und ein Multimeter mit 10-A-Bereich.
+### 7.3 Was die Sparvariante spart
+
+| | Lochraster | Sparvariante | Ersparnis |
+|---|---|---|---|
+| Kosten | ca. 130 € | ca. 80 € | ca. 50 € |
+| Lötstellen | ca. 150 | ca. 25 | |
+| Bauzeit | 2 … 3 Abende | 1 Abend | |
+| Schaltung, Firmware, Sicherheit | gleich | gleich | |
+
+Weiter drücken lässt sich der Preis kaum ohne Abstriche an der Sicherheit: Schlüssel, ARM, Relais,
+zwei Sicherungen und die Durchgangsprüfung bleiben. Verzichtbar wären LEDs und Summer (das Handy zeigt
+alles an), dann geht der Start ohne Handy aber nur noch blind; das spart 3 €. Eine eigene Trägerplatine
+im JLC-Auftrag des Mainboards (ESP32-S3-Modul und E22-400T22S bestückt) würde den Bauaufwand weiter
+senken, kostet aber Entwurfs- und Prüfzeit und hängt am Zeitplan der Hauptplatine; erst sinnvoll für
+eine zweite Version der Station.
 
 ## 8. Gehäuse
 
-- Kunststoffkoffer oder ABS-Gehäuse ca. 200 × 150 × 90 mm (z. B. Hammond 1554, Fibox, Spelsberg),
-  spritzwassergeschützt, Deckel als Bedienfeld oder Bedienfeld schräg auf der Oberseite.
+- **Sparvariante:** Abzweigdose IP65 aus dem Baumarkt (ca. 190 × 140 × 70), der Deckel ist das
+  Bedienfeld. Alternativ eine Kunststoff-Werkzeugbox mit gedruckter Frontplatte (PETG).
+- **Lochraster-Variante:** Kunststoffkoffer oder ABS-Gehäuse ca. 200 × 150 × 90 mm (z. B. Hammond 1554,
+  Fibox, Spelsberg), spritzwassergeschützt.
 - Bedienfeld von links nach rechts in der Reihenfolge des Ablaufs: Hauptschalter – Schlüssel – ARM
   (Schutzklappe) – Start-Taster; LEDs darüber. Der Start-Taster liegt so, dass er mit dem ARM-Schalter
   nicht in einem Griff erreichbar ist.

@@ -20,7 +20,7 @@ jobs:
     outputs:
       list: ${{ steps.list.outputs.list }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: list
         # jede [env:<name>]-Sektion wird gebaut, neue Test-Sketches also ohne Änderung hier
         run: echo "list=$(sed -n 's/^\[env:\([^]]*\)\].*/\1/p' firmware/platformio.ini | jq -Rcs 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
@@ -34,11 +34,11 @@ jobs:
       matrix:
         env: ${{ fromJSON(needs.envs.outputs.list) }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: |
             ~/.platformio
@@ -53,8 +53,8 @@ jobs:
     name: Simulation (pytest)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -69,8 +69,8 @@ jobs:
     name: Pin-Abgleich rev B
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: BoardRevB.h gegen circuit.py

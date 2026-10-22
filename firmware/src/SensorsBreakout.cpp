@@ -16,6 +16,7 @@ Adafruit_BMP280 bmp;
 ICM_20948_I2C   imu;
 INA219_WE       ina219(0x40);
 SensorStatus    status;
+void (*idle_hook)() = nullptr;
 float ground_pa = 101325.0f;
 Vec3  gyro_bias_dps(GYRO_BIAS_DPS_X, GYRO_BIAS_DPS_Y, GYRO_BIAS_DPS_Z);
 Vec3  last_a, last_w;

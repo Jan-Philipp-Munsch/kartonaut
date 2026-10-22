@@ -27,6 +27,8 @@
 #include "SDLogger.h"
 #include "Watchdog.h"
 #include "StateStore.h"
+#include "LandingBurn.h"
+#include "ThrustCurveE12.h"
 
 HardwareSerial& radio = Serial8;   // HC-12 heute, E22-400T22S auf rev B (transparenter Modus)
 
@@ -37,8 +39,15 @@ static KalmanZ   kal;
 static FlightStateMachine fsm(FlightParams{
     FS_LAUNCH_ACCEL_MS2, FS_BURNOUT_AXIAL_MS2, FS_APOGEE_VZ_MS, FS_APOGEE_BARO_DROP_M, FS_LANDED_VZ_MS, FS_LANDED_ALT_M,
     FS_LAUNCH_HOLD_MS, FS_BURNOUT_HOLD_MS, FS_BURN_MAX_MS, FS_APOGEE_EARLIEST_MS, FS_APOGEE_HOLD_MS,
-    FS_APOGEE_FALLBACK_MS, FS_DESCENT_AFTER_MS, FS_LANDED_HOLD_MS, FS_FLIGHT_MAX_MS});
-static PyroLogic pyro(PyroParams{PYRO_PULSE_MS, PYRO_MIN_FLIGHT_MS, PYRO_BACKUP_DELAY_MS, PYRO_RETRY_DELAY_MS, PYRO_MAX_FIRES});
+    FS_APOGEE_FALLBACK_MS, FS_DESCENT_AFTER_MS, FS_LANDED_HOLD_MS, FS_FLIGHT_MAX_MS,
+    RECOVERY_MODE == RecoveryMode::LANDING_BURN, LANDING_BURN_MAX_MS});
+static PyroLogic pyro(PyroParams{{PYRO_PULSE_MS, RECOVERY_MODE == RecoveryMode::LANDING_BURN ? PYRO_IGNITER_PULSE_MS : PYRO_PULSE_MS},
+                                 PYRO_MIN_FLIGHT_MS, PYRO_BACKUP_DELAY_MS, PYRO_RETRY_DELAY_MS, PYRO_MAX_FIRES,
+                                 RECOVERY_MODE == RecoveryMode::CHUTE});
+static LandingPlanner landing(LandingParams{LANDING_MASS_KG, LANDING_FUEL_KG, LANDING_CD_A_M2, LANDING_RHO,
+                                            LANDING_IGNITER_DELAY_S, 1.0f / LOOP_HZ, LANDING_MIN_SPEED_MS,
+                                            LANDING_THRUST_SCALE},
+                              thrustcurve::E12_T_S, thrustcurve::E12_F_N, thrustcurve::E12_N);
 static tlm::Parser radioParser;
 
 static SensorSample sample;
@@ -193,6 +202,7 @@ static bool tryRestore() {
 // ======= Anzeige je Zustand =======
 static void indicateState(FlightState s) {
   switch (s) {
+    case FlightState::LANDING_BURN: Indicate_color(60, 30, 0); break;
     case FlightState::SAFE:      Indicate_color(0, 0, 40); break;
     case FlightState::PAD_READY: Indicate_color(0, 40, 0); break;
     case FlightState::BOOST:
@@ -306,6 +316,11 @@ void loop(){
   in.calibrated = Sensors_calibrated() && attitude.initialized && !calibrating;
   in.sensors_ok = Sensors_status().ok();
   in.pyro_done = pyro.done();
+  // Landemodus: Anzünder muss scharf und mit Durchgang sein, sonst Fallschirm; Zündung vom Planer
+  in.landing_possible = sample.armed && sample.continuity[PYRO_CH_IGNITER] && sample.pyro_fitted[PYRO_CH_IGNITER]
+                        && PIN_PYRO2 >= 0 && pyro.fires(PYRO_CH_IGNITER) == 0;
+  in.ignite_now = (fsm.state() == FlightState::DESCENT && RECOVERY_MODE == RecoveryMode::LANDING_BURN
+                   && !fsm.landingFallback()) ? landing.shouldIgnite(alt_m, vz_ms) : false;
   in.cmd = pending_cmd;
   pending_cmd = FlightCmd::NONE;
   const FlightState before = fsm.state();
@@ -343,7 +358,9 @@ void loop(){
 
   // --- 6. Pyro ---
   PyroInputs pin;
-  pin.t_ms = t; pin.allowed = fsm.pyroAllowed(); pin.t_launch_ms = fsm.launchTime();
+  pin.t_ms = t; pin.t_launch_ms = fsm.launchTime();
+  pin.allowed[PYRO_CH_CHUTE] = fsm.pyroAllowed();
+  pin.allowed[PYRO_CH_IGNITER] = (RECOVERY_MODE == RecoveryMode::CHUTE) ? fsm.pyroAllowed() : fsm.igniterAllowed();
   pin.armed = sample.armed;
   pin.continuity[0] = sample.continuity[0]; pin.continuity[1] = sample.continuity[1];
   pin.fitted[0] = sample.pyro_fitted[0] && PIN_PYRO1 >= 0;
@@ -422,6 +439,7 @@ void loop(){
   if (PLOT_STATE) {
     Serial.print(">State:"); Serial.println((int)fsm.state());
     Serial.print(">A_norm:"); Serial.println(sample.a_norm, 3);
+    if (RECOVERY_MODE == RecoveryMode::LANDING_BURN) { Serial.print(">Landing_J:"); Serial.println(landing.lastCost(), 2); }
   }
 
   LoopTimer_overrunCheck(t0);

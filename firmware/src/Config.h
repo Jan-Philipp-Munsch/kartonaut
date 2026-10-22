@@ -143,8 +143,26 @@ constexpr float    FS_LANDED_ALT_M        = 5.0f;          // ... und Höhe daru
 constexpr uint32_t FS_LANDED_HOLD_MS      = 2000;          // ... für so lange
 constexpr uint32_t FS_FLIGHT_MAX_MS       = 120000;        // Rückfall: nach 2 min gilt gelandet
 
+// ===== Bergung: Fallschirm oder Landebrennen (FlightState.h, LandingBurn.h) =====
+enum class RecoveryMode : uint8_t { CHUTE = 0, LANDING_BURN = 1 };
+constexpr RecoveryMode RECOVERY_MODE = RecoveryMode::CHUTE;   // Erstflug: Fallschirm (Jan, 21.10.2026)
+// Landebrennen mit dem zweiten TSP E12 (Studie simulation/scripts/landing_study.py):
+constexpr float    LANDING_MASS_KG       = MASS_KG;   // Masse bei der Landung mit vollem zweitem Motor
+constexpr float    LANDING_FUEL_KG       = 0.028f;    // Treibstoff des Landemotors
+constexpr float    LANDING_CD_A_M2       = 0.003f;    // Cd·A des Rumpfs (Ø 75 mm, Cd ~0,7); 0 = ohne Luft
+constexpr float    LANDING_RHO           = 1.2f;
+constexpr float    LANDING_IGNITER_DELAY_S = 0.10f;   // Anzünder -> Schub, am Prüfstand messen
+constexpr float    LANDING_MIN_SPEED_MS  = 2.0f;      // unter dieser Sinkrate keine Zündung
+constexpr float    LANDING_THRUST_SCALE  = 1.0f;      // angenommene Schubtoleranz der Planung
+constexpr uint32_t LANDING_BURN_MAX_MS   = 6000;      // LANDING_BURN -> LANDED spätestens danach
+
 // ===== Pyro (Pyro.h) =====
-constexpr uint32_t PYRO_PULSE_MS        = 80;      // 50..100 ms, Abbruch bei Durchgangsverlust
+// Kanal 1 (PIN_PYRO1): Ausstoßladung des Fallschirms. Kanal 2 (PIN_PYRO2): im Fallschirm-Modus
+// Reserve der Ausstoßladung, im Landemodus der Anzünder des zweiten Motors.
+constexpr int      PYRO_CH_CHUTE        = 0;
+constexpr int      PYRO_CH_IGNITER      = 1;
+constexpr uint32_t PYRO_PULSE_MS        = 80;      // Ausstoßladung: 50..100 ms, Abbruch bei Durchgangsverlust
+constexpr uint32_t PYRO_IGNITER_PULSE_MS = 1000;   // Anzünder im Motor: bis er durchbrennt, höchstens 1 s
 constexpr uint32_t PYRO_MIN_FLIGHT_MS   = 2000;    // zweite Bedingung: mindestens so lange seit dem Start
 constexpr uint32_t PYRO_BACKUP_DELAY_MS = 1500;    // Kanal 2 zündet so viel später, falls bestückt
 constexpr uint32_t PYRO_RETRY_DELAY_MS  = 500;     // zweiter Versuch, wenn der Durchgang nach dem Puls bleibt

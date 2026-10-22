@@ -39,6 +39,11 @@ class VehicleParams:
     static_error_z: float = 0.0   # Grad, statischer Fehler (konstant)
     servo_delay: float | None = None  # s, Totzeit des Servomodells; None = Wert aus dem Fit
     l_meas: float | None = None   # m, Hebelarm, mit dem der Regler rechnet (None = l)
+    # Luftwiderstand (nicht im Simulink-Modell, seit 23.10.2026 als Option): D = -1/2 rho cd_a |v| v
+    # entlang der Fluggeschwindigkeit, angriffsfrei (kein Moment). cd_a = Cd * A in m^2;
+    # Rumpf Ø 75 mm: A = 0,0044 m^2, Cd ~ 0,6..0,8 -> cd_a ~ 0,003. 0 = aus (wie Simulink).
+    cd_a: float = 0.0
+    rho: float = 1.2
 
     @classmethod
     def nominal(cls) -> "VehicleParams":
@@ -76,8 +81,20 @@ class VehicleParams:
         return self.l if self.l_meas is None else self.l_meas
 
     def as_eom_params(self) -> tuple[float, ...]:
-        """``[Ix Iy Iz g l mis_y mis_z m_dry]`` wie der Constant-Block im Dynamics Model."""
-        return (self.Ix, self.Iy, self.Iz, self.g, self.l, self.mis_y, self.mis_z, self.m_dry)
+        """``[Ix Iy Iz g l mis_y mis_z m_dry]`` wie der Constant-Block im Dynamics Model,
+        dazu ``cd_a, rho`` fuer den Luftwiderstand (0 = aus)."""
+        return (self.Ix, self.Iy, self.Iz, self.g, self.l, self.mis_y, self.mis_z, self.m_dry, self.cd_a, self.rho)
+
+    @classmethod
+    def light(cls, m_landing_kg: float, fuel_per_motor_kg: float = FUEL_PER_MOTOR_KG, cd_a: float = 0.003) -> "VehicleParams":
+        """Leichte Landekonfiguration (Jan, 23.10.2026: deutlich unter 700 g). Geometrie wie
+        ``erstflug`` (Hebelarm 0,242 m), Traegheit aus dem Erstflug-Modell (0,046 kg m^2 bei
+        0,761 kg) mit der Masse skaliert. ``m_landing_kg`` ist die Masse bei der Landung mit
+        vollem zweitem Motor; ``m_dry`` = ohne jeden Treibstoff."""
+        m_dry = m_landing_kg - fuel_per_motor_kg
+        scale = m_landing_kg / 0.761
+        return cls(Ix=0.0006 * scale, Iy=0.046 * scale, Iz=0.046 * scale, l=0.242, m_dry=m_dry,
+                   static_error_y=0.5, static_error_z=0.5, cd_a=cd_a)
 
 
 @dataclass
@@ -87,6 +104,15 @@ class MotorParams:
     curve: str = "E12"          # "E12" oder "F35" (data/<curve>_thrustcurve.csv)
     secondburn: int = 730       # Verzoegerung des zweiten Motors in Regelschritten (dt)
     second_motor: bool = True
+    # Zuendung des zweiten Motors: "time" nach secondburn Schritten (Simulink), "landing" aus
+    # dem Zustand (Landebrennen, tvcsim.landing: Zuendhoehe als Funktion der Sinkgeschwindigkeit)
+    second_mode: str = "time"
+    igniter_delay: float = 0.10     # s, Zuendverzug Anzuender -> Schub (Landemodus)
+    thrust_scale2: float = 1.0      # Schubtoleranz des zweiten Motors (Landemodus)
+    landing_alt_sigma: float = 0.3  # m, Rauschen der Hoehenschaetzung fuer die Zuendentscheidung
+    landing_vz_sigma: float = 0.3   # m/s, Rauschen der Sinkgeschwindigkeit
+    landing_margin_m: float = 0.0   # m, Zuendung so viel hoeher als die Tabelle (Sicherheitsaufschlag)
+    landing_v_tol: float = 0.5      # m/s, Zielwert |v| beim Aufsetzen der Planung
     # Treibstoffmodell fuer die Masse m = m_dry + m_fuel/1000:
     #  "signalbuilder": die Kurve aus dem Signal Builder der .slx (60 g -> 0 g bis 3,45 s,
     #                   nur der erste Motor), 1:1 wie das Simulink-Modell
@@ -165,6 +191,7 @@ class FirmwareParams:
     # SERVO_*_GAIN und ist am Tisch zu pruefen; hier ist es ein Parameter.
     axis_sign_yaw: float = -1.0
     axis_sign_pitch: float = -1.0
+    coast_center: bool = True     # ohne Schub (T < 0,5 N) Servos auf Mitte, wie main.cpp ausserhalb von BOOST/LANDING_BURN
     quantize_servo: bool = False  # True = auf ganze Grad runden wie die Firmware bis 22.10.2026 (PWMServo);
                                   # seitdem 16-Bit-PWM ohne Rundung
     apply_window: bool = True     # mechanische Fenster anwenden

@@ -10,6 +10,7 @@ const char* flightStateName(FlightState s) {
     case FlightState::DESCENT: return "DESCENT";
     case FlightState::LANDED: return "LANDED";
     case FlightState::ABORT: return "ABORT";
+    case FlightState::LANDING_BURN: return "LANDING_BURN";
   }
   return "?";
 }
@@ -44,7 +45,9 @@ bool FlightStateMachine::update(const FlightInputs& in) {
   const FlightState before = s_;
 
   // Abbruch vom Boden gilt überall außer LANDED
-  if (in.cmd == FlightCmd::ABORT && s_ != FlightState::LANDED && s_ != FlightState::ABORT) {
+  if (in.cmd == FlightCmd::ABORT && s_ != FlightState::LANDED && s_ != FlightState::ABORT
+      && s_ != FlightState::LANDING_BURN) {
+    landing_fallback_ = p_.landing_mode;      // Abbruch im Landemodus: Fallschirm statt Landebrennen
     transition(FlightState::ABORT, FlightReason::CMD, t);
     return true;
   }
@@ -100,12 +103,33 @@ bool FlightStateMachine::update(const FlightInputs& in) {
     }
 
     case FlightState::APOGEE:
+      if (p_.landing_mode && !landing_fallback_) {
+        if (!in.landing_possible) {
+          landing_fallback_ = true;             // Fallschirm statt Landebrennen (Pyro-Kanal 1 frei)
+          transition(FlightState::APOGEE, FlightReason::LANDING_FALLBACK, t);
+          return true;
+        }
+        transition(FlightState::DESCENT, FlightReason::LANDING_FREEFALL, t);
+        break;
+      }
       if (in.pyro_done || t - t_apogee_ms_ >= p_.descent_after_ms) {
         transition(FlightState::DESCENT, FlightReason::PYRO_DONE, t);
       }
       break;
 
     case FlightState::DESCENT: {
+      if (p_.landing_mode && !landing_fallback_) {
+        if (!in.landing_possible) {
+          landing_fallback_ = true;             // z. B. Durchgang am Anzünder verloren: Fallschirm
+          transition(FlightState::DESCENT, FlightReason::LANDING_FALLBACK, t);
+          return true;
+        }
+        if (in.ignite_now) {
+          t_ignite_ms_ = t;
+          transition(FlightState::LANDING_BURN, FlightReason::IGNITION, t);
+          break;
+        }
+      }
       const bool still = in.vz_ms > -p_.landed_vz_ms && in.vz_ms < p_.landed_vz_ms && in.alt_m < p_.landed_alt_m;
       if (held(landed_since_, still, t, p_.landed_hold_ms)) {
         transition(FlightState::LANDED, FlightReason::LANDED_SENSORS, t);
@@ -115,9 +139,21 @@ bool FlightStateMachine::update(const FlightInputs& in) {
       break;
     }
 
+    case FlightState::LANDING_BURN: {
+      // Am Boden und ruhig, aber frühestens nach dem Zündverzug; spätestens nach dem Brennen
+      const bool still = in.vz_ms > -p_.landed_vz_ms && in.vz_ms < p_.landed_vz_ms && in.alt_m < p_.landed_alt_m;
+      if (t - t_ignite_ms_ >= 500 && held(landed_since_, still, t, p_.landed_hold_ms)) {
+        transition(FlightState::LANDED, FlightReason::LANDED_SENSORS, t);
+      } else if (t - t_ignite_ms_ >= p_.landing_burn_max_ms) {
+        transition(FlightState::LANDED, FlightReason::BURN_END, t);
+      }
+      break;
+    }
+
     case FlightState::LANDED:
       break;
   }
   return s_ != before || (n_events_ > 0 && events_[n_events_ - 1].t_ms == t && events_[n_events_ - 1].to == s_
-                          && events_[n_events_ - 1].reason == FlightReason::NOT_READY);
+                          && (events_[n_events_ - 1].reason == FlightReason::NOT_READY
+                              || events_[n_events_ - 1].reason == FlightReason::LANDING_FALLBACK));
 }

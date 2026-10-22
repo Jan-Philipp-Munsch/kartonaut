@@ -9,7 +9,13 @@ static FlightParams params() {
   return FlightParams{FS_LAUNCH_ACCEL_MS2, FS_BURNOUT_AXIAL_MS2, FS_APOGEE_VZ_MS, FS_APOGEE_BARO_DROP_M,
                       FS_LANDED_VZ_MS, FS_LANDED_ALT_M, FS_LAUNCH_HOLD_MS, FS_BURNOUT_HOLD_MS, FS_BURN_MAX_MS,
                       FS_APOGEE_EARLIEST_MS, FS_APOGEE_HOLD_MS, FS_APOGEE_FALLBACK_MS, FS_DESCENT_AFTER_MS,
-                      FS_LANDED_HOLD_MS, FS_FLIGHT_MAX_MS};
+                      FS_LANDED_HOLD_MS, FS_FLIGHT_MAX_MS, false, LANDING_BURN_MAX_MS};
+}
+
+static FlightParams landing_params() {
+  FlightParams p = params();
+  p.landing_mode = true;
+  return p;
 }
 
 // Synthetischer Flug: 2 s Pad, 3,5 s Brennen mit 12 m/s² netto, Gipfel, Schirm 8 m/s, Landung.

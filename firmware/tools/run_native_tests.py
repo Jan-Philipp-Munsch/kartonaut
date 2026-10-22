@@ -11,7 +11,7 @@ import sys
 import tempfile
 
 FW = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PURE = ["Attitude.cpp", "FlightState.cpp", "Pyro.cpp", "Telemetry.cpp", "ControlLaw.cpp", "StateMemory.cpp"]
+PURE = ["Attitude.cpp", "FlightState.cpp", "Pyro.cpp", "Telemetry.cpp", "ControlLaw.cpp", "StateMemory.cpp", "LandingBurn.cpp"]
 
 
 def main():

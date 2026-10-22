@@ -7,6 +7,7 @@ void run_tests_pyro();
 void run_tests_telemetry();
 void run_tests_statememory();
 void run_tests_controllaw();
+void run_tests_landing();
 
 int main() {
   run_tests_attitude();
@@ -15,5 +16,6 @@ int main() {
   run_tests_telemetry();
   run_tests_statememory();
   run_tests_controllaw();
+  run_tests_landing();
   return minitest::summary();
 }

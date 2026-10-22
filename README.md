@@ -261,6 +261,7 @@ the simulation and the Blender files stay outside this repository; their content
 |---|---|
 | [PROJECT.md](PROJECT.md) | key data, work packages with status, findings from the reviews, next steps, changelog |
 | [docs/BUILD.md](docs/BUILD.md) | as-built: inventory of bought and printed parts, mechanics, wiring, software on the device, tests, build log |
+| [docs/Physik_Review_2026-10-23.md](docs/Physik_Review_2026-10-23.md) | physics review (drag, sensor model, fuel, ground) and the powered-landing study with the E12 by mass (German) |
 | [docs/experiments/README.md](docs/experiments/README.md) | ready-to-run experiments (sketch, evaluation script, instructions, German); E01 servo → gimbal transfer function |
 | [docs/Plan_2026-10-21.md](docs/Plan_2026-10-21.md) | board review with component alternatives and cost estimate, power architecture, layout checklist, simulation port plan, decisions |
 | [hardware/mainboard/README.md](hardware/mainboard/README.md) | mainboard rev B specification |

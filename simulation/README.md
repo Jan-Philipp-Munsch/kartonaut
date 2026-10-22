@@ -23,6 +23,8 @@ python scripts/compare_gains.py --vehicle preload   # Firmware- gegen Tuner-Gewi
 python scripts/ident_servo.py messung.csv   # Experiment E01 auswerten -> out/ident_*.png, .json
 python scripts/ident_servo.py --synthetic   # dasselbe mit einer künstlichen Messung
 python scripts/export_firmware_vectors.py   # Testvektoren für firmware/test/data/ (SIL, Flugprofil)
+python scripts/landing_study.py             # Landebrennen mit der E12 nach Masse -> out/landing_study.png
+python scripts/export_landing_firmware.py   # E12-Kurve und Prüfvektoren des Landeplaners für die Firmware
 ```
 
 Alle Ausgaben landen in `simulation/out/` (per `.gitignore` ausgeschlossen). Ein Lauf über
@@ -62,8 +64,21 @@ simulation/
   tests/     Quaternionnorm, Schwebe-Gleichgewicht, Momentenvorzeichen, Regler gegeneinander
   scripts/   run_nominal.py, run_montecarlo.py, tune_pid.py, fit_servo.py, compare_gains.py,
              ident_servo.py (Experiment E01, Modul tvcsim/ident.py),
-             export_firmware_vectors.py (Software-in-the-Loop-Vektoren für die Firmware-Tests)
+             export_firmware_vectors.py (Software-in-the-Loop-Vektoren für die Firmware-Tests),
+             landing_study.py, export_landing_firmware.py (Landebrennen, tvcsim/landing.py)
 ```
+
+## Landebrennen und Luftwiderstand (seit 23.10.2026)
+
+`MotorParams.second_mode = "landing"` zündet den zweiten Motor nicht nach Zeit, sondern aus Höhe
+und Sinkrate: `tvcsim/landing.py` rechnet jeden Takt die Aufsetzkosten J (größte
+Aufsetzgeschwindigkeit einer 1D-Simulation des Brennens mit Bodenkontakt und Hüpfern) für „jetzt“
+und „einen Takt später“ und zündet im Minimum; Zündverzug `igniter_delay`, Schubtoleranz
+`thrust_scale2`, Rauschen der Zündentscheidung `landing_alt_sigma/vz_sigma`. Der Boden hält die
+Rakete, solange der Schub nicht trägt, sonst hebt sie wieder ab; `extra["contacts"]` listet jedes
+Aufsetzen, `extra["v_land"]` das härteste. `VehicleParams.cd_a` schaltet den Luftwiderstand ein
+(`VehicleParams.light(m)` für die leichte Landekonfiguration). Ergebnis und Einordnung:
+`docs/Physik_Review_2026-10-23.md` §3; Zahlen aus `scripts/landing_study.py`.
 
 ## Modell (wie in Simulink)
 

@@ -9,7 +9,13 @@ jedem Teilschritt normiert. Ablauf je Takt ``t_k``:
 4. Integration ``t_k -> t_{k+1}``.
 
 Mit ``SimParams.ground`` (Vorgabe) sitzt die Rakete auf der Rampe, bis der Schub das Gewicht
-uebersteigt, und der Lauf endet bei der Landung (Hoehe 0); ``extra["t_land"]`` nennt den Zeitpunkt.
+uebersteigt, und der Lauf endet bei der Landung (Hoehe 0); ``extra["t_land"]`` nennt den Zeitpunkt,
+``extra["v_land"]`` die Vertikalgeschwindigkeit und ``extra["tilt_land_deg"]`` den Kippwinkel dabei.
+
+Landemodus (``MotorParams.second_mode = "landing"``): nach dem Gipfel entscheidet
+``tvcsim.landing.IgnitionTable`` aus (verrauschter) Hoehe und Sinkgeschwindigkeit, wann der
+zweite Motor gezuendet wird; der Schub kommt ``igniter_delay`` spaeter. ``extra["t_ignite2"]``
+ist der Zuendzeitpunkt (Kommando), ``extra["h_ignite2"]`` die Hoehe dabei.
 """
 from __future__ import annotations
 
@@ -21,6 +27,7 @@ from .actuator import Actuator
 from .controller import make_controller
 from .dynamics import eom, tilt_deg
 from .estimator import estimate
+from .landing import LandingPlanner
 from .motors import ThrustModel
 from .params import SimParams
 from .sensors import Avionics
@@ -75,6 +82,19 @@ def simulate(p: SimParams) -> SimResult:
     eom_params = p.vehicle.as_eom_params()
     rad2deg = 57.2957  # Gain "rad to deg" im Modell
 
+    landing = None
+    if p.motor.second_motor and p.motor.second_mode == "landing":
+        # Masse bei der Landung: trocken plus voller zweiter Motor (fuel_model "impulse")
+        fuel = p.motor.fuel_mass_g / 1000.0 if p.motor.fuel_model == "impulse" else 0.0
+        landing = LandingPlanner(p.motor.curve, p.vehicle.m_dry + fuel, p.vehicle.cd_a, p.vehicle.rho, fuel,
+                                 p.motor.igniter_delay, dt)
+    t_ignite2 = None
+    h_ignite2 = None
+    v_ignite2 = None
+    apogee_seen = False
+    contacts: list[tuple[float, float]] = []    # (t, v) jedes Aufsetzen (Landemodus: auch Huepfer)
+    on_ground = False
+
     # Zustand
     r = np.zeros(3); rd = np.zeros(3); w = np.zeros(3); q = np.array([1.0, 0.0, 0.0, 0.0])
     xy = np.zeros(2); xz = np.zeros(2)
@@ -86,7 +106,7 @@ def simulate(p: SimParams) -> SimResult:
         T = thrust.thrust(t, dt)
         m_fuel = thrust.fuel_mass_g(t, dt)
         th_y, th_z = act.angles(t, xy, xz)
-        rdd, wd, qd, Mb, Tb, m = eom(eom_params, m_fuel, th_y, th_z, T, q, w)
+        rdd, wd, qd, Mb, Tb, m = eom(eom_params, m_fuel, th_y, th_z, T, q, w, rd)
         return rd, rdd, wd, qd, act.y.deriv(t, xy), act.z.deriv(t, xz), (T, m, th_y, th_z, Tb)
 
     N = n_steps + 1
@@ -105,7 +125,22 @@ def simulate(p: SimParams) -> SimResult:
         q_n, w_n, a_n = avionics.sample(q, w * rad2deg, accel)
         w_est, q_est, T_est = estimate(a_n, w_n, q_n, m)
         th_y_com, th_z_com = ctrl.step(t, w_est, q_est, T_est, a_norm=float(np.linalg.norm(a_n)))
+        if p.controller == "firmware" and p.firmware.coast_center and T < 0.5:
+            th_y_com, th_z_com = 0.0, 0.0      # Firmware: ohne Schub stehen die Servos auf Mitte
         act.push_command(th_y_com, th_z_com)
+
+        # Landemodus: Zuendentscheidung nach dem Gipfel aus (verrauschter) Hoehe und Sinkrate
+        if landing is not None and t_ignite2 is None and lifted:
+            if rd[0] < 0.0:
+                apogee_seen = True
+            if apogee_seen and thrust.thrust_single(t) <= 0.0:
+                h_est = r[0] + rng.standard_normal() * p.motor.landing_alt_sigma
+                v_est = rd[0] + rng.standard_normal() * p.motor.landing_vz_sigma
+                if landing.should_ignite(h_est, v_est):
+                    t_ignite2 = t
+                    h_ignite2 = float(r[0])
+                    v_ignite2 = float(rd[0])
+                    thrust.ignite_second(t + p.motor.igniter_delay)
 
         log["r"][k] = r; log["rd"][k] = rd; log["rdd"][k] = rdd; log["w_dps"][k] = w * rad2deg
         log["q"][k] = q; log["m"][k] = m; log["T"][k] = T; log["th_y"][k] = th_y; log["th_z"][k] = th_z
@@ -114,9 +149,14 @@ def simulate(p: SimParams) -> SimResult:
         log["tilt"][k] = tilt_deg(q); log["T_est"][k] = T_est
         if k == n_steps:
             break
-        if p.ground and lifted and r[0] <= 0.0:
+        if p.ground and lifted and r[0] <= 0.0 and landing is None:
             # Landung: letzter Takt geloggt (Hoehe auf 0 geklemmt), Lauf endet hier
             log["r"][k, 0] = 0.0
+            t_land = t
+            k_last = k
+            break
+        if p.ground and lifted and landing is not None and on_ground and T <= 0.0:
+            # Landemodus: am Boden und ausgebrannt -> Ruhe, Lauf endet
             t_land = t
             k_last = k
             break
@@ -139,14 +179,36 @@ def simulate(p: SimParams) -> SimResult:
                     lifted = True
                 else:   # auf der Rampe: kein Sinken, keine Drehung
                     r[:] = 0.0; rd[:] = 0.0; w[:] = 0.0
+            elif p.ground and landing is not None:
+                # Bodenkontakt im Landemodus: Aufsetzen festhalten, liegen bleiben, solange der
+                # Schub nicht traegt; sonst hebt die Rakete wieder ab (Huepfer)
+                if r[0] <= 0.0 and not on_ground:
+                    if rd[0] < 0.0:
+                        contacts.append((ts + h, float(rd[0])))
+                    on_ground = True
+                if on_ground:
+                    r[0] = 0.0
+                    rd[:] = 0.0; w[:] = 0.0
+                    T_now = thrust.thrust(ts + h, dt)
+                    m_now = p.vehicle.m_dry + thrust.fuel_mass_g(ts + h, dt) / 1000.0
+                    if T_now / m_now > p.vehicle.g:
+                        on_ground = False
+                        r[0] = 1e-6
 
     n = k_last + 1
     t_arr = t_arr[:n]
     for key in log:
         log[key] = log[key][:n]
 
+    if landing is not None:
+        v_land = (min(v for _, v in contacts) if contacts else None)
+    else:
+        v_land = float(log["rd"][n - 1, 0]) if t_land is not None else None
+    extra = {"t_land": t_land, "landed": t_land is not None, "t_ignite2": t_ignite2, "h_ignite2": h_ignite2,
+             "v_ignite2": v_ignite2, "contacts": contacts, "v_land": v_land,
+             "tilt_land_deg": float(log["tilt"][n - 1]) if t_land is not None else None,
+             "landing_planner": landing}
     return SimResult(params=p, t=t_arr, r=log["r"], rd=log["rd"], rdd=log["rdd"], w_dps=log["w_dps"],
                      q=log["q"], m=log["m"], T=log["T"], th_y=log["th_y"], th_z=log["th_z"],
                      th_y_com=log["th_y_com"], th_z_com=log["th_z_com"], u=log["u"], rot=log["rot"],
-                     tilt_deg=log["tilt"], T_est=log["T_est"],
-                     extra={"t_land": t_land, "landed": t_land is not None})
+                     tilt_deg=log["tilt"], T_est=log["T_est"], extra=extra)

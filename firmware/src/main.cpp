@@ -29,6 +29,7 @@
 #include "StateStore.h"
 #include "LandingBurn.h"
 #include "ThrustCurveE12.h"
+#include "ThrottleLaw.h"
 
 HardwareSerial& radio = Serial8;   // HC-12 heute, E22-400T22S auf rev B (transparenter Modus)
 
@@ -48,6 +49,13 @@ static LandingPlanner landing(LandingParams{LANDING_MASS_KG, LANDING_FUEL_KG, LA
                                             LANDING_IGNITER_DELAY_S, 1.0f / LOOP_HZ, LANDING_MIN_SPEED_MS,
                                             LANDING_THRUST_SCALE},
                               thrustcurve::E12_T_S, thrustcurve::E12_F_N, thrustcurve::E12_N);
+static ThrottleLaw throttle(ThrottleLawParams{THROTTLE_F_MIN, THROTTLE_H_RESERVE_M, THROTTLE_T_GO_MARGIN_S, THROTTLE_T_GO_MIN_S,
+                                              THROTTLE_KV, THROTTLE_V_FINAL_MS, THROTTLE_H_FINAL_M, THROTTLE_H_CUT_M,
+                                              THROTTLE_AFTER_S, THROTTLE_ACT_TAU_S, THROTTLE_SCALE_PLAN},
+                            LandingParams{LANDING_MASS_KG, LANDING_FUEL_KG, LANDING_CD_A_M2, LANDING_RHO,
+                                          LANDING_IGNITER_DELAY_S, 1.0f / LOOP_HZ, LANDING_MIN_SPEED_MS, THROTTLE_SCALE_PLAN},
+                            thrustcurve::E12_T_S, thrustcurve::E12_F_N, thrustcurve::E12_N);
+static float throttle_u = 0.0f;
 static tlm::Parser radioParser;
 
 static SensorSample sample;
@@ -319,8 +327,10 @@ void loop(){
   // Landemodus: Anzünder muss scharf und mit Durchgang sein, sonst Fallschirm; Zündung vom Planer
   in.landing_possible = sample.armed && sample.continuity[PYRO_CH_IGNITER] && sample.pyro_fitted[PYRO_CH_IGNITER]
                         && PIN_PYRO2 >= 0 && pyro.fires(PYRO_CH_IGNITER) == 0;
+  // Zündentscheidung: mit Drossel früher (Reserve, schwacher Motor geplant), sonst im Kostenminimum
   in.ignite_now = (fsm.state() == FlightState::DESCENT && RECOVERY_MODE == RecoveryMode::LANDING_BURN
-                   && !fsm.landingFallback()) ? landing.shouldIgnite(alt_m, vz_ms) : false;
+                   && !fsm.landingFallback())
+                  ? (THROTTLE_ENABLED ? throttle.shouldIgnite(alt_m, vz_ms) : landing.shouldIgnite(alt_m, vz_ms)) : false;
   in.cmd = pending_cmd;
   pending_cmd = FlightCmd::NONE;
   const FlightState before = fsm.state();
@@ -355,6 +365,15 @@ void loop(){
     roll = RollOutput{}; roll.angle_deg = roll_deg; roll.rate_dps = sample.omega_dps.z;
     Motor_coast();
   }
+
+  // --- 5b. Schubdrossel im Landebrennen ---
+  if (THROTTLE_ENABLED && fsm.state() == FlightState::LANDING_BURN) {
+    throttle_u = throttle.command((t - fsm.ignitionTime()) * 1e-3f, alt_m, vz_ms, sample.a_norm);
+  } else {
+    throttle_u = 0.0f;
+    if (fsm.state() == FlightState::DESCENT) throttle.reset();
+  }
+  Throttle_set(throttle_u);
 
   // --- 6. Pyro ---
   PyroInputs pin;
@@ -392,6 +411,7 @@ void loop(){
     fr.raw_i16[4] = tlm::clamp_i16(py.yaw_tvc_deg * 100.f);
     fr.raw_i16[5] = tlm::clamp_i16(py.pitch_tvc_deg * 100.f);
     fr.raw_i16[6] = (int16_t)reset_cause;
+    fr.raw_i16[7] = (int16_t)(throttle_u * 1000.0f);
     SDLogger_logFrame(fr, LoopTimer_slack_us(loopTimer));
     log_frames++;
   }
@@ -440,6 +460,7 @@ void loop(){
     Serial.print(">State:"); Serial.println((int)fsm.state());
     Serial.print(">A_norm:"); Serial.println(sample.a_norm, 3);
     if (RECOVERY_MODE == RecoveryMode::LANDING_BURN) { Serial.print(">Landing_J:"); Serial.println(landing.lastCost(), 2); }
+    if (THROTTLE_ENABLED) { Serial.print(">Throttle_u:"); Serial.println(throttle_u, 3); }
   }
 
   LoopTimer_overrunCheck(t0);

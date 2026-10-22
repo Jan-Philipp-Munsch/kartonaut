@@ -8,6 +8,7 @@ void run_tests_telemetry();
 void run_tests_statememory();
 void run_tests_controllaw();
 void run_tests_landing();
+void run_tests_throttle();
 
 int main() {
   run_tests_attitude();
@@ -17,5 +18,6 @@ int main() {
   run_tests_statememory();
   run_tests_controllaw();
   run_tests_landing();
+  run_tests_throttle();
   return minitest::summary();
 }

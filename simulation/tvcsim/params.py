@@ -142,6 +142,32 @@ class ServoParams:
 
 
 @dataclass
+class ThrottleParams:
+    """Schubdrossel nach BPS Scout F (Jan, 23.10.2026): zwei Pads schwenken symmetrisch unter der
+    Duese in den Abgasstrahl und lenken ihn seitlich ab. Modell: Axialschub = Motorschub * f(u),
+    Kommando u in [0, 1] (0 = Pads draussen), f(u) = 1 - (1 - f_min) * u, dahinter dieselbe
+    Servodynamik wie am Kardan (PT2 mit Totzeit, ServoParams). Wirkt auf den Gesamtschub, also
+    auf jeden Motor im Rohr. f_min ist unbekannt und wird in der Studie variiert (0,3 / 0,5 / 0,7);
+    Experiment E05 misst die Kennlinie am Pruefstand. Zusatzmasse ca. 60 g (zwei Servos, Pads, Gehaeuse)."""
+
+    enabled: bool = False
+    f_min: float = 0.5
+    mass_kg: float = 0.06
+    # Landeregler mit Drossel (tvcsim.throttle.ThrottleLandingController)
+    h_reserve_m: float = 3.0      # zuenden, sobald ein Vollschub-Brennen hoechstens so hoch ueber dem Boden stoppen wuerde
+    throttle_after_s: float = 0.8 # erst nach der Schubspitze drosseln (E12: 28 N bei 0,54 s, ab 0,8 s unter 14 N)
+    act_tau_s: float = 0.12       # Ersatzzeitkonstante der Pads (PT1) fuer die eigene Schaetzung des Schubfaktors
+    t_go_margin_s: float = 0.15   # die Fuehrung plant das Aufsetzen so viel vor dem geschaetzten Brennschluss
+    t_go_min_s: float = 0.3       # kleinste Restzeit, mit der die Fuehrung rechnet
+    kv: float = 3.0               # 1/s, Rueckfuehrung der Sinkrate in der Endphase
+    v_final_ms: float = 0.5       # Sollsinkrate unter h_final
+    h_final_m: float = 0.8
+    h_cut_m: float = 0.25         # darunter Pads ganz rein (Schubabbruch beim Aufsetzen, gegen den Huepfer)
+    thrust_scale_assumed: float = 0.9   # Kurve, mit der der Regler plant: der schwaechste erwartete Motor (-10 %);
+                                        # einen staerkeren drosselt er weg (die wahre Kurve: MotorParams.thrust_scale2)
+
+
+@dataclass
 class ControlParams:
     """Regler-Teilsystem (Simulink ``Controller``)."""
 
@@ -234,6 +260,7 @@ class SimParams:
     vehicle: VehicleParams = field(default_factory=VehicleParams)
     motor: MotorParams = field(default_factory=MotorParams)
     servo: ServoParams = field(default_factory=ServoParams)
+    throttle: ThrottleParams = field(default_factory=ThrottleParams)
     control: ControlParams = field(default_factory=ControlParams)
     firmware: FirmwareParams = field(default_factory=FirmwareParams)
     noise: NoiseParams = field(default_factory=NoiseParams)

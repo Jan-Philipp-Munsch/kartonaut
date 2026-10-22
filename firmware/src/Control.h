@@ -27,3 +27,5 @@ void Motor_coast();
 void Apply_servos_deg(float yaw_deg, float pitch_deg);
 void Servos_center();
 void Chute_servo_deg(float deg);
+// Schubdrossel: u in [0, 1] (0 = Pads draußen); ohne PIN_SERVO_THROTTLE wirkungslos
+void Throttle_set(float u);

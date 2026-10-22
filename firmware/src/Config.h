@@ -156,6 +156,27 @@ constexpr float    LANDING_MIN_SPEED_MS  = 2.0f;      // unter dieser Sinkrate k
 constexpr float    LANDING_THRUST_SCALE  = 1.0f;      // angenommene Schubtoleranz der Planung
 constexpr uint32_t LANDING_BURN_MAX_MS   = 6000;      // LANDING_BURN -> LANDED spätestens danach
 
+// ===== Schubdrossel (ThrottleLaw.h): zwei Pads nach BPS Scout F unter der Düse =====
+constexpr bool     THROTTLE_ENABLED      = false;    // erst mit Drosselmechanik und Experiment E05
+constexpr float    THROTTLE_F_MIN        = 0.5f;     // Axialschub bei ganz eingeschwenkten Pads (Kennlinie E05)
+#ifdef BOARD_REVB
+constexpr int      PIN_SERVO_THROTTLE    = 10;       // J_SERVO4 (SERVO_LEGS) an VSERVO, solange die Beine keinen Servo haben
+#else
+constexpr int      PIN_SERVO_THROTTLE    = -1;       // Breakouts: kein freier Servoausgang
+#endif
+constexpr float    THROTTLE_SERVO_OUT_DEG = 20.0f;   // Servo-Grad bei u = 0 (Pads draußen)
+constexpr float    THROTTLE_SERVO_IN_DEG  = 110.0f;  // Servo-Grad bei u = 1 (Pads im Strahl)
+constexpr float    THROTTLE_H_RESERVE_M   = 3.0f;    // Zündung: Vollschub-Stopp mit schwachem Motor höchstens so hoch
+constexpr float    THROTTLE_T_GO_MARGIN_S = 0.15f;
+constexpr float    THROTTLE_T_GO_MIN_S    = 0.3f;
+constexpr float    THROTTLE_KV            = 3.0f;
+constexpr float    THROTTLE_V_FINAL_MS    = 0.5f;
+constexpr float    THROTTLE_H_FINAL_M     = 0.8f;
+constexpr float    THROTTLE_H_CUT_M       = 0.25f;
+constexpr float    THROTTLE_AFTER_S       = 0.8f;    // E12: erst nach der Spitze drosseln
+constexpr float    THROTTLE_ACT_TAU_S     = 0.12f;
+constexpr float    THROTTLE_SCALE_PLAN    = 0.9f;    // Zündung für den schwächsten erwarteten Motor planen
+
 // ===== Pyro (Pyro.h) =====
 // Kanal 1 (PIN_PYRO1): Ausstoßladung des Fallschirms. Kanal 2 (PIN_PYRO2): im Fallschirm-Modus
 // Reserve der Ausstoßladung, im Landemodus der Anzünder des zweiten Motors.

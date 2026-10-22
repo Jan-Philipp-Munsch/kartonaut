@@ -4,14 +4,14 @@ PlatformIO-Projekt für den Teensy 4.1. Die Firmware liest die Sensoren, schätz
 Höhe, führt den Flugzustandsautomaten, regelt den Schubvektor, zündet die Bergung, funkt
 Telemetrie und loggt jeden Durchlauf auf die SD-Karte. Die Regler sind in `Config.h`
 abgeschaltet, bis der Prüfstand (Experiment E02) sie freigibt. Nichts davon ist bisher am
-Gerät gelaufen; die Logik ist in den nativen Tests geprüft (`pio test -e native`, 38 Tests).
+Gerät gelaufen; die Logik ist in den nativen Tests geprüft (`pio test -e native`, 42 Tests).
 
 ```bash
 pio run                        # Flug-Firmware für den Breakout-Aufbau bauen
 pio run -e teensy41_revb       # dieselbe Firmware für das Mainboard rev B
 pio run -t upload              # flashen (teensy-cli)
 pio device monitor             # 115200 Bd, Teleplot-kompatibel; ? c r a s als Befehle
-pio test -e native             # 38 Tests ohne Hardware (oder: python tools/run_native_tests.py)
+pio test -e native             # 42 Tests ohne Hardware (oder: python tools/run_native_tests.py)
 pio run -e i2c_scanner -t upload   # einen Test-Sketch flashen
 ```
 
@@ -31,6 +31,7 @@ pio run -e i2c_scanner -t upload   # einen Test-Sketch flashen
 | `src/Control.*` | Servos als 16-Bit-PWM mit `SERVO_FRAME_HZ`, H-Brücke, Fallschirm-Servo | – |
 | `src/Pyro.*` | Zündlogik je Kanal: Zustand, Flugzeit, ARM, Durchgang; Puls, Abbruch bei Durchgangsverlust, Reservekanal (Fallschirm) oder Anzünder des Landemotors | ✅ |
 | `src/LandingBurn.*`, `src/ThrustCurveE12.h` | Zündentscheidung für das Landebrennen: Aufsetzkosten aus einer 1D-Simulation der E12-Kurve mit Bodenkontakt, Zündung im Minimum (Port von `tvcsim.landing`) | ✅ |
+| `src/ThrottleLaw.*` | Schubdrossel (Scout-F-Pads): Zündung mit Reserve, Schubschätzung in der Spitze, zeitbasierte Führung auf Höhe 0 zum Brennschluss, Schubabbruch beim Aufsetzen (Port von `tvcsim.throttle`) | ✅ |
 | `src/Telemetry.*`, `src/Crc16.h` | Funkprotokoll (Rahmen, TLM/EVT/ACK, Kommandos, Parser, CRC-16/CCITT) | ✅ |
 | `src/StateMemory.*`, `src/StateStore.*` | Zustandsspeicher (Magic + CRC) und seine Ablage in DMAMEM für den Neustart im Flug | ✅ / – |
 | `src/Watchdog.*` | RTWDOG mit `WDT_TIMEOUT_MS`, Reset-Ursache | – |
@@ -69,6 +70,13 @@ Pitch/Yaw-Regler aktiv, **LANDED** wenn die Rakete ruhig am Boden liegt oder sp�
 `LANDING_BURN_MAX_MS`. Hat der Anzünder keinen Durchgang, ist nicht scharf oder kommt ABORT,
 fällt die Bergung auf den Fallschirm (Kanal 1 in APOGEE) zurück. Für den Erstflug steht
 `RECOVERY_MODE = CHUTE`.
+
+**Schubdrossel** (`THROTTLE_ENABLED`, Pads nach BPS Scout F am dritten Servokanal
+`PIN_SERVO_THROTTLE`, rev B J_SERVO4): im Landemodus zündet `ThrottleLaw` früher (Reserve für
+einen schwachen Motor), lässt in der Schubspitze die Pads draußen und schätzt dabei den wahren
+Schub aus |a|, führt dann zeitbasiert auf Höhe 0 und −0,5 m/s zum Brennschluss und schwenkt die
+Pads beim Aufsetzen ganz ein. Kennlinie und Mindestschub `THROTTLE_F_MIN` misst Experiment E05;
+bis dahin bleibt die Drossel aus. Studie: `docs/Physik_Review_2026-10-23.md` §4.
 
 Jeder Übergang geht als EVT-Rahmen über Funk, auf USB-Serial und ins Log. Alle Schwellen
 stehen in `Config.h` (`FS_*`, `PYRO_*`).
@@ -117,6 +125,7 @@ eigener Rahmen, sobald es ein Modul gibt.
 | Schalter | Wirkung |
 |---|---|
 | `RECOVERY_MODE` | `CHUTE` (Ausstoßladung in APOGEE, Kanal 2 Reserve) oder `LANDING_BURN` (Kanal 2 = Anzünder des zweiten Motors, `LANDING_*`-Parameter) |
+| `THROTTLE_ENABLED`, `THROTTLE_F_MIN`, `THROTTLE_*` | Schubdrossel im Landebrennen (dritter Servokanal, Kennlinie aus E05) |
 | `PY_CONTROL_ACTIVE`, `ROLL_CONTROL_ACTIVE` | Regler freigeben. Ohne Freigabe bleiben die Servos auf Mitte und der Motor aus. |
 | `LOG_DATA`, `LOG_EVERY_N_LOOPS`, `LOG_STOP_AFTER_FRAMES` | SD-Log an; jeden N-ten Takt; nach N Frames stoppen und einmal als CSV exportieren (Tischtest, 0 = nie). |
 | `WDT_ENABLED`, `WDT_TIMEOUT_MS` | Watchdog |
@@ -205,7 +214,7 @@ python firmware/tools/check_board_pins.py
 ## Tests ohne Hardware (`test/test_native/`)
 
 `pio test -e native` baut die reinen Module (`Attitude`, `FlightState`, `Pyro`, `Telemetry`,
-`ControlLaw`, `StateMemory`, `LandingBurn`) mit dem System-Compiler und lässt 38 Tests laufen; ohne
+`ControlLaw`, `StateMemory`, `LandingBurn`) mit dem System-Compiler und lässt 42 Tests laufen; ohne
 PlatformIO tut `python tools/run_native_tests.py` dasselbe mit g++. Das Testgerüst ist
 `minitest.h` (Ausgabe im Unity-Format, Runner `test/test_custom_runner.py`), damit keine
 Bibliothek aus der Registry nötig ist.
@@ -217,6 +226,7 @@ Bibliothek aus der Registry nötig ist.
 | `test_pyro.cpp` | alle vier Bedingungen einzeln, Pulslänge, Abbruch bei Durchgangsverlust, Versuche und Reservekanal, Entschärfen während des Pulses |
 | `test_telemetry.cpp` | CRC-Prüfwert, Rahmen hin und zurück, Resynchronisation nach Müll und Bitfehler, Längen, Skalierung |
 | `test_statememory.cpp` | Magic und CRC, Zufallsinhalt wird abgelehnt |
+| `test_throttle.cpp` | Drosselkennlinie, Stopphöhen und Kommandofolge gegen Python-Vektoren, Zündung mit Reserve, Phasen des Reglers |
 | `test_landing.cpp` | Aufsetzkosten gegen 60 Python-Werte, Minimum entlang des freien Falls, Zündbedingungen, Zustandsautomat auf dem simulierten Landeflug (`test/data/landing_profile_tvcsim.csv`), Rückfall auf den Fallschirm |
 | `test_controllaw.cpp` | Mitte, Vorzeichen, Fenster, Integrator-Grenze, Roll-Totband; **Software-in-the-Loop**: dieselben Eingänge wie `tvcsim.controller.FirmwareController` liefern dieselben Momente und Servo-Grad (`test/data/sil_controller_ki*.csv` aus `simulation/scripts/export_firmware_vectors.py`) |
 

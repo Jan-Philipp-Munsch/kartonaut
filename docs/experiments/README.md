@@ -11,6 +11,7 @@ Jedes Experiment hat eine Nummer, eine Anleitung hier, einen Sketch unter `firmw
 | E02 | TVC-Prüfstand: geschlossener Regelkreis mit Propeller (`cad/testrig.py`) | – | – | `PY_K*`, Meilenstein M4 | offen |
 | E03 | Funkreichweite E22 (S3 in `Schnittstellen_Bodensystem_2026-10-22.md`) | – | – | LoRa-Parameter | offen |
 | E04 | Ausstoßtest Kolben und Fallschirm | – | – | Ladungsmenge, Checkliste | offen |
+| E05 | [Kennlinie der Schubdrossel](E05_drossel_kennlinie.md) (Scout-F-Pads, Zündverzug) | `servo_ident` (Drosselkanal) | – | `THROTTLE_F_MIN`, `ThrottleParams`, `LANDING_IGNITER_DELAY_S` | Anleitung fertig, Mechanik fehlt |
 
 Ablauf für jedes Experiment:
 

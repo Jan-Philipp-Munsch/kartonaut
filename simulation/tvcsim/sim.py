@@ -28,6 +28,7 @@ from .controller import make_controller
 from .dynamics import eom, tilt_deg
 from .estimator import estimate
 from .landing import LandingPlanner
+from .throttle import ThrottleLandingController, throttle_factor
 from .motors import ThrustModel
 from .params import SimParams
 from .sensors import Avionics
@@ -53,6 +54,9 @@ class SimResult:
     tilt_deg: np.ndarray
     T_est: np.ndarray
     extra: dict = field(default_factory=dict)
+    throttle_u: np.ndarray | None = None   # Drosselkommando 0..1
+    throttle_f: np.ndarray | None = None   # wirksamer Schubfaktor
+    v_ref: np.ndarray | None = None        # Sollsinkrate des Landereglers
 
     @property
     def max_height(self) -> float:
@@ -83,11 +87,24 @@ def simulate(p: SimParams) -> SimResult:
     rad2deg = 57.2957  # Gain "rad to deg" im Modell
 
     landing = None
+    throttle_ctrl = None
     if p.motor.second_motor and p.motor.second_mode == "landing":
         # Masse bei der Landung: trocken plus voller zweiter Motor (fuel_model "impulse")
         fuel = p.motor.fuel_mass_g / 1000.0 if p.motor.fuel_model == "impulse" else 0.0
-        landing = LandingPlanner(p.motor.curve, p.vehicle.m_dry + fuel, p.vehicle.cd_a, p.vehicle.rho, fuel,
-                                 p.motor.igniter_delay, dt)
+        if p.throttle.enabled:
+            throttle_ctrl = ThrottleLandingController(p.motor.curve, p.vehicle.m_dry + fuel, p.throttle, p.vehicle.cd_a,
+                                                      p.vehicle.rho, fuel, p.motor.igniter_delay, dt)
+            landing = throttle_ctrl
+        else:
+            landing = LandingPlanner(p.motor.curve, p.vehicle.m_dry + fuel, p.vehicle.cd_a, p.vehicle.rho, fuel,
+                                     p.motor.igniter_delay, dt)
+    # Drossel-Aktuator: PT2 mit Totzeit wie ein Servo, Eingang u in [0, 1], K = 1
+    from .actuator import ServoChannel
+    from dataclasses import replace as _replace
+    thr_servo = _replace(p.servo, K=1.0, servo_deg_per_tvc_deg=1.0, sat_deg=1.0)
+    thr_act = ServoChannel(thr_servo, max(0.0, p.servo.tau if p.vehicle.servo_delay is None else p.vehicle.servo_delay), dt)
+    xu = np.zeros(2)
+    u_cmd = 0.0
     t_ignite2 = None
     h_ignite2 = None
     v_ignite2 = None
@@ -102,24 +119,26 @@ def simulate(p: SimParams) -> SimResult:
     t_land = None
     k_last = n_steps
 
-    def derivs(t, r, rd, w, q, xy, xz):
+    def derivs(t, r, rd, w, q, xy, xz, xu):
         T = thrust.thrust(t, dt)
+        if p.throttle.enabled:
+            T *= throttle_factor(xu[0], p.throttle.f_min)
         m_fuel = thrust.fuel_mass_g(t, dt)
         th_y, th_z = act.angles(t, xy, xz)
         rdd, wd, qd, Mb, Tb, m = eom(eom_params, m_fuel, th_y, th_z, T, q, w, rd)
-        return rd, rdd, wd, qd, act.y.deriv(t, xy), act.z.deriv(t, xz), (T, m, th_y, th_z, Tb)
+        return rd, rdd, wd, qd, act.y.deriv(t, xy), act.z.deriv(t, xz), thr_act.deriv(t, xu), (T, m, th_y, th_z, Tb)
 
     N = n_steps + 1
     log = {k: np.zeros((N, 3)) for k in ("r", "rd", "rdd", "w_dps", "u", "rot")}
     log["q"] = np.zeros((N, 4))
-    for k in ("m", "T", "th_y", "th_z", "th_y_com", "th_z_com", "tilt", "T_est"):
+    for k in ("m", "T", "th_y", "th_z", "th_y_com", "th_z_com", "tilt", "T_est", "throttle_u", "throttle_f", "v_ref"):
         log[k] = np.zeros(N)
     t_arr = np.arange(N) * dt
 
     for k in range(N):
         t = k * dt
         # Werte zum Abtastzeitpunkt
-        _, rdd, _, _, _, _, aux = derivs(t, r, rd, w, q, xy, xz)
+        _, rdd, _, _, _, _, _, aux = derivs(t, r, rd, w, q, xy, xz, xu)
         T, m, th_y, th_z, Tb = aux
         accel = rdd if p.noise.accel_model == "rdd" else Tb / m
         q_n, w_n, a_n = avionics.sample(q, w * rad2deg, accel)
@@ -141,12 +160,23 @@ def simulate(p: SimParams) -> SimResult:
                     h_ignite2 = float(r[0])
                     v_ignite2 = float(rd[0])
                     thrust.ignite_second(t + p.motor.igniter_delay)
+        # Drossel: im Landebrennen regelt sie die Sinkrate, sonst Pads draussen
+        if throttle_ctrl is not None and t_ignite2 is not None and not on_ground:
+            h_est = r[0] + rng.standard_normal() * p.motor.landing_alt_sigma
+            v_est = rd[0] + rng.standard_normal() * p.motor.landing_vz_sigma
+            u_cmd = throttle_ctrl.throttle_command(t - t_ignite2, h_est, v_est, p.vehicle.m_dry + thrust.fuel_mass_g(t, dt) / 1000.0,
+                                                   a_meas=float(np.linalg.norm(a_n)))
+        else:
+            u_cmd = 0.0
+        thr_act.push_command(u_cmd)
 
         log["r"][k] = r; log["rd"][k] = rd; log["rdd"][k] = rdd; log["w_dps"][k] = w * rad2deg
         log["q"][k] = q; log["m"][k] = m; log["T"][k] = T; log["th_y"][k] = th_y; log["th_z"][k] = th_z
         log["th_y_com"][k] = th_y_com; log["th_z_com"][k] = th_z_com
         log["u"][k] = ctrl.last.get("u", np.zeros(3)); log["rot"][k] = ctrl.last.get("rot", np.zeros(3))
         log["tilt"][k] = tilt_deg(q); log["T_est"][k] = T_est
+        log["throttle_u"][k] = u_cmd; log["throttle_f"][k] = throttle_factor(xu[0], p.throttle.f_min) if p.throttle.enabled else 1.0
+        log["v_ref"][k] = throttle_ctrl.last.get("v_ref", 0.0) if throttle_ctrl is not None else 0.0
         if k == n_steps:
             break
         if p.ground and lifted and r[0] <= 0.0 and landing is None:
@@ -164,15 +194,15 @@ def simulate(p: SimParams) -> SimResult:
         # Integration bis t + dt (RK4 mit festen Teilschritten)
         for s in range(p.substeps):
             ts = t + s * h
-            k1 = derivs(ts, r, rd, w, q, xy, xz)[:6]
-            a = [v + 0.5 * h * d for v, d in zip((r, rd, w, q, xy, xz), k1)]
-            k2 = derivs(ts + 0.5 * h, *a)[:6]
-            b = [v + 0.5 * h * d for v, d in zip((r, rd, w, q, xy, xz), k2)]
-            k3 = derivs(ts + 0.5 * h, *b)[:6]
-            c = [v + h * d for v, d in zip((r, rd, w, q, xy, xz), k3)]
-            k4 = derivs(ts + h, *c)[:6]
-            r, rd, w, q, xy, xz = [v + h / 6.0 * (d1 + 2 * d2 + 2 * d3 + d4)
-                                   for v, d1, d2, d3, d4 in zip((r, rd, w, q, xy, xz), k1, k2, k3, k4)]
+            k1 = derivs(ts, r, rd, w, q, xy, xz, xu)[:7]
+            a = [v + 0.5 * h * d for v, d in zip((r, rd, w, q, xy, xz, xu), k1)]
+            k2 = derivs(ts + 0.5 * h, *a)[:7]
+            b = [v + 0.5 * h * d for v, d in zip((r, rd, w, q, xy, xz, xu), k2)]
+            k3 = derivs(ts + 0.5 * h, *b)[:7]
+            c = [v + h * d for v, d in zip((r, rd, w, q, xy, xz, xu), k3)]
+            k4 = derivs(ts + h, *c)[:7]
+            r, rd, w, q, xy, xz, xu = [v + h / 6.0 * (d1 + 2 * d2 + 2 * d3 + d4)
+                                       for v, d1, d2, d3, d4 in zip((r, rd, w, q, xy, xz, xu), k1, k2, k3, k4)]
             q = q / np.linalg.norm(q)
             if p.ground and not lifted:
                 if r[0] > 1e-6:
@@ -190,6 +220,8 @@ def simulate(p: SimParams) -> SimResult:
                     r[0] = 0.0
                     rd[:] = 0.0; w[:] = 0.0
                     T_now = thrust.thrust(ts + h, dt)
+                    if p.throttle.enabled:
+                        T_now *= throttle_factor(xu[0], p.throttle.f_min)
                     m_now = p.vehicle.m_dry + thrust.fuel_mass_g(ts + h, dt) / 1000.0
                     if T_now / m_now > p.vehicle.g:
                         on_ground = False
@@ -211,4 +243,5 @@ def simulate(p: SimParams) -> SimResult:
     return SimResult(params=p, t=t_arr, r=log["r"], rd=log["rd"], rdd=log["rdd"], w_dps=log["w_dps"],
                      q=log["q"], m=log["m"], T=log["T"], th_y=log["th_y"], th_z=log["th_z"],
                      th_y_com=log["th_y_com"], th_z_com=log["th_z_com"], u=log["u"], rot=log["rot"],
-                     tilt_deg=log["tilt"], T_est=log["T_est"], extra=extra)
+                     tilt_deg=log["tilt"], T_est=log["T_est"], extra=extra,
+                     throttle_u=log["throttle_u"], throttle_f=log["throttle_f"], v_ref=log["v_ref"])

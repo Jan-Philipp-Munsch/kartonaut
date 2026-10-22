@@ -7,6 +7,8 @@
 * ``firmware/test/data/landing_cost_E12.csv``: Aufsetzkosten J(h, v) aus ``tvcsim.landing``
   für mehrere Massen; ``test_landing.cpp`` muss dieselben Werte liefern (gleicher Algorithmus,
   gleiche Schrittweite 5 ms).
+* ``firmware/test/data/throttle_vectors.csv``: Stopphöhen und Drosselkommandos aus ``tvcsim.throttle`` für
+  ``test_throttle.cpp``.
 * ``firmware/test/data/landing_profile_tvcsim.csv``: ein 6DOF-Flug mit Landebrennen (Masse 0,7 kg)
   für den Zustandsautomaten: Zeit, |a|, axiale Kraft, Höhe, vz, Barometerhöhe, Schub.
 """
@@ -84,7 +86,42 @@ def export_profile(m: float = 0.7) -> None:
           f"{e['h_ignite2']:.1f} m / {e['v_ignite2']:.1f} m/s (t = {e['t_ignite2'] + 2:.2f} s), Aufsetzen {e['v_land']:.1f} m/s")
 
 
+
+
+def export_throttle_vectors() -> None:
+    """Drosselregler: stop_height- und command-Werte für test_throttle.cpp (gleicher Algorithmus)."""
+    from tvcsim.params import ThrottleParams
+    from tvcsim.throttle import ThrottleLandingController, stop_height
+    t, f = load_thrust_curve("E12")
+    rows = []
+    for m in (0.6, 0.7):
+        for h, v, t0, fnow in ((40.0, -20.0, 0.0, 1.0), (30.0, -15.0, 1.0, 1.0), (30.0, -15.0, 1.0, 0.6), (10.0, -8.0, 2.0, 0.8)):
+            hs = stop_height(t, f, m, h, v, 0.003, 1.2, 0.028, 0.9, t0=t0, f_now=fnow, act_tau=0.12)
+            rows.append(["stop", m, h, v, t0, fnow, 0.0, f"{hs:.4f}"])
+    # Kommandofolge: 0,6 kg, f_min 0,5, ein fester Zustandsverlauf (nicht die geschlossene Schleife)
+    tp = ThrottleParams(enabled=True, f_min=0.5)
+    c = ThrottleLandingController("E12", 0.6, tp, 0.003, 1.2, 0.028, 0.1, 0.01)
+    h, v = 51.0, -25.6
+    for k in range(360):
+        ts = k * 0.01
+        a_meas = 0.9 * float(np.interp(ts - 0.1, t, f, left=0, right=0)) / 0.6 + 0.5 * 1.2 * 0.003 * v * v / 0.6
+        u = c.throttle_command(ts, h, v, 0.6, a_meas=a_meas)
+        rows.append(["cmd", 0.6, h, v, ts, a_meas, u, f"{c.scale_est:.5f}"])
+        # einfacher Zustandsverlauf: Vollschub-Bremsung zu 90 %
+        T = 0.9 * float(np.interp(ts - 0.1, t, f, left=0, right=0)) * (1 - 0.5 * u)
+        v += (T / 0.6 - 9.81) * 0.01
+        h += v * 0.01
+        if h <= 0:
+            break
+    with open(FW / "test" / "data" / "throttle_vectors.csv", "w", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        w.writerow(["kind", "m_kg", "h_m", "v_ms", "t_s", "x", "u", "value"])
+        w.writerows(rows)
+    print(f"throttle_vectors.csv: {len(rows)} Zeilen")
+
+
 if __name__ == "__main__":
     export_curve()
     export_costs()
     export_profile()
+    export_throttle_vectors()

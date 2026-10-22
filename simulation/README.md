@@ -25,6 +25,7 @@ python scripts/ident_servo.py --synthetic   # dasselbe mit einer künstlichen Me
 python scripts/export_firmware_vectors.py   # Testvektoren für firmware/test/data/ (SIL, Flugprofil)
 python scripts/landing_study.py             # Landebrennen mit der E12 nach Masse -> out/landing_study.png
 python scripts/export_landing_firmware.py   # E12-Kurve und Prüfvektoren des Landeplaners für die Firmware
+python scripts/throttle_study.py            # Landebrennen mit Schubdrossel: Masse × f_min, Monte-Carlo
 ```
 
 Alle Ausgaben landen in `simulation/out/` (per `.gitignore` ausgeschlossen). Ein Lauf über
@@ -65,7 +66,8 @@ simulation/
   scripts/   run_nominal.py, run_montecarlo.py, tune_pid.py, fit_servo.py, compare_gains.py,
              ident_servo.py (Experiment E01, Modul tvcsim/ident.py),
              export_firmware_vectors.py (Software-in-the-Loop-Vektoren für die Firmware-Tests),
-             landing_study.py, export_landing_firmware.py (Landebrennen, tvcsim/landing.py)
+             landing_study.py, export_landing_firmware.py (Landebrennen, tvcsim/landing.py),
+             throttle_study.py (Schubdrossel, tvcsim/throttle.py)
 ```
 
 ## Landebrennen und Luftwiderstand (seit 23.10.2026)
@@ -79,6 +81,13 @@ Rakete, solange der Schub nicht trägt, sonst hebt sie wieder ab; `extra["contac
 Aufsetzen, `extra["v_land"]` das härteste. `VehicleParams.cd_a` schaltet den Luftwiderstand ein
 (`VehicleParams.light(m)` für die leichte Landekonfiguration). Ergebnis und Einordnung:
 `docs/Physik_Review_2026-10-23.md` §3; Zahlen aus `scripts/landing_study.py`.
+
+**Schubdrossel** (`ThrottleParams.enabled`, Scout-F-Pads): Axialschub = Motorschub · f(u) mit
+f = 1 − (1 − f_min) u, Pads als PT2 wie der Kardan-Servo. Der Landeregler in `tvcsim/throttle.py`
+zündet mit Reserve für einen schwachen Motor, lässt die Schubspitze ungedrosselt, schätzt dabei den
+wahren Schub aus |a| und führt danach zeitbasiert (ZEM/ZEV) auf Höhe 0 und −0,5 m/s zum
+Brennschluss; `simulate_landing_1d` ist die schnelle 1D-Fassung für Monte-Carlo
+(`scripts/throttle_study.py`). Ergebnis: `docs/Physik_Review_2026-10-23.md` §4.
 
 ## Modell (wie in Simulink)
 

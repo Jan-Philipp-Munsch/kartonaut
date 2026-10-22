@@ -44,6 +44,11 @@ void Control_setup(){
   pinMode(PIN_SERVO_PITCH, OUTPUT);
   analogWriteFrequency(PIN_SERVO_YAW, SERVO_FRAME_HZ);
   analogWriteFrequency(PIN_SERVO_PITCH, SERVO_FRAME_HZ);
+  if (PIN_SERVO_THROTTLE >= 0) {
+    pinMode(PIN_SERVO_THROTTLE, OUTPUT);
+    analogWriteFrequency(PIN_SERVO_THROTTLE, SERVO_FRAME_HZ);
+    Throttle_set(0.0f);
+  }
   chuteServo.attach(PIN_SERVO_CHUTE);
   Chute_servo_deg(CHUTE_SERVO_CLOSED_DEG);
   Servos_center();
@@ -55,6 +60,13 @@ void Apply_servos_deg(float yaw_deg, float pitch_deg){
 }
 
 void Servos_center(){ Apply_servos_deg(SERVO_YAW_OFFSET, SERVO_PITCH_OFFSET); }
+
+void Throttle_set(float u){
+  if (PIN_SERVO_THROTTLE < 0) return;
+  if (u < 0.f) u = 0.f; else if (u > 1.f) u = 1.f;
+  const float deg = THROTTLE_SERVO_OUT_DEG + (THROTTLE_SERVO_IN_DEG - THROTTLE_SERVO_OUT_DEG) * u;
+  writeServoPulse(PIN_SERVO_THROTTLE, servoPulseUs(deg, SERVO_PULSE_MIN_US, SERVO_PULSE_MAX_US));
+}
 
 void Chute_servo_deg(float deg){
   int d = (int)lroundf(deg);

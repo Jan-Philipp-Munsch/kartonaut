@@ -117,6 +117,10 @@ constexpr uint32_t PYRO_BACKUP_DELAY_MS = 1000;
 constexpr uint32_t PYRO_PULSE_MS      = 80;     // Review A4: 50–100 ms
 constexpr float    ARM_MIN_V          = 5.0f;   // ARM_SENSE über diesem Wert = scharf (2S ≥ 6 V)
 constexpr float    PYRO_CONT_FRACTION = 0.5f;   // Durchgang, wenn PYRO_SENSE > Anteil von ARM
+// Breakouts ohne ARM- und Durchgangsmessung: true lässt die Pyro-Logik so tun, als wäre beides
+// gegeben (Tischtest 2.4 mit Lämpchen am MOSFET-Modul). Für einen Flug auf den Breakouts bleibt
+// es false, dann zündet dort nie etwas. Rev B misst beides, der Schalter wirkt dort nicht.
+constexpr bool     PYRO_NO_SENSE_ASSUME_OK = false;
 
 // ===== Akkus =====
 constexpr float VBAT1_MIN_V = 3.5f;   // 1S Elektronik, darunter Warnton und kein PAD_READY
@@ -142,7 +146,7 @@ constexpr bool     LOOP_WARNING = true;         // Overrun auf Serial melden
 
 // ===== Watchdog und Zustandsspeicher =====
 constexpr bool     WATCHDOG_ENABLE   = true;
-constexpr float    WATCHDOG_TIMEOUT_S = 1.0f;   // WDOG1 in 0,5-s-Stufen
+constexpr float    WATCHDOG_TIMEOUT_S = 2.0f;   // WDOG1 in 0,5-s-Stufen; blockierende Kalibrierungen füttern ihn über den Idle-Hook
 constexpr uint32_t PERSIST_SAVE_HZ   = 10;
 
 // ===== Regler-Freigaben =====

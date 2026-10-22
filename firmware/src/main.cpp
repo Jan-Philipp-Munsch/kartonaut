@@ -82,7 +82,7 @@ static void safeOutputs() {
 
 static uint8_t telemetryFlags() {
   uint8_t f = 0;
-  if (power.armed)          f |= KN_FLAG_ARMED;
+  if (pyro.armed())         f |= KN_FLAG_ARMED;
   if (pyro.continuity(0))   f |= KN_FLAG_PYRO1_CONT;
   if (pyro.continuity(1))   f |= KN_FLAG_PYRO2_CONT;
   if (pyro.fired(0))        f |= KN_FLAG_PYRO1_FIRED;
@@ -350,7 +350,11 @@ void setup() {
     if (st.imu && st.baro) calibrate();   // Tisch/Rampe: erste Lage; auf der Rampe per CALIBRATE wiederholen
   }
 
-  if (WATCHDOG_ENABLE) Watchdog_begin(WATCHDOG_TIMEOUT_S);
+  if (WATCHDOG_ENABLE) {
+    Watchdog_begin(WATCHDOG_TIMEOUT_S);
+    Sensors_setIdleHook(Watchdog_feed);
+    SDLogger_setIdleHook(Watchdog_feed);
+  }
   Indicators_off();
   if (st.imu && st.baro) Indicate_success();
   Serial.println("Bereit. 'h' für Tasten.");
@@ -398,7 +402,12 @@ void loop() {
   in.gyro_mag_dps = norm(imu.omega_dps);
   in.vz_ms = vz_ms; in.alt_m = alt_m; in.baro_alt_m = baro.alt_m;
   in.tilt_deg = att.tiltDeg();
-  in.armed = power.armed;
+  // Ohne Messleitungen (Breakouts) entscheidet PYRO_NO_SENSE_ASSUME_OK, ob die Pyro-Logik
+  // „scharf und Durchgang“ annimmt (Tischtest) oder nie zündet
+  const bool armed = HAS_ARM_SENSE ? power.armed : PYRO_NO_SENSE_ASSUME_OK;
+  bool continuity[4];
+  for (int i = 0; i < 4; ++i) continuity[i] = HAS_PYRO_SENSE ? power.continuity[i] : (PYRO_NO_SENSE_ASSUME_OK && PYRO_FITTED[i]);
+  in.armed = armed;
   in.continuity = pyro.continuity(PYRO_CHUTE_CHANNEL);
   in.calibrated = calibrated;
   in.batteries_ok = batteriesOk();
@@ -410,7 +419,7 @@ void loop() {
   rig.update(now);
 
   const bool pyro_allowed = fs.pyroAllowed() || (fs.phase() == FlightPhase::ABORT && fs.liftoff_ms() > 0);
-  pyro.update(now, power.armed, power.continuity, pyro_allowed);
+  pyro.update(now, armed, continuity, pyro_allowed);
   if (pyro_allowed) {
     pyro.fire(PYRO_CHUTE_CHANNEL, now);                       // lehnt ab, wenn schon gezündet
     const uint32_t t_ref = fs.apogee_ms() ? fs.apogee_ms() : fs.phaseEntered_ms();
@@ -474,7 +483,7 @@ void loop() {
 
   // --- 6b. Anzeigen, Zustandsspeicher ---
   IndicatorInputs ii;
-  ii.phase = fs.phase(); ii.armed = power.armed; ii.continuity = pyro.continuity(PYRO_CHUTE_CHANNEL);
+  ii.phase = fs.phase(); ii.armed = armed; ii.continuity = pyro.continuity(PYRO_CHUTE_CHANNEL);
   ii.battery_low = !batteriesOk(); ii.calibrated = calibrated;
   Indicators_update(ii, now);
   if (loop_count % (uint8_t)(LOOP_HZ / PERSIST_SAVE_HZ) == 0) savePersist(now);

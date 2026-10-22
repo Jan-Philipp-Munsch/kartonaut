@@ -82,6 +82,9 @@ struct SDExportResult {
   char     csv_name[16] = {0};
 };
 
+// Wird während des Exports regelmäßig aufgerufen (Watchdog füttern)
+void SDLogger_setIdleHook(void (*fn)());
+
 SDExportResult SDLogger_exportBINtoCSVx(const char* binName, bool scaled = true);
 SDExportResult SDLogger_exportLatestCSVx(bool scaled = true);
 bool SDLogger_exportBINtoCSV(const char* binName, bool scaled = true);

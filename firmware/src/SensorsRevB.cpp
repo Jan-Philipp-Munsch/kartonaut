@@ -15,6 +15,7 @@ ICM42688 imu(bus);
 BMP390   baro(bus, revb::Cs::BARO);
 INA239   ina(bus, revb::INA_SHUNT_OHM, revb::INA_MAX_CURRENT_A);
 SensorStatus status;
+void (*idle_hook)() = nullptr;
 float ground_pa = 101325.0f;
 Vec3  gyro_bias_dps(GYRO_BIAS_DPS_X, GYRO_BIAS_DPS_Y, GYRO_BIAS_DPS_Z);
 Vec3  last_a, last_w;
@@ -46,6 +47,8 @@ bool Sensors_setup() {
 }
 
 const SensorStatus& Sensors_status() { return status; }
+void Sensors_setIdleHook(void (*fn)()) { idle_hook = fn; }
+void Sensors_idle() { if (idle_hook) idle_hook(); }
 
 bool Read_IMU_raw(Vec3& a, Vec3& w) {
   if (!status.imu) return false;
@@ -118,6 +121,7 @@ bool Sensors_calibrateGyro(uint16_t samples, float max_std_dps, Vec3& bias, Vec3
   uint16_t n = 0;
   const uint32_t t0 = millis();
   while (n < samples && millis() - t0 < 10000) {
+    Sensors_idle();
     if (!imu.dataReady()) { delayMicroseconds(200); continue; }
     ImuSample s;
     imu.read(s);
@@ -146,6 +150,7 @@ void Sensors_calibrateBaroGround(uint16_t samples) {
   uint16_t n = 0;
   const uint32_t t0 = millis();
   while (n < samples && millis() - t0 < 5000) {
+    Sensors_idle();
     float p, t;
     if (baro.read(p, t)) { sum += p; ++n; }
     delay(2);

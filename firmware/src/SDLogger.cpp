@@ -60,6 +60,8 @@ static const uint32_t SYNC_INTERVAL_US_EARLY = 500000UL;  // 0.5 s in den ersten
 // Timing / Guards (Slack-aware)
 // ===========================
 static SDLogTiming g_tim{};
+static void (*g_idle_hook)() = nullptr;
+void SDLogger_setIdleHook(void (*fn)()) { g_idle_hook = fn; }
 static float    g_safety_factor    = 1.5f; // Multiplikator auf Schätzung
 static uint32_t g_min_slack_flush  = 2000; // µs
 static uint32_t g_min_slack_sync   = 4000; // µs
@@ -497,6 +499,7 @@ SDExportResult SDLogger_exportBINtoCSVx(const char* name, bool scaled){
       wf.write(line, len);
       res.rows++;
     }
+    if ((res.rows & 0xFF) == 0 && g_idle_hook) g_idle_hook();
   }
 
   wf.sync();

@@ -87,6 +87,8 @@ bool Sensors_setup() {
 }
 
 const SensorStatus& Sensors_status() { return status; }
+void Sensors_setIdleHook(void (*fn)()) { idle_hook = fn; }
+void Sensors_idle() { if (idle_hook) idle_hook(); }
 
 bool Read_IMU_raw(Vec3& a, Vec3& w) {
   if (!status.imu) return false;
@@ -149,6 +151,7 @@ bool Sensors_calibrateGyro(uint16_t samples, float max_std_dps, Vec3& bias, Vec3
   uint16_t n = 0;
   const uint32_t t0 = millis();
   while (n < samples && millis() - t0 < 10000) {
+    Sensors_idle();
     Vec3 a_sum, w_sum; int na, nw;
     drainFifo(a_sum, w_sum, na, nw);
     if (nw == 0) { delay(2); continue; }
@@ -173,7 +176,7 @@ Vec3 Sensors_gyroBias() { return gyro_bias_dps; }
 void Sensors_calibrateBaroGround(uint16_t samples) {
   if (!status.baro) return;
   double sum = 0;
-  for (uint16_t i = 0; i < samples; ++i) { sum += bmp.readPressure(); delay(5); }
+  for (uint16_t i = 0; i < samples; ++i) { Sensors_idle(); sum += bmp.readPressure(); delay(5); }
   ground_pa = float(sum / samples);
 }
 

@@ -67,3 +67,7 @@ float Sensors_groundPressure();
 
 // Rohwerte ohne Bias-Korrektur (Kalibrier-Sketches)
 bool Read_IMU_raw(Vec3& a_body_ms2, Vec3& omega_dps);
+
+// Wird in den blockierenden Kalibrierschleifen regelmäßig aufgerufen (Watchdog füttern)
+void Sensors_setIdleHook(void (*fn)());
+void Sensors_idle();

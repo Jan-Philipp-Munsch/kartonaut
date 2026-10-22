@@ -27,7 +27,8 @@ sch() {
 }
 
 route() {
-  # 1. Freerouting on the placed board (deterministic: the same input gives the same result)
+  # 1. Freerouting on the placed board; it stops by itself once the score has not improved for ten
+  #    passes (about 20 passes, 8 minutes for this board)
   "$KPY" gen_pcb.py dsn ""
   rm -f out/mainboard.ses
   "$JAVA" -jar "$JAR" --gui.enabled=false -de out/mainboard.dsn -do out/mainboard.ses     --router.autorouter.max_passes=100 > out/freerouting.log 2>&1 || true
@@ -35,11 +36,13 @@ route() {
   "$KPY" gen_pcb.py ses ""
   # 2. two finishing passes: existing wiring exported as fixed, only the open connections are routed
   #    and merged into the board (a plain second pass would rip everything up and end worse)
+  #    (gen_pcb.py dsn exports everything on the board as fixed). Four passes: in every finishing run so
+  #    far the first pass was the best, after that the router cycles between the same few states.
   for pass in 1 2; do
     "$KPY" gen_pcb.py dsn _fix
-    sed -i 's/(type route))/(type fix))/' out/mainboard_fix.dsn
     rm -f out/mainboard_fix.ses
-    "$JAVA" -jar "$JAR" --gui.enabled=false -de out/mainboard_fix.dsn -do out/mainboard_fix.ses       --router.autorouter.max_passes=100 > "out/freerouting_fix$pass.log" 2>&1 || true
+    "$JAVA" -jar "$JAR" --gui.enabled=false -de out/mainboard_fix.dsn -do out/mainboard_fix.ses       --router.autorouter.max_passes=4 > "out/freerouting_fix$pass.log" 2>&1 || true
+    grep -E "Auto-routing stage completed" "out/freerouting_fix$pass.log" | sed 's/.*final score/  Freerouting fix: score/' | cut -c1-70 || true
     [ -f out/mainboard_fix.ses ] && "$KPY" gen_pcb.py merge _fix
   done
   # 3. close track ends left just short of their pad, collision-checked

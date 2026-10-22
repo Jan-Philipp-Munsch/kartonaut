@@ -1,57 +1,51 @@
 ** Drc report for mainboard.kicad_pcb **
-** Created on 2026-10-22T21:42:25 **
+** Created on 2026-10-22T23:55:22 **
 ** Report includes: Errors, Warnings, Exclusions **
 
-** Found 28 DRC violations **
+** Found 23 DRC violations **
+[via_dangling]: Via is not connected or connected on only one layer
+    Local override; warning
+    @(122.2250 mm, 122.9225 mm): Via [VBAT1_SENSE] on F.Cu - B.Cu
+[via_dangling]: Via is not connected or connected on only one layer
+    Local override; warning
+    @(132.9047 mm, 101.1919 mm): Via [CS_BARO2] on F.Cu - B.Cu
+[via_dangling]: Via is not connected or connected on only one layer
+    Local override; warning
+    @(102.7530 mm, 115.7211 mm): Via [LORA_TXD] on F.Cu - B.Cu
+[via_dangling]: Via is not connected or connected on only one layer
+    Local override; warning
+    @(102.7568 mm, 112.4051 mm): Via [LORA_M0] on F.Cu - B.Cu
 [track_dangling]: Track has unconnected end
     Local override; warning
-    @(141.9492 mm, 98.8602 mm): Track [SPI1_MISO] on In2.Cu, length 0.0106 mm
-[via_dangling]: Via is not connected or connected on only one layer
-    Local override; warning
-    @(150.8534 mm, 83.1909 mm): Via [SCL] on F.Cu - B.Cu
-[via_dangling]: Via is not connected or connected on only one layer
-    Local override; warning
-    @(123.3916 mm, 129.2693 mm): Via [CS_BARO] on F.Cu - B.Cu
-[via_dangling]: Via is not connected or connected on only one layer
-    Local override; warning
-    @(143.3250 mm, 72.4410 mm): Via [ARM_SENSE] on F.Cu - B.Cu
-[via_dangling]: Via is not connected or connected on only one layer
-    Local override; warning
-    @(122.3413 mm, 127.8298 mm): Via [CS_IMU] on F.Cu - B.Cu
-[via_dangling]: Via is not connected or connected on only one layer
-    Local override; warning
-    @(133.0838 mm, 150.2742 mm): Via [VBAT2_SENSE] on F.Cu - B.Cu
-[via_dangling]: Via is not connected or connected on only one layer
-    Local override; warning
-    @(129.1266 mm, 125.3144 mm): Via [PYRO2_SENSE] on F.Cu - B.Cu
-[via_dangling]: Via is not connected or connected on only one layer
-    Local override; warning
-    @(146.0750 mm, 123.5507 mm): Via [SERVO_LEGS] on F.Cu - B.Cu
-[via_dangling]: Via is not connected or connected on only one layer
-    Local override; warning
-    @(149.6614 mm, 124.9824 mm): Via [U7_VCP] on F.Cu - B.Cu
-[via_dangling]: Via is not connected or connected on only one layer
-    Local override; warning
-    @(138.9535 mm, 70.6206 mm): Via [PYRO4_FIRE] on F.Cu - B.Cu
-[via_dangling]: Via is not connected or connected on only one layer
-    Local override; warning
-    @(118.6095 mm, 151.7473 mm): Via [SERVO_YAW] on F.Cu - B.Cu
+    @(127.1563 mm, 137.8936 mm): Track [CHG_PROG] on F.Cu, length 0.6805 mm
 [silk_edge_clearance]: Silkscreen clipped by board edge
     Rule: Einschränkungen aus Platinenkonfiguration zum Bestückungsdruck; warning
     @(100.0000 mm, 52.0000 mm): Segment on Edge.Cuts
     @(114.5000 mm, 128.9000 mm): PCB text '1:GND 2:GNDP 3:3V3 4:5V 5,6:VSRV' on B.Silkscreen
-[silk_overlap]: Silkscreen clearance
-    Rule: Einschränkungen aus Platinenkonfiguration zum Bestückungsdruck; warning
-    @(127.4200 mm, 106.7567 mm): Reference field of U4
-    @(127.0000 mm, 107.3000 mm): Segment on F.Silkscreen
+[hole_to_hole]: Bohrloch zu dicht an anderem Loch (Einschränkungen aus Platinenkonfiguration min 0,2500 mm; tatsächlich 0,2408 mm)
+    Rule: Einschränkungen aus Platinenkonfiguration; warning
+    @(110.7000 mm, 65.6500 mm): Via [GND_PWR] on F.Cu - B.Cu
+    @(111.1500 mm, 65.9500 mm): Via [GND_PWR] on F.Cu - B.Cu
 [silk_overlap]: Silkscreen clearance
     Rule: Einschränkungen aus Platinenkonfiguration zum Bestückungsdruck; warning
     @(118.2300 mm, 121.2400 mm): Circle of U10 on F.Silkscreen
     @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: Einschränkungen aus Platinenkonfiguration zum Bestückungsdruck; warning
+    @(127.0000 mm, 107.3000 mm): Segment on F.Silkscreen
+    @(127.4200 mm, 106.7567 mm): Reference field of U4
 [silk_over_copper]: Silkscreen clipped by solder mask
     Local override; warning
     @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
-    @(117.4000 mm, 116.0100 mm): Pad 4 [unconnected-(U10-NC-Pad4)] of U10 on F.Cu
+    @(117.4000 mm, 99.7200 mm): Pad 11 [GND] of U10 on F.Cu
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
+    @(117.4000 mm, 98.4500 mm): Pad 12 [unconnected-(U10-ANT-Pad12)] of U10 on F.Cu
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
+    @(117.4000 mm, 97.1800 mm): Pad 13 [GND] of U10 on F.Cu
 [silk_over_copper]: Silkscreen clipped by solder mask
     Local override; warning
     @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
@@ -83,15 +77,7 @@
 [silk_over_copper]: Silkscreen clipped by solder mask
     Local override; warning
     @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
-    @(117.4000 mm, 99.7200 mm): Pad 11 [GND] of U10 on F.Cu
-[silk_over_copper]: Silkscreen clipped by solder mask
-    Local override; warning
-    @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
-    @(117.4000 mm, 98.4500 mm): Pad 12 [unconnected-(U10-ANT-Pad12)] of U10 on F.Cu
-[silk_over_copper]: Silkscreen clipped by solder mask
-    Local override; warning
-    @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
-    @(117.4000 mm, 97.1800 mm): Pad 13 [GND] of U10 on F.Cu
+    @(117.4000 mm, 116.0100 mm): Pad 4 [unconnected-(U10-NC-Pad4)] of U10 on F.Cu
 [silk_over_copper]: Silkscreen clipped by solder mask
     Local override; warning
     @(127.0000 mm, 90.0000 mm): PCB text 'JLCJLCJLCJLC' on F.Silkscreen
@@ -105,7 +91,7 @@
     @(118.2300 mm, 121.2400 mm): Circle of U10 on F.Silkscreen
     @(119.3800 mm, 120.9300 mm): PTH pad 17 [SEL1] of A1
 
-** Found 28 unconnected pads **
+** Found 21 unconnected pads **
 [unconnected_items]: Missing connection between items
     Local override; error
     @(100.3000 mm, 169.7000 mm): Zone 'GND F.Cu' [GND] on F.Cu, priority 0
@@ -116,40 +102,28 @@
     @(100.3000 mm, 169.7000 mm): Zone 'GND F.Cu' [GND] on F.Cu, priority 0
 [unconnected_items]: Missing connection between items
     Local override; error
-    @(124.9871 mm, 119.1931 mm): Track [PYRO1_SENSE] on In2.Cu, length 1.3888 mm
-    @(119.5000 mm, 67.6200 mm): Pad 2 [PYRO1_SENSE] of R32 on F.Cu
+    @(122.2250 mm, 124.3625 mm): Pad 1 [VBAT1_SENSE] of C7 on F.Cu
+    @(121.6005 mm, 135.4137 mm): Track [VBAT1_SENSE] on In2.Cu, length 4.2152 mm
 [unconnected_items]: Missing connection between items
     Local override; error
-    @(130.8000 mm, 83.6000 mm): Via [5V_SYS] on F.Cu - B.Cu
-    @(133.7149 mm, 78.3617 mm): Track [5V_SYS] on F.Cu, length 1.2517 mm
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(140.7400 mm, 90.1400 mm): PTH pad 4 [5V_SYS] of J15
-    @(144.5875 mm, 101.0500 mm): Track [5V_SYS] on F.Cu, length 1.2250 mm
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(120.7875 mm, 64.7000 mm): Pad 3 [PYRO2_NEG] of Q4 on F.Cu
-    @(123.8500 mm, 68.4000 mm): Track [PYRO2_NEG] on F.Cu, length 0.3683 mm
+    @(140.7400 mm, 92.6800 mm): PTH pad 6 [VSERVO] of J15
+    @(138.2000 mm, 92.6800 mm): PTH pad 5 [VSERVO] of J15
 [unconnected_items]: Missing connection between items
     Local override; error
     @(143.5875 mm, 107.8250 mm): Pad 1 [VSERVO] of C36 on F.Cu
-    @(150.7500 mm, 104.0000 mm): Pad 1 [VSERVO] of TP4 on F.Cu
+    @(151.5592 mm, 97.1689 mm): Zone 'VSERVO Strompfad' [VSERVO] on F.Cu, priority 2
 [unconnected_items]: Missing connection between items
     Local override; error
-    @(151.5159 mm, 97.1548 mm): Zone 'VSERVO Strompfad' [VSERVO] on F.Cu, priority 2
-    @(151.5159 mm, 97.1548 mm): Zone 'VSERVO Strompfad' [VSERVO] on F.Cu, priority 2
+    @(146.3625 mm, 115.8250 mm): Pad 12 [VSERVO] of U7 on F.Cu
+    @(144.7363 mm, 121.6008 mm): Track [VSERVO] on F.Cu, length 0.5008 mm
 [unconnected_items]: Missing connection between items
     Local override; error
-    @(151.5159 mm, 97.1548 mm): Zone 'VSERVO Strompfad' [VSERVO] on F.Cu, priority 2
-    @(151.5159 mm, 97.1548 mm): Zone 'VSERVO Strompfad' [VSERVO] on F.Cu, priority 2
+    @(146.0152 mm, 122.1227 mm): Track [VSERVO] on F.Cu, length 1.9996 mm
+    @(149.2000 mm, 124.3000 mm): Track [VSERVO] on F.Cu, length 0.0500 mm
 [unconnected_items]: Missing connection between items
     Local override; error
-    @(151.5159 mm, 97.1548 mm): Zone 'VSERVO Strompfad' [VSERVO] on F.Cu, priority 2
-    @(151.5159 mm, 97.1548 mm): Zone 'VSERVO Strompfad' [VSERVO] on F.Cu, priority 2
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(150.7500 mm, 104.0000 mm): Pad 1 [VSERVO] of TP4 on F.Cu
-    @(140.7400 mm, 92.6800 mm): Track [VSERVO] on F.Cu, length 2.5400 mm
+    @(151.5592 mm, 97.1689 mm): Zone 'VSERVO Strompfad' [VSERVO] on F.Cu, priority 2
+    @(140.7400 mm, 92.6800 mm): PTH pad 6 [VSERVO] of J15
 [unconnected_items]: Missing connection between items
     Local override; error
     @(126.3200 mm, 147.7000 mm): Track [GND_PWR] on F.Cu, length 1.8450 mm
@@ -160,64 +134,48 @@
     @(131.8625 mm, 116.2500 mm): Pad 2 [GND_PWR] of C38 on F.Cu
 [unconnected_items]: Missing connection between items
     Local override; error
-    @(100.3000 mm, 169.7000 mm): Zone 'GND_PWR B.Cu' [GND_PWR] on B.Cu, priority 0
-    @(140.7400 mm, 87.6000 mm): PTH pad 2 [GND_PWR] of J15
+    @(140.7400 mm, 90.1400 mm): PTH pad 4 [5V_SYS] of J15
+    @(144.5875 mm, 102.3709 mm): Track [5V_SYS] on F.Cu, length 1.3209 mm
 [unconnected_items]: Missing connection between items
     Local override; error
-    @(126.1750 mm, 126.6375 mm): Pad 9 [CS_EXT2] of U12 on F.Cu
-    @(140.7400 mm, 100.3000 mm): PTH pad 12 [CS_EXT2] of J15
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(144.2500 mm, 109.7300 mm): Pad 6 [CS_BARO] of U5 on F.Cu
-    @(122.9250 mm, 126.6375 mm): Track [CS_BARO] on F.Cu, length 2.1652 mm
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(138.2159 mm, 144.7673 mm): Zone 'VBAT2_F Strompfad' [VBAT2_F] on F.Cu, priority 2
-    @(132.5625 mm, 152.9750 mm): Pad 1 [VBAT2_F] of R4 on F.Cu
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(138.2159 mm, 144.7673 mm): Zone 'VBAT2_F Strompfad' [VBAT2_F] on F.Cu, priority 2
-    @(146.8875 mm, 143.7500 mm): Pad 2 [VBAT2_F] of R2 on F.Cu
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(153.5592 mm, 91.6189 mm): Zone 'VBAT_PROT Strompfad' [VBAT_PROT] on F.Cu, priority 2
-    @(153.5592 mm, 91.6189 mm): Zone 'VBAT_PROT Strompfad' [VBAT_PROT] on F.Cu, priority 2
+    @(140.6375 mm, 117.1250 mm): Track [MOT_A] on F.Cu, length 1.0375 mm
+    @(140.6375 mm, 113.8750 mm): Pad 2 [MOT_A] of U7 on F.Cu
 [unconnected_items]: Missing connection between items
     Local override; error
     @(140.6375 mm, 115.1750 mm): Track [MOT_B] on F.Cu, length 0.6500 mm
     @(141.9000 mm, 121.3000 mm): PTH pad 2 [MOT_B] of J8
 [unconnected_items]: Missing connection between items
     Local override; error
-    @(127.5000 mm, 108.4900 mm): Pad 12 [CS_IMU] of U4 on F.Cu
-    @(122.2750 mm, 126.6375 mm): Track [CS_IMU] on F.Cu, length 1.1260 mm
+    @(132.3750 mm, 126.6375 mm): Pad 9 [SEL2] of U13 on F.Cu
+    @(122.9250 mm, 131.2169 mm): Track [SEL2] on F.Cu, length 0.0955 mm
 [unconnected_items]: Missing connection between items
     Local override; error
-    @(110.7500 mm, 134.9600 mm): Pad 1 [VSYS_IN] of U2 on F.Cu
-    @(109.6814 mm, 131.9026 mm): Track [VSYS_IN] on In2.Cu, length 3.1043 mm
+    @(125.5250 mm, 126.6375 mm): Pad 10 [CS_EXT1] of U12 on F.Cu
+    @(138.2000 mm, 100.3000 mm): PTH pad 11 [CS_EXT1] of J15
 [unconnected_items]: Missing connection between items
     Local override; error
-    @(146.0750 mm, 123.5507 mm): Track [SERVO_LEGS] on F.Cu, length 0.9493 mm
-    @(119.3800 mm, 108.2300 mm): PTH pad 12 [SERVO_LEGS] of A1
+    @(124.8750 mm, 126.6375 mm): Pad 11 [CS_EXT0] of U12 on F.Cu
+    @(140.7400 mm, 97.7600 mm): PTH pad 10 [CS_EXT0] of J15
 [unconnected_items]: Missing connection between items
     Local override; error
-    @(138.1750 mm, 71.4450 mm): Pad 1 [PYRO4_NEG] of R44 on F.Cu
-    @(142.8500 mm, 68.4000 mm): Pad 2 [PYRO4_NEG] of D6 on F.Cu
+    @(130.2875 mm, 64.7000 mm): Pad 3 [PYRO3_NEG] of Q8 on F.Cu
+    @(133.3500 mm, 68.4000 mm): Track [PYRO3_NEG] on F.Cu, length 1.2304 mm
 [unconnected_items]: Missing connection between items
     Local override; error
-    @(142.8500 mm, 68.4000 mm): Pad 2 [PYRO4_NEG] of D6 on F.Cu
-    @(140.2467 mm, 58.9639 mm): Zone 'PYRO4_NEG Strompfad' [PYRO4_NEG] on F.Cu, priority 2
+    @(101.4000 mm, 113.4700 mm): Pad 21 [LORA_M1] of U10 on F.Cu
+    @(119.3800 mm, 138.7100 mm): PTH pad 24 [LORA_M1] of A1
 [unconnected_items]: Missing connection between items
     Local override; error
     @(146.0000 mm, 150.4000 mm): PTH pad 1 [VBAT2_RAW] of J18
     @(137.3784 mm, 151.6048 mm): Zone 'VBAT2_RAW Strompfad' [VBAT2_RAW] on F.Cu, priority 2
 [unconnected_items]: Missing connection between items
     Local override; error
-    @(101.4000 mm, 117.2800 mm): Pad 24 [LORA_AUX] of U10 on F.Cu
-    @(134.6200 mm, 131.0900 mm): PTH pad 45 [LORA_AUX] of A1
+    @(138.2592 mm, 144.7814 mm): Zone 'VBAT2_F Strompfad' [VBAT2_F] on F.Cu, priority 2
+    @(132.5625 mm, 152.9750 mm): Pad 1 [VBAT2_F] of R4 on F.Cu
 [unconnected_items]: Missing connection between items
     Local override; error
-    @(101.4000 mm, 114.7400 mm): Pad 22 [LORA_RXD] of U10 on F.Cu
-    @(134.6200 mm, 133.6300 mm): PTH pad 46 [LORA_RXD] of A1
+    @(153.5159 mm, 91.6048 mm): Zone 'VBAT_PROT Strompfad' [VBAT_PROT] on F.Cu, priority 2
+    @(153.5159 mm, 91.6048 mm): Zone 'VBAT_PROT Strompfad' [VBAT_PROT] on F.Cu, priority 2
 
 ** Found 0 Footprint errors **
 

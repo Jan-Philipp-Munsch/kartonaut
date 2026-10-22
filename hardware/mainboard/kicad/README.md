@@ -18,9 +18,9 @@ von der Spezifikation abgewichen wurde. Die Fertigerwahl steht in `../Fertiger_2
 | Netzliste gegen Spezifikation §4 (`check_design.py`) | **OK**: 39 Teensy-Pins, 7 Chip-Selects, 7 Mux-Kanäle, 11 Schienen, Kelvin-Abgriff |
 | Platzierung | **alle 166 Footprints**, keine Überschneidung |
 | Strompfade | 2S-Pfad, Pyro-Ausgänge und VSYS_IN als F.Cu-Flächen (§5.4); kein 2S-Netz auf In2 |
-| Routing | 2053 Bahnsegmente (3,61 m), 322 Vias, vier Lagen |
+| Routing | 2223 Bahnsegmente, 348 Vias, vier Lagen; `./make.sh pcb` braucht etwa 25 Minuten, danach `close_gaps.py` (§5.5) |
 | DRC (JLC-Regeln) | **0 Fehler**, Schaltplan-Parität **0 Abweichungen** |
-| Offene Verbindungen | **28**, von Hand zu ziehen (§5.5) |
+| Offene Verbindungen | **21** nach Freerouting und Skript-Routing; Rest von Hand in KiCad (§5.5) |
 | Abbildungen | Renders oben, unten und schräg, Lagenbilder (`img/`) |
 | Fertigungsdaten (Gerber, BOM, CPL) | offen, nach den offenen Verbindungen (§8) |
 
@@ -57,12 +57,17 @@ build_lib.py        lib/mainboard.*: Teensy-Symbol, INA239-Symbol, Sockel-Footpr
                     R_2512_Kelvin, 3D-Modelle Teensy und XT30; Pin-Typen der LCSC-Symbole
 gen_schematic.py    Projektdatei (JLC-Regeln, Netzklassen, ERC-Ausschlüsse), Wurzelblatt und 7 Unterblätter
 check_design.py     Tor 1: Netzliste aus dem Schaltplan gegen die Pin-Tabelle der Spezifikation
-gen_pcb.py          Platine: Umriss, Footprints, Platzierung, Flächen, Sperrflächen, Plane-Vias, DSN/SES, Nachbesserung,
+gen_pcb.py          Platine: Umriss, Footprints, Platzierung, Flächen, Sperrflächen, Plane-Vias, DSN-Export, SES-Übernahme, Nachbesserung,
                     Bestückungsdruck (`gen_pcb.py silk`: nur der Druck, auf der gerouteten Platine)
 logo.py             Kartonaut-Abzeichen als Polygone, für den Bestückungsdruck und docs/brand/*.svg
 render.py           Lagenbilder zuschneiden und zusammenfügen, Renders auf die Platine zuschneiden
 make.sh             ganze Kette: ./make.sh [sch|pcb|drc|img]
 snapshot.py         schnelles Bild einzelner Lagen beim Entwickeln
+gaps.py             die offenen Verbindungen aus out/drc.json: was, wo, wie weit; `gaps.py png` mit Bild je Häufung
+close_gaps.py       `dump`: Geometrie der Platine und die offenen Verbindungen nach out/geom.json; `apply`: Ergebnis des
+                    Gitter-Routers in die Platine (KiCad-Python)
+route_gaps.py       Gitter-Router (System-Python mit numpy/scipy): A* auf 0,05 mm, F.Cu/In2 mit Vias, Rip-up von
+                    Signalbahnen; `debug n` mit Bild und Kennzahlen je Lücke, `region x0 y0 x1 y1` reißt einen Bereich auf
 lib/                lcsc.* (easyeda2kicad), mainboard.* (eigene)
 out/                Schaltplan-PDF, ERC- und DRC-Bericht (alles andere dort ist Zwischenstand)
 img/                Renders und Lagenbilder
@@ -183,40 +188,85 @@ Der Pyro-Rückstrom läuft über die GND_PWR-Fläche auf B.Cu direkt unter den S
 
 ### 5.5 Routing und was offen ist
 
-Freerouting entflechtet den Großteil. Zwei Nachläufe exportieren die vorhandenen Bahnen als *fix* und
-routen nur das Offene; das Ergebnis wird in die Platine übernommen. Ein gewöhnlicher zweiter Lauf reißt
-alles neu auf und endet schlechter. Zuletzt schließt `gen_pcb.py patch` Lücken: erst mit einem geraden,
-kollisionsgeprüften Stummel auf einer Lage, dann über In2 mit zwei Vias (nicht für die Klasse Strom, nicht
-in der 5-mm-Zone der IMU, nicht durch fremde Stromflächen). Danach löscht es die Sperrflächen aus §5.4.
+Freerouting entflechtet den Großteil. Die Kette (`route` in `make.sh`) hat seit dem 22.10. abends diese Form:
 
-Acht Läufe am 22.10.2026 endeten zwischen 26 und 35 offenen Verbindungen; ein Lauf dauert gut
-40 Minuten. Die Platine ist gegenüber rev B um 32 Teile und vier Stromflächen dichter, und Freerouting
-findet in den Kanälen um den DRV8833, unter dem Teensy und an der Spitze keinen Weg mehr. **Die eingecheckte
-Platine hat 28 offene Verbindungen, 0 DRC-Fehler und keine Abweichung vom Schaltplan.** Sie sind in KiCad
-von Hand zu ziehen (interaktiver Router; danach `./make.sh drc`). Koordinaten (u | v) in mm wie in
-`gen_pcb.py`, KiCad x = 127 + u, y = 170 − v:
+1. `gen_pcb.py dsn` exportiert die platzierte Platine. **Alles, was schon auf der Platine liegt, ist für den
+   Router fix** (im ersten Lauf die 124 Plane-Vias mit ihren Stummeln, in den Nachläufen die ganze
+   Verdrahtung); In1 und B.Cu sind Power-Lagen, die Klasse Strom bleibt auf F.Cu. Das 5-mm-Via-Verbot um die
+   IMU ist ein Polygon mit Löchern um die eigenen Masse-Vias der IMU; als volle Scheibe meldete Freerouting
+   sie bei jedem Lauf als 22 „unfixable violations“ (jetzt 12, alle an den Sperrflächen des LoRa-Moduls).
+2. Der Hauptlauf hält von selbst an, wenn sich der Score zehn Pässe lang nicht verbessert hat (28 bis 40
+   Pässe, 13 bis 17 Minuten).
+3. `gen_pcb.py ses` übernimmt die Session **durch Zusammenführen**, nicht durch Ersetzen: KiCads SES-Import
+   löscht die vorhandene Verdrahtung, und Freerouting schreibt fixe Elemente nicht in die Session. Danach
+   kommen die GND-Füllungen auf F.Cu und In2 dazu.
+4. Zwei Nachläufe mit **je vier Pässen** routen nur das Offene und werden zusammengeführt. Mit 100 Pässen
+   kreisten sie zehn Minuten lang zwischen denselben drei Zuständen; der erste Pass war immer der beste.
+5. `gen_pcb.py patch` schließt Lücken mit dem Abstand der Platinenregel (0,2 mm; mit 0,13 mm entstanden
+   DRC-Fehler): erst mit einem geraden Stummel auf einer Lage, dann über In2 mit zwei Vias (nicht für die
+   Klasse Strom, nicht in der IMU-Zone, nicht durch fremde Stromflächen). Danach löscht es die Sperrflächen
+   aus §5.4.
 
-| Art | Netz | Wo (u \| v) |
-|---|---|---|
-| Fläche zerfallen | VSERVO | innere Schiene oberhalb TP4 (23,8 \| 66 bis 72,8): drei Inseln, mit einer Bahn auf F.Cu verbinden |
-| Fläche zerfallen | VBAT_PROT | Stich zu J4 Pin 1 (26,6 \| 78,4) |
-| Fläche zerfallen | GND | F.Cu-Füllung: zwei Inseln, eine davon an U6 Pin 7 (6,5 \| 21,3); Via zu In1 |
-| Anschluss an Stromfläche | VBAT2_RAW | J18 Pin 1 (19,0 \| 19,6) zur Fläche XT30 → Q1 |
-| Anschluss an Stromfläche | VBAT2_F | R2 und R4 (Gate-Widerstand Q6, Teiler) zur Fläche F1 → Q6 (11,2 \| 25,2) |
-| Anschluss an Stromfläche | PYRO2_NEG, PYRO4_NEG | Q4 Pin 3 (−6,2 \| 105,3); D6 Pin 2 und R44 (15,8 \| 101,6) |
-| Anschluss an Stromfläche | VSYS_IN | U2 Pin 1 (−16,2 \| 35,0) zur In2-Bahn |
-| Versorgung | VSERVO | C36 (16,6 \| 62,2) und TP4 |
-| Versorgung | 5V_SYS | Via bei (3,8 \| 86,4); J15 Pin 4 (13,7 \| 79,9) |
-| Versorgung | GND_PWR | J15 Pin 2 (13,7 \| 82,4); C6 Pin 2 (−0,7 \| 22,3); C38 Pin 2 (12,3 \| 53,5) |
-| Signal | CS_IMU | U12 Pin 15 → U4 Pin 12 (0,5 \| 61,5), nur F.Cu (IMU-Zone) |
-| Signal | CS_EXT2, CS_BARO | U12 Pin 9 → J15 Pin 12; U5 Pin 6 (17,2 \| 60,3) |
-| Signal | LORA_AUX, LORA_RXD | U10 Pins 24, 22 (−25,6 \| 52,7 / 55,3) → Teensy Pins 36, 35 |
-| Signal | SERVO_LEGS, MOT_B, PYRO1_SENSE | Teensy Pin 10 (19,1 \| 46,4); U7 Pin 5 → J8 Pin 2; R32 → Mux-Teiler (−1,0 \| 51,8) |
+Ein ganzer Lauf dauert damit **etwa 25 Minuten** statt 40. Was Freerouting am Ende als „unrouted“ zählt
+(80 bis 90), ist nicht das Maß: rund 55 davon sind die Pads, die schon über Stummel und Via an ihrer Fläche
+hängen. Freerouting kennt die Flächen auf den Power-Lagen nicht als Verbindung, legt für diese Pads in
+seiner Fanout-Stufe eigene Vias und zählt sie dann als offen. Zwei Auswege wurden am 22.10. ausprobiert und
+verworfen: In1 und B.Cu als Signallagen unter einer Bahnensperre (668 Abstandsverletzungen, jedes fremde
+Via gegen die GND-Fläche) und die schon angebundenen Pads aus der Netzliste nehmen (146 Verletzungen, fixe
+Stummel gegen netzlose Pads). **Das Maß ist der KiCad-DRC.**
+
+Drei Läufe am 22.10. abends endeten bei 25, 27 und 28 offenen Verbindungen, acht Läufe davor zwischen 26
+und 35; die Liste ist von Lauf zu Lauf fast dieselbe. Die Platine ist gegenüber rev B um 32 Teile und vier
+Stromflächen dichter.
+
+**Skript-Routing der Reste (23.10. nachts):** `close_gaps.py dump` schreibt die Geometrie der Platine und die
+offenen Verbindungen des DRC nach `out/geom.json`; `route_gaps.py` (System-Python mit numpy/scipy) rastert
+alles Kupfer mit 0,05 mm und sucht je Lücke mit A* einen Weg auf F.Cu und In2 mit Vias (Klasse Strom nur
+F.Cu, Versorgungsflächen-Netze auch B.Cu), Abstand nach Netzklasse, Sperrflächen und 5-mm-IMU-Zone
+beachtet; ein Endpunkt ist das ganze zusammenhängende Kupferstück (Pad, Stummel, Via). Wo ein Pin
+eingekesselt ist, reißt es Signalbahnen auf, routet und legt die aufgerissenen Netze neu; klappt das nicht,
+wird alles zurückgesetzt. `close_gaps.py apply` übernimmt das Ergebnis, dann `./make.sh drc`. So gingen
+sechs der 27 zu, mit 0 DRC-Fehlern. Die übrigen 21 liegen in drei Häufungen, in denen das Aufreißen nicht
+konvergiert: um den DRV8833 mit der VSERVO-Schiene, um J_STACK mit CS-Decoder und Analogmux, und um den
+Shunt mit der 2S-Kette. Ein Versuch, den ganzen Bereich x 120..154 / y 85..133 aufzureißen und neu zu
+verlegen (`route_gaps.py region`), schloss zwar alle Lücken dort, ließ aber 24 Signalnetze offen: dafür
+braucht es einen echten Autorouter mit Schieben, also KiCads interaktiven Router.
+
+**Die eingecheckte Platine hat 21 offene Verbindungen, 0 DRC-Fehler und keine Abweichung vom Schaltplan.**
+7 davon sind Geometrie der Flächen: Strompfade, die ihr Pad nicht erreichen oder in Inseln
+zerfallen (`CORRIDORS` und `add_zones` in `gen_pcb.py`, oder in KiCad eine Bahn zwischen die Inseln).
+Die übrigen 14 sind in KiCad von Hand zu ziehen (interaktiver Router mit
+Schieben; danach `./make.sh drc`). Koordinaten (u | v) in mm wie in `gen_pcb.py`, KiCad x = 127 + u,
+y = 170 − v:
+
+| Art | Netz | Was | Wo (u \| v) |
+|---|---|---|---|
+| Fläche | GND | Pad 7 von U6 ↔ Zone "GND F.Cu" | 6.5 \| 21.3 |
+| Fläche | GND | Zone "GND F.Cu" ↔ Zone "GND F.Cu" | -26.7 \| 0.3 |
+| Fläche | VBAT2_F | Zone "VBAT2_F" ↔ Pad 1 von R4 | 5.6 \| 17.0 |
+| Fläche | VBAT2_RAW | Pad 1 von J18 ↔ Zone "VBAT2_RAW" | 19.0 \| 19.6 |
+| Fläche | VBAT_PROT | Zone "VBAT_PROT" ↔ Zone "VBAT_PROT" | 26.5 \| 78.4 |
+| Fläche | VSERVO | Pad 1 von C36 ↔ Zone "VSERVO" | 16.6 \| 62.2 |
+| Fläche | VSERVO | Zone "VSERVO" ↔ Pad 6 von J15 | 13.7 \| 77.3 |
+| Versorgung | 5V_SYS | Pad 4 von J15 ↔ Bahn | 13.7 \| 79.9 |
+| Versorgung | GND_PWR | Bahn ↔ Pad 2 von C6 | -0.7 \| 22.3 |
+| Versorgung | GND_PWR | Via - B.Cu ↔ Pad 2 von C38 | 12.3 \| 53.5 |
+| Versorgung | VSERVO | Bahn ↔ Bahn | 19.0 \| 47.9 |
+| Versorgung | VSERVO | Pad 12 von U7 ↔ Bahn | 19.4 \| 54.2 |
+| Versorgung | VSERVO | Pad 6 von J15 ↔ Pad 5 von J15 | 13.7 \| 77.3 |
+| Signal | CS_EXT0 | Pad 11 von U12 ↔ Pad 10 von J15 | -2.1 \| 43.4 |
+| Signal | CS_EXT1 | Pad 10 von U12 ↔ Pad 11 von J15 | -1.5 \| 43.4 |
+| Signal | LORA_M1 | Pad 21 von U10 ↔ Pad 24 von A1 | -25.6 \| 56.5 |
+| Signal | MOT_A | Bahn ↔ Pad 2 von U7 | 13.6 \| 52.9 |
+| Signal | MOT_B | Pad 5 von U7 ↔ Pad 2 von J8 | 13.6 \| 54.2 |
+| Signal | PYRO3_NEG | Pad 3 von Q8 ↔ Bahn | 3.3 \| 105.3 |
+| Signal | SEL2 | Pad 9 von U13 ↔ Bahn | 5.4 \| 43.4 |
+| Signal | VBAT1_SENSE | Pad 1 von C7 ↔ Bahn | -4.8 \| 45.6 |
 
 Die aktuelle Liste mit Positionen schreibt `kicad-cli pcb drc` nach `out/drc.rpt` (Abschnitt „unconnected“).
-Freerouting ist zwischen Läufen nicht vollständig reproduzierbar: Ein neuer `./make.sh pcb` überschreibt
-die Platine und hinterlässt eine andere Restliste. Sobald von Hand geroutet wird, ist die Platinendatei die
-Quelle; dann nur noch `./make.sh sch`, `./make.sh drc` und `gen_pcb.py silk`.
+Freerouting ist zwischen Läufen nicht reproduzierbar: Ein neuer `./make.sh pcb` überschreibt die Platine und
+hinterlässt eine etwas andere Restliste. Sobald von Hand geroutet wird, ist die Platinendatei die Quelle;
+dann nur noch `./make.sh sch`, `./make.sh drc` und `gen_pcb.py silk`.
 
 Gemessen mit `../review_check_layout.py`: kein 2S-Netz auf In2 (A6); im Umkreis von 5 mm um die IMU nur
 deren eigene Masse-Vias, keine In2-Bahnen (B16); die Sense-Netze berühren nur die Sense-Pads des Shunts (A5).
@@ -286,8 +336,11 @@ LoRa-Moduls, Umriss-Kreuzungen); JLC schneidet den Druck über Pads weg.
 | U5, U15 | Barometer, zweites (DNP) | NT1 | Sternpunkt GND_PWR/GND |
 ## 8. Nächste Schritte
 
-1. Die 28 offenen Verbindungen aus §5.5 in KiCad ziehen, danach `./make.sh drc` (Ziel: 0 Fehler,
-   0 offene Verbindungen) und `gen_pcb.py silk` für den Druck. Ab hier ist die Platinendatei die Quelle.
+1. Die 21 offenen Verbindungen aus §5.5 in KiCad ziehen (interaktiver Router mit Schieben, die drei
+   Häufungen DRV8833, J_STACK und Shunt), die Flächen-Punkte entweder dort mit einer Bahn oder im
+   Generator (`CORRIDORS`, `add_zones`), dann `./make.sh drc` (Ziel: 0 Fehler, 0 offene Verbindungen) und
+   `gen_pcb.py silk` für den Druck. Ab hier ist die Platinendatei die Quelle; `./make.sh pcb` nicht mehr
+   laufen lassen.
 2. `../review_check_layout.py` erneut laufen lassen: keine 2S-Bahn auf In2, nichts Fremdes in der
    IMU-Zone.
 3. Review mit dem Kollegen anhand von Schaltplan-PDF, `img/layers.pdf` und Design Guide (Tor 1 und 2 in

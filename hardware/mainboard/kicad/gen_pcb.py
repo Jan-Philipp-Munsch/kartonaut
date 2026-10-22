@@ -1122,6 +1122,12 @@ def build():
 
 def export_dsn(tag=""):
     board = pcbnew.LoadBoard(str(PCB))
+    # In1 and B.Cu are power layers for the router: no wires there. Tried and rejected (22.10.): the two
+    # as signal layers under a full wire_keepout, so that Freerouting sees the planes as conduction
+    # areas (668 clearance violations, every via of another net against the GND plane); and the pads
+    # that already have a plane via taken out of the netlist (146 violations, fixed stubs against
+    # netless pads). The router therefore fans those pads out a second time and lists about 55 of
+    # them as open at the end; on the board they are connected, KiCad's DRC is the measure.
     board.SetLayerType(pcbnew.In1_Cu, pcbnew.LT_POWER)
     board.SetLayerType(pcbnew.B_Cu, pcbnew.LT_POWER)
     out = HERE / "out" / f"mainboard{tag}.dsn"
@@ -1136,33 +1142,66 @@ def export_dsn(tag=""):
         # stubs of dividers, gate resistors, capacitors and test points: 0.5 mm, not the class 1.0 mm
         k = s.index("(width 1000)", j)
         s = s[:k] + "(width 500)" + s[k + len("(width 1000)"):]
+    # Everything that is on the board already is fixed for the router: in the first run the plane vias
+    # with their stubs, in the finishing passes the whole wiring. Routable, the router may move or rip
+    # them, and the session file would then be the only record of them; fixed items stay on the board
+    # and merge_ses() adds only what the router made. (It does not stop the fanout stage from treating
+    # those pads as open, see above.)
+    s = s.replace("(type route)", "(type fix)")
     # spec section 8 / B16: the router places no via within 5 mm of the IMU (the board rule is 2.6 mm,
-    # so the IMU's own ground vias set by add_plane_vias may stay in the ring)
+    # so the IMU's own ground vias set by add_plane_vias may stay in the ring). The keepout is the
+    # 5 mm disc with a hole around every via that is already there; a disc over fixed vias made
+    # Freerouting report 22 "unfixable violations" on every run.
     x, y = XY(*ANCHORS["U4"][:2])
-    keep = "".join("    (via_keepout \"IMU 5 mm\" (circle {} {} {:.0f} {:.0f}))\n".format(
-        layer, int(2 * IMU_KEEP_R * 1000), x * 1000, -y * 1000) for layer in ("F.Cu", "In2.Cu"))
+    keep = "".join('    (via_keepout "IMU 5 mm" (polygon {} 0 {}))\n'.format(layer, pts)
+                   for pts in imu_keepout_polys(board, x, y) for layer in ("F.Cu", "In2.Cu"))
     i = s.index("    (via_keepout")
     s = s[:i] + keep + s[i:]
     out.write_text(s, encoding="utf-8")
-    print("dsn", ok, out)
+    print("dsn", ok, out, f"({s.count('(type fix)')} fixed items, {keep.count('via_keepout')} IMU keepout polygons)")
+
+
+def imu_keepout_polys(board, x, y, n=48):
+    """Point lists (DSN units: um, y up) of the 5 mm via keepout around the IMU, minus the vias that are
+    already inside it (the IMU's own ground vias), as hole-free polygons."""
+    def circle(cx, cy, r):
+        c = pcbnew.SHAPE_POLY_SET()
+        c.NewOutline()
+        for k in range(n):
+            a = 2 * math.pi * k / n
+            c.Append(int(MM(cx + r * math.cos(a))), int(MM(cy + r * math.sin(a))))
+        return c
+    poly = circle(x, y, IMU_KEEP_R)
+    for t in board.GetTracks():
+        if t.GetClass() != "PCB_VIA":
+            continue
+        vx, vy = pcbnew.ToMM(t.GetPosition().x), pcbnew.ToMM(t.GetPosition().y)
+        if math.hypot(vx - x, vy - y) < IMU_KEEP_R + 0.5:
+            poly.BooleanSubtract(circle(vx, vy, pcbnew.ToMM(t.GetWidth(pcbnew.F_Cu)) / 2 + 0.25))
+    poly.Fracture()
+    out = []
+    for i in range(poly.OutlineCount()):
+        o = poly.COutline(i)
+        if o.PointCount() < 3:
+            continue
+        out.append(" ".join("{:.1f} {:.1f}".format(o.CPoint(k).x / 1000, -o.CPoint(k).y / 1000)
+                            for k in range(o.PointCount())))
+    return out
 
 
 def import_ses(tag=""):
-    board = pcbnew.LoadBoard(str(PCB))
-    has_pours = any(z.GetZoneName() == "GND F.Cu" for z in board.Zones())   # from an earlier pass
-    ok = pcbnew.ImportSpecctraSES(board, str(HERE / "out" / f"mainboard{tag}.ses"))  # tag: variant
-    if not has_pours:
-        add_pours(board)
-    filler = pcbnew.ZONE_FILLER(board)
-    filler.Fill(board.Zones())
-    pcbnew.SaveBoard(str(PCB), board, True)
-    print("ses imported", ok, "tracks", len(board.GetTracks()))
+    """First run: take the session into the board and add the GND pours. KiCad's SES import replaces
+    the whole wiring, and Freerouting leaves fixed items (the plane vias and their stubs) out of the
+    session file, so the session goes into a copy and only what is new is taken over (merge_ses)."""
+    merge_ses(tag, pours=True)
 
 
-def merge_ses(tag="_fix"):
+def merge_ses(tag="_fix", pours=False):
     """Add the tracks of a session that routed only the remaining connections (existing wiring was
     exported as fixed) to the board, keeping what is there."""
     board = pcbnew.LoadBoard(str(PCB))
+    if pours and not any(z.GetZoneName() == "GND F.Cu" for z in board.Zones()):
+        add_pours(board)
     other = pcbnew.LoadBoard(str(PCB))
     pcbnew.ImportSpecctraSES(other, str(HERE / "out" / f"mainboard{tag}.ses"))
     have = {(t.GetClass(), t.GetStart().x, t.GetStart().y, t.GetEnd().x, t.GetEnd().y, t.GetLayer())
@@ -1186,7 +1225,7 @@ def merge_ses(tag="_fix"):
         n += 1
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
     pcbnew.SaveBoard(str(PCB), board, True)
-    print(f"{n} tracks and vias added from the finishing pass")
+    print(f"{n} tracks and vias added from the session, {len(board.GetTracks())} on the board")
 
 
 STROM_NETS = set(circuit.NETCLASSES["Strom"][4])
@@ -1203,7 +1242,7 @@ def patch_unconnected():
     board = pcbnew.LoadBoard(str(PCB))
     d = json.loads((HERE / "out" / "drc.json").read_text(encoding="utf-8"))
     copper = [pcbnew.F_Cu, pcbnew.In2_Cu, pcbnew.B_Cu]
-    width, clear = MM(0.15), MM(0.13)    # board minimum (JLC 4 layers): 0.127 mm
+    width, clear = MM(0.15), MM(0.2)     # the board rule (netclass clearance); 0.13 made DRC errors
     others = list(board.GetTracks()) + [p for fp in board.GetFootprints() for p in fp.Pads()]
 
     paths = [z for z in board.Zones() if z.GetZoneName().endswith("Strompfad")]

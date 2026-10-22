@@ -196,29 +196,43 @@ def _gimbal_loc():
 
 
 def servo_geometry():
-    """Je Servo: Körper, Hebel, Draht im Bezugssystem der Druckdatei, dazu die Lage der Welle (für die Fenster)."""
+    """Je Servo: Körper, Hebel, Draht (nach Jans Fotos) im Bezugssystem der Druckdatei, dazu die Lage der Welle."""
     out = []
     L, H, T = M.SERVO_BODY
-    for name, (cx, cy, cz), (rx, ry), s_tan, r_target in M.SERVOS:
+    for name, (cx, cy, cz), (rx, ry), s_tan, phi_t, r_t in M.SERVOS:
         tx, ty = -ry, rx
         rad = math.hypot(cx, cy)
         ang = math.degrees(math.atan2(ry, rx)) - 90.0
         body = cq.Workplane("XY").box(L, T, H).rotate((0, 0, 0), (0, 0, 1), ang).translate((cx, cy, cz))
         r_face = rad + T / 2
-        # Welle: radial an der Außenfläche, tangential bei s_tan (vom Achsenschnitt aus), auf Höhe des Kardanpunkts
         sx, sy = rx * r_face + tx * s_tan, ry * r_face + ty * s_tan
         z0 = M.SERVO_SHAFT_Z
         p0, p1 = (sx, sy, z0), (sx + rx * 2.5, sy + ry * 2.5, z0)
         hub = cyl_between(6.0, p0, p1)
-        tip = (p1[0], p1[1], z0 - M.HORN_R)
-        arm = cyl_between(4.5, (p0[0] + rx * 1.25, p0[1] + ry * 1.25, z0), (p0[0] + rx * 1.25, p0[1] + ry * 1.25, tip[2]))
-        w0 = (tip[0] - rx * 1.0, tip[1] - ry * 1.0, tip[2])      # Draht hakt von innen in den Hebel, läuft innen an der Wand
-        w1 = (w0[0], w0[1], w0[2] + M.WIRE_DROP)
-        k = r_target / math.hypot(w1[0], w1[1])
-        w2 = (w1[0] * k, w1[1] * k, w1[2])
-        wire = cyl_between(M.WIRE_D, w0, w1).union(cyl_between(M.WIRE_D, w1, w2)).union(cq.Workplane("XY").sphere(M.WIRE_D / 2).translate(w1))
-        hook = cyl_between(M.WIRE_D, (tip[0] + rx * 1.0, tip[1] + ry * 1.0, tip[2]), w0)
-        out.append(dict(name=name, body=body, horn=hub.union(arm), wire=wire.union(hook), shaft=(sx, sy, z0)))
+        hm = (p0[0] + rx * 1.25, p0[1] + ry * 1.25)
+        arm = cyl_between(4.5, (hm[0], hm[1], z0), (hm[0], hm[1], z0 + M.HORN_R))
+        tip = (hm[0] - rx * 1.5, hm[1] - ry * 1.5, z0 + M.HORN_R)      # Draht steckt von innen im oberen Hebelloch
+        # Bogen innen an der Wand vom Hebel zum Zielwinkel, dann senkrecht hinunter, dann radial zum Stift
+        a0 = math.degrees(math.atan2(tip[1], tip[0])) % 360
+        a1 = phi_t % 360
+        da = ((a1 - a0 + 180) % 360) - 180
+        R = M.WIRE_ARC_R
+        pts = [tip, (R * math.cos(math.radians(a0)), R * math.sin(math.radians(a0)), tip[2])]
+        n = 10
+        for k in range(1, n + 1):
+            a = math.radians(a0 + da * k / n)
+            pts.append((R * math.cos(a), R * math.sin(a), tip[2]))
+        a = math.radians(a1)
+        pts.append((R * math.cos(a), R * math.sin(a), M.WIRE_PIN_Z))
+        pin_in = ((r_t - 2.0) * math.cos(a), (r_t - 2.0) * math.sin(a), M.WIRE_PIN_Z)
+        pts.append(pin_in)
+        wire = None
+        for q0, q1 in zip(pts[:-1], pts[1:]):
+            seg = cyl_between(M.WIRE_D, q0, q1).union(cq.Workplane("XY").sphere(M.WIRE_D / 2).translate(q1))
+            wire = seg if wire is None else wire.union(seg)
+        washer = cyl_between(6.0, ((r_t + 2.5) * math.cos(a), (r_t + 2.5) * math.sin(a), M.WIRE_PIN_Z),
+                             ((r_t + 0.5) * math.cos(a), (r_t + 0.5) * math.sin(a), M.WIRE_PIN_Z))
+        out.append(dict(name=name, body=body, horn=hub.union(arm), wire=wire.union(washer), shaft=(sx, sy, z0)))
     return out
 
 

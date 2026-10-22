@@ -31,7 +31,7 @@
 			)
 		)
 	)
-	(text "Versorgung: 1S-Pfad (Elektronik) und 2S-Pfad (Aktoren,\nPyro)"
+	(text "Versorgung: 1S-Pfad (Elektronik,\nLader) und 2S-Pfad (Aktoren,\nPyro), Lastschalter"
 		(exclude_from_sim no)
 		(at 32 56 0)
 		(effects (font (size 1.27 1.27)) (justify left top))
@@ -56,7 +56,7 @@
 			)
 		)
 	)
-	(text "Teensy 4.1 auf Buchsenleisten,\nErweiterungsleiste,\nBefestigung"
+	(text "Teensy 4.1,\nCS-Decoder und Analogmux,\nStapelstecker J_STACK"
 		(exclude_from_sim no)
 		(at 122 56 0)
 		(effects (font (size 1.27 1.27)) (justify left top))
@@ -81,7 +81,7 @@
 			)
 		)
 	)
-	(text "IMU ICM-42688-P an SPI1,\nBarometer BMP390 und Qwiic an I2C"
+	(text "IMU ICM-42688-P und zwei BMP390 an SPI1,\nQwiic an I2C"
 		(exclude_from_sim no)
 		(at 212 56 0)
 		(effects (font (size 1.27 1.27)) (justify left top))
@@ -131,7 +131,7 @@
 			)
 		)
 	)
-	(text "TVC-Servos am 2S-Akku,\nFallschirm-Servo,\nRollmotor DRV8833"
+	(text "Vier Servos und Rollmotor DRV8833 am 2S-Akku"
 		(exclude_from_sim no)
 		(at 32 116 0)
 		(effects (font (size 1.27 1.27)) (justify left top))
@@ -156,7 +156,7 @@
 			)
 		)
 	)
-	(text "Zwei Pyro-Kanaele low-side,\nArming,\nDurchgangspruefung"
+	(text "Vier Pyro-Kanaele low-side (3 und 4 DNP),\nArming,\nDurchgangspruefung"
 		(exclude_from_sim no)
 		(at 122 116 0)
 		(effects (font (size 1.27 1.27)) (justify left top))
@@ -181,7 +181,7 @@
 			)
 		)
 	)
-	(text "WS2812B mit Pegelwandler,\nSummer,\nKamera-Trigger"
+	(text "WS2812B-Kette mit Pegelwandler,\nSummer,\nKamera-Trigger"
 		(exclude_from_sim no)
 		(at 212 116 0)
 		(effects (font (size 1.27 1.27)) (justify left top))

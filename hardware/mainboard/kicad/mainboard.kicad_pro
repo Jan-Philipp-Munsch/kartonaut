@@ -109,7 +109,7 @@
       },
       {
         "name": "Versorgung",
-        "track_width": 0.5,
+        "track_width": 0.6,
         "clearance": 0.2,
         "via_diameter": 0.6,
         "via_drill": 0.3,
@@ -126,7 +126,7 @@
       },
       {
         "name": "Wandler",
-        "track_width": 0.25,
+        "track_width": 0.4,
         "clearance": 0.15,
         "via_diameter": 0.6,
         "via_drill": 0.3,
@@ -156,11 +156,11 @@
       },
       {
         "netclass": "Strom",
-        "pattern": "VBAT_PROT"
+        "pattern": "VBAT2_F"
       },
       {
         "netclass": "Strom",
-        "pattern": "VBAT_MEAS"
+        "pattern": "VBAT_PROT"
       },
       {
         "netclass": "Strom",
@@ -179,6 +179,14 @@
         "pattern": "PYRO2_NEG"
       },
       {
+        "netclass": "Strom",
+        "pattern": "PYRO3_NEG"
+      },
+      {
+        "netclass": "Strom",
+        "pattern": "PYRO4_NEG"
+      },
+      {
         "netclass": "Rueckstrom",
         "pattern": "GND_PWR"
       },
@@ -188,7 +196,15 @@
       },
       {
         "netclass": "Versorgung",
-        "pattern": "VBAT1_PROT"
+        "pattern": "VBAT1_REV"
+      },
+      {
+        "netclass": "Versorgung",
+        "pattern": "VBAT1_F"
+      },
+      {
+        "netclass": "Versorgung",
+        "pattern": "VSYS_IN"
       },
       {
         "netclass": "Versorgung",
@@ -196,11 +212,11 @@
       },
       {
         "netclass": "Versorgung",
-        "pattern": "5V_SERVO"
+        "pattern": "3V3_RF"
       },
       {
         "netclass": "Versorgung",
-        "pattern": "3V3_RF"
+        "pattern": "3V3_EXP"
       },
       {
         "netclass": "Versorgung",
@@ -216,11 +232,7 @@
       },
       {
         "netclass": "Versorgung",
-        "pattern": "U1_SW"
-      },
-      {
-        "netclass": "Wandler",
-        "pattern": "VSYS_IN"
+        "pattern": "VBUS_CHG"
       },
       {
         "netclass": "Wandler",
@@ -235,19 +247,19 @@
   "erc": {
     "erc_exclusions": [
       [
-        "pin_to_pin|2070100|749300|0108db02-d0bd-598a-b70b-6815eecf266f|29f85bb4-89b8-5ada-a2e3-aaba07f63502|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5",
+        "pin_to_pin|2235200|736600|0108db02-d0bd-598a-b70b-6815eecf266f|29f85bb4-89b8-5ada-a2e3-aaba07f63502|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5",
         "DRV8833: Bruecken A und B bewusst parallel (Datenblatt 8.3.6)"
       ],
       [
-        "pin_to_pin|2070100|774700|37a563e6-2da7-5a99-b610-fe6babff5138|5b90348a-62da-5d7a-9405-1d8a2dfc9249|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5",
+        "pin_to_pin|2235200|762000|37a563e6-2da7-5a99-b610-fe6babff5138|5b90348a-62da-5d7a-9405-1d8a2dfc9249|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5",
         "DRV8833: Bruecken A und B bewusst parallel (Datenblatt 8.3.6)"
       ],
       [
-        "pin_to_pin|1816100|673100|127a281e-8606-5618-a079-ba424c7961c8|69e1b699-f125-5d0b-867f-2ba9e9e84a66|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/f0386704-8586-5f5e-9fc9-73b7b3ca675e",
+        "pin_to_pin|1981200|660400|127a281e-8606-5618-a079-ba424c7961c8|69e1b699-f125-5d0b-867f-2ba9e9e84a66|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/f0386704-8586-5f5e-9fc9-73b7b3ca675e",
         "AISEN ohne Strommessung direkt an GND_PWR"
       ],
       [
-        "pin_to_pin|1816100|698500|5da8c95c-5408-5c84-b300-605c78a45458|69e1b699-f125-5d0b-867f-2ba9e9e84a66|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/f0386704-8586-5f5e-9fc9-73b7b3ca675e",
+        "pin_to_pin|1981200|685800|5da8c95c-5408-5c84-b300-605c78a45458|69e1b699-f125-5d0b-867f-2ba9e9e84a66|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/3b9d6e9a-2ac7-5b0c-b5fd-72393d8709a5|/3edc49d3-b449-556d-9f7a-20d2b2dcc15a/f0386704-8586-5f5e-9fc9-73b7b3ca675e",
         "BISEN ohne Strommessung direkt an GND_PWR"
       ]
     ]

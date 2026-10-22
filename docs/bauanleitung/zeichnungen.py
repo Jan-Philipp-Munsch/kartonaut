@@ -3,7 +3,7 @@
     python docs/bauanleitung/zeichnungen.py
 
 Schreibt
-  docs/bauanleitung/Zeichnungen_Kartonaut1.pdf    Blatt Z1 … Z7 (A4 quer, maßstäblich, Maße in mm)
+  docs/bauanleitung/Zeichnungen_Kartonaut1.pdf    Blatt Z1 … Z6 (A4 quer, maßstäblich, Maße in mm)
   docs/bauanleitung/Bohrschablonen_1zu1.pdf       Blatt S1 … S4 zum Ausdrucken in Originalgröße und Umwickeln des Rohrs
   docs/img/bauanleitung/Z*.png, S*.png            dieselben Blätter als Bild für die Bauanleitung
 Alle Maße kommen aus cad/modular_params.py und cad/params.py (MS_CONFIG=erstflug), keine Zahl steht hier doppelt.
@@ -56,7 +56,7 @@ class Sheet:
             ax.plot([x0, x0 + w], [yy, yy], lw=0.4, c="#333")
         ax.plot([x0 + 70, x0 + 70], [y0, y0 + 16], lw=0.4, c="#333")
         ax.text(x0 + 2, y0 + 19, f"{nr}  {title}", fontsize=9, weight="bold", va="center")
-        ax.text(x0 + 2, y0 + 12, "Kartonaut 1 · Modulbauweise (Erstflug)", va="center")
+        ax.text(x0 + 2, y0 + 12, "Kartonaut 1 · Modulbauweise, Stand 2 (Erstflug)", va="center")
         ax.text(x0 + 2, y0 + 4, "Maße in mm · Quelle cad/modular_params.py", va="center", fontsize=6)
         ax.text(x0 + 72, y0 + 12, f"Maßstab {scale_txt}", va="center")
         ax.text(x0 + 72, y0 + 4, f"Stand {DATE}", va="center")
@@ -169,52 +169,42 @@ def deg(v):
 
 
 # --------------------------------------------------------------------------- Lochlisten der Rohre (aus den Parametern)
-def zl(z):
-    return z - M.TUBE_BOTTOM_Z
-
-
-def zu(z):
-    return z - M.JOINT_Z
-
-
-def lower_features():
-    """(Art, phi, h0, h1, d/Breite, Text) auf dem unteren Rohr, h ab Rohrunterkante."""
-    f = []
-    for phi in M.SCREW_PHI:
-        f.append(("hole", phi, zl(M.TVC_SCREW_Z), None, M.SCREW_HOLE_PAPER, "Kardan M3"))
-    f.append(("hole", M.KEY_PHI, zl(M.KEY_Z), None, M.KEY_HOLE_D, "Schlüsselschalter"))
-    for phi in M.BARO_PHI:
-        f.append(("hole", phi, zl(M.BARO_Z), None, M.BARO_D, "Baro"))
-    for nm, hd in (("Luke A1 (SD)", M.HATCH_A1), ("Luke B (Schalter)", M.HATCH_B)):
-        f.append(("win", hd["phi"], zl(M.v_to_z(hd["v"][0])), zl(M.v_to_z(hd["v"][1])), hd.get("w", M.HATCH_W), nm))
+# Art: "hole" neu bohren, "old" schon vorhanden (Bestand), "win" ausschneiden. h ab der Unterkante des Rohrs.
+def feats_a():
+    z0 = M.TUBE_A[0]
+    f = [("old", p, M.GIMBAL_SCREW_Z - z0, None, M.SCREW_HOLE_PAPER, "Kardan (Bestand)") for p in M.SCREW_PHI]
+    f += [("hole", p, M.J1_SCREW_Z - z0, None, M.SCREW_HOLE_PAPER, "Stoß J1 M3") for p in M.SCREW_PHI]
     return f
 
 
-def upper_features():
-    f = []
-    for phi in M.SCREW_PHI:
-        f.append(("hole", phi, zu(M.JOINT_SCREW_Z), None, M.SCREW_HOLE_PAPER, "Stoß M3"))
-    for phi in M.SHEAR_PIN_PHI:
-        f.append(("hole", phi, zu(M.SHEAR_PIN_Z), None, M.SHEAR_PIN_D, "Abscherstift M2"))
-    hd = M.HATCH_A2
-    f.append(("win", hd["phi"], 0.0, zu(M.v_to_z(hd["v"][1])), M.HATCH_W, "Kerbe A2 (USB)"))
+def feats_b():
+    z0 = M.TUBE_B[0]
+    f = [("old", p, M.OLD_HOLES_B_Z - z0, None, M.SCREW_HOLE_PAPER, "alt: Baro-Ausgleich") for p in M.SCREW_PHI]
+    f += [("hole", p, M.SPIGOT_B_SCREW_Z - z0, None, M.SCREW_HOLE_PAPER, "Spant M3") for p in M.SCREW_PHI]
+    sw = M.ARM_SCREW_SWITCH
+    f.append(("hole", sw["phi"] + 12.0, M.v_to_z(sw["v"]) - z0, None, sw["d"], "Schraubschalter"))
+    for nm, hd in (("Luke A1 (SD)", M.HATCH_A1), ("Luke A2 (USB)", M.HATCH_A2), ("Luke B (Schalter)", M.HATCH_B)):
+        f.append(("win", hd["phi"], M.v_to_z(hd["v"][0]) - z0, M.v_to_z(hd["v"][1]) - z0, hd.get("w", M.HATCH_W), nm))
     return f
 
 
-def coupler_features():
-    f = []
-    zc = M.COUPLER_Z[0]
-    for phi in M.SCREW_PHI:
-        f.append(("hole", phi, M.JOINT_SCREW_Z - zc, None, M.SCREW_HOLE_PAPER, "Stoß M3"))
-    for phi in M.BARO_PHI:
-        f.append(("hole", phi, M.BARO_Z - zc, None, M.BARO_D, "Baro"))
-    for nm, hd in (("A1", M.HATCH_A1), ("B", M.HATCH_B), ("A2", M.HATCH_A2)):
-        f.append(("win", hd["phi"], M.v_to_z(hd["v"][0]) - zc, M.v_to_z(hd["v"][1]) - zc, hd.get("w", M.HATCH_W), f"Fenster {nm}"))
+def feats_c():
+    z0 = M.TUBE_C[0]
+    f = [("hole", p, M.SPIGOT_C_SCREW_Z - z0, None, M.SCREW_HOLE_PAPER, "Spant M3") for p in M.SPIGOT_C_PHI]
+    f += [("hole", p, M.SHEAR_PIN_Z - z0, None, M.SHEAR_PIN_D, "Abscherstift M2") for p in M.SHEAR_PIN_PHI]
     return f
 
 
-def draw_development(v, C, L, feats, title, zones=(), guides=True):
-    """Abwicklung von außen: x = Bogenlänge ab der Naht bei 330° (0 … C), y = h ab Unterkante (0 … L)."""
+def guide_h(tube):
+    """Höhe der Rampenführung über der Unterkante dieses Rohrs (0 = keine)."""
+    return max(0.0, M.RAMP_GUIDE_H - tube[0])
+
+
+def guide_half():
+    return math.degrees(math.atan(M.RAMP_GUIDE_W / 2 / (M.TUBE_OD / 2 + M.RAMP_GUIDE_GAP)))
+
+
+def draw_development(v, C, L, feats, title, zones=(), gh=0.0):
     v.rect(0, 0, C, L, lw=LW)
     for k in range(8):
         x = sx(45 * k, C)
@@ -224,82 +214,76 @@ def draw_development(v, C, L, feats, title, zones=(), guides=True):
     v.line([(x0, 0), (x0, L)], lw=1.1, c="#2a7")
     v.text(x0, -5 / v.s, "Längslinie 0°", ha="center", fontsize=5.6, color="#2a7")
     v.text(0, -9 / v.s, "Naht 330°", ha="center", fontsize=5.2, color="#777")
-    if guides:
-        half = math.degrees(math.atan(10.0 / (M.TUBE_OD / 2 + M.RAMP_GUIDE_GAP)))
+    if gh > 0:
         for g in M.RAMP_GUIDE_PHI:
-            a, b = sx(g - half, C), sx(g + half, C)
-            hg = min(M.RAMP_GUIDE_H, L)
+            a, b = sx(g - guide_half(), C), sx(g + guide_half(), C)
+            hg = min(gh, L)
             v.rect(a, 0, b, hg, lw=0.3, c="#c99", fill=C_WARN, alpha=0.45)
-            v.text((a + b) / 2, hg / 2, "Führung Startrampe: frei halten", ha="center", va="center", fontsize=4.6,
-                   color="#a55", rotation=90)
+            v.text((a + b) / 2, hg / 2, "Führung Rampe", ha="center", va="center", fontsize=4.6, color="#a55", rotation=90)
     for (h0, h1, txt) in zones:
         v.rect(0, h0, C, h1, lw=0.3, c="#7a9", ls=(0, (2, 2)), fill="#e8f3ec", alpha=0.6)
         v.text(C + 2 / v.s, (h0 + h1) / 2, txt, va="center", fontsize=5.4, color="#386")
     for kind, phi, h0, h1, d, txt in feats:
         x = sx(phi, C)
-        if kind == "hole":
-            v.hole(x, h0, d, label=f"Ø{fmt(d)}")
+        if kind in ("hole", "old"):
+            v.hole(x, h0, d, c=C_HOLE if kind == "hole" else "#888", label=f"Ø{fmt(d)}" if kind == "hole" else "alt")
         else:
             v.rect(x - d / 2, h0, x + d / 2, h1, lw=0.7, c=C_CUT, fill="#fbe3cf", hatch="////")
-            v.text(x, (h0 + h1) / 2, txt, ha="center", va="center", fontsize=5.2, rotation=90, color="#8a4a12")
+            v.text(x, (h0 + h1) / 2, txt, ha="center", va="center", fontsize=5.0, rotation=90, color="#8a4a12")
     v.text(C / 2, L + 8 / v.s, title, ha="center", fontsize=7, weight="bold")
 
 
 def feature_table(feats, C):
     rows = [["Nr", "Art", "Winkel", "Bogen ab Naht", "h ab Kante", "Maß"]]
-    k = 1
-    for kind, phi, h0, h1, d, txt in sorted(feats, key=lambda f: (f[2], f[1])):
+    for k, (kind, phi, h0, h1, d, txt) in enumerate(sorted(feats, key=lambda f: (f[2], f[1])), 1):
         s = sx(phi, C)
-        if kind == "hole":
-            rows.append([k, txt, deg(phi), fmt(s), fmt(h0), f"Ø {fmt(d)}"])
-        else:
+        if kind == "win":
             rows.append([k, txt, deg(phi), f"{fmt(s - d / 2)} … {fmt(s + d / 2)}", f"{fmt(h0)} … {fmt(h1)}", f"{fmt(d)} × {fmt(h1 - h0)}"])
-        k += 1
+        else:
+            rows.append([k, txt, deg(phi), fmt(s), fmt(h0), f"Ø {fmt(d)}"])
     return rows
 
 
 # --------------------------------------------------------------------------- Z1 Übersicht
 def z1(pdf):
-    sh = Sheet("Z1", "Übersicht, Module und Trennstellen", "1:4",
-               "Längsschnitt in der Ebene der Platine (Blick von +x). z = Abstand von der Düsenebene. "
-               "Module: M1 Antrieb, M2 Unterteil (geklebt), M3 Avionik-Schlitten, M4 Oberteil mit Bergung, M5 Spitze. "
-               "T1 … T5 sind die Trennstellen; nur dort wird geschraubt oder gesteckt.")
+    sh = Sheet("Z1", "Übersicht, Module und Trennstellen (Stand 2)", "1:4",
+               "Längsschnitt in der Ebene der Platine. z = Abstand von der Rohrunterkante (= Düse, der Motor steht bündig). "
+               "M1 Antrieb (Rohr A mit dem gebauten Kardan), M2 Avionik (Rohr B, Kuppler J1 darin verklebt, Schlitten mit Spant), "
+               "M3 Bergung (Rohr C mit CO₂-Modul und Schirm), M4 Spitze. Alle Radialschrauben bei 0°/90°/180°/270° (Rohr C: 45°-versetzt).")
     s = 0.25
-    v = sh.view(28, 150, s)       # z waagrecht (nach rechts), y senkrecht
+    v = sh.view(28, 150, s)
 
     def zr(z0, z1, r0, r1, **kw):
         v.rect(z0, r0, z1, r1, **kw)
         v.rect(z0, -r1, z1, -r0, **kw)
     R, Ri = M.TUBE_OD / 2, M.TUBE_ID / 2
-    zr(M.TUBE_BOTTOM_Z, M.JOINT_Z, Ri, R, fill="#efe6cf", lw=0.5)
-    zr(M.JOINT_Z, M.TOP_Z, Ri, R, fill="#efe6cf", lw=0.5)
-    zr(M.COUPLER_Z[0], M.COUPLER_Z[1], P.COUPLER_ID / 2, P.COUPLER_OD / 2, fill="#c9ad86", lw=0.4)
-    zr(*M.KEY_RING_Z, M.KEY_RING_OD / 2 - M.KEY_RING_WALL, M.KEY_RING_OD / 2, fill="#6d8fc7", lw=0.4)
-    v.rect(M.KEY_RING_Z[0], -M.KEY_RING_OD / 2 + 2.5, M.KEY_RING_Z[0] + 1.6, M.KEY_RING_OD / 2 - 2.5, fill="#6d8fc7", lw=0.3)
-    # Kardan, Motor
-    v.rect(0, -P.MOTOR_D / 2, P.MOTOR_L, P.MOTOR_D / 2, fill="#b9775a", lw=0.4)
-    v.rect(P.MOTOR_TUBE_Z[0], -P.MOTOR_TUBE_OD / 2, P.MOTOR_TUBE_Z[1], P.MOTOR_TUBE_OD / 2, lw=0.4, c="#345")
-    zr(P.TVC_RING_Z, P.TVC_RING_Z + P.OUTER_H, P.OUTER_RING_ID / 2, P.OUTER_RING_OD / 2, fill="#8fb1e0", lw=0.4)
-    # Schlitten
+    for t in (M.TUBE_A, M.TUBE_B, M.TUBE_C):
+        zr(*t, Ri, R, fill="#efe6cf", lw=0.5)
+    zr(*M.J1_COUPLER, P.COUPLER_ID / 2, P.COUPLER_OD / 2, fill="#c9ad86", lw=0.4)
+    zr(*M.J1_RING["z"], M.J1_RING["id"] / 2, M.J1_RING["od"] / 2, fill="#6d8fc7", lw=0.3)
+    v.rect(0, -P.MOTOR_D / 2, M.MOTOR_L, P.MOTOR_D / 2, fill="#b9775a", lw=0.4)
+    v.rect(3, -P.COUPLER_ID / 2 + 1, M.GIMBAL_TOP_Z, P.COUPLER_ID / 2 - 1, lw=0.4, c="#345", ls=(0, (3, 2)))
+    v.text(M.GIMBAL_TOP_Z / 2, P.COUPLER_ID / 2 - 6, "Kardan\n(gebaut)", ha="center", va="top", fontsize=5)
     v.rect(*[M.DISC_Z[0], -M.DISC_OD / 2, M.DISC_Z[1], M.DISC_OD / 2], fill="#8fb1e0", lw=0.4)
     v.rect(M.BOARD_V0_Z, -M.BOARD_W / 2, M.BOARD_V0_Z + M.BOARD_L, M.BOARD_W / 2, fill="#2e7d4f", lw=0.4, alpha=0.85)
-    zr(*M.SPIGOT_Z, M.SPIGOT_ID / 2, M.SPIGOT_OD / 2, fill="#8fb1e0", lw=0.4)
-    v.rect(M.FLANGE_Z[0], -M.FLANGE_OD / 2, M.FLANGE_Z[1], M.FLANGE_OD / 2, fill="#8fb1e0", lw=0.4)
-    # Bergung, Spitze
-    zr(*M.PISTON_Z, P.COUPLER_ID / 2, P.COUPLER_OD / 2, fill="#c9ad86", lw=0.4)
-    v.rect(M.PISTON_Z[0], -P.COUPLER_ID / 2, M.PISTON_Z[0] + 3, P.COUPLER_ID / 2, fill="#6d8fc7", lw=0.3)
-    v.rect(M.CHUTE_Z[0], -P.CHUTE_D / 2, M.CHUTE_Z[1], P.CHUTE_D / 2, fill="#e8a49c", lw=0.4)
-    zr(*M.NOSE_SHOULDER_Z, P.NOSE_SHOULDER_D / 2 - 1.2, P.NOSE_SHOULDER_D / 2, fill="#c9ad86", lw=0.3)
+    zr(*M.SPIGOT_B["z"], M.SPIGOT_B["id"] / 2, M.SPIGOT_B["od"] / 2, fill="#8fb1e0", lw=0.4)
+    zr(*M.SPIGOT_C["z"], M.SPIGOT_C["id"] / 2, M.SPIGOT_C["od"] / 2, fill="#8fb1e0", lw=0.4)
+    v.rect(M.BAND_Z[0], -M.BAND_OD / 2, M.BAND_Z[1], M.BAND_OD / 2, fill="#2471a3", lw=0.4)
+    c = M.CO2
+    v.rect(M.CO2_Z0, -c["l"] / 2, M.CO2_Z0 + c["d"], c["l"] / 2, fill="#999", lw=0.4)
+    v.rect(M.CHUTE_Z[0], -M.CHUTE["d"] / 2, M.CHUTE_Z[1], M.CHUTE["d"] / 2, fill="#e8a49c", lw=0.4)
+    zr(M.NOSE_SHOULDER_Z0, M.TOP_Z, P.NOSE_SHOULDER_D / 2 - 1.2, P.NOSE_SHOULDER_D / 2, fill="#c9ad86", lw=0.3)
+    hz = M.NOSE_SHOULDER_Z0 + M.NOSE_HOOK_DEPTH
+    v.rect(hz, -P.NOSE_SHOULDER_D / 2 + 1.2, hz + 4, P.NOSE_SHOULDER_D / 2 - 1.2, fill="#a0784c", lw=0.3)
     import airframe
     prof = airframe.nose_profile()
     pts = [(M.TOP_Z + dz, r) for r, dz in prof] + [(M.TOP_Z + dz, -r) for r, dz in reversed(prof)]
     sh.ax.add_patch(Polygon([v.P(*p) for p in pts], closed=True, fc="#f4f4f4", ec="#111", lw=0.5))
-    v.center([(-10, 0), (M.TOP_Z + P.NOSE_L + 10, 0)])
-    # Stationen
-    stations = [(0, "Düse"), (M.TUBE_BOTTOM_Z, ""), (M.TVC_SCREW_Z, "T1"), (M.KEY_Z, ""), (M.COUPLER_Z[0], ""),
-                (M.BOARD_V0_Z, ""), (M.JOINT_Z, "Stoß"), (M.JOINT_SCREW_Z, "T2"), (M.FLANGE_Z[1], ""), (M.PISTON_Z[0], ""),
-                (M.CHUTE_Z[0], ""), (M.CHUTE_Z[1], ""), (M.NOSE_SHOULDER_Z[0], ""), (M.SHEAR_PIN_Z, "T3"), (M.TOP_Z, ""),
-                (M.TOP_Z + P.NOSE_L, "")]
+    v.center([(-10, 0), (M.NOSE_TIP_Z + 10, 0)])
+    stations = [(0, "Düse"), (M.GIMBAL_SCREW_Z, ""), (M.J1_SCREW_Z, "T1"), (M.TUBE_B[0], ""), (M.BOARD_V0_Z, ""),
+                (M.OLD_HOLES_B_Z, ""), (M.SPIGOT_B_SCREW_Z, "T2"), (M.TUBE_B[1], ""), (M.SPIGOT_C_SCREW_Z, "T3"),
+                (M.CHUTE_Z[0], ""), (M.CHUTE_Z[1], ""), (M.NOSE_SHOULDER_Z0, ""), (M.SHEAR_PIN_Z, "T4"), (M.TOP_Z, ""),
+                (M.NOSE_TIP_Z, "")]
     for i, (z, lab) in enumerate(stations):
         x, y = v.P(z, -R)
         yy = y - 6 - (i % 3) * 4.2
@@ -307,220 +291,171 @@ def z1(pdf):
         sh.ax.text(x, yy, fmt(z), fontsize=5.2, ha="center", va="top", color=C_DIM)
         if lab:
             sh.ax.text(x, v.P(z, R)[1] + 2.5, lab, fontsize=6, ha="center", color="#a33", weight="bold")
-    # Modulbänder
-    mods = [("M1 Antrieb", 0, P.TVC_RING_Z + P.OUTER_H + 8), ("M2 Unterteil (Rohr 200, Schlüsselring, Kuppler geklebt)", M.TUBE_BOTTOM_Z, M.COUPLER_Z[1]),
-            ("M3 Avionik-Schlitten", M.DISC_Z[0], M.FLANGE_Z[1]), ("M4 Oberteil (Rohr 500) mit Kolben und Schirm", M.JOINT_Z, M.TOP_Z),
-            ("M5 Spitze", M.NOSE_SHOULDER_Z[0], M.TOP_Z + P.NOSE_L)]
-    cols = ["#d35400", "#7f8c8d", "#2471a3", "#b7950b", "#7d3c98"]
+    mods = [("M1 Antrieb (Rohr A)", *M.TUBE_A), ("M2 Avionik (Rohr B, Kuppler, Schlitten mit Spant)", M.J1_COUPLER[0], M.BAND_Z[1]),
+            ("M3 Bergung (Rohr C)", M.TUBE_C[0], M.TOP_Z), ("M4 Spitze", M.NOSE_SHOULDER_Z0, M.NOSE_TIP_Z)]
+    cols = ["#d35400", "#2471a3", "#b7950b", "#7d3c98"]
     for i, (nm, a, b) in enumerate(mods):
         y = 150 + R * s + 12 + i * 5.0
         x0, x1 = v.P(a, 0)[0], v.P(b, 0)[0]
         sh.ax.add_patch(Rectangle((x0, y), x1 - x0, 3.2, fc=cols[i], ec="none", alpha=0.85))
         sh.ax.text(x0 + 1, y + 1.6, nm, fontsize=5.6, va="center", color="white", weight="bold")
-    # Legende der Trennstellen
     rows = [["Trennstelle", "Wo", "Wie", "Lösen für"],
-            ["T1", f"z {fmt(M.TVC_SCREW_Z)}, Kardanflansch", "3 × M3 × 6 radial in Einschmelzmuttern", "Kardan/Servo tauschen (nach unten)"],
-            ["T2", f"z {fmt(M.JOINT_SCREW_Z)}, Rohrstoß", "3 × M3 × 6 durch Rohr oben + Kuppler in den Spant", "Oberteil ab, Schlitten heraus"],
-            ["T3", f"z {fmt(M.SHEAR_PIN_Z)}, Spitze", "2 × M2-Nylon als Abscherstifte", "trennt beim Ausstoß"],
-            ["T4", "Platine, Stirnseiten", "Stecker J5, J6, J1, J4, J9, J10", "Kabel Schlitten ↔ Rumpf/Kardan/Zünder"],
-            ["T5", "Spant, oben", "2 Zünder-Klemmen M2, Ringschraube M4", "Zünder und Schockschnur je Flug"]]
-    sh.table(12, 100, rows, [20, 46, 70, 52], row_h=4.4)
+            ["T1", f"z {fmt(M.J1_SCREW_Z)}, Stoß A/B", "4 × M3 durch Rohr A und Kuppler in den Schraubring", "Kardan/Motorraum, Servo"],
+            ["T2", f"z {fmt(M.SPIGOT_B_SCREW_Z)}, oben in B", "4 × M3 durch Rohr B in den Spant", "Schlitten heraus"],
+            ["T3", f"z {fmt(M.SPIGOT_C_SCREW_Z)}, unten in C", "4 × M3 (45°) durch Rohr C in den Spant", "Bergung, CO₂-Kapsel"],
+            ["T4", f"z {fmt(M.SHEAR_PIN_Z)}, Spitze", "Passung (Abscherstifte nur nach Test)", "trennt beim Ausstoß"],
+            ["T5", "Platine", "Stecker J5, J6 (Servos), CO₂-Servo, Akkus", "Kabel"]]
+    sh.table(12, 100, rows, [20, 40, 78, 50], row_h=4.4)
     sh.text(12, 103, "Trennstellen", fontsize=8, weight="bold")
     v2 = sh.view(255, 76, 0.42)
-    # Querschnitt im Avionik-Kuppler (Blick von oben, +z), zeigt Platine, Träger, Luken
     v2.circle(0, 0, M.TUBE_OD); v2.circle(0, 0, M.TUBE_ID, lw=0.3)
-    v2.circle(0, 0, P.COUPLER_OD, lw=0.3); v2.circle(0, 0, P.COUPLER_ID, lw=0.5)
-    v2.rect(-M.BOARD_W / 2, -M.BOARD_T / 2, M.BOARD_W / 2, M.BOARD_T / 2, fill="#2e7d4f", lw=0.3)
-    v2.rect(-8.9, M.BOARD_T / 2, 8.9, 13.5, fill="#3c9a62", lw=0.3)
-    v2.rect(-M.BOARD_W / 2, M.TRAY_FLOOR_Y, M.BOARD_W / 2, -M.BOARD_T / 2, lw=0.4, c="#2471a3")
-    v2.rect(-M.BAT2S["w"] / 2, M.TRAY_FLOOR_Y + 1.9, M.BAT2S["w"] / 2, M.TRAY_FLOOR_Y + 1.9 + M.BAT2S["h"], fill="#e9c46a", lw=0.3)
-    v2.rect(-M.PANEL_W / 2, M.PANEL_Y[0], M.PANEL_W / 2, M.PANEL_Y[1], fill="#6d8fc7", lw=0.3)
-    for nm, phi, w in (("Luke A", 90, M.HATCH_W), ("Luke B", 270, M.HATCH_B["w"])):
-        a = math.degrees(w / 2 / (M.TUBE_OD / 2))
-        for dd in (-a, a):
-            v2.line([(35 * math.cos(math.radians(phi + dd)), 35 * math.sin(math.radians(phi + dd))),
-                     (41 * math.cos(math.radians(phi + dd)), 41 * math.sin(math.radians(phi + dd)))], c=C_CUT, lw=0.8)
-        v2.text(46 * math.cos(math.radians(phi)), 46 * math.sin(math.radians(phi)), nm, ha="center", va="center", color=C_CUT)
+    for phi in M.SCREW_PHI:
+        v2.hole(36.3 * math.cos(math.radians(phi)), 36.3 * math.sin(math.radians(phi)), 3.4, label=None, cross=2)
+    for g in M.RAMP_GUIDE_PHI:
+        a = math.radians(g)
+        v2.rect(0, 0, 0, 0)
+        cx, cy = 49 * math.cos(a), 49 * math.sin(a)
+        sh.ax.add_patch(Polygon([v2.P(cx + dx * math.cos(a) - dy * math.sin(a), cy + dx * math.sin(a) + dy * math.cos(a))
+                                 for dx, dy in ((-10, -10), (10, -10), (10, 10), (-10, 10))], closed=True, fc=C_WARN, ec="#a55", lw=0.4))
     for phi in (0, 90, 180, 270):
-        v2.text(52 * math.cos(math.radians(phi)), 52 * math.sin(math.radians(phi)) - 2, deg(phi), ha="center", fontsize=5.5, color="#555")
-    v2.text(44, 2, "Schlüssel\n(z 116)", fontsize=5, color="#555")
-    v2.text(-60, -66, "Schnitt bei z ≈ 190, Blick von der Spitze\n+x = 0° (Längslinie), +y = 90° (Bestückungsseite)", fontsize=5.6)
+        v2.text(62 * math.cos(math.radians(phi)), 62 * math.sin(math.radians(phi)) - 2, deg(phi), ha="center", fontsize=5.5, color="#555")
+    v2.text(-110, -72, "Querschnitt Rohr A, Blick von oben: Schrauben bei 0/90/180/270°,\nRampenführungen (rot) bei 45/135/225/315°", fontsize=5.6)
     sh.save(pdf, "Z1_uebersicht.png")
 
 
 # --------------------------------------------------------------------------- Z2–Z4 Abwicklungen
-def z2(pdf):
-    C, L = M.CIRC_TUBE, M.LOWER_L
-    sh = Sheet("Z2", "Rohr unten 75 × 200: Abwicklung, Bohrungen, Fenster", "1:1,6",
-               "Abwicklung von außen gesehen, Unterkante (Düsenseite) unten. Bogen = Abstand ab der Naht bei 330° entlang des Umfangs "
-               f"(Umfang {fmt(C)}); die Längslinie 0° liegt {fmt(sx(0, C))} rechts der Naht. Bohren mit den 1:1-Schablonen S1/S2. Fenster und "
-               "Barometer-Bohrungen erst NACH dem Einkleben des Kupplers durch beide Wände schneiden/bohren.")
-    v = sh.view(24, 50, 1 / 1.6)
-    zones = [(zl(P.TVC_RING_Z), zl(P.TVC_RING_Z + P.OUTER_FLANGE_H), "Kardanflansch"),
-             (zl(M.KEY_RING_Z[0]), zl(M.KEY_RING_Z[1]), "Schlüsselring"),
-             (zl(M.COUPLER_Z[0]), L, f"Kuppler ({fmt(M.COUPLER_GLUE)} geklebt)")]
-    feats = lower_features()
-    draw_development(v, C, L, feats, "Rohr unten, Abwicklung von außen", zones=zones)
-    v.dim((C, 0), (C, L), -34, fmt(L))
+def dev_sheet(pdf, nr, title, tube, feats, zones, png, note, scale):
+    C, L = M.CIRC_TUBE, tube[1] - tube[0]
+    sh = Sheet(nr, title, f"1:{fmt(scale)}", note)
+    v = sh.view(24, 50, 1 / scale)
+    draw_development(v, C, L, feats, f"{title.split(':')[0]}, Abwicklung von außen", zones=zones, gh=guide_h(tube))
+    v.dim((C, 0), (C, L), -36, fmt(L))
     v.dim((0, 0), (C, 0), -9, f"Umfang {fmt(C)}")
     v.dim((0, L), (sx(0, C), L), 12, fmt(sx(0, C)))
     for kind, phi, h0, h1, d, txt in feats:
-        if kind == "hole" and txt != "Baro":
-            v.dim((sx(phi, C) + 5, 0), (sx(phi, C) + 5, h0), -2, fmt(h0), fs=5.2)
-    sh.table(206, 192, feature_table(feats, C), [6, 21, 10, 18, 14, 12], row_h=4.0, fs=5.2)
-    sh.save(pdf, "Z2_rohr_unten.png")
+        if kind == "hole":
+            v.dim((sx(phi, C) + 5, 0), (sx(phi, C) + 5, h0), -2, fmt(h0), fs=5.0)
+    sh.table(206, 192, feature_table(feats, C), [6, 24, 10, 18, 13, 12], row_h=4.0, fs=5.1)
+    sh.text(206, 192 - 4.0 * (len(feats) + 1) - 5, "rot = neu bohren/schneiden, grau = vorhanden", fontsize=5.6)
+    sh.save(pdf, png)
+
+
+def z2(pdf):
+    dev_sheet(pdf, "Z2", "Rohr A 75 × 125: Kardanrohr", M.TUBE_A, feats_a(),
+              [(M.GIMBAL_SCREW_Z - 6, M.GIMBAL_SCREW_Z + 6, "Kardanflansch (Bestand)"),
+               (M.GIMBAL_WINDOW["z"][0], M.GIMBAL_WINDOW["z"][1], "Servofenster (Bestand, Winkel lt. Rohr)"),
+               (M.J1_COUPLER[0], M.TUBE_A[1], "Kuppler J1 steckt")],
+              "Z2_rohr_a.png",
+              "Gebaut: Kardan mit 4 Schrauben bei 0/90/180/270° auf h = 44, zwei Servofenster ca. 20 × 20 ab h = 60. Neu: nur die 4 Löcher T1 "
+              "15 mm unter der Oberkante, gebohrt durch Rohr A UND den aufgesteckten Kuppler (Schablone S1). Die Servofenster dürfen nicht "
+              "unter einer Rampenführung liegen (45/135/225/315°) oder die Führungen werden für diese Rakete gedreht.", 1.0)
 
 
 def z3(pdf):
-    C, L = M.CIRC_TUBE, M.UPPER_L
-    sh = Sheet("Z3", "Rohr oben 75 × 500: Abwicklung, Bohrungen, Kerbe", "1:3,3 (Detail 1:1,25)",
-               "Unterkante = Rohrstoß (steckt auf dem Avionik-Kuppler). Stoßschrauben und Kerbe A2 mit Schablone S3 bei aufgestecktem Rohr durch "
-               "Rohr und Kuppler bohren. Abscherstifte mit S4 bei eingesetzter Spitze durch Rohr und Schulter bohren (Ø 2, die M2-Nylonschraube "
-               "schneidet ihr Gewinde selbst).")
-    v = sh.view(40, 38, 1 / 3.3)
-    zones = [(0, M.COUPLER_FREE, "Kuppler"), (zu(M.PISTON_Z[0]), zu(M.PISTON_Z[1]), "Kolben"),
-             (zu(M.CHUTE_Z[0]), zu(M.CHUTE_Z[1]), "Fallschirm"), (zu(M.NOSE_SHOULDER_Z[0]), L, "Schulter Spitze")]
-    feats = upper_features()
-    draw_development(v, C, L, feats, "Rohr oben, Abwicklung", zones=zones, guides=False)
-    v.dim((0, 0), (0, L), 9, fmt(L))
-    sh.table(150, 192, feature_table(feats, C), [6, 28, 10, 20, 16, 15], row_h=4.2, fs=5.6)
-    sc = 1 / 1.25
-    vd = sh.view(150, 85, sc)
-    W = sx(140, C)
-    vd.rect(0, 0, W, 66, lw=0.5)
-    vd.text(0, 74, "Detail Stoß, Naht (330°) bis 140°, 1:1,25", fontsize=6.5, weight="bold")
-    for k in (0, 45, 90, 135):
-        vd.line([(sx(k, C), 0), (sx(k, C), 66)], lw=0.25, c="#bbb", ls=(0, (3, 3)))
-        vd.text(sx(k, C), 67.5, deg(k), ha="center", fontsize=5.5, color="#555")
-    vd.line([(sx(0, C), 0), (sx(0, C), 66)], lw=1.0, c="#2a7")
-    for kind, phi, h0, h1, d, txt in feats:
-        x = sx(phi, C)
-        if x > W:
-            continue
-        if kind == "hole" and h0 < 66:
-            vd.hole(x, h0, d, label=f"Ø{fmt(d)}")
-            vd.dim((x + 4, 0), (x + 4, h0), -2, fmt(h0))
-        elif kind == "win":
-            vd.rect(x - d / 2, 0, x + d / 2, h1, c=C_CUT, fill="#fbe3cf", hatch="////")
-            vd.dim((x - d / 2, h1), (x + d / 2, h1), 3, fmt(d))
-            vd.dim((x + d / 2, 0), (x + d / 2, h1), -5, fmt(h1))
-    vd.dim((sx(0, C), 0), (sx(90, C), 0), -5, f"{fmt(sx(90, C) - sx(0, C))} (0° bis 90°)")
-    vd.dim((sx(0, C), 0), (sx(135, C), 0), -11, f"{fmt(sx(135, C) - sx(0, C))} (0° bis 135°)")
-    sh.save(pdf, "Z3_rohr_oben.png")
+    dev_sheet(pdf, "Z3", "Rohr B 75 × 176: Avionikrohr", M.TUBE_B, feats_b(),
+              [(0, M.J1_COUPLER[1] - M.TUBE_B[0], "Kuppler J1 verklebt"),
+               (M.SPIGOT_B["z"][0] - M.TUBE_B[0], M.TUBE_B[1] - M.TUBE_B[0], "Zapfen des Spants")],
+              "Z3_rohr_b.png",
+              "Die 4 alten Löcher auf h = 44 (vom Ring-Stack) bleiben offen: sie sind der Druckausgleich für das Barometer. Luken mit Cutter "
+              "ausschneiden, Stücke als Deckel aufheben. Spantschrauben T2 8 mm unter der Oberkante. Schraubschalter-Loch Ø 3 neben Luke B. "
+              "Schablonen S2 (unten) und S3 (oben).", 1.4)
 
 
 def z4(pdf):
-    C, L = M.CIRC_COUPLER, P.COUPLER_L
-    sh = Sheet("Z4", "Avionik-Kuppler 72,4 × 150: Abwicklung", "1:1,25",
-               f"Unten {fmt(M.COUPLER_GLUE)} mm im unteren Rohr verklebt (Epoxid), oben {fmt(M.COUPLER_FREE)} mm frei für das obere Rohr. "
-               "Alle Öffnungen entstehen beim Bohren/Schneiden durch das Rohr hindurch, diese Zeichnung dient der Kontrolle. "
-               f"Oberkante = Auflage des Spant-Flanschs (Moosgummi-Dichtring). Umfang {fmt(C)}.")
-    v = sh.view(24, 60, 1 / 1.4)
-    zones = [(0, M.COUPLER_GLUE, "im Rohr unten verklebt"), (M.COUPLER_GLUE, L, "Rohr oben steckt")]
-    feats = coupler_features()
-    draw_development(v, C, L, feats, "Avionik-Kuppler, Abwicklung", zones=zones, guides=False)
-    v.dim((0, M.COUPLER_GLUE), (0, 0), 6, fmt(M.COUPLER_GLUE))
-    v.dim((0, L), (0, M.COUPLER_GLUE), 6, fmt(M.COUPLER_FREE))
-    v.dim((0, 0), (C, 0), -9, f"Umfang {fmt(C)}")
-    sh.table(206, 192, feature_table(feats, C), [6, 19, 10, 18, 15, 13], row_h=4.0, fs=5.2)
-    sh.save(pdf, "Z4_kuppler.png")
+    dev_sheet(pdf, "Z4", "Rohr C 75 × " + fmt(M.TUBE_C[1] - M.TUBE_C[0]) + ": Bergungsrohr", M.TUBE_C, feats_c(),
+              [(0, M.SPIGOT_C["z"][1] - M.TUBE_C[0], "Zapfen des Spants"),
+               (M.CO2_Z0 - M.TUBE_C[0], M.CO2_Z0 + M.CO2["h"] - M.TUBE_C[0], "CO₂-Modul"),
+               (M.CHUTE_Z[0] - M.TUBE_C[0], M.CHUTE_Z[1] - M.TUBE_C[0], "Schirm 100 × Ø 70"),
+               (M.NOSE_SHOULDER_Z0 - M.TUBE_C[0], M.TOP_Z - M.TUBE_C[0], "Schulter der Spitze")],
+              "Z4_rohr_c.png",
+              "Neues Rohr, Länge aus dem Stapel: Zapfen 15, CO₂-Modul 24, Schirm 100, Schnur 40, Schulter 75 (Schulterlänge nach Klima-Zeichnung "
+              "prüfen, ändert die Rohrlänge 1:1). Spantschrauben T3 um 45° versetzt (Kapsel liegt quer zwischen ihnen). Abscherstifte nur, "
+              "wenn der CO₂-Test zeigt, dass sie sicher abscheren. Schablone S4.", 2.0)
 
 
-# --------------------------------------------------------------------------- Z5 Avionik-Schlitten
+# --------------------------------------------------------------------------- Z5 Schlitten mit Spant
 def z5(pdf):
-    sh = Sheet("Z5", "Avionik-Schlitten mit Ausstoßspant (Druckteil)", "1:1,25",
-               "Ein Druckteil, stehend gedruckt (Flansch auf dem Bett), PETG, 3 Wände, 25 % Gyroid. Bezugsebene A = Unterseite des Flanschs "
-               "(liegt auf der Kupplerkante). Einschmelzmuttern M3 kurz (Ø 4,0 × 5 vorgebohrt) in: 3 Schraubenaugen (radial), "
-               "4 Platinensäulen, 2 Stirnaugen (untere Scheibe). Platine rev B1 mit 4 × M3 × 6 von oben.")
+    sh = Sheet("Z5", "Avionik-Schlitten mit Spant (ein Druckteil)", "1:1,25",
+               "Stehend gedruckt, Band auf dem Bett, PETG, 3 Wände, 25 % Gyroid. Bezugsebene A = Unterseite des Bands (liegt auf der Oberkante "
+               "von Rohr B). Einschmelzmuttern M3 (Ø 4,0 × 5): 4 Augen unten (T2), 4 Augen oben (T3, 45° versetzt), 4 Platinensäulen, 2 Stirnaugen. "
+               "Platte 5 mm für den CO₂-Druck, Ringschraube M4 und Kabeldurchführung Ø 6 für das CO₂-Servo.")
     s = 1 / 1.25
-    A = M.FLANGE_Z[0]
-    # Ansicht 1: von +y (Bestückungsseite), x = u, y = z - A (nach unten negativ)
-    v = sh.view(62, 170, s)
+    A = M.BAND_Z[0]
+
     def zz(z):
         return z - A
     bw = M.BOARD_W / 2
-    v.rect(-M.FLANGE_OD / 2, zz(M.FLANGE_Z[0]), M.FLANGE_OD / 2, zz(M.FLANGE_Z[1]), fill="#cfdcf0")
-    v.rect(-M.SPIGOT_OD / 2, zz(M.SPIGOT_Z[0]), M.SPIGOT_OD / 2, zz(M.SPIGOT_Z[1]), fill="#dfe8f5")
-    v.rect(-bw, zz(M.DISC_Z[1]), bw, zz(M.SPIGOT_Z[0]), lw=0.5, c="#2471a3")
+    v = sh.view(62, 166, s)
+    sb, sc = M.SPIGOT_B, M.SPIGOT_C
+    v.rect(-M.BAND_OD / 2, 0, M.BAND_OD / 2, zz(M.BAND_Z[1]), fill="#cfdcf0")
+    v.rect(-sc["od"] / 2, zz(sc["z"][0]), sc["od"] / 2, zz(sc["z"][1]), fill="#dfe8f5")
+    v.rect(-sb["od"] / 2, zz(sb["z"][0]), sb["od"] / 2, zz(sb["z"][1]), fill="#dfe8f5")
+    v.rect(-bw, zz(M.DISC_Z[1]), bw, zz(sb["z"][0]), lw=0.5, c="#2471a3")
     v.rect(-bw, zz(M.BOARD_V0_Z), bw, zz(M.BOARD_V0_Z + M.BOARD_L), lw=0.5, c="#2e7d4f", ls=(0, (4, 2)))
     v.rect(-M.DISC_OD / 2, zz(M.DISC_Z[0]), M.DISC_OD / 2, zz(M.DISC_Z[1]), fill="#cfdcf0")
     t = P.TEENSY
     v.rect(t["u0"], zz(M.BOARD_V0_Z + t["v0"]), t["u1"], zz(M.BOARD_V0_Z + t["v1"]), lw=0.4, c="#2e7d4f", ls=(0, (2, 2)))
-    v.text(0, zz(M.BOARD_V0_Z + 60), "Teensy", ha="center", fontsize=5.5, color="#2e7d4f", rotation=90)
     for (u, vv) in M.BOARD_HOLES:
         v.hole(u, zz(M.BOARD_V0_Z + vv), M.INSERT_HOLE[0])
-    v.hole(0, zz(M.JOINT_SCREW_Z), M.INSERT_HOLE[0], label="Auge 0°")
-    v.center([(0, zz(M.DISC_Z[0]) - 6), (0, zz(M.FLANGE_Z[1]) + 6)])
-    v.dim((-M.FLANGE_OD / 2, zz(M.FLANGE_Z[1])), (M.FLANGE_OD / 2, zz(M.FLANGE_Z[1])), 5, f"Ø {fmt(M.FLANGE_OD)}")
-    v.dim((-M.SPIGOT_OD / 2, zz(M.SPIGOT_Z[0])), (M.SPIGOT_OD / 2, zz(M.SPIGOT_Z[0])), -4, f"Ø {fmt(M.SPIGOT_OD)}")
+    v.hole(0, zz(M.SPIGOT_B_SCREW_Z), M.INSERT_HOLE[0], label="Auge 0°")
+    v.center([(0, zz(M.DISC_Z[0]) - 6), (0, zz(sc["z"][1]) + 6)])
+    v.dim((-M.BAND_OD / 2, zz(sc["z"][1])), (M.BAND_OD / 2, zz(sc["z"][1])), 5, f"Band Ø {fmt(M.BAND_OD)}, Zapfen Ø {fmt(sc['od'])}")
     v.dim((-M.DISC_OD / 2, zz(M.DISC_Z[0])), (M.DISC_OD / 2, zz(M.DISC_Z[0])), -5, f"Ø {fmt(M.DISC_OD)} (Scheibe)")
-    xr = M.FLANGE_OD / 2
-    v.dim((xr, 0), (xr, zz(M.FLANGE_Z[1])), -5, fmt(M.FLANGE_Z[1] - M.FLANGE_Z[0]))
-    v.dim((xr, zz(M.SPIGOT_Z[0])), (xr, 0), -6, fmt(A - M.SPIGOT_Z[0]))
-    v.dim((xr, zz(M.JOINT_SCREW_Z)), (xr, 0), -12, fmt(A - M.JOINT_SCREW_Z))
-    v.dim((xr, zz(M.BOARD_V0_Z + M.BOARD_L)), (xr, 0), -18, fmt(A - M.BOARD_V0_Z - M.BOARD_L))
-    v.dim((xr, zz(M.BOARD_V0_Z)), (xr, 0), -24, fmt(A - M.BOARD_V0_Z))
-    v.dim((xr, zz(M.DISC_Z[0])), (xr, 0), -30, fmt(A - M.DISC_Z[0]))
+    xr = M.BAND_OD / 2
+    for i, (zv, lab) in enumerate(((sc["z"][1], None), (M.SPIGOT_C_SCREW_Z, None))):
+        v.dim((xr, 0), (xr, zz(zv)), -6 * (i + 1), fmt(zv - A))
+    for i, zv in enumerate((sb["z"][0], M.SPIGOT_B_SCREW_Z, M.BOARD_V0_Z + M.BOARD_L, M.BOARD_V0_Z, M.DISC_Z[0])):
+        v.dim((xr, zz(zv)), (xr, 0), -6 * (i + 1), fmt(A - zv))
     v.dim((-bw, zz(M.BOARD_V0_Z)), (bw, zz(M.BOARD_V0_Z)), -12, f"{fmt(M.BOARD_W)} (Platine)")
     u0, v0 = M.BOARD_HOLES[0]
     v.dim((M.BOARD_HOLES[0][0], zz(M.BOARD_V0_Z + v0)), (M.BOARD_HOLES[1][0], zz(M.BOARD_V0_Z + v0)), 6, fmt(2 * abs(u0)))
-    v.dim((-bw, zz(M.BOARD_V0_Z + M.BOARD_HOLES[2][1])), (-bw, zz(M.BOARD_V0_Z + M.BOARD_HOLES[0][1])), -5,
-          fmt(M.BOARD_HOLES[2][1] - M.BOARD_HOLES[0][1]))
-    v.text(-M.FLANGE_OD / 2, 9, "A", fontsize=8, weight="bold", color="#a33")
-    v.text(-M.FLANGE_OD / 2, 16, "Ansicht von +y (Bestückungsseite)", fontsize=6.5, weight="bold")
-    # Ansicht 2: von +x (Seite), x = y-Koordinate
-    v2 = sh.view(172, 170, s)
-    v2.rect(-M.FLANGE_OD / 2, zz(M.FLANGE_Z[0]), M.FLANGE_OD / 2, zz(M.FLANGE_Z[1]), fill="#cfdcf0")
-    v2.rect(-M.SPIGOT_OD / 2, zz(M.SPIGOT_Z[0]), M.SPIGOT_OD / 2, zz(M.SPIGOT_Z[1]), fill="#dfe8f5")
+    v.dim((-bw, zz(M.BOARD_V0_Z + M.BOARD_HOLES[2][1])), (-bw, zz(M.BOARD_V0_Z + M.BOARD_HOLES[0][1])), -5, fmt(M.BOARD_HOLES[2][1] - M.BOARD_HOLES[0][1]))
+    v.text(-M.BAND_OD / 2 - 5, 0, "A", fontsize=8, weight="bold", color="#a33", va="center")
+    v.text(-M.BAND_OD / 2, zz(sc["z"][1]) + 10, "Ansicht von +y (Bestückungsseite)", fontsize=6.5, weight="bold")
+    # Seitenansicht
+    v2 = sh.view(172, 166, s)
+    v2.rect(-M.BAND_OD / 2, 0, M.BAND_OD / 2, zz(M.BAND_Z[1]), fill="#cfdcf0")
+    v2.rect(-sc["od"] / 2, zz(sc["z"][0]), sc["od"] / 2, zz(sc["z"][1]), fill="#dfe8f5")
+    v2.rect(-sb["od"] / 2, zz(sb["z"][0]), sb["od"] / 2, zz(sb["z"][1]), fill="#dfe8f5")
     v2.rect(-M.DISC_OD / 2, zz(M.DISC_Z[0]), M.DISC_OD / 2, zz(M.DISC_Z[1]), fill="#cfdcf0")
     v2.rect(-M.BOARD_T / 2, zz(M.BOARD_V0_Z), M.BOARD_T / 2, zz(M.BOARD_V0_Z + M.BOARD_L), fill="#2e7d4f", lw=0.3)
-    v2.rect(M.TRAY_FLOOR_Y, zz(M.DISC_Z[1]), -M.BOARD_T / 2, zz(M.SPIGOT_Z[0]), lw=0.5, c="#2471a3")
+    v2.rect(M.TRAY_FLOOR_Y, zz(M.DISC_Z[1]), -M.BOARD_T / 2, zz(sb["z"][0]), lw=0.5, c="#2471a3")
     for nm, bat in (("2S", M.BAT2S), ("1S", M.BAT1S)):
         y0 = M.TRAY_FLOOR_Y + M.TRAY_WALL + 0.3
         v2.rect(y0, zz(M.BOARD_V0_Z + bat["v0"]), y0 + bat["h"], zz(M.BOARD_V0_Z + bat["v0"] + bat["l"]), fill="#e9c46a", lw=0.3)
         v2.text(y0 + bat["h"] / 2, zz(M.BOARD_V0_Z + bat["v0"] + bat["l"] / 2), nm, ha="center", va="center", fontsize=5.5, rotation=90)
     va, vb = M.HATCH_B["v"]
     v2.rect(M.PANEL_Y[0], zz(M.BOARD_V0_Z + va + 1), M.PANEL_Y[1], zz(M.BOARD_V0_Z + vb - 1), fill="#6d8fc7", lw=0.3)
-    for (cu, cv) in M.PANEL_COLS:
-        v2.rect(M.PANEL_Y[1], zz(M.BOARD_V0_Z + cv) - 3.5, M.TRAY_FLOOR_Y, zz(M.BOARD_V0_Z + cv) + 3.5, fill="#6d8fc7", lw=0.3)
-    v2.rect(-8.9 * 0 + M.BOARD_T / 2, zz(M.BOARD_V0_Z + t["v0"]), 13.5, zz(M.BOARD_V0_Z + t["v1"]), lw=0.3, c="#2e7d4f")
+    g = M.GPS
+    v2.rect(g["y"][0], zz(g["z_top"] - g["h"]), g["y"][1], zz(g["z_top"]), fill="#3c9a62", lw=0.3)
+    v2.leader((g["y"][1], zz(g["z_top"] - g["h"] / 2)), (14, -6), "GPS, Patch nach oben")
+    lh = M.LORA_HELIX
+    v2.rect(lh["y"] - lh["d"] / 2, zz(lh["z_top"] - lh["l"]), lh["y"] + lh["d"] / 2, zz(lh["z_top"]), fill="#bbb", lw=0.3)
+    v2.leader((lh["y"] + lh["d"] / 2, zz(lh["z_top"] - lh["l"] / 2)), (16, 0), "LoRa-Wendel 433 MHz")
     v2.dim((M.TRAY_FLOOR_Y, zz(M.DISC_Z[1]) - 2), (-M.BOARD_T / 2, zz(M.DISC_Z[1]) - 2), -4, fmt(abs(M.TRAY_FLOOR_Y) - M.BOARD_T / 2))
-    v2.dim((M.PANEL_Y[0], zz(M.BOARD_V0_Z + va + 1)), (M.PANEL_Y[0], zz(M.BOARD_V0_Z + vb - 1)), 5, f"Schalterbrett {fmt(vb - va - 2)}")
-    v2.text(-M.FLANGE_OD / 2, 16, "Ansicht von +x (Luke B links, Luke A rechts)", fontsize=6.5, weight="bold")
-    # Ansicht 3: Draufsicht auf den Spant (von +z)
-    v3 = sh.view(250, 105, 0.72)
-    v3.circle(0, 0, M.FLANGE_OD, fill="#cfdcf0"); v3.circle(0, 0, M.SPIGOT_OD, lw=0.3, ls=(0, (3, 2)))
-    v3.circle(0, 0, M.SPIGOT_ID, lw=0.3, ls=(0, (3, 2)))
-    cc = M.CHARGE_CUP
-    v3.circle(cc["x"], cc["y"], cc["d"] + 6); v3.circle(cc["x"], cc["y"], cc["d"])
-    v3.leader((cc["x"] + 6, cc["y"] + 3), (2, 30), f"Ladungsbecher Ø {fmt(cc['d'])} × {fmt(cc['h'])}")
-    for (x, y) in M.FEEDTHRU:
-        v3.hole(x, y, M.FEEDTHRU_D)
-    v3.leader(M.FEEDTHRU[0], (-12, 24), "Zünder-Klemmen 2 × M2 Messing")
-    v3.hole(M.EYE_BOLT["x"], M.EYE_BOLT["y"], M.EYE_BOLT["d"])
-    v3.leader((M.EYE_BOLT["x"], M.EYE_BOLT["y"]), (-22, -14), "Ringschraube M4 (Ø 4,3)")
-    for phi in M.SCREW_PHI:
-        x, y = (M.SPIGOT_OD / 2 - 2) * math.cos(math.radians(phi)), (M.SPIGOT_OD / 2 - 2) * math.sin(math.radians(phi))
+    v2.text(-M.BAND_OD / 2, zz(sc["z"][1]) + 10, "Ansicht von +x (Luke B links, Luke A rechts)", fontsize=6.5, weight="bold")
+    # Draufsicht
+    v3 = sh.view(250, 100, 0.72)
+    v3.circle(0, 0, M.BAND_OD, fill="#cfdcf0"); v3.circle(0, 0, sc["od"], lw=0.3, ls=(0, (3, 2))); v3.circle(0, 0, sc["id"], lw=0.3, ls=(0, (3, 2)))
+    v3.hole(0, -16, 4.3); v3.leader((0, -16), (-22, -14), "Ringschraube M4")
+    v3.hole(-18, 8, 6.0); v3.leader((-18, 8), (-24, 18), "Kabel CO₂-Servo Ø 6")
+    for phi in M.SPIGOT_C_PHI:
+        x, y = (sc["od"] / 2 - 2) * math.cos(math.radians(phi)), (sc["od"] / 2 - 2) * math.sin(math.radians(phi))
         v3.hole(x, y, 2.0, c="#2471a3")
-        v3.text(x * 1.32, y * 1.32, deg(phi), ha="center", va="center", fontsize=5.5, color="#2471a3")
-    v3.rect(-M.BOARD_W / 2, -M.BOARD_T / 2, M.BOARD_W / 2, M.BOARD_T / 2, lw=0.3, c="#2e7d4f", ls=(0, (3, 2)))
-    v3.center([(-42, 0), (42, 0)]); v3.center([(0, -42), (0, 42)])
-    v3.dim((M.FEEDTHRU[0][0], M.FEEDTHRU[0][1]), (M.FEEDTHRU[1][0], M.FEEDTHRU[1][1]), 4, fmt(M.FEEDTHRU[1][0] - M.FEEDTHRU[0][0]))
-    v3.dim((0, 0), (0, cc["y"]), -26, fmt(cc["y"]))
-    v3.dim((0, 0), (0, M.FEEDTHRU[0][1]), -34, fmt(M.FEEDTHRU[0][1]))
-    v3.dim((0, 0), (0, M.EYE_BOLT["y"]), -26, fmt(abs(M.EYE_BOLT["y"])))
-    v3.text(-40, -46, "Draufsicht Spant (von der Spitze)\nAugen mit Einschmelzmutter bei 0°/135°/225°,\nBohrung radial in Höhe A − "
-            f"{fmt(A - M.JOINT_SCREW_Z)}", fontsize=6)
+        v3.text(x * 1.34, y * 1.34, deg(phi), ha="center", va="center", fontsize=5.5, color="#2471a3")
+    v3.rect(-M.CO2["l"] / 2, 4 - M.CO2["d"] / 2, M.CO2["l"] / 2, 4 + M.CO2["d"] / 2, lw=0.4, ls=(0, (2, 2)), c="#666")
+    v3.text(0, 4, "CO₂-Kapsel (quer)", ha="center", va="center", fontsize=5)
+    v3.center([(-44, 0), (44, 0)]); v3.center([(0, -44), (0, 44)])
+    v3.text(-40, -50, "Draufsicht Spant (von der Spitze)\nobere Augen bei 45°/135°/225°/315°", fontsize=6)
     sh.save(pdf, "Z5_schlitten.png")
 
 
 # --------------------------------------------------------------------------- Z6 Kleinteile
 def z6(pdf):
-    sh = Sheet("Z6", "Untere Scheibe, Schalterbrett, Kolbenplatte, Ladungsbecher", "1:1",
-               "PETG (Kolbenplatte und Becher besser ASA: sie sehen die Ausstoßgase). Die Scheibe zentriert das untere Ende des Schlittens im "
-               "Kuppler; durch ihr Fenster stecken die Stecker J5/J6/J1, durch das Rundloch laufen die Kabel. Nach dem Einbau beides mit "
-               "Schaumstoff stopfen (Barometer-Raum dicht gegen den Kardanraum).")
-    # Untere Scheibe
+    sh = Sheet("Z6", "Untere Scheibe, Schalterbrett, Schraubring J1", "1:1",
+               "PETG. Die Scheibe zentriert das untere Ende des Schlittens im Kuppler J1; durch ihr Fenster stecken J5/J6/J1, durch das Rundloch "
+               "laufen die Kabel und ragt die LoRa-Wendel. Danach mit Schaumstoff stopfen. Schraubring J1 wird im Kuppler verklebt, 25 mm über "
+               "dessen Unterkante (Lage = Bohrungen T1 in Rohr A).")
     v = sh.view(55, 130, 1.0)
     v.circle(0, 0, M.DISC_OD, fill="#cfdcf0")
     v.circle(0, -4, M.DISC_CABLE_D, fill="white")
@@ -534,9 +469,7 @@ def z6(pdf):
     v.dim((-M.DISC_OD / 2, 0), (M.DISC_OD / 2, 0), 40, f"Ø {fmt(M.DISC_OD)}")
     v.dim((x0, y1), (x1, y1), 4, fmt(x1 - x0)); v.dim((x1, y0), (x1, y1), -4, fmt(y1 - y0))
     v.dim((M.TRAY_TO_DISC[0][0], M.TRAY_TO_DISC[0][1]), (M.TRAY_TO_DISC[1][0], M.TRAY_TO_DISC[1][1]), -12, f"{fmt(2 * abs(M.TRAY_TO_DISC[0][0]))} (2 × Ø 3,4)")
-    v.leader((0, -4 - M.DISC_CABLE_D / 2 + 1), (-8, -22), f"Kabelloch Ø {fmt(M.DISC_CABLE_D)}")
-    v.text(-36, 48, f"Untere Scheibe, {fmt(M.DISC_Z[1] - M.DISC_Z[0])} dick (Blick von oben)", fontsize=7, weight="bold")
-    # Schalterbrett (v ab Brettunterkante)
+    v.text(-36, 48, f"Untere Scheibe, {fmt(M.DISC_Z[1] - M.DISC_Z[0])} dick", fontsize=7, weight="bold")
     va, vb = M.HATCH_B["v"]
     b0 = va + 1
     v2 = sh.view(128, 125, 1.5)
@@ -547,122 +480,45 @@ def z6(pdf):
         v2.circle(cu, cv - b0, M.PANEL_COL_D, lw=0.4, ls=(0, (2, 1)))
     v2.dim((-M.PANEL_W / 2, vb - 1 - b0), (M.PANEL_W / 2, vb - 1 - b0), 4, fmt(M.PANEL_W))
     v2.dim((M.PANEL_W / 2, 0), (M.PANEL_W / 2, vb - 1 - b0), -5, fmt(vb - va - 2))
-    v2.text(-M.PANEL_W / 2 - 10, vb - b0 + 8, "Schalterbrett (Luke B), Blick von außen", fontsize=6.5, weight="bold")
+    v2.text(-M.PANEL_W / 2 - 10, vb - b0 + 8, "Schalterbrett (Luke B), von außen", fontsize=6.5, weight="bold")
     rows = [["Ausbruch", "u-Mitte", "v von … bis", "Breite"]]
     for name, u, a, b, w in M.PANEL_PARTS:
         rows.append([name, fmt(u), f"{fmt(a - b0)} … {fmt(b - b0)}", fmt(w + 0.4)])
-    rows.append(["2 Säulen Ø 7 (M3 von innen)", " / ".join(fmt(cu) for cu, _ in M.PANEL_COLS),
-                 " / ".join(fmt(cv - b0) for _, cv in M.PANEL_COLS), "–"])
+    rows.append(["2 Säulen Ø 7 (M3 von innen)", " / ".join(fmt(cu) for cu, _ in M.PANEL_COLS), " / ".join(fmt(cv - b0) for _, cv in M.PANEL_COLS), "–"])
     sh.table(100, 108, rows, [42, 13, 20, 12], row_h=4.0, fs=5.4)
-    sh.text(100, 110, "v ab Brettunterkante (TVC-Seite), u ab Brettmitte", fontsize=5.6)
-    # Kolbenplatte
-    v3 = sh.view(208, 165, 1.0)
-    D = P.COUPLER_ID - 0.2
-    v3.rect(-D / 2, 0, D / 2, 3.0, fill="#cfdcf0")
-    v3.rect(-D / 2, 3.0, -D / 2 + 1.6, 8.0, fill="#cfdcf0"); v3.rect(D / 2 - 1.6, 3.0, D / 2, 8.0, fill="#cfdcf0")
-    v3.rect(-3, -0.2, 3, 3.2, fill="white", lw=0.4)
-    v3.dim((-D / 2, 0), (D / 2, 0), -5, f"Ø {fmt(D)}")
-    v3.dim((D / 2, 0), (D / 2, 8), -5, "8")
-    v3.dim((D / 2, 0), (D / 2, 3), 5, "3")
-    v3.dim((-3, 3.2), (3, 3.2), 9, "Ø 6")
-    v3.text(-D / 2, 16, "Kolbenplatte (Schnitt), in Kuppler-Stück 40 geklebt\nKragen 1,6 Wand; Schnur läuft mittig durch", fontsize=6.5, weight="bold")
-    # Kolben-Kuppler
-    v3b = sh.view(208, 110, 0.6)
-    v3b.rect(-P.COUPLER_OD / 2, 0, P.COUPLER_OD / 2, P.PISTON_L, lw=0.5)
-    v3b.dim((P.COUPLER_OD / 2, 0), (P.COUPLER_OD / 2, P.PISTON_L), -5, fmt(P.PISTON_L))
-    v3b.text(-P.COUPLER_OD / 2, P.PISTON_L + 6, "Kuppler-Stück 72,4 × 40 (vom 2. Klima-Kuppler)", fontsize=6.2)
-    # Ladungsbecher
-    v4 = sh.view(265, 165, 2.0)
-    cc = M.CHARGE_CUP
-    v4.rect(-cc["d"] / 2, 0, cc["d"] / 2, 1.2, fill="#cfdcf0")
-    v4.rect(-cc["d"] / 2, 1.2, -cc["d"] / 2 + 1.2, cc["h"], fill="#cfdcf0"); v4.rect(cc["d"] / 2 - 1.2, 1.2, cc["d"] / 2, cc["h"], fill="#cfdcf0")
-    v4.dim((-cc["d"] / 2, 0), (cc["d"] / 2, 0), -5, f"Ø {fmt(cc['d'])}")
-    v4.dim((cc["d"] / 2, 0), (cc["d"] / 2, cc["h"]), -5, fmt(cc["h"]))
-    v4.text(-cc["d"] / 2 - 6, cc["h"] + 7, "Ladungsbecher\n(steckt im Sockel)", fontsize=6.5, weight="bold")
+    v3 = sh.view(235, 130, 1.0)
+    rg = M.J1_RING
+    v3.circle(0, 0, rg["od"], fill="#cfdcf0"); v3.circle(0, 0, rg["id"], fill="white")
+    for phi in M.SCREW_PHI:
+        a = math.radians(phi)
+        v3.circle((rg["id"] / 2 - 0.5) * math.cos(a), (rg["id"] / 2 - 0.5) * math.sin(a), 9.0, fill="#cfdcf0", lw=0.4)
+        p0 = ((rg["od"] / 2 - M.INSERT_HOLE[1]) * math.cos(a), (rg["od"] / 2 - M.INSERT_HOLE[1]) * math.sin(a))
+        v3.line([p0, (rg["od"] / 2 * math.cos(a), rg["od"] / 2 * math.sin(a))], c=C_HOLE, lw=M.INSERT_HOLE[0] * 2.83)
+    v3.circle(0, 0, rg["id"] - 0.01, lw=0.6)
+    v3.dim((-rg["od"] / 2, 0), (rg["od"] / 2, 0), 40, f"Ø {fmt(rg['od'])}")
+    v3.dim((-rg["id"] / 2, -8), (rg["id"] / 2, -8), -4, f"Ø {fmt(rg['id'])}")
+    v3.text(-38, 48, f"Schraubring J1, {fmt(rg['z'][1] - rg['z'][0])} hoch, 4 Augen 90°", fontsize=7, weight="bold")
     sh.save(pdf, "Z6_kleinteile.png")
 
 
-# --------------------------------------------------------------------------- Z7 Schlüsselring und Kardanflansch
-def z7(pdf):
-    sh = Sheet("Z7", "Schlüsselring mit Kabelgitter, Lochbild Kardanflansch", "1:1",
-               "Schlüsselring: dünnwandig, im unteren Rohr verklebt (Unterkante h = "
-               f"{fmt(zl(M.KEY_RING_Z[0]))} ab Rohrunterkante). Vor dem Kleben den Schlüsselschalter von außen durch Rohr und Ring stecken, "
-               "Mutter in die Tasche: der Schalter selbst richtet den Ring aus. Kardan-Außenrahmen: die 4 alten Ø-3,2-Bohrungen bei 45° entfallen, "
-               "dafür 3 Einschmelzmuttern bei 0°/135°/225° (Bohrung Ø 4,0 × 5).")
-    v = sh.view(70, 115, 1.15)
-    ro = M.KEY_RING_OD / 2
-    v.circle(0, 0, M.KEY_RING_OD, fill="#dfe8f5"); v.circle(0, 0, M.KEY_RING_OD - 2 * M.KEY_RING_WALL, fill="#f6f9fd")
-    for k in range(8):
-        a = 22.5 + 45 * k
-        v.circle(15 * math.cos(math.radians(a)), 15 * math.sin(math.radians(a)), 10.0, fill="white", lw=0.4)
-    bw, bd = M.KEY_BOSS
-    for k in range(12):
-        a = 15 + 30 * k
-        x, y = 27 * math.cos(math.radians(a)), 27 * math.sin(math.radians(a))
-        if not (x + 3.5 > ro - bd and abs(y) - 3.5 < bw / 2):
-            v.circle(x, y, 7.0, fill="white", lw=0.4)
-    v.rect(ro - bd, -bw / 2, ro - 0.3, bw / 2, fill="#cfdcf0")
-    v.rect(ro - bd - 0.5, -M.KEY_HOLE_D / 2, ro + 2, M.KEY_HOLE_D / 2, fill="white", lw=0.5, c=C_HOLE)
-    sw, nh = M.KEY_NUT
-    r_nut = ro - bd + 3.0
-    v.rect(r_nut - nh / 2, -sw / 2, r_nut + nh / 2, sw / 2, lw=0.5, ls=(0, (2, 1)))
-    for phi in (90, 270):
-        a = math.degrees(6.0 / (ro - 4))
-        v.rect(-6, ro - 9 if phi == 90 else -ro + M.KEY_RING_WALL, 6, ro - M.KEY_RING_WALL if phi == 90 else -ro + 9, fill="white", lw=0.5, c=C_CUT)
-        v.text(0, (ro + 4) * (1 if phi == 90 else -1), f"Servokabel {deg(phi)}", ha="center", va="center", fontsize=5.5, color=C_CUT)
-    v.center([(-44, 0), (44, 0)]); v.center([(0, -44), (0, 44)])
-    v.dim((-ro, 0), (ro, 0), 40, f"Ø {fmt(M.KEY_RING_OD)}")
-    v.dim((ro - bd, bw / 2), (ro, bw / 2), 4, fmt(bd))
-    v.dim((ro + 1, -M.KEY_HOLE_D / 2), (ro + 1, M.KEY_HOLE_D / 2), -6, f"Ø {fmt(M.KEY_HOLE_D)}")
-    v.dim((r_nut - nh / 2, -sw / 2), (r_nut - nh / 2, sw / 2), 6, f"SW {fmt(sw)}")
-    v.text(-ro, ro + 9, f"Schlüsselring, Blick von oben, Höhe {fmt(M.KEY_RING_Z[1] - M.KEY_RING_Z[0])}, Wand {fmt(M.KEY_RING_WALL)}, Gitter 1,6",
-           fontsize=7, weight="bold")
-    v.text(ro + 4, 4, "0°", fontsize=6)
-    # Kardanflansch
-    v2 = sh.view(205, 115, 1.15)
-    v2.circle(0, 0, P.OUTER_RING_OD, fill="#dfe8f5"); v2.circle(0, 0, P.OUTER_RING_ID, fill="white")
-    ro2 = P.OUTER_RING_OD / 2
-    for phi in (45, 135, 225, 315):
-        x, y = (ro2 - 3) * math.cos(math.radians(phi)), (ro2 - 3) * math.sin(math.radians(phi))
-        v2.line([(x - 2, y - 2), (x + 2, y + 2)], c="#999", lw=0.5); v2.line([(x - 2, y + 2), (x + 2, y - 2)], c="#999", lw=0.5)
-    for phi in M.SCREW_PHI:
-        a = math.radians(phi)
-        v2.rect(0, 0, 0, 0)
-        p0 = ((ro2 - M.INSERT_HOLE[1]) * math.cos(a), (ro2 - M.INSERT_HOLE[1]) * math.sin(a))
-        p1 = (ro2 * math.cos(a), ro2 * math.sin(a))
-        v2.line([p0, p1], c=C_HOLE, lw=M.INSERT_HOLE[0] * 1.15 * 2.83)
-        v2.text(1.18 * p1[0], 1.18 * p1[1], deg(phi), ha="center", va="center", fontsize=6, color=C_HOLE)
-    v2.text(0, -ro2 + 7, "Servotasche (270°)", ha="center", fontsize=5.5)
-    v2.text(0, ro2 - 9, "Lagerohr (90°)", ha="center", fontsize=5.5)
-    v2.center([(-44, 0), (44, 0)]); v2.center([(0, -44), (0, 44)])
-    v2.dim((-ro2, 0), (ro2, 0), 40, f"Ø {fmt(P.OUTER_RING_OD)}")
-    v2.text(-ro2, ro2 + 9, f"Kardan-Außenrahmen, Flansch (Blick von oben), Bohrungen in Flanschmitte h = {fmt(P.OUTER_FLANGE_H / 2)}",
-            fontsize=7, weight="bold")
-    v2.text(-ro2, -ro2 - 10, "rot: neu, Einschmelzmutter M3 radial (Ø 4,0 × 5)\ngrau ×: alte Bohrungen bei 45° entfallen", fontsize=6)
-    sh.save(pdf, "Z7_ring_kardan.png")
-
-
 # --------------------------------------------------------------------------- Bohrschablonen 1:1
-def template(pdf, nr, title, C, feats, h_range, ref, note):
-    """Abwicklung im Maßstab 1:1. ref = 'unten' (Blattkante an der Rohrunterkante) oder 'oben' (an der Oberkante)."""
+def template(pdf, nr, title, C, feats, h_range, ref, note, gh):
     fig = plt.figure(figsize=(A4[0] / 25.4, A4[1] / 25.4))
     ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, A4[0]); ax.set_ylim(0, A4[1]); ax.set_aspect("equal"); ax.axis("off")
     h0, h1 = h_range
     H = h1 - h0
     x_off, y_off = 18.0, (A4[1] - H) / 2 - 6
+
     def P_(s, h):
         return x_off + s, y_off + (h - h0)
-    # Streifen mit Klebelasche
     ax.add_patch(Rectangle(P_(0, h0), C, H, fill=False, lw=0.6, ec="#000"))
     ax.add_patch(Rectangle(P_(C, h0), 12, H, fill=True, fc="#eee", ec="#999", lw=0.4, hatch="..."))
-    ax.text(*P_(C + 6, h0 + H / 2), "Klebelasche: unter den Streifenanfang (0°) legen", rotation=90, ha="center", va="center", fontsize=5.5)
-    # Bezugskante
+    ax.text(*P_(C + 6, h0 + H / 2), "Klebelasche", rotation=90, ha="center", va="center", fontsize=5.5)
     ky = h0 if ref == "unten" else h1
     xa, ya = P_(0, ky); xb, _ = P_(C, ky)
     ax.plot([xa, xb], [ya, ya], lw=2.2, c="#c0392b")
     ax.text(xa, ya + (-4 if ref == "unten" else 7.5), f"Bezugskante = Rohr{'unter' if ref == 'unten' else 'ober'}kante: bündig anlegen",
             fontsize=6.5, color="#c0392b", va="bottom" if ref == "oben" else "top")
-    # Winkelteilung ab der Naht bei 330°
     for k in range(0, 360, 15):
         x, _ = P_(sx(k, C), h0)
         major = k % 45 == 0
@@ -672,44 +528,38 @@ def template(pdf, nr, title, C, feats, h_range, ref, note):
     ax.text(*P_(0, h1), "Naht\n330°", ha="center", va="bottom", fontsize=5, color="#777")
     xg, _ = P_(sx(0, C), h0)
     ax.plot([xg, xg], [P_(0, h0)[1], P_(0, h1)[1]], lw=1.4, c="#2a7")
-    ax.text(xg + 1, P_(0, h1)[1] - 3, "Längslinie 0°\n(auf die Bleistiftlinie)", fontsize=5.5, color="#2a7", va="top")
-    # Führungen
-    half = math.degrees(math.atan(10.0 / (M.TUBE_OD / 2 + M.RAMP_GUIDE_GAP)))
-    if "unten" in title.lower() and h0 < M.RAMP_GUIDE_H:
+    ax.text(xg + 1, P_(0, h1)[1] - 3, "Längslinie 0°\n(Kardanschraube)", fontsize=5.5, color="#2a7", va="top")
+    if gh > h0:
         for g in M.RAMP_GUIDE_PHI:
-            a, b = sx(g - half, C), sx(g + half, C)
-            top = min(M.RAMP_GUIDE_H, h1)
+            a, b = sx(g - guide_half(), C), sx(g + guide_half(), C)
+            top = min(gh, h1)
             ax.add_patch(Rectangle(P_(a, h0), b - a, top - h0, fc=C_WARN, ec="none", alpha=0.35))
-            ax.text(*P_((a + b) / 2, (h0 + top) / 2), "Führung Startrampe: nichts hervorstehen lassen", rotation=90, ha="center",
-                    va="center", fontsize=5, color="#a55")
-    # Löcher und Fenster
+            ax.text(*P_((a + b) / 2, (h0 + top) / 2), "Führung Rampe: nichts hervorstehen", rotation=90, ha="center", va="center", fontsize=5, color="#a55")
     for kind, phi, a, b, d, txt in feats:
         s = sx(phi, C)
-        if kind == "hole" and h0 <= a <= h1:
+        if kind in ("hole", "old") and h0 <= a <= h1:
             x, y = P_(s, a)
-            ax.add_patch(Circle((x, y), d / 2, fill=False, ec="#c0392b", lw=0.5))
-            ax.plot([x - 6, x + 6], [y, y], lw=0.3, c="#c0392b"); ax.plot([x, x], [y - 6, y + 6], lw=0.3, c="#c0392b")
+            col = "#c0392b" if kind == "hole" else "#888"
+            ax.add_patch(Circle((x, y), d / 2, fill=False, ec=col, lw=0.5))
+            ax.plot([x - 6, x + 6], [y, y], lw=0.3, c=col); ax.plot([x, x], [y - 6, y + 6], lw=0.3, c=col)
             ax.add_patch(Circle((x, y), 0.35, fc="#000"))
-            ax.text(x + 2.5, y + 2.5, f"{txt}\nØ {fmt(d)}", fontsize=5.2, color="#c0392b")
+            ax.text(x + 2.5, y + 2.5, f"{txt}\nØ {fmt(d)}" + (" (vorhanden: Lage prüfen)" if kind == "old" else ""), fontsize=5.0, color=col)
         elif kind == "win":
             lo, hi = max(a, h0), min(b, h1)
             if hi > lo:
                 ax.add_patch(Rectangle(P_(s - d / 2, lo), d, hi - lo, fill=True, fc="#fbe3cf", ec="#e67e22", lw=0.7, hatch="////"))
-                ax.text(*P_(s, (lo + hi) / 2), f"{txt}\nausschneiden\n{fmt(d)} × {fmt(b - a)}", ha="center", va="center", fontsize=5.2,
+                ax.text(*P_(s, (lo + hi) / 2), f"{txt}\nausschneiden\n{fmt(d)} × {fmt(b - a)}", ha="center", va="center", fontsize=5.0,
                         color="#8a4a12", bbox=dict(fc="white", ec="none", pad=0.4))
-    # Höhenmaßstab links
     for h in range(int(math.ceil(h0 / 10) * 10), int(h1) + 1, 10):
         x, y = P_(0, h)
         ax.plot([x - 3, x], [y, y], lw=0.3, c="#000")
         ax.text(x - 3.5, y, str(h), fontsize=4.8, ha="right", va="center")
-    # Prüfmaß
     ax.plot([20, 120], [12, 12], lw=1.0, c="#000")
     for x in (20, 120):
         ax.plot([x, x], [10, 14], lw=1.0, c="#000")
     ax.text(70, 14.5, "Prüfmaß 100 mm: nach dem Druck nachmessen", ha="center", fontsize=6)
     ax.text(130, 15.5, f"{nr}  {title}", fontsize=7.5, va="bottom", weight="bold")
-    ax.text(130, 9.5, f"A4 quer drucken, „Tatsächliche Größe / 100 %“, nicht „An Seite anpassen“. Umfang {fmt(C)} mm.",
-            fontsize=6.2, va="bottom")
+    ax.text(130, 9.5, f"A4 quer drucken, „Tatsächliche Größe / 100 %“, nicht „An Seite anpassen“. Umfang {fmt(C)} mm.", fontsize=6.2, va="bottom")
     ax.text(18, A4[1] - 8, "\n".join(textwrap.wrap(note, 160)), fontsize=6.2, va="top", linespacing=1.3)
     pdf.savefig(fig)
     fig.savefig(IMG / f"{nr}_schablone.png", dpi=110)
@@ -718,28 +568,33 @@ def template(pdf, nr, title, C, feats, h_range, ref, note):
 
 def templates():
     out = HERE / "Bohrschablonen_1zu1.pdf"
-    lf, uf = lower_features(), upper_features()
+    C = M.CIRC_TUBE
+    LB = M.TUBE_B[1] - M.TUBE_B[0]
+    LC = M.TUBE_C[1] - M.TUBE_C[0]
     with PdfPages(out) as pdf:
-        template(pdf, "S1", "Rohr unten, Unterkante (Kardan, Schlüsselschalter)", M.CIRC_TUBE, lf, (0.0, 120.0), "unten",
-                 "Streifen ausschneiden, um das untere Rohr legen (Bezugskante bündig an der Unterkante, 0° auf der Längslinie), mit Klebeband fixieren. "
-                 "Mitten mit Vorstecher durchstechen, dann Ø 2 vor- und auf Endmaß bohren. Schalterloch mit Stufenbohrer. Bohrränder mit dünnem Sekundenkleber härten.")
-        template(pdf, "S2", "Rohr unten, Oberkante (Luken A1 und B, Barometer)", M.CIRC_TUBE, lf, (115.0, 200.0), "oben",
-                 "ERST NACH dem Einkleben des Kupplers verwenden: Bezugskante an die Stufe Rohr/Kuppler. Fenster mit Cutter durch Rohr UND Kuppler schneiden "
-                 "(mehrere Züge, Stahllineal), das ausgeschnittene Stück als Deckel aufheben. Barometer-Löcher Ø 2 durch beide Wände.")
-        template(pdf, "S3", "Rohr oben, Unterkante (Stoßschrauben, Kerbe A2)", M.CIRC_TUBE, uf, (0.0, 70.0), "unten",
-                 "Oberes Rohr auf den Kuppler stecken, Längslinien beider Rohre fluchten lassen. Bezugskante an die Unterkante des oberen Rohrs. Stoßschrauben "
-                 "Ø 3,4 durch Rohr und Kuppler bohren; Kerbe A2 im Rohr ausschneiden, das Fenster dahinter im Kuppler gleich mit.")
-        template(pdf, "S4", "Rohr oben, Oberkante (Abscherstifte der Spitze)", M.CIRC_TUBE, uf, (440.0, 500.0), "oben",
-                 "Spitze einsetzen. Bezugskante an die Oberkante des oberen Rohrs. Ø 2 durch Rohr und Schulter der Spitze; M2-Nylonschraube schneidet ihr Gewinde "
-                 "selbst. Abscherstifte nur einsetzen, wenn der Bodentest zeigt, dass die Ladung sie sicher abschert.")
+        template(pdf, "S1", "Rohr A, Oberkante (Stoß J1)", C, feats_a(), (M.TUBE_A[1] - M.TUBE_A[0] - 45.0, M.TUBE_A[1] - M.TUBE_A[0]), "oben",
+                 "Zuerst den Kuppler J1 in Rohr B kleben und Rohr A aufstecken. Streifen um Rohr A, rote Kante an die Oberkante von A (Stoß), grüne "
+                 "Linie auf die Kardanschraube 0°. Die 4 Löcher T1 Ø 3,4 durch Rohr A und Kuppler bohren. Danach den Schraubring von oben in den "
+                 "Kuppler schieben, mit M3 durch die Löcher ausrichten und erst dann einkleben.", guide_h(M.TUBE_A) - 0)
+        template(pdf, "S2", "Rohr B, Unterkante (Luken A1 und B, Schraubschalter)", C, feats_b(), (0.0, 110.0), "unten",
+                 "Rohr B mit verklebtem Kuppler, Bezugskante an die Unterkante von B (Stoß), Längslinie von Rohr A über den Stoß verlängert. "
+                 "Grau = alte Löcher (bleiben als Druckausgleich offen). Luken mit Cutter, Schalterloch Ø 3.", guide_h(M.TUBE_B))
+        template(pdf, "S3", "Rohr B, Oberkante (Luke A2, Spant T2)", C, feats_b(), (LB - 75.0, LB), "oben",
+                 "Bezugskante an die Oberkante von B. Löcher T2 Ø 3,4, Luke A2 ausschneiden. Danach Schlitten einsetzen: die Augen fluchten in "
+                 "4 Lagen, die richtige ist die mit Luke A über dem USB-Stecker.", 0.0)
+        template(pdf, "S4", "Rohr C, beide Enden (Spant T3, Abscherstifte)", C, feats_c(), (0.0, 30.0), "unten",
+                 "Unteres Ende: Löcher T3 Ø 3,4 bei 45°/135°/225°/315°, 7,5 mm über der Unterkante. Für die Abscherstifte (optional, h = "
+                 f"{fmt(M.SHEAR_PIN_Z - M.TUBE_C[0])}) denselben Streifen an der Oberkante anlegen: Stifte bei 45° und 225°, 15 mm unter der Kante.", 0.0)
     return out
 
 
 def main():
     IMG.mkdir(parents=True, exist_ok=True)
+    for f in list(IMG.glob("Z*.png")) + list(IMG.glob("S*_schablone.png")):
+        f.unlink()
     out = HERE / "Zeichnungen_Kartonaut1.pdf"
     with PdfPages(out) as pdf:
-        for f in (z1, z2, z3, z4, z5, z6, z7):
+        for f in (z1, z2, z3, z4, z5, z6):
             f(pdf)
     t = templates()
     print("wrote", out.relative_to(ROOT), "and", t.relative_to(ROOT))

@@ -86,9 +86,34 @@ nutzen also dieselben Pins aus `Config.h`.
 | `radio_beacon` | Sendet 1×/s eine `BEACON,<seq>,<millis>`-Zeile über den HC-12 an Serial8. Gegenstück: Empfänger im Repo `kartonaut-ground`. |
 | `i2c_scanner` | Listet alle I²C-Adressen auf Wire. Erwartet 0x40, 0x68/0x69 und 0x76. |
 | `pyro_mosfet_test` | Warnblinken, dann ein 1-s-Puls auf `PIN_PYRO1` (23). Nur mit Lämpchen oder Widerstand als Last. |
+| `revb_bringup` | Inbetriebnahme des Mainboards rev B: sichere Ausgänge, dann Mux (Akkus, ARM, Pyro-Durchgang), ICM-42688-P, BMP390 (×2), INA239, LoRa-Parameter, GPS; je Baustein OK/FEHL, danach Messwerte im Sekundentakt. Nutzt `lib/mainboard_revb/`, nicht `Config.h`. |
 
 Die früheren Monolith-Sketches und kopierten Bibliotheksbeispiele (`sketches/` bis Commit
 `3b152c9`) sind entfernt; sie stehen in der Git-Historie.
+
+## Mainboard rev B (vorbereitet, Platine noch nicht gefertigt)
+
+`lib/mainboard_revb/` enthält Pinbelegung und SPI-Treiber für die Platine. Die Flug-Firmware in
+`src/` bindet sie noch nicht ein; PlatformIO baut die Bibliothek nur in Umgebungen, die sie
+benutzen (heute `revb_bringup`).
+
+| Datei | Aufgabe |
+|---|---|
+| `BoardRevB.h` | Teensy-Pins, Chip-Selects (74HC138, `revb::Cs`), Analogkanäle (74HC4051, `revb::Mux`), Teiler und Shunt |
+| `BusRevB.*` | SPI1 auf 26/27/39, Chip-Select über den Decoder, Analogmessung über die Mux |
+| `ICM42688.*` | IMU über SPI, ±2000 °/s, ±16 g, 1 kHz, INT1 Daten bereit |
+| `BMP390.*` | Barometer über SPI, Bosch-Kompensation, erkennt auch den BMP388 |
+| `INA239.*` | Strom und Spannung im 2S-Pfad über SPI |
+
+Decoder und Mux teilen sich die Select-Leitungen. Deshalb: kein SPI aus einer ISR, und keine
+Analogmessung zwischen `select()` und `deselect()` (Details in `BusRevB.h`). Die IMU-Werte kommen
+in Chip-Achsen; die Drehung ins Körpersystem wird eingetragen, wenn die Platzierung feststeht.
+
+Solange sich die Platine ändert, vor dem Flashen die Pins gegen die Schaltung prüfen:
+
+```bash
+python firmware/tools/check_board_pins.py
+```
 
 ## Bibliotheken
 

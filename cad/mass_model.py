@@ -63,12 +63,13 @@ def point(name, m, cx, cy, cz, group, src):
 
 
 # ----------------------------------------------------------------------------- Teileliste
-def parts(legs_deployed=False):
+def parts(legs_deployed=False, config=None, tube_total=None):
+    L = P.layout_ns(config, tube_total)
     ps = []
     # Motor
-    ps.append(shell("Motorgehäuse E12 (ohne Treibstoff)", P.MOTOR_M - P.PROP_M, P.MOTOR_D / 2 - 1.5, P.MOTOR_D / 2,
+    ps.append(shell("Motorgehäuse E12 (ohne Treibstoff)", P.MOTOR_M - P.GRAIN_M, P.MOTOR_D / 2 - 1.5, P.MOTOR_D / 2,
                     *P.MOTOR_Z, "motor", "[BUILD] 64 g gesamt, 28 g Treibstoff"))
-    ps.append(shell("Treibstoff E12", P.PROP_M, 0, P.PROP_D / 2, *P.PROP_Z, "propellant",
+    ps.append(shell("Treibstoff E12", P.GRAIN_M, 0, P.GRAIN_D / 2, *P.GRAIN_Z, "propellant",
                     "[Annahme] Treibsatz bei z = 10…60 mm"))
     ps.append(shell("Adapter 29→24", P.ADAPTER_M, P.ADAPTER_ID / 2, P.ADAPTER_OD / 2, *P.ADAPTER_Z, "tvc",
                     "[Annahme] 15 g PLA"))
@@ -84,43 +85,53 @@ def parts(legs_deployed=False):
     ps.append(box("Servo Innenrahmen (x-Achse)", P.SERVO_M, P.SERVO_T, P.SERVO_L, P.SERVO_H,
                   P.SERVO_INNER_R, 0.0, P.PIVOT_Z, "tvc", "[BUILD] W5652H 10 g"))
     # Rumpf
-    ps.append(shell("Rohr unten", P.TUBE_M, P.TUBE_ID / 2, P.TUBE_OD / 2, *P.LOWER_TUBE_Z, "airframe", "[Klima] 120 g"))
-    ps.append(shell("Rohr oben", P.TUBE_M, P.TUBE_ID / 2, P.TUBE_OD / 2, *P.UPPER_TUBE_Z, "airframe", "[Klima] 120 g"))
-    ps.append(shell("Kuppler Flugcomputer", P.COUPLER_M, P.COUPLER_ID / 2, P.COUPLER_OD / 2, *P.FC_COUPLER_Z,
+    for nm, zz in (("Rohr unten", L.LOWER_TUBE_Z), ("Rohr oben", L.UPPER_TUBE_Z)):
+        ps.append(shell(nm, (zz[1] - zz[0]) * P.TUBE_G_PER_MM, P.TUBE_ID / 2, P.TUBE_OD / 2, *zz, "airframe",
+                        "[Klima] 240 g/m"))
+    ps.append(shell("Kuppler Flugcomputer", P.COUPLER_M, P.COUPLER_ID / 2, P.COUPLER_OD / 2, *L.FC_COUPLER_Z,
                     "airframe", "[Klima] 34 g"))
     # Spitze
-    ps.append(cone_shell("Spitze Kegel (ABS)", 80.0, P.TUBE_OD / 2, P.NOSE_L, P.NOSE_BASE_Z, "nose",
+    ps.append(cone_shell("Spitze Kegel (ABS)", 80.0, P.TUBE_OD / 2, P.NOSE_L, L.NOSE_BASE_Z, "nose",
                          "[Klima] ca. 100 g gesamt; Aufteilung [Annahme]"))
     ps.append(shell("Spitze Schulterkuppler", 17.0, P.NOSE_SHOULDER_D / 2 - 1.2, P.NOSE_SHOULDER_D / 2,
-                    P.NOSE_BASE_Z - P.NOSE_SHOULDER_L, P.NOSE_BASE_Z, "nose", "[Annahme]"))
-    ps.append(shell("Spitze Spant + Öse", 3.0, 0, P.NOSE_SHOULDER_D / 2, P.NOSE_BASE_Z - 6, P.NOSE_BASE_Z - 3, "nose",
+                    L.NOSE_BASE_Z - P.NOSE_SHOULDER_L, L.NOSE_BASE_Z, "nose", "[Annahme]"))
+    ps.append(shell("Spitze Spant + Öse", 3.0, 0, P.NOSE_SHOULDER_D / 2, L.NOSE_BASE_Z - 6, L.NOSE_BASE_Z - 3, "nose",
                     "[Annahme]"))
     # Flugcomputer
-    zc = (P.FC_COUPLER_Z[0] + P.FC_COUPLER_Z[1]) / 2
-    ps.append(box("Platine + Teensy + Bauteile", P.FC_M_BOARD, P.BOARD_W, 12.0, P.BOARD_L,
-                  0.0, 4.0, P.BOARD_V0_Z + P.BOARD_L / 2, "fc", "[Annahme] Anteil der 100 g"))
-    ps.append(shell("Endring unten", P.FC_M_RINGS * 0.3, 0, P.FC_RING_D / 2, P.FC_COUPLER_Z[0],
-                    P.FC_COUPLER_Z[0] + P.FC_RING_T, "fc", "[Annahme]"))
+    zc = (L.FC_COUPLER_Z[0] + L.FC_COUPLER_Z[1]) / 2
+    ps.append(box("Platine + Teensy + Bauteile", L.FC_M_BOARD, P.BOARD_W, 12.0, P.BOARD_L,
+                  0.0, 4.0, L.BOARD_V0_Z + P.BOARD_L / 2, "fc", "[Annahme] Anteil der 100 g"))
+    ps.append(shell("Endring unten", P.FC_M_RINGS * 0.3, 0, P.FC_RING_D / 2, L.FC_COUPLER_Z[0],
+                    L.FC_COUPLER_Z[0] + P.FC_RING_T, "fc", "[Annahme]"))
     ps.append(shell("Endplatte oben (Spant mit Ladungsschale)", P.FC_M_RINGS * 0.7, 0, P.FC_RING_D / 2,
-                    P.FC_COUPLER_Z[1] - P.FC_RING_T, P.FC_COUPLER_Z[1], "fc", "[Annahme]"))
-    ps.append(shell("8 Gewindestangen M2", P.FC_M_RODS, 30.3, 30.3, *P.FC_COUPLER_Z, "fc", "[Annahme] als Ring auf r = 30,3"))
+                    L.FC_COUPLER_Z[1] - P.FC_RING_T, L.FC_COUPLER_Z[1], "fc", "[Annahme]"))
+    ps.append(shell("8 Gewindestangen M2", P.FC_M_RODS, 30.3, 30.3, *L.FC_COUPLER_Z, "fc", "[Annahme] als Ring auf r = 30,3"))
     ps.append(box("Träger (gedruckt)", P.FC_M_CARRIER, P.BOARD_W, P.CARRIER_DEPTH, P.BOARD_L,
-                  0.0, -P.CARRIER_DEPTH / 2, P.BOARD_V0_Z + P.BOARD_L / 2, "fc", "[Annahme]"))
-    b = P.BAT2S
+                  0.0, -P.CARRIER_DEPTH / 2, L.BOARD_V0_Z + P.BOARD_L / 2, "fc", "[Annahme]"))
+    b = L.BAT2S
     ps.append(box("Akku 2S", b["m"], b["w"], b["h"], b["l"], 0.0, -(P.BOARD_T / 2 + 2 + b["h"] / 2),
-                  P.BOARD_V0_Z + b["v0"] + b["l"] / 2, "fc", "[Vorgabe] 45 g, Maße [BUILD]"))
+                  L.BOARD_V0_Z + b["v0"] + b["l"] / 2, "fc", "[Vorgabe] 45 g, Maße [BUILD]"))
     b = P.BAT1S
     ps.append(box("Akku 1S", b["m"], b["w"], b["h"], b["l"], 0.0, -(P.BOARD_T / 2 + 2 + b["h"] / 2),
-                  P.BOARD_V0_Z + b["v0"] + b["l"] / 2, "fc", "[Vorgabe] 12 g, Maße [Annahme]"))
+                  L.BOARD_V0_Z + b["v0"] + b["l"] / 2, "fc", "[Vorgabe] 12 g, Maße [Annahme]"))
     # Bergung
-    ps.append(shell("Kolben Kuppler-Stück", 9.0, P.COUPLER_ID / 2, P.COUPLER_OD / 2, P.PISTON_Z0,
-                    P.PISTON_Z0 + P.PISTON_L, "recovery", "[Annahme] 34 g/150 mm × 40 mm"))
-    ps.append(shell("Kolbenplatte", 10.0, 0, P.COUPLER_ID / 2, P.PISTON_Z0, P.PISTON_Z0 + P.PISTON_PLATE_T, "recovery",
+    ps.append(shell("Kolben Kuppler-Stück", 9.0, P.COUPLER_ID / 2, P.COUPLER_OD / 2, L.PISTON_Z0,
+                    L.PISTON_Z0 + P.PISTON_L, "recovery", "[Annahme] 34 g/150 mm × 40 mm"))
+    ps.append(shell("Kolbenplatte", 10.0, 0, P.COUPLER_ID / 2, L.PISTON_Z0, L.PISTON_Z0 + P.PISTON_PLATE_T, "recovery",
                     "[Annahme]"))
-    ps.append(shell("Ladungsschale + E-Match + Anker", 12.0, 0, 15.0, P.FC_COUPLER_Z[1], P.FC_COUPLER_Z[1] + 8,
+    ps.append(shell("Ladungsschale + E-Match + Anker", 12.0, 0, 15.0, L.FC_COUPLER_Z[1], L.FC_COUPLER_Z[1] + 8,
                     "recovery", "[Annahme]"))
-    ps.append(shell("Fallschirm 125 cm mit Schockschnur", P.CHUTE_M, 0, P.CHUTE_D / 2, P.CHUTE_Z0,
-                    P.CHUTE_Z0 + P.CHUTE_L, "recovery", "[Vorgabe] 50 g"))
+    ps.append(shell("Fallschirm 125 cm mit Schockschnur", P.CHUTE_M, 0, P.CHUTE_D / 2, L.CHUTE_Z0,
+                    L.CHUTE_Z0 + P.CHUTE_L, "recovery", "[Vorgabe] 50 g"))
+    if L.HATCH_HW_M:
+        z0 = P.KEY_COLLAR_Z
+        ps.append(shell("Schlüsselschalter-Kragen + Schlüsselschalter", 14.0, 24.0, P.COUPLER_OD / 2, *z0, "fc",
+                        "[Annahme] Kragen 8 g, Schalter 6 g"))
+        ps.append(box("Schalterbrett (Schalter, USB-C, XT30, XH-3, LED)", L.HATCH_HW_M - 14.0, P.PANEL_W, 8.0, 66.0,
+                      0.0, -33.0, L.BOARD_V0_Z + 57.0, "fc", "[Annahme] Anteil von ERSTFLUG_HATCH_HW_M"))
+    if not L.LEGS:
+        ps.append(point("Kabel, Schrauben, Kleber", P.MISC_M, 0.0, 0.0, L.MISC_Z, "misc", "[Annahme] 20 g"))
+        return ps
     # Landebeine
     ps.append(shell("Beinring unten (Hülse)", P.LEG_M_SLEEVE, P.LEG_SLEEVE_ID / 2, P.LEG_SLEEVE_OD / 2,
                     P.LEG_SLEEVE_Z0, P.LEG_SLEEVE_Z0 + P.LEG_SLEEVE_H, "legs", "[Vorgabe] 200 g gesamt, Aufteilung [Annahme]"))
@@ -138,7 +149,7 @@ def parts(legs_deployed=False):
         ps.append(rod(f"Bein {i + 1} Hauptstrebe", P.LEG_M_MAIN, h0, foot, "legs", "Anteil der 200 g"))
         ps.append(rod(f"Bein {i + 1} obere Strebe", P.LEG_M_TOP, t0, foot, "legs", "Anteil der 200 g"))
         ps.append(point(f"Bein {i + 1} Fuß", P.LEG_M_FOOT, *foot, "legs", "Anteil der 200 g"))
-    ps.append(point("Kabel, Schrauben, Kleber", P.MISC_M, 0.0, 0.0, P.MISC_Z, "misc", "[Annahme] 20 g"))
+    ps.append(point("Kabel, Schrauben, Kleber", P.MISC_M, 0.0, 0.0, L.MISC_Z, "misc", "[Annahme] 20 g"))
     return ps
 
 
@@ -160,8 +171,8 @@ def properties(ps):
                                                                          Ixy=I_si[0][1], Ixz=I_si[0][2], Iyz=I_si[1][2]))
 
 
-def configurations():
-    base = parts(legs_deployed=False)
+def configurations(config="voll", tube_total=None):
+    base = parts(legs_deployed=False, config=config, tube_total=tube_total)
     confs = {
         "liftoff": ("Start, voller Motor", base),
         "burnout": ("Brennschluss, Treibstoff verbraucht", [p for p in base if p.group != "propellant"]),
@@ -255,11 +266,108 @@ def write_md(confs, base, path):
     path.write_text("\n".join(L), encoding="utf-8")
 
 
+def erstflug_variants():
+    """voll (1000 mm) gegen Erstflug mit 700 mm und mit dem kürzesten passenden Rohr."""
+    tmin = math.ceil(P.layout("erstflug")["TUBE_MIN"])
+    var = {}
+    for key, (cfg, tl, label) in {
+        "voll_1000": ("voll", None, "voll, Beine, 850-mAh-2S"),
+        "erstflug_700": ("erstflug", 700.0, "Erstflug"),
+        "erstflug_min": ("erstflug", float(tmin), "Erstflug, kürzestes Rohr"),
+    }.items():
+        confs, base = configurations(cfg, tl)
+        var[key] = dict(label=label, config=cfg, layout=P.layout(cfg, tl), confs=confs, parts=base)
+    return var
+
+
+def write_erstflug_md(var):
+    L = []
+    d = var["erstflug_700"]["layout"]
+    dm = var["erstflug_min"]["layout"]
+    z = dm["FC_COUPLER_Z"]
+    L.append("\n## Erstflug-Konfiguration (22.10.2026)\n")
+    L.append("Entscheidung Jan 22.10.2026: Aufstieg mit einem Motor (TSP E12-0) und Fallschirm, kein Landesystem, Rohr aus Papier. "
+             "Gegenüber der Konfiguration oben (`config=\"voll\"`) gilt bei `config=\"erstflug\"` (`MS_CONFIG=erstflug`, "
+             "`layout()` in `params.py`):\n")
+    L.append("- keine Beine, kein Beinring, kein Aktor (−200 g); der zweite Motor war im Modell schon nicht enthalten.")
+    L.append(f"- 2S-Akku 450 mAh mit {P.ERSTFLUG_BAT2S_M:.0f} g statt 45 g (Abmessungen 56 × 25,5 × 8 der 850er zur Sicherheit "
+             f"beibehalten); Mainboard 54 × 120 mit Teensy {P.ERSTFLUG_BOARD_M:.0f} g statt 40 g.")
+    L.append(f"- Hardware der Luken (Schalterbrett, Schlüsselschalter, Kragen) {P.ERSTFLUG_HATCH_HW_M:.0f} g [Annahme], neu.")
+    L.append(f"- Kolbenabstand {P.PISTON_GAP:.0f} statt 5 mm (auch bei \"voll\"): die Ladungsschale (8 mm) und die Öse (8,5 mm) der Endplatte "
+             "durchdrangen sonst die Kolbenplatte.")
+    L.append(f"- Das Rohr beginnt wie bisher bei z = 20 mm. Über dem Kardan folgt der Schlüsselschalter-Kragen "
+             f"(z = {P.KEY_COLLAR_Z[0]:.0f} … {P.KEY_COLLAR_Z[1]:.0f}), dann der Kuppler. Der Kuppler steckt nur "
+             f"{P.COUPLER_INTO_LOWER_EF:.0f} mm im unteren Rohr; der Stoß liegt bei z = {d['JOINT_Z']:.0f} mm, beide Luken liegen im oberen "
+             "Rohr. Rohrmasse 0,24 g/mm.\n")
+    L.append("### Kürzestes Rohr\n")
+    L.append("Rohrlänge = Rohrunterkante (z = 20 mm) bis Spitzenbasis. Die Stapelhöhe über dem Kardan bestimmt das Minimum:\n")
+    L.append("| Abschnitt | Länge | z von … bis |")
+    L.append("|---|---|---|")
+    L.append(f"| Kardan (Motorrohr endet bei 103, mit 7° bis 105) | | 20 … {P.KEY_COLLAR_Z[0]:.0f} |")
+    L.append(f"| Schlüsselschalter-Kragen + 2 mm Luft | {z[0] - P.KEY_COLLAR_Z[0]:.0f} mm | {P.KEY_COLLAR_Z[0]:.0f} … {z[0]:.0f} |")
+    L.append(f"| Flugcomputer-Kuppler | {P.COUPLER_L:.0f} mm | {z[0]:.0f} … {z[1]:.0f} |")
+    L.append(f"| Gasraum + Kolben | {P.PISTON_GAP:.0f} + {P.PISTON_L:.0f} mm | {z[1]:.0f} … {dm['PISTON_Z0'] + P.PISTON_L:.0f} |")
+    L.append(f"| Fallschirm 125 cm (Ø {P.CHUTE_D:.0f} × {P.CHUTE_L:.0f}) mit 5 mm Luft | {P.CHUTE_L + 5:.0f} mm | {dm['CHUTE_Z0']:.0f} … {dm['CHUTE_Z1']:.0f} |")
+    L.append(f"| Schockschnur | {P.CORD_BAY_MIN:.0f} mm | {dm['CHUTE_Z1']:.0f} … {dm['CHUTE_Z1'] + P.CORD_BAY_MIN:.0f} |")
+    L.append(f"| Schulter der Spitze bis Spant | {P.NOSE_BULKHEAD_BELOW_BASE:.0f} mm | … {dm['NOSE_BASE_Z']:.0f} (Rohrende) |")
+    L.append(f"| **Rohr gesamt (Minimum)** | **{dm['TUBE_TOTAL']:.0f} mm** | |")
+    L.append("")
+    L.append("Das Minimum hängt an Annahmen: gepackter Fallschirm 230 mm (`CHUTE_L`), 50 mm Raum für die Schockschnur (`CORD_BAY_MIN`), "
+             "Kolben 40 mm. Jede 10 mm weniger Schirm oder Schnurraum kürzen das Rohr um 10 mm (2,4 g). Beim Packen nachmessen. "
+             f"Bei 700 mm bleiben {d['CORD_BAY']:.0f} mm Raum über dem Schirm.\n")
+    L.append("### Ergebnis\n")
+    L.append("| Konfiguration | Rohr | Start | Schwerpunkt ab Düse | Hebelarm Kardan–CG | Ixx = Iyy | Izz | Brennschluss | Hebelarm BS |")
+    L.append("|---|---|---|---|---|---|---|---|---|")
+    for v in var.values():
+        lo, bo = v["confs"]["liftoff"], v["confs"]["burnout"]
+        L.append(f"| {v['label']} | {v['layout']['TUBE_TOTAL']:.0f} mm | **{lo['mass_kg'] * 1000:.0f} g** | {lo['cg_mm'][2]:.0f} mm "
+                 f"| {lo['lever_arm_m'] * 1000:.0f} mm | {lo['inertia_kgm2']['Ixx']:.4f} kg·m² | {lo['inertia_kgm2']['Izz']:.5f} kg·m² "
+                 f"| {bo['mass_kg'] * 1000:.0f} g | {bo['lever_arm_m'] * 1000:.0f} mm |")
+    L.append("")
+    e7, em = var["erstflug_700"]["confs"]["liftoff"], var["erstflug_min"]["confs"]["liftoff"]
+    L.append(f"Ziel unter 750 g: {'erreicht' if e7['mass_kg'] < 0.75 else 'verfehlt'} "
+             f"({e7['mass_kg'] * 1000:.0f} g bei 700 mm, {em['mass_kg'] * 1000:.0f} g bei {dm['TUBE_TOTAL']:.0f} mm). "
+             f"Schub-Gewicht mit 12 N mittlerem Schub bei 700 mm: {12 / (e7['mass_kg'] * 9.81):.2f}.\n")
+    L.append("### Teileliste Erstflug, Rohr 700 mm (Start)\n")
+    L.append("| Teil | Masse | z Schwerpunkt | Quelle / Annahme |")
+    L.append("|---|---|---|---|")
+    for p in var["erstflug_700"]["parts"]:
+        L.append(f"| {p.name} | {p.m:.1f} g | {p.cg[2]:.0f} mm | {p.src} |")
+    L.append(f"| **Summe** | **{sum(p.m for p in var['erstflug_700']['parts']):.0f} g** | | |")
+    L.append("")
+    return "\n".join(L)
+
+
+def write_erstflug_json(var, path):
+    js = json.loads(path.read_text(encoding="utf-8"))
+    js["erstflug_2026-10-22"] = {
+        "note": "config erstflug: ohne Beine, 2S 450 mAh 30 g, Mainboard 54x120 45 g; Details in mass_properties.md",
+        "variants": {k: {
+            "label": v["label"], "tube_mm": v["layout"]["TUBE_TOTAL"], "tube_min_mm": round(v["layout"]["TUBE_MIN"], 1),
+            "coupler_z_mm": list(v["layout"]["FC_COUPLER_Z"]), "joint_z_mm": v["layout"]["JOINT_Z"],
+            "total_length_mm": v["layout"]["TOTAL_LENGTH"], "cord_bay_mm": round(v["layout"]["CORD_BAY"], 1),
+            "configurations": {kk: {"mass_kg": round(c["mass_kg"], 4), "cg_from_nozzle_m": round(c["cg_from_nozzle_m"], 4),
+                                    "lever_arm_m": round(c["lever_arm_m"], 4),
+                                    "inertia_kgm2": {n: round(x, 6) for n, x in c["inertia_kgm2"].items()}}
+                               for kk, c in v["confs"].items()}} for k, v in var.items()}}
+    path.write_text(json.dumps(js, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
 if __name__ == "__main__":
-    confs, base = configurations()
+    if P.CONFIG != "voll":
+        sys.exit("mass_model.py schreibt alle Varianten selbst; MS_CONFIG nicht setzen")
+    confs, base = configurations("voll")
     write_json(confs, HERE / "mass_properties.json")
     write_md(confs, base, HERE / "mass_properties.md")
+    var = erstflug_variants()
+    with open(HERE / "mass_properties.md", "a", encoding="utf-8") as f:
+        f.write(write_erstflug_md(var))
+    write_erstflug_json(var, HERE / "mass_properties.json")
     for k, v in confs.items():
         I = v["inertia_kgm2"]
         print(f"{k:9s} m={v['mass_kg']:.3f} kg  cg={v['cg_mm'][2]:.0f} mm  lever={v['lever_arm_m']:.3f} m  "
               f"Ixx={I['Ixx']:.4f} Iyy={I['Iyy']:.4f} Izz={I['Izz']:.5f} kg m^2")
+    for k, v in var.items():
+        c = v["confs"]["liftoff"]
+        print(f"{k:13s} tube={v['layout']['TUBE_TOTAL']:.0f} m={c['mass_kg']:.3f} cg={c['cg_mm'][2]:.0f} "
+              f"lever={c['lever_arm_m']:.3f} Ixx={c['inertia_kgm2']['Ixx']:.4f} Izz={c['inertia_kgm2']['Izz']:.5f}")

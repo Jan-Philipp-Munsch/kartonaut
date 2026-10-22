@@ -8,56 +8,220 @@
   "liftoff": {
    "label": "Start, voller Motor",
    "mass_kg": 0.981,
-   "cg_from_nozzle_m": 0.4483,
+   "cg_from_nozzle_m": 0.4487,
    "cg_lateral_m": [
     0.00024,
     -0.00065
    ],
    "inertia_kgm2": {
-    "Ixx": 0.109616,
-    "Iyy": 0.109623,
+    "Ixx": 0.109842,
+    "Iyy": 0.10985,
     "Izz": 0.001053,
     "Ixy": -0.0,
     "Ixz": 8.7e-05,
-    "Iyz": -9.7e-05
+    "Iyz": -9.8e-05
    },
-   "lever_arm_m": 0.3718
+   "lever_arm_m": 0.3722
   },
   "burnout": {
    "label": "Brennschluss, Treibstoff verbraucht",
    "mass_kg": 0.953,
-   "cg_from_nozzle_m": 0.4605,
+   "cg_from_nozzle_m": 0.4609,
    "cg_lateral_m": [
     0.00025,
     -0.00067
    ],
    "inertia_kgm2": {
-    "Ixx": 0.104685,
-    "Iyy": 0.104693,
+    "Ixx": 0.104902,
+    "Iyy": 0.10491,
     "Izz": 0.001051,
     "Ixy": -0.0,
     "Ixz": 9e-05,
     "Iyz": -0.000105
    },
-   "lever_arm_m": 0.384
+   "lever_arm_m": 0.3844
   },
   "no_motor": {
    "label": "Ohne Motor (Adapter bleibt)",
    "mass_kg": 0.917,
-   "cg_from_nozzle_m": 0.4767,
+   "cg_from_nozzle_m": 0.4771,
    "cg_lateral_m": [
     0.00026,
     -0.0007
    ],
    "inertia_kgm2": {
-    "Ixx": 0.098276,
-    "Iyy": 0.098283,
+    "Ixx": 0.098479,
+    "Iyy": 0.098486,
     "Izz": 0.001047,
     "Ixy": -0.0,
     "Ixz": 9.4e-05,
-    "Iyz": -0.000115
+    "Iyz": -0.000116
    },
-   "lever_arm_m": 0.4002
+   "lever_arm_m": 0.4006
+  }
+ },
+ "erstflug_2026-10-22": {
+  "note": "config erstflug: ohne Beine, 2S 450 mAh 30 g, Mainboard 54x120 45 g; Details in mass_properties.md",
+  "variants": {
+   "voll_1000": {
+    "label": "voll, Beine, 850-mAh-2S",
+    "tube_mm": 1000.0,
+    "tube_min_mm": 984.0,
+    "coupler_z_mm": [
+     445.0,
+     595.0
+    ],
+    "joint_z_mm": 520.0,
+    "total_length_mm": 1250.0,
+    "cord_bay_mm": 66.0,
+    "configurations": {
+     "liftoff": {
+      "mass_kg": 0.981,
+      "cg_from_nozzle_m": 0.4487,
+      "lever_arm_m": 0.3722,
+      "inertia_kgm2": {
+       "Ixx": 0.109842,
+       "Iyy": 0.10985,
+       "Izz": 0.001053,
+       "Ixy": -0.0,
+       "Ixz": 8.7e-05,
+       "Iyz": -9.8e-05
+      }
+     },
+     "burnout": {
+      "mass_kg": 0.953,
+      "cg_from_nozzle_m": 0.4609,
+      "lever_arm_m": 0.3844,
+      "inertia_kgm2": {
+       "Ixx": 0.104902,
+       "Iyy": 0.10491,
+       "Izz": 0.001051,
+       "Ixy": -0.0,
+       "Ixz": 9e-05,
+       "Iyz": -0.000105
+      }
+     },
+     "no_motor": {
+      "mass_kg": 0.917,
+      "cg_from_nozzle_m": 0.4771,
+      "lever_arm_m": 0.4006,
+      "inertia_kgm2": {
+       "Ixx": 0.098479,
+       "Iyy": 0.098486,
+       "Izz": 0.001047,
+       "Ixy": -0.0,
+       "Ixz": 9.4e-05,
+       "Iyz": -0.000116
+      }
+     }
+    }
+   },
+   "erstflug_700": {
+    "label": "Erstflug",
+    "tube_mm": 700.0,
+    "tube_min_mm": 665.0,
+    "coupler_z_mm": [
+     126.0,
+     276.0
+    ],
+    "joint_z_mm": 151.0,
+    "total_length_mm": 950.0,
+    "cord_bay_mm": 85.0,
+    "configurations": {
+     "liftoff": {
+      "mass_kg": 0.719,
+      "cg_from_nozzle_m": 0.3082,
+      "lever_arm_m": 0.2317,
+      "inertia_kgm2": {
+       "Ixx": 0.044193,
+       "Iyy": 0.044195,
+       "Izz": 0.000527,
+       "Ixy": -0.0,
+       "Ixz": 5.4e-05,
+       "Iyz": -0.00012
+      }
+     },
+     "burnout": {
+      "mass_kg": 0.691,
+      "cg_from_nozzle_m": 0.3193,
+      "lever_arm_m": 0.2428,
+      "inertia_kgm2": {
+       "Ixx": 0.042011,
+       "Iyy": 0.042014,
+       "Izz": 0.000525,
+       "Ixy": -0.0,
+       "Ixz": 5.7e-05,
+       "Iyz": -0.000128
+      }
+     },
+     "no_motor": {
+      "mass_kg": 0.655,
+      "cg_from_nozzle_m": 0.3342,
+      "lever_arm_m": 0.2577,
+      "inertia_kgm2": {
+       "Ixx": 0.039177,
+       "Iyy": 0.039179,
+       "Izz": 0.00052,
+       "Ixy": -0.0,
+       "Ixz": 6.1e-05,
+       "Iyz": -0.000139
+      }
+     }
+    }
+   },
+   "erstflug_min": {
+    "label": "Erstflug, kürzestes Rohr",
+    "tube_mm": 665.0,
+    "tube_min_mm": 665.0,
+    "coupler_z_mm": [
+     126.0,
+     276.0
+    ],
+    "joint_z_mm": 151.0,
+    "total_length_mm": 915.0,
+    "cord_bay_mm": 50.0,
+    "configurations": {
+     "liftoff": {
+      "mass_kg": 0.7106,
+      "cg_from_nozzle_m": 0.2986,
+      "lever_arm_m": 0.2221,
+      "inertia_kgm2": {
+       "Ixx": 0.039671,
+       "Iyy": 0.039674,
+       "Izz": 0.000515,
+       "Ixy": -0.0,
+       "Ixz": 5.2e-05,
+       "Iyz": -0.000113
+      }
+     },
+     "burnout": {
+      "mass_kg": 0.6826,
+      "cg_from_nozzle_m": 0.3094,
+      "lever_arm_m": 0.2329,
+      "inertia_kgm2": {
+       "Ixx": 0.037639,
+       "Iyy": 0.037641,
+       "Izz": 0.000514,
+       "Ixy": -0.0,
+       "Ixz": 5.5e-05,
+       "Iyz": -0.000121
+      }
+     },
+     "no_motor": {
+      "mass_kg": 0.6466,
+      "cg_from_nozzle_m": 0.324,
+      "lever_arm_m": 0.2475,
+      "inertia_kgm2": {
+       "Ixx": 0.035002,
+       "Iyy": 0.035004,
+       "Izz": 0.000509,
+       "Ixy": -0.0,
+       "Ixz": 5.8e-05,
+       "Iyz": -0.000131
+      }
+     }
+    }
+   }
   }
  }
 }

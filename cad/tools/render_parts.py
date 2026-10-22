@@ -81,6 +81,13 @@ elif view == "tvc":
 elif view == "avionics":
     # von +y (Bestückungsseite mit Teensy), schräg
     aim((0.7, 1.0, 0.45), ctr, ext.z * 1.12, 1000, 1400)
+elif view in ("hatch_a", "hatch_b"):
+    # Blick radial auf die Luke (A: von +y, B: von -y), Ausschnitt um den Kuppler
+    sgn = 1.0 if view == "hatch_a" else -1.0
+    aim((0.0, sgn, 0.0), ctr, max(ext.z * 1.08, 90.0), 900, 1400)
+elif view == "hatch_a_iso" or view == "hatch_b_iso":
+    sgn = 1.0 if view == "hatch_a_iso" else -1.0
+    aim((0.45, sgn, 0.35), ctr, max(ext.z * 1.1, 90.0), 1000, 1400)
 elif view == "testrig":
     # Gestell von schräg vorn, Welle quer im Bild
     aim((0.9, 1.3, 0.5), ctr, max(ext.z * 1.08, ext.x * 1.15), 1200, 1500)

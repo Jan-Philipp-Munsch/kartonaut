@@ -16,7 +16,9 @@ Angelegt am 21.10.2026. Das Modell ersetzt die Blender-Dateien als Konstruktions
 python -m pip install --user cadquery      # einmalig (CadQuery 2.8, Python 3.13 funktioniert)
 python cad/build.py                         # STEP/STL nach cad/export/, Bilder nach docs/img/cad/
 python cad/build.py --no-render             # ohne Blender
-python cad/mass_model.py                    # mass_properties.md und .json neu schreiben
+python cad/mass_model.py                    # mass_properties.md und .json neu schreiben (alle Varianten)
+python cad/build.py --config erstflug       # Erstflug-Konfiguration (22.10.2026), Rohr 700 mm
+python cad/build.py --config erstflug --tube-l 665   # kürzestes Rohr (Minimum steht in params.TUBE_MIN)
 ```
 
 `build.py` baut die Geometrie (54 Teile, 2 s), exportiert je Baugruppe `export/<gruppe>.step` und `.stl`
@@ -34,7 +36,7 @@ nur die Bilder.
 | `airframe.py` | zwei Klima-Rohre 75 × 500, Luke, Klima-Spitze 8539 mit Schulterkuppler und Spant |
 | `tvc.py` | Außenrahmen, Innenrahmen, Motorrohr, Adapter 29→24, Motor E12, zwei W5652H mit Hebelscheiben |
 | `avionics.py` | Flugcomputer-Kuppler: Endringe, 8 × M2-Stangen, Träger, Platine 54 × 120 mit Teensy, Akkus 2S/1S, obere Endplatte = Spant mit Ladungsschale |
-| `ejection.py` | Kolben (Kuppler-Stück mit Platte und Öse), Fallschirm als Platzhalter |
+| `ejection.py` | Kolben (Kuppler-Stück mit Platte und Öse), Fallschirm als Platzhalter; Gasraum 11 mm (war 5, die Ladungsschale ragte in die Kolbenplatte) |
 | `legs.py` | Hülse am Rohrende, Ring 70 mm darüber, vier Beine mit Haupt- und oberer Strebe, Fuß, Gelenke |
 | `testrig.py` | TVC-Prüfstand: Gestell, Rahmen, Klemmkragen, Prop-Adapter mit BR2814 und Propeller, Schutzkäfig (siehe unten) |
 | `build.py` | Zusammenbau, Export, Kollisionsprüfung, Render-Aufrufe |
@@ -97,6 +99,50 @@ Welche davon Pitch und welche Yaw ist, muss mit `Config.h` abgeglichen werden.
 Die Landebeine sind geometrisch wie in Blender (ausgefahren: Fuß auf r ≈ 320 mm). Eingeklappt wird nur
 die Hauptstrebe senkrecht gestellt; die obere Strebe passt mit fester Länge nicht (eingeklappt bräuchte
 sie 218 statt 320 mm). Der Einklappmechanismus ist offen, siehe Inventur §3.7.
+
+## Konfigurationen (22.10.2026): `voll` und `erstflug`
+
+`params.py` kennt zwei Konfigurationen, gewählt über die Umgebungsvariable `MS_CONFIG` (von `build.py --config`
+gesetzt, Vorgabe `voll`) und optional `MS_TUBE_L`. Die abgeleiteten Längen (Rohrstoß, Kuppler, Platine, Kolben,
+Schirm, Spitze, Gesamtlänge) liefert `params.layout(config, tube_total)`; `mass_model.py` nutzt diese Funktion
+und rechnet alle Varianten in einem Lauf, ohne die Umgebungsvariable.
+
+| | `voll` (Stand 21.10.) | `erstflug` (Entscheidung Jan 22.10.) |
+|---|---|---|
+| Rohr | 2 × 500 mm, Stoß bei z = 520 | 700 mm (Minimum 665): unteres Rohr 131 mm, oberes Rest, Stoß bei z = 151 |
+| Kuppler | zentriert um den Stoß (75 / 75) | 25 mm im unteren Rohr, 125 mm im oberen |
+| Landebeine | ja (200 g) | nein |
+| 2S-Akku / Platine | 45 g / 40 g | 30 g (450 mAh) / 45 g (Mainboard mit Teensy) |
+| Luken | eine USB-Luke (+y) | Luke A (+y) und Luke B (−y), Schlüsselschalter-Kragen |
+| Start | 981 g | 719 g (700 mm), 711 g (665 mm) |
+
+Der Prüfstand (`rig=True`) und die Bilder der Gesamtübersicht gehören zu `voll`; `build.py --config erstflug` schreibt
+`export/erstflug/*` und `export/rocket_erstflug.step` und rendert `rocket_erstflug_*.png` und `hatches_*.png`.
+Dazu prüft es, ob die Luken frei sind, die Steckerräume leer bleiben und die Kolbenbohrung frei ist.
+
+### Luken im Flugcomputer-Kuppler (Erstflug)
+
+| Luke A, +y, Bestückungsseite | Luke B, −y, Schalterbrett |
+|---|---|
+| ![](../docs/img/cad/hatches_a_iso.png) | ![](../docs/img/cad/hatches_b_iso.png) |
+
+Die M2-Stangen stehen bei (±7, ±29,5) und (±29,5, ±7); zwischen zwei Stangen eines Paars bleiben 12 mm frei.
+Beide Luken sind deshalb 12 mm breit und liegen bei ±y (u = 0). Sie liegen im oberen Rohr, der Rohrstoß (25 mm über der
+Kupplerunterkante) kreuzt sie nicht. Lage der Schrauben: drei M2 bei 45°, 135°, 225° im oberen Rohr, damit der Kuppler nur in
+einer Drehung passt und die Luken zu den Fenstern im Rohr stehen.
+
+- **Luke A (Teensy):** v = 25 … 100 mm (z = Platinenanfang + 25 … 100), Micro-USB, Programmiertaste und SD-Slot des
+  Teensy. 21 mm Luft von der Teensy-Oberseite bis zur Kupplerwand für Stecker und Karte; Steckerräume (USB-Stecker 11 mm,
+  SD-Karte 11 mm breit) sind frei.
+- **Luke B (Schalterbrett):** v = 24 … 90 mm. Ein 11 mm breites Brett (gedruckt oder Leiterplatte) sitzt zwischen den Stangen
+  bei y = −33,1 … −31,1 auf zwei Stützen am Trägerboden; die Bauteile in einer Reihe von unten (TVC) nach oben: Schiebeschalter
+  2-polig (v 28–40), USB-C-Buchse (44–53) mit LED (56–59), XT30-Buchse (61–71), XH-3-Buchse für den Balancer (76–83,5). Sie sind
+  über Kabel mit der Platine verbunden (`J_SW`, USB-C-Lader, `J_BAT2`-Parallelanschluss). Sie liegen frei von Stangen, Akkus
+  (die 2S/1S-Akkus liegen bei y > −10,8, Trägerboden bei −14,5), Träger und Platine, jeder Stecker hat 1,5 mm Luft ringsum.
+- **Schlüsselschalter passt nicht in Luke B** (Körper Ø 12 gegen 12 mm Stangenlücke, dazu 15 mm Einbautiefe). Er sitzt in einem
+  gedruckten **Kragen** im unteren Rohr direkt unter dem Kuppler (z = 106 … 124, 3 mm über dem Kardan), radial nach +x, durch eine
+  Bohrung Ø 12,4 im unteren Rohr. Das kostet 20 mm Rohrlänge (der Kuppler beginnt bei z = 126), das Modul wird weiter nach oben
+  herausgezogen, der Kragen bleibt im Rohr; Kabel zur Platine über Steckverbinder.
 
 ## Prüfstand (`testrig.py`, 21.10.2026)
 

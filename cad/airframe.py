@@ -1,11 +1,21 @@
 """Rumpf: zwei Klima-Rohre 75 mm, Luke für den USB-Stecker, Klima-Spitze 8539 mit Schulterkuppler."""
+import math
 import cadquery as cq
 import params as P
-from common import Parts, tube, cyl, box_from, radial_holes
+from common import Parts, tube, cyl, box_from, cyl_between, radial_holes
+
+
+def _window(side, w, v0, v1):
+    c = box_from(-w / 2, w / 2, 0, P.TUBE_OD, P.BOARD_V0_Z + v0, P.BOARD_V0_Z + v1)
+    return c.mirror("XZ") if side < 0 else c
 
 
 def hatch_cutter():
-    """Fenster in Rohr und Kuppler auf der Bestückungsseite (+y) über dem USB-Stecker des Teensy."""
+    """Fenster in Rohr und Kuppler. voll: eine Luke über dem USB-Stecker (+y). erstflug: Luke A (+y, Teensy) und
+    Luke B (-y, Schalterbrett), je zwischen den M2-Stangen."""
+    if P.CONFIG == "erstflug":
+        a, b = P.HATCH_A, P.HATCH_B
+        return _window(a["side"], a["w"], *a["v"]).union(_window(b["side"], b["w"], *b["v"]))
     z0 = P.BOARD_V0_Z + P.HATCH_V[0]
     z1 = P.BOARD_V0_Z + P.HATCH_V[1]
     c = box_from(-P.HATCH_W / 2, P.HATCH_W / 2, 0, P.TUBE_OD, z0, z1)
@@ -45,10 +55,22 @@ def build(parts: Parts):
     lower = tube(P.TUBE_OD, P.TUBE_ID, *P.LOWER_TUBE_Z)
     lower = radial_holes(lower, P.OUTER_SCREW_D, P.TUBE_OD / 2, P.TVC_RING_Z + P.OUTER_FLANGE_H / 2, n=4, phi0=45,
                          depth=3)
+    if P.CONFIG == "erstflug":
+        zk = (P.KEY_COLLAR_Z[0] + P.KEY_COLLAR_Z[1]) / 2
+        lower = lower.cut(cyl_between(P.KEY_HOLE_D, (P.TUBE_OD, 0, zk), (P.TUBE_ID / 2 - 3, 0, zk)))
     parts.add("Rohr unten 75x500", lower, "tube", "airframe")
     upper = tube(P.TUBE_OD, P.TUBE_ID, *P.UPPER_TUBE_Z).cut(hatch)
     # vier Schrauben Rohr–Kuppler oben und unten (M2 radial)
-    upper = radial_holes(upper, 2.2, P.TUBE_OD / 2, P.JOINT_Z + P.COUPLER_INTO_UPPER / 2, n=4, phi0=45, depth=3)
+    if P.CONFIG == "erstflug":
+        # drei M2 im oberen Rohr bei 45°, 135°, 225°: eindeutige Lage, die Luken (90°, 270°) liegen dazwischen
+        zs = P.FC_COUPLER_Z[0] + 90.0
+        for phi in (45.0, 135.0, 225.0):
+            c, s_ = math.cos(math.radians(phi)), math.sin(math.radians(phi))
+            upper = upper.cut(cyl_between(2.2, (P.TUBE_OD / 2 * 1.2 * c, P.TUBE_OD / 2 * 1.2 * s_, zs),
+                                          (P.TUBE_OD / 2 * 0.9 * c, P.TUBE_OD / 2 * 0.9 * s_, zs)))
+    else:
+        # vier Schrauben Rohr–Kuppler oben und unten (M2 radial)
+        upper = radial_holes(upper, 2.2, P.TUBE_OD / 2, P.JOINT_Z + P.COUPLER_INTO_UPPER / 2, n=4, phi0=45, depth=3)
     parts.add("Rohr oben 75x500 (mit Luke)", upper, "tube", "airframe")
     z0 = P.NOSE_BASE_Z - P.NOSE_SHOULDER_L
     shoulder = tube(P.NOSE_SHOULDER_D, P.NOSE_SHOULDER_D - 2.4, z0, P.NOSE_BASE_Z + 2)

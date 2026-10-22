@@ -86,6 +86,41 @@ def battery(spec):
     return b.edges("|Z").fillet(1.5)
 
 
+def switch_panel():
+    """Erstflug, Luke B (-y): Brett zwischen den Stangen mit zwei Stützen auf dem Trägerboden. Das Brett ist 11 mm breit,
+    die Stangen bei (±7, -29,5) lassen 12 mm; die Bauteile stecken mit ihren Steckflächen bündig an der Kupplerwand."""
+    v0 = P.BOARD_V0_Z
+    va, vb = P.PANEL_PARTS[0][1], P.PANEL_PARTS[-1][2]
+    plate = box_from(-P.PANEL_W / 2, P.PANEL_W / 2, P.PANEL_Y[0], P.PANEL_Y[1], v0 + va - 2, v0 + vb + 2)
+    for v in (va + 3, vb - 3):
+        plate = plate.union(cyl_between(5.0, (0, -P.CARRIER_DEPTH, v0 + v), (0, P.PANEL_Y[1] + 0.5, v0 + v)))
+    return plate
+
+
+def switch_parts():
+    v0 = P.BOARD_V0_Z
+    out = []
+    for name, a, b, hw in P.PANEL_PARTS:
+        if name.startswith("Lade-LED"):
+            body = cyl_between(3.0, (0, P.PANEL_Y[0], v0 + (a + b) / 2), (0, P.PANEL_FACE_Y, v0 + (a + b) / 2))
+        else:
+            body = box_from(-hw, hw, P.PANEL_FACE_Y, P.PANEL_Y[0], v0 + a, v0 + b)
+        if name.startswith("Schiebeschalter"):   # Hebel ragt 2 mm in die Luke
+            body = body.union(box_from(-1.0, 1.0, P.PANEL_FACE_Y - 2.0, P.PANEL_FACE_Y, v0 + a + 3, v0 + a + 7))
+        out.append((name, body))
+    return out
+
+
+def key_collar():
+    """Kragen im unteren Rohr unter dem Kuppler mit Schlüsselschalter Ø 12 radial nach +x (passt nicht zwischen die Stangen)."""
+    z0, z1 = P.KEY_COLLAR_Z
+    zk = (z0 + z1) / 2
+    ring = tube(P.COUPLER_OD, 48.0, z0, z1)
+    ring = ring.cut(cyl_between(P.KEY_HOLE_D, (20.0, 0, zk), (P.TUBE_OD, 0, zk)))
+    key = cyl_between(P.KEY_SWITCH_D, (22.0, 0, zk), (P.TUBE_OD / 2 - 0.5, 0, zk))
+    return ring, key
+
+
 def build(parts: Parts, hatch):
     z0, z1 = P.FC_COUPLER_Z
     coupler = tube(P.COUPLER_OD, P.COUPLER_ID, z0, z1).cut(hatch)
@@ -99,3 +134,10 @@ def build(parts: Parts, hatch):
     parts.add("Teensy 4.1", teensy(), "teensy", "avionics")
     parts.add("Akku 2S", battery(P.BAT2S), "battery", "avionics")
     parts.add("Akku 1S", battery(P.BAT1S), "battery", "avionics")
+    if P.CONFIG == "erstflug":
+        parts.add("Schalterbrett (Luke B)", switch_panel(), "printed2", "avionics")
+        for name, body in switch_parts():
+            parts.add(name, body, "steel", "avionics")
+        ring, key = key_collar()
+        parts.add("Schlüsselschalter-Kragen", ring, "printed", "avionics")
+        parts.add("Schlüsselschalter", key, "steel", "avionics")

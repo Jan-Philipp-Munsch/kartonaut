@@ -9,6 +9,12 @@ Benötigt cadquery (pip install --user cadquery). Für die Renderbilder wird Ble
 """
 import json, os, subprocess, sys, time
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+# --config erstflug [--tube-l 700]: muss vor dem Import von params stehen (params liest MS_CONFIG / MS_TUBE_L)
+for _i, _a in enumerate(sys.argv):
+    if _a == "--config":
+        os.environ["MS_CONFIG"] = sys.argv[_i + 1]
+    elif _a == "--tube-l":
+        os.environ["MS_TUBE_L"] = sys.argv[_i + 1]
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -19,7 +25,7 @@ import params as P
 from common import Parts, box_from
 import airframe, tvc, avionics, ejection, legs, testrig
 
-EXPORT = HERE / "export"
+EXPORT = HERE / "export" / P.CONFIG if P.CONFIG != "voll" else HERE / "export"
 IMG = HERE.parent / "docs" / "img" / "cad"
 BLENDER = os.environ.get("BLENDER", r"C:\Program Files\Blender Foundation\Blender 5.2\blender.exe")
 
@@ -33,7 +39,7 @@ def build_all(pitch=0.0, yaw=0.0, legs_deployed=None, rig=False, rig_pitch=0.0, 
     ejection.build(parts)
     if rig:
         testrig.build(parts, rig_pitch=rig_pitch, rig_yaw=rig_yaw)
-    else:
+    elif P.LEGS:
         legs.build(parts, deployed=legs_deployed)
     return parts
 
@@ -47,7 +53,7 @@ def assembly(parts, names=True):
 
 
 def export_groups(parts):
-    EXPORT.mkdir(exist_ok=True)
+    EXPORT.mkdir(parents=True, exist_ok=True)
     groups = sorted({g for _, _, _, g in parts})
     for g in groups:
         shapes = [s for _, s, _, gg in parts if gg == g]
@@ -56,10 +62,11 @@ def export_groups(parts):
         sub = Parts([p for p in parts if p[3] == g])
         assembly(sub).export(str(EXPORT / f"{g}.step"))
         print(f"  {g:10s} {len(shapes):3d} Teile -> {g}.step / {g}.stl")
-    assembly(parts).export(str(EXPORT / "rocket.step"))
+    step = EXPORT.parent / "rocket_erstflug.step" if P.CONFIG == "erstflug" else EXPORT / "rocket.step"
+    assembly(parts).export(str(step))
     comp = cq.Compound.makeCompound([s for _, s, _, _ in parts])
     exporters.export(cq.Workplane().add(comp), str(EXPORT / "rocket.stl"), tolerance=0.05, angularTolerance=0.2)
-    print("  rocket.step (Gesamtmodell, im Repo) und rocket.stl")
+    print(f"  {step.name} (Gesamtmodell, im Repo) und rocket.stl")
 
 
 def export_rig(parts):
@@ -121,7 +128,8 @@ def check_clearance(deg=None):
     by = {n: s for n, s, _, _ in parts}
     moving_motor = ["Motorrohr", "Adapter 29→24", "Motor TSP E12-0", "Servohebel innen"]
     moving_inner = ["Innenrahmen", "Servo Innenrahmen W5652H", "Servohebel außen"] + moving_motor
-    fixed = ["Außenrahmen", "Servo Außenrahmen W5652H", "Rohr unten 75x500", "Beinring unten (Hülse)", "Endring unten"]
+    fixed = ["Außenrahmen", "Servo Außenrahmen W5652H", "Rohr unten 75x500", "Endring unten"]
+    fixed += [n for n in ("Beinring unten (Hülse)", "Schlüsselschalter-Kragen", "Schlüsselschalter") if n in by]
     pairs = [(a, b) for a in moving_inner for b in fixed] + [(a, b) for a in moving_motor for b in ("Innenrahmen", "Servo Innenrahmen W5652H")]
     bad = []
     for a, b in pairs:
@@ -173,6 +181,132 @@ def check_rig_clearance():
     return bad
 
 
+
+def check_erstflug(parts):
+    """Erstflug: Luken, Schalterbrett, Schlüsselschalter und Kolbenraum. Gibt die Befunde als Liste zurück."""
+    import math
+    from common import cyl_between
+    by = {n: s for n, s, _, _ in parts}
+    out = []
+    rods = [n for n in by if n.startswith("Gewindestange")]
+    sled = ["Platine 54x120", "Teensy 4.1", "Akku 2S", "Akku 1S", "Träger (gedruckt)"]
+    hw = ["Schalterbrett (Luke B)", "Schlüsselschalter"] + [n for n, *_ in P.PANEL_PARTS if n in by]
+    # 1 Hardware gegen Stangen, Platine, Akkus, Träger, Kuppler, Rohr
+    bad = []
+    for h in hw:
+        for o in rods + sled + ["Kuppler Flugcomputer 150", "Rohr oben 75x500 (mit Luke)", "Rohr unten 75x500", "Endring unten",
+                                "Endplatte oben (Spant, Ladungsschale)"]:
+            v = _overlap(by, h, o)
+            if v > 0.5:
+                bad.append(f"{h} / {o}: {v:.0f} mm³")
+    for o in rods + sled + ["Kuppler Flugcomputer 150", "Rohr unten 75x500", "Endring unten"]:
+        v = _overlap(by, "Schlüsselschalter-Kragen", o)
+        if v > 0.5 and o != "Kuppler Flugcomputer 150":
+            bad.append(f"Kragen / {o}: {v:.0f} mm³")
+    out.append(("Schalterbrett, Bauteile, Schlüsselschalter gegen Stangen/Platine/Akkus/Träger/Rohre/Kuppler", bad))
+    # 2 Steckerräume vor den Steckflächen (Stecker 1,5 mm größer, 8 mm tief nach außen) müssen leer sein
+    bad = []
+    v0 = P.BOARD_V0_Z
+    others = [n for n in by if n not in ("Rohr oben 75x500 (mit Luke)", "Kuppler Flugcomputer 150")]
+    for name, a, b, hwid in P.PANEL_PARTS:
+        probe = cq.Workplane().add(box_from(-min(hwid + 1.5, 5.9), min(hwid + 1.5, 5.9), -P.TUBE_OD, P.PANEL_FACE_Y - 0.01,
+                                            v0 + a - 1.5, v0 + b + 1.5))
+        for n in others:
+            if n == name:
+                continue
+            try:
+                v = probe.intersect(cq.Workplane().add(by[n])).val().Volume()
+            except Exception:
+                v = 0.0
+            if v > 0.5:
+                bad.append(f"Steckerraum {name} / {n}: {v:.0f} mm³")
+    for label, (u, vv0, vv1, y0) in {"Micro-USB-Stecker (Teensy)": (5.5, v0 + P.TEENSY["v1"] - 6, v0 + P.TEENSY["v1"] + 14, 10.0),
+                                     "SD-Karte (Teensy)": (5.5, v0 + P.TEENSY["v0"] - 14, v0 + P.TEENSY["v0"] + 12, 10.0)}.items():
+        probe = cq.Workplane().add(box_from(-u, u, y0, P.TUBE_OD, vv0, vv1))
+        for n in others:
+            try:
+                v = probe.intersect(cq.Workplane().add(by[n])).val().Volume()
+            except Exception:
+                v = 0.0
+            if v > 0.5 and n not in ("Teensy 4.1",):
+                bad.append(f"{label} / {n}: {v:.0f} mm³")
+    zk = (P.KEY_COLLAR_Z[0] + P.KEY_COLLAR_Z[1]) / 2
+    probe = cq.Workplane().add(cyl_between(P.KEY_SWITCH_D + 4, (P.TUBE_OD / 2 + 0.01, 0, zk), (P.TUBE_OD / 2 + 30, 0, zk)))
+    for n in by:
+        if n.startswith(("Rohr", "Schl", "Spitze")):
+            continue
+        try:
+            v = probe.intersect(cq.Workplane().add(by[n])).val().Volume()
+        except Exception:
+            v = 0.0
+        if v > 0.5:
+            bad.append(f"Schlüsselschalter-Außenraum / {n}: {v:.0f} mm³")
+    out.append(("Steckerräume (USB, SD, Schalterbrett, Schlüssel) frei", bad))
+    # 3 Kolbenbohrung
+    bad = []
+    piston = [n for n in by if n.startswith("Kolben")]
+    for pn in piston:
+        for n in by:
+            if n == pn or n.startswith(("Kolben", "Rohr oben")):
+                continue
+            v = _overlap(by, pn, n)
+            if v > 0.5:
+                bad.append(f"{pn} / {n}: {v:.0f} mm³")
+    zmax = max(by[n].BoundingBox().zmax for n in by if n.startswith(("Endplatte oben", "Gewindestange", "Kuppler Flugcomputer")))
+    zmin_p = min(by[n].BoundingBox().zmin for n in piston)
+    out.append((f"Kolben (z {zmin_p:.0f} …) gegen Endplatte/Stangen/Kuppler, Luft zur höchsten Kante (z {zmax:.1f}): {zmin_p - zmax:.1f} mm", bad))
+    # Bohrung: Innenradius des oberen Rohrs von der Kolbenunterkante bis zur Spitze frei von Einbauten
+    ur = by["Rohr oben 75x500 (mit Luke)"]
+    zz0 = zmin_p
+    bore = cq.Workplane().add(cyl_between(P.COUPLER_OD, (0, 0, zz0), (0, 0, P.NOSE_BASE_Z - P.NOSE_BULKHEAD_BELOW_BASE)))
+    stuck = []
+    for n in by:
+        if n.startswith(("Kolben", "Fallschirm", "Rohr", "Spitze", "Kuppler Flugcomputer")):
+            continue
+        try:
+            v = bore.intersect(cq.Workplane().add(by[n])).val().Volume()
+        except Exception:
+            v = 0.0
+        if v > 0.5:
+            stuck.append(f"{n}: {v:.0f} mm³")
+    out.append((f"Bohrung Ø {P.COUPLER_OD} von z {zz0:.0f} bis Spant der Spitze ({P.NOSE_BASE_Z - P.NOSE_BULKHEAD_BELOW_BASE:.0f}) frei von Einbauten", stuck))
+    for label, bad in out:
+        print(f"  {label}: " + ("frei" if not bad else "DURCHDRINGUNG"))
+        for x in bad:
+            print("    " + x)
+    return out
+
+
+def main_erstflug():
+    t0 = time.time()
+    no_render = "--no-render" in sys.argv
+    print(f"Erstflug-Konfiguration, Rohr {P.TUBE_TOTAL:.0f} mm (Minimum {P.TUBE_MIN:.0f} mm)")
+    parts = build_all()
+    print(f"  {len(parts)} Teile in {time.time() - t0:.0f} s; Gesamtlänge {P.TOTAL_LENGTH:.0f} mm")
+    export_groups(parts)
+    check_clearance()
+    print("Erstflug-Prüfungen ...")
+    check_erstflug(parts)
+    if no_render:
+        return
+    IMG.mkdir(parents=True, exist_ok=True)
+    print("Render ...")
+    z0, z1 = P.FC_COUPLER_Z
+    cut = (0, 200, -200, 200, -200, P.TOTAL_LENGTH + 50)
+    d = write_render_manifest(parts, "ef_overall")
+    render(d, IMG / "rocket_erstflug_overall.png", "overall")
+    d = write_render_manifest(build_all(), "ef_section", cut=cut)
+    render(d, IMG / "rocket_erstflug_section.png", "section")
+    # Luken: nur Kuppler-Bereich (Rohr oben, Kuppler, Modul, Kragen), geschnitten auf z = Kuppler ± ein paar mm
+    zc = (P.KEY_COLLAR_Z[0] - 5, z1 + 5)
+    for side, view in (("a", "hatch_a"), ("b", "hatch_b")):
+        d = write_render_manifest(parts, f"ef_hatch_{side}", only_groups={"avionics", "airframe"},
+                                  exclude=("Rohr unten", "Spitze"), cut=(-200, 200, -200, 200, zc[1], 3000))
+        render(d, IMG / f"hatches_{side}.png", view)
+        render(d, IMG / f"hatches_{side}_iso.png", view + "_iso")
+    print(f"fertig in {time.time() - t0:.0f} s")
+
+
 def main():
     t0 = time.time()
     no_render = "--no-render" in sys.argv
@@ -216,4 +350,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_erstflug() if P.CONFIG == "erstflug" else main()

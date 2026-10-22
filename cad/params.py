@@ -18,19 +18,15 @@ Geänderte Maße gegenüber Blender sind mit "geändert:" markiert.
 # --------------------------------------------------------------------------- Rumpf
 TUBE_OD = 75.0            # [Klima] Körperrohr 207550000
 TUBE_ID = 72.6            # [Klima]
-TUBE_L = 500.0            # [Klima]
-TUBE_M = 120.0            # [Klima] je Rohr
+TUBE_L = 500.0            # [Klima] Lieferlänge eines Rohrs
+TUBE_M = 120.0            # [Klima] je Rohr (500 mm)
+TUBE_G_PER_MM = TUBE_M / TUBE_L   # 0,24 g/mm [Klima]
 TUBE_BOTTOM_Z = 20.0      # [Annahme] Unterkante des unteren Rohrs über der Düsenebene: der Motor ragt 20 mm heraus
-LOWER_TUBE_Z = (TUBE_BOTTOM_Z, TUBE_BOTTOM_Z + TUBE_L)
-UPPER_TUBE_Z = (TUBE_BOTTOM_Z + TUBE_L, TUBE_BOTTOM_Z + 2 * TUBE_L)
-JOINT_Z = TUBE_BOTTOM_Z + TUBE_L          # Stoß der beiden Rohre
 
 COUPLER_OD = 72.4         # [BUILD] Kuppler 207315000; der Klima-Shop nennt 72,6 mm, nachmessen
 COUPLER_ID = 70.2         # [Klima]
 COUPLER_L = 150.0         # [Klima]
 COUPLER_M = 34.0          # [Klima]
-COUPLER_INTO_UPPER = 75.0 # [Annahme] wie weit der Flugcomputer-Kuppler ins obere Rohr ragt (75 = symmetrisch)
-FC_COUPLER_Z = (JOINT_Z + COUPLER_INTO_UPPER - COUPLER_L, JOINT_Z + COUPLER_INTO_UPPER)
 
 # Spitze: Klima 8539, Spritzguss-ABS, "Länge 230 mm, Außen Ø 75, Schulter Ø 72,6, ca. 100 g" [Klima]
 NOSE_L = 230.0            # [Klima] sichtbare Länge über dem Rohr (Annahme: ohne Schulter)
@@ -38,17 +34,14 @@ NOSE_SHOULDER_D = 72.4    # [Klima] 72,6 laut Shop; geändert: 0,2 mm Spiel, die
 NOSE_SHOULDER_L = 75.0    # [Annahme] mitgelieferter Kuppler, Länge nachmessen
 NOSE_WALL = 2.0           # [Annahme]
 NOSE_M = 100.0            # [Klima] ca., davon [Annahme] 80 g Kegel, 17 g Schulterkuppler, 3 g Spant/Öse
-NOSE_BASE_Z = UPPER_TUBE_Z[1]
-NOSE_TIP_Z = NOSE_BASE_Z + NOSE_L
-TOTAL_LENGTH = NOSE_TIP_Z                 # ab Düsenebene
 
 # --------------------------------------------------------------------------- Motor und Adapter
 MOTOR_D = 24.0            # [BUILD] TSP E12-0
 MOTOR_L = 95.0            # [BUILD]
 MOTOR_M = 64.0            # [BUILD] gesamt
-PROP_M = 28.0             # [BUILD] Treibstoff
-PROP_Z = (10.0, 60.0)     # [Annahme] Lage des Treibsatzes im Gehäuse (über der Düse, unter dem Verzögerungs-/Deckelbereich)
-PROP_D = 20.0             # [Annahme]
+GRAIN_M = 28.0             # [BUILD] Treibstoff
+GRAIN_Z = (10.0, 60.0)     # [Annahme] Lage des Treibsatzes im Gehäuse (über der Düse, unter dem Verzögerungs-/Deckelbereich)
+GRAIN_D = 20.0             # [Annahme]
 MOTOR_Z = (0.0, MOTOR_L)
 
 ADAPTER_OD = 29.0         # [Blender] 29→24-Adapter, Außen wie ein 29-mm-Motor; geändert: Blender-Teil war Ø 35 × 100
@@ -124,7 +117,6 @@ FC_RODS = [(29.5, 7.0), (29.5, -7.0), (-29.5, 7.0), (-29.5, -7.0),
            (7.0, 29.5), (-7.0, 29.5), (7.0, -29.5), (-7.0, -29.5)]   # [HW]
 BOARD_W, BOARD_L, BOARD_T = 54.0, 120.0, 1.6   # [HW]
 BOARD_HOLES = [(-23.5, 3.5), (23.5, 3.5), (-23.5, 116.5), (23.5, 116.5)]   # [HW] (u, v)
-BOARD_V0_Z = FC_COUPLER_Z[0] + FC_RING_T + 4.0   # [Annahme] v = 0 (TVC-Ende der Platine) über der Düse
 TEENSY = dict(u0=-8.9, u1=8.9, v0=30.0, v1=91.0, h=12.0)   # [HW] Teensy auf Buchsenleisten, Höhe [Annahme]
 SD_V = (24.0, 30.0)       # [HW] Freifläche vor dem SD-Slot
 USB_V = (91.0, 103.0)     # [HW] Freifläche für den USB-Stecker
@@ -150,14 +142,12 @@ HATCH_SIDE_Y = +1         # Luke auf der Bestückungsseite (+y)
 CHARGE_WELL_D = 12.0      # [Annahme] Schwarzpulver-Schale
 CHARGE_WELL_H = 8.0       # [Annahme]
 EMATCH_HOLE_D = 2.0
-PISTON_GAP = 5.0          # [Annahme] Luft zwischen Spant und Kolben (Gasraum)
+PISTON_GAP = 11.0         # geändert: war 5; Ladungsschale (8 mm) und Öse der Endplatte (bis 8,5 mm) ragen über die Platte, der Kolben braucht 2,5 mm Luft darüber
 PISTON_L = 40.0           # [Annahme] Kuppler-Abschnitt
 PISTON_PLATE_T = 6.0      # [Annahme]
-PISTON_Z0 = FC_COUPLER_Z[1] + PISTON_GAP
 PISTON_M = 31.0           # [Annahme] 9 g Kuppler-Stück + 10 g Platte + 12 g Ladungsschale/Spantaufbau
 CHUTE_D = 60.0            # [Annahme] gepackter Klima-Fallschirm 125 cm
 CHUTE_L = 230.0           # [Annahme]
-CHUTE_Z0 = PISTON_Z0 + PISTON_L + 5.0
 CHUTE_M = 50.0            # [Vorgabe] mit Schockschnur
 SHOCK_CORD_EYE_D = 6.0
 
@@ -190,7 +180,6 @@ LEG_M = LEG_M_SLEEVE + LEG_M_UPPER_RING + LEG_N * (LEG_M_MAIN + LEG_M_TOP + LEG_
 
 # --------------------------------------------------------------------------- Sonstiges
 MISC_M = 20.0             # [Annahme] Kabel, Schrauben, Schockschnur-Anker, Kleber
-MISC_Z = JOINT_Z
 
 # --------------------------------------------------------------------------- Farben für Export und Render (RGB 0..1)
 COLORS = {
@@ -257,3 +246,89 @@ GUARD_COLLAR_Z = (TUBE_BOTTOM_Z + 25.0, TUBE_BOTTOM_Z + 45.0)   # Klemmring am R
 GUARD_COLLAR_OD = 90.0
 GUARD_M = 90.0             # [Annahme] g, Alu-Rohr 8 mm und Druckteile
 COLORS.update({"alu": (0.75, 0.76, 0.78), "wood": (0.82, 0.70, 0.50), "prop": (0.20, 0.20, 0.22)})
+
+
+# --------------------------------------------------------------------------- Konfigurationen (22.10.2026)
+# "voll":     Stand 21.10.: 2 × 500 mm Rohr (1000 mm), Landebeine, Flugcomputer um den Rohrstoß, 850-mAh-2S.
+# "erstflug": Entscheidung Jan 22.10.: Aufstieg mit einem Motor, Fallschirm, kein Landesystem; Rohr gekürzt,
+#             Platine 54 × 120 statt Breakouts, 2S 450 mAh. Gewählt über die Umgebungsvariable MS_CONFIG
+#             (build.py --config erstflug) und optional MS_TUBE_L; mass_model.py rechnet alle Varianten.
+import os as _os
+import types as _types
+
+CONFIG_DEFAULT_TUBE_L = {"voll": 1000.0, "erstflug": 700.0}
+CONFIG = _os.environ.get("MS_CONFIG", "voll")
+ERSTFLUG_BAT2S_M = 30.0       # [Vorgabe] 2S 450 mAh statt 45 g für 850 mAh; Abmessungen der 850er beibehalten (konservativ)
+ERSTFLUG_BOARD_M = 45.0       # [Vorgabe] Mainboard 54 × 120 mit Teensy, ersetzt die Breakouts (40 g im Modell "voll")
+ERSTFLUG_HATCH_HW_M = 20.0    # [Annahme] Schalterbrett (Schiebeschalter, USB-C, XT30, XH-3, LED), Schlüsselschalter, Kragen
+CORD_BAY_MIN = 50.0           # [Annahme] Raum über dem Fallschirm für die Schockschnur (3 × Rumpf, gefaltet) vor dem Spant der Spitze
+COUPLER_INTO_LOWER_EF = 25.0  # [Annahme] Erstflug: Kuppler steckt nur 25 mm im unteren Rohr, damit beide Luken im oberen liegen
+KEY_COLLAR_Z = (106.0, 124.0) # Erstflug: Kragen für den Schlüsselschalter im unteren Rohr, 3 mm über dem Kardan (Motorrohr bis 103 + 2 bei 7°)
+NOSE_BULKHEAD_BELOW_BASE = NOSE_SHOULDER_L - 2.0   # Spant der Spitze: Unterkante 73 mm unter der Spitzenbasis (Rohrende)
+
+# Luken im Flugcomputer-Kuppler, Erstflug. Maße (u quer, v längs der Platine ab dem TVC-Ende), Koordinaten wie die Platine.
+HATCH_A = dict(side=+1, w=12.0, v=(25.0, 100.0))    # Teensy: Micro-USB, Programmiertaste, SD; 14 mm Stangenabstand, 12 mm frei
+HATCH_B = dict(side=-1, w=12.0, v=(24.0, 90.0))     # Schalterbrett gegenüber
+PANEL_W, PANEL_T = 11.0, 2.0                         # Schalterbrett (gedruckt/Platine), zwischen den Stangen bei u = ±6
+PANEL_Y = (-33.1, -31.1)                             # Brett im Freiraum zwischen Trägerboden (y = -14,5) und Kupplerwand (-35,1)
+PANEL_FACE_Y = -35.0                                 # Steckflächen bündig an der Kupplerinnenwand
+# Bauteile des Schalterbretts: (Name, v0, v1, u-Halbbreite); Steckflächen nach -y
+PANEL_PARTS = [("Schiebeschalter 2-polig", 28.0, 40.0, 3.0), ("USB-C-Buchse", 44.0, 53.0, 1.7),
+               ("Lade-LED", 56.0, 59.0, 1.5), ("XT30-Buchse (2S Laden)", 61.0, 71.2, 2.5),
+               ("XH-3-Buchse (Balancer)", 76.0, 83.5, 2.9)]
+KEY_SWITCH_D = 12.0                                  # [Annahme] Schlüsselschalter Ø 12 (Gewindekörper), passt nicht in 12 mm Stangenlücke
+KEY_HOLE_D = 12.4
+KEY_PHI = 0.0                                        # Winkel der Bohrung im Kragen (+x)
+
+
+def layout(config=None, tube_total=None):
+    """Abgeleitete Längen und Massen einer Konfiguration. Liefert ein dict; z ab Düsenebene."""
+    config = config or CONFIG
+    d = dict(CONFIG=config)
+    if config == "voll":
+        if tube_total not in (None, 1000.0):
+            raise ValueError("voll ist fest 2 × 500 mm")
+        d["TUBE_TOTAL"] = 1000.0
+        d["JOINT_Z"] = TUBE_BOTTOM_Z + TUBE_L
+        d["COUPLER_INTO_UPPER"] = 75.0
+        d["FC_COUPLER_Z"] = (d["JOINT_Z"] + 75.0 - COUPLER_L, d["JOINT_Z"] + 75.0)
+        d["LEGS"] = True
+        d["BAT2S"] = dict(BAT2S)
+        d["FC_M_BOARD"] = FC_M_BOARD
+        d["HATCH_HW_M"] = 0.0
+    elif config == "erstflug":
+        d["FC_COUPLER_Z"] = (KEY_COLLAR_Z[1] + 2.0, KEY_COLLAR_Z[1] + 2.0 + COUPLER_L)
+        d["JOINT_Z"] = d["FC_COUPLER_Z"][0] + COUPLER_INTO_LOWER_EF
+        d["COUPLER_INTO_UPPER"] = COUPLER_L - COUPLER_INTO_LOWER_EF
+        d["LEGS"] = False
+        d["BAT2S"] = dict(BAT2S, m=ERSTFLUG_BAT2S_M)
+        d["FC_M_BOARD"] = ERSTFLUG_BOARD_M
+        d["HATCH_HW_M"] = ERSTFLUG_HATCH_HW_M
+    else:
+        raise ValueError(config)
+    d["BOARD_V0_Z"] = d["FC_COUPLER_Z"][0] + FC_RING_T + 4.0   # [Annahme] v = 0 (TVC-Ende der Platine)
+    d["PISTON_Z0"] = d["FC_COUPLER_Z"][1] + PISTON_GAP
+    d["CHUTE_Z0"] = d["PISTON_Z0"] + PISTON_L + 5.0
+    d["CHUTE_Z1"] = d["CHUTE_Z0"] + CHUTE_L
+    d["TUBE_MIN"] = d["CHUTE_Z1"] + CORD_BAY_MIN + NOSE_BULKHEAD_BELOW_BASE - TUBE_BOTTOM_Z
+    if config == "erstflug":
+        d["TUBE_TOTAL"] = tube_total or CONFIG_DEFAULT_TUBE_L[config]
+        if d["TUBE_TOTAL"] < d["TUBE_MIN"] - 1e-6:
+            raise ValueError(f"Rohr {d['TUBE_TOTAL']} mm kürzer als das Minimum {d['TUBE_MIN']:.0f} mm")
+    top = TUBE_BOTTOM_Z + d["TUBE_TOTAL"]
+    d["LOWER_TUBE_Z"] = (TUBE_BOTTOM_Z, d["JOINT_Z"])
+    d["UPPER_TUBE_Z"] = (d["JOINT_Z"], top)
+    d["NOSE_BASE_Z"] = top
+    d["NOSE_TIP_Z"] = top + NOSE_L
+    d["TOTAL_LENGTH"] = d["NOSE_TIP_Z"]
+    d["CORD_BAY"] = top - NOSE_BULKHEAD_BELOW_BASE - d["CHUTE_Z1"]
+    d["MISC_Z"] = d["JOINT_Z"]
+    d["FC_M"] = d["FC_M_BOARD"] + FC_M_RINGS + FC_M_RODS + FC_M_CARRIER
+    return d
+
+
+def layout_ns(config=None, tube_total=None):
+    return _types.SimpleNamespace(**layout(config, tube_total))
+
+
+globals().update(layout(CONFIG, float(_os.environ["MS_TUBE_L"]) if "MS_TUBE_L" in _os.environ else None))

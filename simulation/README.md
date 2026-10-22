@@ -3,7 +3,7 @@
 Port des MATLAB/Simulink-Projekts `6DOF_model` (`TVC6DOF_sim.slx`, `TVC6DOF.m`, `pid_tuner.m`)
 nach Python, wie in `docs/Plan_2026-10-21.md` Abschnitt 3 festgelegt. Zusätzlich zum
 Simulink-Regler gibt es einen zweiten Regler, der genau wie die Firmware
-(`spacecode/src/Control.cpp` + `main.cpp`) rechnet, damit die Reglergewinne der Firmware
+(`firmware/src/Control.cpp` + `main.cpp`) rechnet, damit die Reglergewinne der Firmware
 gegen die der Simulation verglichen werden können.
 
 ## Starten

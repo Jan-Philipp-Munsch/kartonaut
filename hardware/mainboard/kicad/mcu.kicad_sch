@@ -8,7 +8,7 @@
 		(title "Mainboard rev B - Teensy")
 		(date "2026-10-21")
 		(rev "B")
-		(company "Mission Space")
+		(company "Kartonaut")
 		(comment 1 "Teensy 4.1 auf Buchsenleisten, Erweiterungsleiste, Befestigung")
 		(comment 2 "erzeugt aus circuit.py (gen_schematic.py)")
 	)

@@ -56,7 +56,7 @@ Anforderungen an das Pad:
 | Boden → Rakete | Kommandos mit Quittung: PING, CALIBRATE, PAD_READY_QUERY, ABORT |
 | Rahmen | Vorschlag: `0xA5 0x5A`, Typ (1 Byte), Länge (1 Byte), Nutzlast, CRC-16/CCITT |
 
-Das Telemetrieprotokoll gehört der Flug-Firmware (`spacecode/`, Punkt E7: design-unabhängig, wird dort
+Das Telemetrieprotokoll gehört der Flug-Firmware (`firmware/`, Punkt E7: design-unabhängig, wird dort
 gerade entworfen). Die Bodenstation übernimmt die Definition von dort, sobald es sie gibt; bis dahin gilt
 der Vorschlag oben als Platzhalter in einer eigenen Datei, die sich austauschen lässt.
 
@@ -82,4 +82,4 @@ der Vorschlag oben als Platzhalter in einer eigenen Datei, die sich austauschen 
 | Teil | Ordner | Darf nicht anfassen |
 |---|---|---|
 | Start-/Landepad | `cad/landingpad.py`, `docs/img/cad/landingpad*.png`, eigener Abschnitt in `cad/README.md` | `cad/params.py`, `build.py` und die übrigen Module (nur importieren) |
-| Bodenstation | `groundstation/` (Konzept, Schaltung, Stückliste, Firmware ESP32-S3, Weboberfläche) | `spacecode/`, `hardware/`, `simulation/`, `cad/` |
+| Bodenstation | `groundstation/` (Konzept, Schaltung, Stückliste, Firmware ESP32-S3, Weboberfläche) | `firmware/`, `hardware/`, `simulation/`, `cad/` |

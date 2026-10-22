@@ -8,7 +8,7 @@
 		(title "Mainboard rev B")
 		(date "2026-10-21")
 		(rev "B")
-		(company "Mission Space")
+		(company "Kartonaut")
 		(comment 1 "Teensy 4.1, ICM-42688-P, BMP390, E22-400T22S, 1S + 2S")
 	)
 	(lib_symbols)
@@ -187,7 +187,7 @@
 		(effects (font (size 1.27 1.27)) (justify left top))
 		(uuid "330bd5cf-5eff-586e-86fb-02671f3e52e9")
 	)
-	(text "Mission Space - Flugcomputer-Mainboard rev B (54 x 120 mm, 4 Lagen, JLCPCB)"
+	(text "Kartonaut - Flugcomputer-Mainboard rev B (54 x 120 mm, 4 Lagen, JLCPCB)"
 		(exclude_from_sim no)
 		(at 30 180 0)
 		(effects (font (size 2 2)) (justify left bottom))

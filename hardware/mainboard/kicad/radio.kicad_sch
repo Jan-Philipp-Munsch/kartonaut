@@ -8,7 +8,7 @@
 		(title "Mainboard rev B - Funk")
 		(date "2026-10-21")
 		(rev "B")
-		(company "Mission Space")
+		(company "Kartonaut")
 		(comment 1 "LoRa E22-400T22S an Serial8, GPS an Serial1")
 		(comment 2 "erzeugt aus circuit.py (gen_schematic.py)")
 	)

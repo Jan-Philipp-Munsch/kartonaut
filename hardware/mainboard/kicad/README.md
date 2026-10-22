@@ -54,7 +54,9 @@ circuit.py          Schaltung als Daten: Bauteile, Werte, Footprints, LCSC-Numme
 build_lib.py        lib/mainboard.*: Teensy-Symbol, Sockel-Footprint, 3D-Modelle Teensy und XT30; Pin-Typen der LCSC-Symbole
 gen_schematic.py    Projektdatei (JLC-Regeln, Netzklassen, ERC-Ausschlüsse), Wurzelblatt und 7 Unterblätter
 check_design.py     Tor 1: Netzliste aus dem Schaltplan gegen die Pin-Tabelle der Spezifikation
-gen_pcb.py          Platine: Umriss, Footprints, Platzierung, Flächen, Sperrflächen, Plane-Vias, DSN/SES, Nachbesserung
+gen_pcb.py          Platine: Umriss, Footprints, Platzierung, Flächen, Sperrflächen, Plane-Vias, DSN/SES, Nachbesserung,
+                    Bestückungsdruck (`gen_pcb.py silk`: nur der Druck, auf der gerouteten Platine)
+logo.py             Kartonaut-Abzeichen als Polygone, für den Bestückungsdruck und docs/brand/*.svg
 render.py           Lagenbilder zuschneiden und zusammenfügen, Renders auf die Platine zuschneiden
 make.sh             ganze Kette: ./make.sh [sch|pcb|drc|img]
 snapshot.py         schnelles Bild einzelner Lagen beim Entwickeln
@@ -150,11 +152,23 @@ andere Handvoll offener Verbindungen hinterlassen. Die eingecheckte Platine ist 
 
 ### 5.5 Bestückungsdruck
 
-Steckerbeschriftung (S/+/−), IMU-Achsen, Revision, Platzhalter `JLCJLCJLCJLC` unter dem Teensy. Die
-Referenzen der Passiven stehen nur auf F.Fab, die Zusatzfelder (LCSC, Funktion, Datenblatt) sind
-unsichtbar. Der DRC meldet noch 167 Bestückungsdruck-Warnungen. Ursachen sind Elko-Kreise, die
-Nachbarumrisse schneiden, und Siebdrucklinien der EasyEDA-Footprints über Pads (JLC schneidet diese
-automatisch weg). Das ist kosmetisch und wird beim Review bereinigt.
+`add_silk` in `gen_pcb.py` setzt den ganzen Druck; `gen_pcb.py silk` macht nur diesen Schritt auf der
+gerouteten Platine (Bauteile, Bahnen und Flächen bleiben). Regeln nach JLC: 1,0 mm Schrift, 0,15 mm
+Strich, nur 0° und 90°. Jeder Text sucht sich einen Platz rund um sein Bauteil, der frei ist von
+offenen Pads, Bauteilumrissen, fremden Courtyards, dem Rand und schon gesetztem Text. Findet er keinen,
+bleibt die Referenz nur auf F.Fab (heute J10, R_SH1, U1, U2, U3, U5, JP1 und die Testpunkte TP1, TP4,
+TP8, TP9; das Skript listet sie).
+
+- **Vorderseite:** Stecker mit Kurznamen (`LABELS`: ARM, PYRO1, YAW …) statt J-Nummer, Referenzen der
+  ICs, Transistoren, LEDs und Jumper, Testpunkte mit Netznamen (`TP_LABELS`), IMU-Achsen und
+  `JLCJLCJLCJLC` unter dem Teensy, ein kleines Abzeichen (6 mm) an der ersten freien Stelle.
+- **Rückseite:** Abzeichen 20 mm mit „KARTONAUT“ und „MAINBOARD REV B“, Datum, Steckerbelegung
+  (`PINOUT`, Pin 1 zuerst, Wortzahl gegen `circuit.py` geprüft) in ein oder zwei Blöcken.
+- **Lötstopp blau:** `MASK_COLOR`, als Stackup JLC04161H-7628 ins Board geschrieben (`set_stackup`);
+  die Renders nutzen die Stackup-Farben.
+
+Der DRC meldet noch 14 Druckwarnungen, alle aus Footprint-Grafik: der Teensy-Umriss über den
+Randpads des LoRa-Moduls (JLC schneidet den Druck dort weg) und zwei Umriss-Kreuzungen. Vorher 167.
 
 ## 6. Entscheidungen, die die Spezifikation offen ließ oder die von ihr abweichen
 

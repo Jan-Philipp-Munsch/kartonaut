@@ -205,7 +205,7 @@ class Sheet:
         root = ["kicad_sch", ["version", VERSION], ["generator", Q("eeschema")], ["generator_version", Q("10.0")],
                 ["uuid", Q(self.sheet_uuid)], ["paper", Q(paper)],
                 ["title_block", ["title", Q(f"Mainboard rev B - {self.title}")], ["date", Q("2026-10-21")],
-                 ["rev", Q("B")], ["company", Q("Mission Space")],
+                 ["rev", Q("B")], ["company", Q("Kartonaut")],
                  ["comment", 1, Q(self.page_title)],
                  ["comment", 2, Q("erzeugt aus circuit.py (gen_schematic.py)")]],
                 ["lib_symbols"] + list(self.libsyms.values())] + self.items + [["embedded_fonts", "no"]]
@@ -340,7 +340,7 @@ def main():
                             ["effects", font(), ["justify", "left", "top"]], ["uuid", uid("roottext", stem)]])
 
     notes = [
-        "Mission Space - Flugcomputer-Mainboard rev B (54 x 120 mm, 4 Lagen, JLCPCB)",
+        "Kartonaut - Flugcomputer-Mainboard rev B (54 x 120 mm, 4 Lagen, JLCPCB)",
         "Spezifikation: hardware/mainboard/README.md; Design Guide: docs/DesignGuide_Mainboard_revB.md",
         "Massen: GND = Logik und 1S-Minus; GND_PWR = Rueckstrom aller 2S-Verbraucher. Einzige Verbindung: NT1 am 2S-Minus.",
         "Dieser Schaltplan wird von gen_schematic.py aus circuit.py erzeugt. Aenderungen dort machen, dann neu erzeugen.",
@@ -351,7 +351,7 @@ def main():
     root = ["kicad_sch", ["version", VERSION], ["generator", Q("eeschema")], ["generator_version", Q("10.0")],
             ["uuid", Q(root_uuid)], ["paper", Q("A3")],
             ["title_block", ["title", Q("Mainboard rev B")], ["date", Q("2026-10-21")], ["rev", Q("B")],
-             ["company", Q("Mission Space")], ["comment", 1, Q("Teensy 4.1, ICM-42688-P, BMP390, E22-400T22S, 1S + 2S")]],
+             ["company", Q("Kartonaut")], ["comment", 1, Q("Teensy 4.1, ICM-42688-P, BMP390, E22-400T22S, 1S + 2S")]],
             ["lib_symbols"]] + sheet_nodes + root_items + [
         ["sheet_instances", ["path", Q("/"), ["page", Q("1")]]], ["embedded_fonts", "no"]]
     (HERE / f"{PROJECT}.kicad_sch").write_text(dumps(root) + "\n", encoding="utf-8")

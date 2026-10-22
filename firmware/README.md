@@ -1,4 +1,4 @@
-# spacecode – Flug-Firmware
+# Flug-Firmware
 
 PlatformIO-Projekt für den Teensy 4.1. Die Firmware liest die Sensoren, schätzt Lage und
 Höhe, regelt den Schubvektor und loggt jeden Durchlauf auf die SD-Karte. Ein
@@ -83,7 +83,7 @@ nutzen also dieselben Pins aus `Config.h`.
 
 | Umgebung | Zweck |
 |---|---|
-| `radio_beacon` | Sendet 1×/s eine `BEACON,<seq>,<millis>`-Zeile über den HC-12 an Serial8. Gegenstück: Empfänger im Repo `groundcode`. |
+| `radio_beacon` | Sendet 1×/s eine `BEACON,<seq>,<millis>`-Zeile über den HC-12 an Serial8. Gegenstück: Empfänger im Repo `kartonaut-ground`. |
 | `i2c_scanner` | Listet alle I²C-Adressen auf Wire. Erwartet 0x40, 0x68/0x69 und 0x76. |
 | `pyro_mosfet_test` | Warnblinken, dann ein 1-s-Puls auf `PIN_PYRO1` (23). Nur mit Lämpchen oder Widerstand als Last. |
 

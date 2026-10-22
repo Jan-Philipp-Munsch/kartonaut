@@ -42,7 +42,7 @@ Maximum 33 N) ist ein anderer Motor und kommt nur zum Vergleich in die Python-Si
 | BMP280 Breakout | 1 | 0x76 | `Sensors.cpp` |
 | INA219 Breakout | 1 | 0x40, 0,1-Ω-Shunt | `Sensors.cpp` |
 | HC-12 (433 MHz) | 2 (Rakete + Boden) `[?]` | Serial8, 9600 Bd | `Config.h`, `eLab` 14.10.2025 |
-| Arduino Nano (Bodenstation) | 1 | | Repo `groundcode` |
+| Arduino Nano (Bodenstation) | 1 | | Repo `kartonaut-ground` |
 | microSD-Karte | 1 | Größe `[?]` | `SDLogger.cpp` |
 | 2× WS2812B, aktiver Summer | | Pins 5, 6, 13 | `Indicators.cpp` |
 | Servo SG90 | 3 `[?]` | 2× TVC, 1× Fallschirm; Pulsbreite 760–2300 µs gemessen | `Config.h` |

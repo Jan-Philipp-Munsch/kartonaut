@@ -5,7 +5,7 @@
 ``u_i = kp e_i + ki int(e_i) + kd (-w_est_i)``, Integratoren werden bei ``secondburn/100`` s
 zurueckgesetzt, dann ``Moments2Commands``.
 
-``FirmwareController`` rechnet wie ``spacecode/src/main.cpp`` + ``Control.cpp``:
+``FirmwareController`` rechnet wie ``firmware/src/main.cpp`` + ``Control.cpp``:
 ``rot_deg += omega * dt``, PID auf ``rot/-100``, ``delta = asin(M / (l m |a|))``,
 Servo-Grad = delta_deg * GAIN + OFFSET, mechanisches Fenster, Rundung auf ganze Grad.
 

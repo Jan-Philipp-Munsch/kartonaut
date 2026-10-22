@@ -1,10 +1,14 @@
-# Mission Space
+# Kartonaut
+
+<img src="docs/brand/kartonaut_patch.svg" width="150" align="right" alt="Kartonaut-Abzeichen">
 
 [![Lizenz: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Firmware: PlatformIO / Teensy 4.1](https://img.shields.io/badge/firmware-PlatformIO%20%C2%B7%20Teensy%204.1-orange.svg)](spacecode/)
+[![Firmware: PlatformIO / Teensy 4.1](https://img.shields.io/badge/firmware-PlatformIO%20%C2%B7%20Teensy%204.1-orange.svg)](firmware/)
 [![Simulation: Python 6DOF](https://img.shields.io/badge/simulation-Python%206DOF-3776AB.svg)](simulation/)
 
 *English version: [README.md](README.md).*
+
+**Kartonaut** aus Karton und Astronaut: Der Rumpf ist ein Klima-Papprohr. Die Flüge zählen hoch, der Erstflug ist *Kartonaut 1*. Abzeichen und Logo in [`docs/brand/`](docs/brand/).
 
 Eine Modellrakete mit Schubvektorsteuerung (TVC) und selbst entwickeltem Flugcomputer, aufgebaut
 nach dem Vorbild der „Scout F“ von [BPS.space](https://bps.space). Der Motor hängt in einem Kardan
@@ -202,7 +206,7 @@ Schwarzpulver schon getestet.
 
 ## Firmware
 
-PlatformIO-Projekt für den Teensy 4.1 in [`spacecode/`](spacecode/README.md). Die Hauptschleife
+PlatformIO-Projekt für den Teensy 4.1 in [`firmware/`](firmware/README.md). Die Hauptschleife
 läuft mit festen 100 Hz:
 
 1. **Sensoren lesen.** IMU (Drehrate, Beschleunigung), Barometer, Strommonitor.
@@ -214,7 +218,7 @@ läuft mit festen 100 Hz:
    freien Zeit vor der nächsten Deadline. Am Boden wird das Binärlog als CSV exportiert.
 
 ```bash
-cd spacecode
+cd firmware
 pio run                      # Flug-Firmware bauen
 pio run -t upload            # auf den Teensy 4.1 flashen
 pio device monitor           # serielle Konsole, 115200 Bd, Teleplot-kompatibel
@@ -222,14 +226,14 @@ pio run -e radio_beacon      # einen Test-Sketch aus examples/ bauen
 ```
 
 Alle Pins, Gewinne, Filterkonstanten und Debug-Schalter liegen in
-[`spacecode/src/Config.h`](spacecode/src/Config.h). Die Regler sind dort abgeschaltet, bis der
+[`firmware/src/Config.h`](firmware/src/Config.h). Die Regler sind dort abgeschaltet, bis der
 erste Flugtest ansteht. Offen: Quaternion-Lage, Gyro-Kalibrierung auf der Rampe,
 Flugzustandsautomat mit Pyro-Logik, Telemetrieprotokoll, Treiber für die neue IMU.
 
 ## Aufbau des Repos
 
 ```
-spacecode/              Flug-Firmware (PlatformIO, Teensy 4.1)             -> spacecode/README.md
+firmware/               Flug-Firmware (PlatformIO, Teensy 4.1)             -> firmware/README.md
   src/                  Module: Sensors, KalmanZ, Control, SDLogger, Timing, Indicators
   examples/             Test-Sketches (Funk-Beacon, I2C-Scan, Pyro-MOSFET)
 simulation/             6DOF-Simulation in Python, Paket tvcsim             -> simulation/README.md
@@ -241,7 +245,7 @@ PROJECT.md              Projektdatei: Eckdaten, Arbeitspakete, Befunde, Änderun
 ```
 
 Die Bodenstation (Arduino Nano mit dem passenden Funkmodul) ist ein eigenes Repo:
-[groundcode](https://github.com/Jan-Philipp-Munsch/groundcode). Das MATLAB/Simulink-Original
+[kartonaut-ground](https://github.com/Jan-Philipp-Munsch/kartonaut-ground). Das MATLAB/Simulink-Original
 der Simulation und die Blender-Dateien bleiben außerhalb dieses Repos; ihr Inhalt ist hierher
 portiert.
 
@@ -258,7 +262,7 @@ portiert.
 | [hardware/mainboard/review_kicad_2026-10-21.md](hardware/mainboard/review_kicad_2026-10-21.md) | Zweitmeinung-Review des KiCad-Projekts: Schaltung gegen Datenblätter, Layout gegen Spezifikation, Zukunft, Kosten |
 | [hardware/mainboard/Fertiger_2026-10-21.md](hardware/mainboard/Fertiger_2026-10-21.md) | Fertigervergleich (JLCPCB, PCBWay, Aisler, Eurocircuits) und Entscheidung |
 | [simulation/README.md](simulation/README.md) | Modell, Koordinaten, Annahmen, Ergebnis des Gewinnvergleichs |
-| [spacecode/README.md](spacecode/README.md) | Firmware-Module, Log-Format, Test-Sketches |
+| [firmware/README.md](firmware/README.md) | Firmware-Module, Log-Format, Test-Sketches |
 | [cad/README.md](cad/README.md) | parametrisches Modell, Parameter, Wartungskonzept |
 | [cad/mass_properties.md](cad/mass_properties.md) | Massenmodell: Methode, Teileliste, Schwerpunkt und Trägheit je Flugzustand |
 | [cad/blender_inventory.md](cad/blender_inventory.md) | was die 16 Blender-Dateien enthalten, was aktuell und was überholt ist |

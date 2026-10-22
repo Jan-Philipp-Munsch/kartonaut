@@ -61,11 +61,11 @@ pcb() {
 
 img() {
   # 3D renders (ray-traced) and one PDF per layer, cut and labelled by render.py
-  "$CLI" pcb render --quality high --floor --background opaque --width 3200 --height 1700 --side top \
+  "$CLI" pcb render --use-board-stackup-colors --quality high --floor --background opaque --width 3200 --height 1700 --side top \
     --rotate 0,0,90 -o img/render_top.png mainboard.kicad_pcb
-  "$CLI" pcb render --quality high --floor --background opaque --width 3200 --height 1700 --side bottom \
+  "$CLI" pcb render --use-board-stackup-colors --quality high --floor --background opaque --width 3200 --height 1700 --side bottom \
     --rotate 0,0,-90 -o img/render_bottom.png mainboard.kicad_pcb
-  "$CLI" pcb render --quality high --floor --background opaque --width 2400 --height 1600 --side top \
+  "$CLI" pcb render --use-board-stackup-colors --quality high --floor --background opaque --width 2400 --height 1600 --side top \
     --perspective --zoom 1.6 --rotate -55,0,35 -o img/render_iso.png mainboard.kicad_pcb
   for l in "F_Cu:F.Cu,F.SilkS,Edge.Cuts" "In1_Cu:In1.Cu,Edge.Cuts" "In2_Cu:In2.Cu,Edge.Cuts" \
            "B_Cu:B.Cu,Edge.Cuts" "Bestueckung:F.SilkS,F.Fab,Edge.Cuts"; do

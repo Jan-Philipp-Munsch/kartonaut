@@ -8,7 +8,7 @@
 		(title "Mainboard rev B - Pyro")
 		(date "2026-10-21")
 		(rev "B")
-		(company "Mission Space")
+		(company "Kartonaut")
 		(comment 1 "Zwei Pyro-Kanaele low-side, Arming, Durchgangspruefung")
 		(comment 2 "erzeugt aus circuit.py (gen_schematic.py)")
 	)

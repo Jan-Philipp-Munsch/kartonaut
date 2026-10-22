@@ -1,6 +1,6 @@
 # Flugcomputer-Mainboard rev B – Design Guide
 
-<p class="subtitle">Mission Space, Modellrakete mit Schubvektorsteuerung · Jan-Philipp Munsch · Stand 21.10.2026 nachts · Schaltplan und Layout als KiCad-Projekt (ERC und DRC sauber), Review vom 21.10. wird eingearbeitet</p>
+<p class="subtitle">Kartonaut, Modellrakete mit Schubvektorsteuerung · Jan-Philipp Munsch · Stand 21.10.2026 nachts · Schaltplan und Layout als KiCad-Projekt (ERC und DRC sauber), Review vom 21.10. wird eingearbeitet</p>
 
 Dieses Dokument stellt die Elektronik der Rakete vor: was sie tun muss, wie die Platine aufgebaut ist und
 warum die Entscheidungen so gefallen sind. Es ist für drei Leser geschrieben. Für den Kollegen, der den
@@ -374,4 +374,4 @@ Auszug aus `hardware/mainboard/README.md` §7; die LCSC-Nummern und ihr Status s
 | `hardware/mainboard/figures.py` | die Abbildungen dieses Guides |
 | `docs/Plan_2026-10-21.md` | Planungsrunde mit Bewertung von rev A, Versorgungsrechnung, Layout-Checkliste |
 | `docs/build_design_guide.py` | baut aus dieser Datei die PDF-Fassung |
-| `spacecode/src/Config.h` | heutige Pinbelegung der Firmware |
+| `firmware/src/Config.h` | heutige Pinbelegung der Firmware |

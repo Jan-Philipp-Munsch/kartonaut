@@ -8,7 +8,7 @@
 		(title "Mainboard rev B - Aktoren")
 		(date "2026-10-21")
 		(rev "B")
-		(company "Mission Space")
+		(company "Kartonaut")
 		(comment 1 "TVC-Servos am 2S-Akku, Fallschirm-Servo, Rollmotor DRV8833")
 		(comment 2 "erzeugt aus circuit.py (gen_schematic.py)")
 	)

@@ -1,10 +1,14 @@
-# Mission Space
+# Kartonaut
+
+<img src="docs/brand/kartonaut_patch.svg" width="150" align="right" alt="Kartonaut mission patch">
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Firmware: PlatformIO / Teensy 4.1](https://img.shields.io/badge/firmware-PlatformIO%20%C2%B7%20Teensy%204.1-orange.svg)](spacecode/)
+[![Firmware: PlatformIO / Teensy 4.1](https://img.shields.io/badge/firmware-PlatformIO%20%C2%B7%20Teensy%204.1-orange.svg)](firmware/)
 [![Simulation: Python 6DOF](https://img.shields.io/badge/simulation-Python%206DOF-3776AB.svg)](simulation/)
 
 *Deutsche Fassung: [README.de.md](README.de.md). The detailed documents are in German.*
+
+**Kartonaut** is German *Karton* (cardboard) plus astronaut: the airframe is a cardboard tube. Flights are numbered, the first one is *Kartonaut 1*. Patch and logo in [`docs/brand/`](docs/brand/).
 
 A thrust-vector-controlled (TVC) model rocket with a home-built flight computer, modelled on the
 "Scout F" by [BPS.space](https://bps.space). The motor sits in a two-servo gimbal, a roll motor
@@ -200,7 +204,7 @@ ejection has already been tested with about 1 g of black powder.
 
 ## Firmware
 
-PlatformIO project for the Teensy 4.1 in [`spacecode/`](spacecode/README.md). The main loop runs
+PlatformIO project for the Teensy 4.1 in [`firmware/`](firmware/README.md). The main loop runs
 at a fixed 100 Hz:
 
 1. **Read the sensors.** IMU (angular rate, acceleration), barometer, power monitor.
@@ -212,7 +216,7 @@ at a fixed 100 Hz:
    the next deadline. On the ground the binary log is exported as CSV.
 
 ```bash
-cd spacecode
+cd firmware
 pio run                      # build the flight firmware
 pio run -t upload            # flash the Teensy 4.1
 pio device monitor           # serial console, 115200 baud, Teleplot-compatible
@@ -220,14 +224,14 @@ pio run -e radio_beacon      # one of the test sketches in examples/
 ```
 
 All pins, gains, filter constants and debug switches live in
-[`spacecode/src/Config.h`](spacecode/src/Config.h). The controllers are switched off there until
+[`firmware/src/Config.h`](firmware/src/Config.h). The controllers are switched off there until
 the first flight test. Open points: quaternion attitude, gyro calibration on the pad, flight state
 machine with pyro logic, telemetry protocol, driver for the new IMU.
 
 ## Repository layout
 
 ```
-spacecode/              flight firmware (PlatformIO, Teensy 4.1)          -> spacecode/README.md
+firmware/               flight firmware (PlatformIO, Teensy 4.1)          -> firmware/README.md
   src/                  modules: Sensors, KalmanZ, Control, SDLogger, Timing, Indicators
   examples/             test sketches (radio beacon, I2C scan, pyro MOSFET)
 simulation/             6DOF simulation in Python, package tvcsim          -> simulation/README.md
@@ -239,7 +243,7 @@ PROJECT.md              project file: key data, work packages, findings, changel
 ```
 
 The ground station (Arduino Nano with the matching radio module) lives in its own repository,
-[groundcode](https://github.com/Jan-Philipp-Munsch/groundcode). The MATLAB/Simulink original of
+[kartonaut-ground](https://github.com/Jan-Philipp-Munsch/kartonaut-ground). The MATLAB/Simulink original of
 the simulation and the Blender files stay outside this repository; their content is ported here.
 
 ## Documentation
@@ -255,7 +259,7 @@ the simulation and the Blender files stay outside this repository; their content
 | [hardware/mainboard/review_kicad_2026-10-21.md](hardware/mainboard/review_kicad_2026-10-21.md) | second-opinion review of the KiCad project: circuit against datasheets, layout against the specification, future-proofing, costs |
 | [hardware/mainboard/Fertiger_2026-10-21.md](hardware/mainboard/Fertiger_2026-10-21.md) | manufacturer comparison (JLCPCB, PCBWay, Aisler, Eurocircuits) and decision |
 | [simulation/README.md](simulation/README.md) | model, coordinates, assumptions, results of the gain comparison |
-| [spacecode/README.md](spacecode/README.md) | firmware modules, log format, test sketches |
+| [firmware/README.md](firmware/README.md) | firmware modules, log format, test sketches |
 | [cad/README.md](cad/README.md) | parametric model, parameters, maintenance concept |
 | [cad/mass_properties.md](cad/mass_properties.md) | mass model: method, parts list, centre of gravity and inertia per flight state |
 | [cad/blender_inventory.md](cad/blender_inventory.md) | what the 16 Blender files contain, which is current, which is superseded |

@@ -1,4 +1,4 @@
-// main.cpp – Flug-Firmware des Teensy-4.1-Flugcomputers (Mission Space)
+// main.cpp – Flug-Firmware des Teensy-4.1-Flugcomputers (Kartonaut)
 //
 // Ablauf pro Loop (LOOP_HZ, siehe Config.h):
 //   1. Sensoren lesen: Barometer, IMU (DMP-FIFO leeren), Strommonitor

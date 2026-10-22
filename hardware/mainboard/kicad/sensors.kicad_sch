@@ -8,7 +8,7 @@
 		(title "Mainboard rev B - Sensorik")
 		(date "2026-10-21")
 		(rev "B")
-		(company "Mission Space")
+		(company "Kartonaut")
 		(comment 1 "IMU ICM-42688-P an SPI1, Barometer BMP390 und Qwiic an I2C")
 		(comment 2 "erzeugt aus circuit.py (gen_schematic.py)")
 	)

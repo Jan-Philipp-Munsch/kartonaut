@@ -139,7 +139,7 @@ class ControlParams:
 
 @dataclass
 class FirmwareParams:
-    """Konstanten aus ``spacecode/src/Config.h``, wie sie ``Control_updatePY`` benutzt."""
+    """Konstanten aus ``firmware/src/Config.h``, wie sie ``Control_updatePY`` benutzt."""
 
     PY_KP: float = 5.0
     PY_KI: float = 0.0

@@ -132,11 +132,21 @@ REF_REGIONS.update({f"TP{i}": BOARD for i in range(1, 10)})   # test points: nex
 # tall THT parts not. The placer only places SMD passives, so these are checked for anchors only.
 KEEPOUTS = [(u0, u1, v0, v1) for _, u0, u1, v0, v1 in outline.KEEPOUTS]
 UNDER_TEENSY = (-6.1, 6.1, 30.0, 91.0)          # only parts up to 3 mm high, i.e. the IMU block
-LABELS = {  # silkscreen next to connectors
-    "J1": "2S + -", "J2": "1S", "J3": "SW 1S 1S 2S 2S", "J4": "ARM", "J5": "YAW S+-", "J6": "PITCH S+-",
-    "J7": "CHUTE S+-", "J8": "MOT", "J9": "PYRO1", "J10": "PYRO2", "J11": "GPS", "J12": "QWIIC",
-    "J13": "CAM", "J14": "LED", "J15": "EXP",
+# Silkscreen: front carries short names, the back the logo, title and pin-out (JLC: 1.0 mm text, 0.15 mm stroke)
+LABELS = {  # front, next to the connector instead of its J number
+    "J1": "2S", "J2": "1S", "J3": "SW", "J4": "ARM", "J5": "YAW", "J6": "PITCH", "J7": "CHUTE", "J8": "MOT",
+    "J9": "PYRO1", "J10": "PYRO2", "J11": "GPS", "J12": "QWIIC", "J13": "CAM", "J14": "LED", "J15": "EXP",
 }
+PINOUT = {  # back, pin 1 first; one word per pin (checked against circuit.py), J15 only its supply pins
+    "J1": "+ -", "J2": "+ -", "J3": "1S 1S 2S 2S", "J4": "2S ARM", "J5": "S + -", "J6": "S + -", "J7": "S 5V -",
+    "J8": "A B", "J9": "+ -", "J10": "+ -", "J11": "3V3 GND TX RX", "J12": "GND 3V3 SDA SCL",
+    "J13": "5V TRG GND", "J14": "5V DAT GND", "J15": "1:3V3 2:GND 14:5V",
+}
+TP_LABELS = {"VBAT_PROT": "VBAT", "VSYS_IN": "VSYS", "5V_SYS": "5V", "VSERVO": "VSRV", "5V_SERVO": "5VS",
+             "3V3_RF": "3V3RF", "GND": "GND", "SDA": "SDA", "SCL": "SCL"}   # test points by net, not TPn
+SILK_H, SILK_T = 1.0, 0.15
+NAME, REV = "KARTONAUT", "MAINBOARD REV B"
+MASK_COLOR = "Blue"
 
 
 # ---------------------------------------------------------------- helpers
@@ -164,6 +174,11 @@ def load_fp(fpid):
     fp.SetFPID(pcbnew.LIB_ID(lib, name))
 
     return fp
+
+
+def passive(ref):
+    p = next(q for q in circuit.PARTS if q.ref == ref)
+    return p.lib.startswith(("Device:R", "Device:C", "Device:L", "Device:D", "Connector:TestPoint")) and ref != "R_SH1"
 
 
 def crt_box(fp):
@@ -274,11 +289,8 @@ def add_footprints(board):
             net = p.pins.get(pad.GetNumber())
             if net:
                 pad.SetNet(netinfo[net])
-        if p.lib.startswith(("Device:R", "Device:C", "Device:L", "Device:D", "Connector:TestPoint")) and p.ref not in ("R_SH1",):
+        if passive(p.ref):
             fp.Reference().SetLayer(pcbnew.F_Fab)          # passives: designator on the assembly drawing only
-        else:
-            fp.Reference().SetTextSize(pcbnew.VECTOR2I(MM(0.8), MM(0.8)))
-            fp.Reference().SetTextThickness(MM(0.12))
         fp.Value().SetLayer(pcbnew.F_Fab)
         for item in fp.GraphicalItems():
             if isinstance(item, pcbnew.PCB_TEXT) and item.GetLayer() == pcbnew.F_SilkS:
@@ -459,52 +471,296 @@ def add_zones(board, fps):
     rect_zone(board, None, [pcbnew.F_Cu, pcbnew.In2_Cu], inner, rule={"tracks", "vias"}, name="LoRa ohne Signale")
 
 
-def add_silk(board, fps):
-    def text(s, u, v, size=0.9, layer=pcbnew.F_SilkS, rot=0, bold=False):
-        t = pcbnew.PCB_TEXT(board)
+class Courtyard:
+    """Courtyard outline for the free-space test: round parts leave their bounding-box corners free.
+    A courtyard in several pieces (the Teensy: one per pin row) counts as its bounding box, the body
+    spans the gap."""
+
+    def __init__(self, poly):
+        self.poly, self.bbox = poly, poly.BBox()
+        self.solid = poly.OutlineCount() > 1
+        self.pts = []
+        for i in range(poly.OutlineCount()):
+            c = poly.COutline(i)
+            n = c.PointCount()
+            for k in range(n):
+                a, b = c.CPoint(k), c.CPoint((k + 1) % n)
+                steps = max(1, int(math.hypot(b.x - a.x, b.y - a.y) / MM(0.2)))
+                self.pts += [pcbnew.VECTOR2I(int(a.x + (b.x - a.x) * j / steps), int(a.y + (b.y - a.y) * j / steps))
+                             for j in range(steps)]
+
+    def Intersects(self, box):
+        if not self.bbox.Intersects(box):
+            return False
+        if self.solid or any(box.Contains(q) for q in self.pts):
+            return True
+        x0, x1, y0, y1 = box.GetLeft(), box.GetRight(), box.GetTop(), box.GetBottom()
+        probe = [(x0, y0), (x1, y0), (x0, y1), (x1, y1), ((x0 + x1) // 2, (y0 + y1) // 2)]
+        return any(self.poly.Contains(pcbnew.VECTOR2I(int(x), int(y))) for x, y in probe)
+
+
+class Silk:
+    """Free-space bookkeeping for one silkscreen side: text and logos go only where they keep clear of
+    exposed copper (pads in the mask layer), footprint outlines, other parts' courtyards, the board
+    edge and what is already placed. Vias are tented on both sides and may be printed over."""
+
+    def __init__(self, board, fps, back=False):
+        self.board, self.back = board, back
+        self.layer = pcbnew.B_SilkS if back else pcbnew.F_SilkS
+        mask = pcbnew.B_Mask if back else pcbnew.F_Mask
+        self.pads = [p for fp in fps.values() for p in fp.Pads() if p.IsOnLayer(mask)]
+        self.lines = [g for fp in fps.values() for g in fp.GraphicalItems()
+                      if g.GetLayer() == self.layer and not isinstance(g, pcbnew.PCB_TEXT)]
+        self.court = {} if back else {r: Courtyard(fp.GetCourtyard(pcbnew.F_CrtYd)) for r, fp in fps.items()
+                                      if fp.GetCourtyard(pcbnew.F_CrtYd).OutlineCount()}
+        # drilled pads mark the back even without a mask opening there (thermal vias in pads)
+        self.holes = [(p.GetPosition(), p.GetDrillSize().x / 2) for fp in fps.values() for p in fp.Pads()
+                      if back and p.GetDrillSize().x > 0]
+        (x0, y0), (x1, y1) = XY(-W / 2 + 0.5, L - 0.5), XY(W / 2 - 0.5, 0.5)
+        self.edge = pcbnew.BOX2I(pcbnew.VECTOR2I(MM(x0), MM(y0)), pcbnew.VECTOR2L(MM(x1 - x0), MM(y1 - y0)))
+        self.taken = []
+
+    def free(self, box, own=None, courtyards=True, under=()):
+        if not self.edge.Contains(box):
+            return False
+        grown = pcbnew.BOX2I(box.GetPosition(), box.GetSize())
+        grown.Inflate(MM(0.2))
+        if any(grown.Intersects(t) for t in self.taken):
+            return False
+        if any(p.HitTest(box, False, MM(0.15)) for p in self.pads):
+            return False
+        if any(g.HitTest(box, False, MM(0.12)) for g in self.lines):
+            return False
+        if any(math.hypot(max(grown.GetLeft() - c.x, 0, c.x - grown.GetRight()),
+                          max(grown.GetTop() - c.y, 0, c.y - grown.GetBottom())) < r for c, r in self.holes):
+            return False
+        return not courtyards or not any(r != own and r not in under and c.Intersects(box)
+                                         for r, c in self.court.items())
+
+    def text(self, s, size=SILK_H, bold=False):
+        t = pcbnew.PCB_TEXT(self.board)
         t.SetText(s)
-        t.SetPosition(P(u, v))
-        t.SetLayer(layer)
-        t.SetTextSize(pcbnew.VECTOR2I(MM(size), MM(size)))
-        t.SetTextThickness(MM(size * (0.18 if bold else 0.13)))
-        t.SetTextAngleDegrees(rot)
-        board.Add(t)
+        t.SetLayer(self.layer)
+        t.SetMirrored(self.back)
+        style(t, size, bold)
         return t
 
-    for ref, label in LABELS.items():
-        b = crt_box(fps[ref])
-        cu = (b[0] + b[1]) / 2
-        if ref in EDGE and EDGE[ref][0] == "bottom":
-            text(label, cu, b[3] + 0.9, 0.8)
-        elif ref in EDGE:
-            text(label, cu, b[2] - 0.9, 0.8)
-        else:
-            text(label, cu, b[3] + 0.9, 0.8)
-    text("MISSION SPACE", 17.5, 112.5, 1.0, bold=True)
-    text("MAINBOARD REV B", 17.5, 110.8, 0.8)
-    text("2026-10", 17.5, 109.3, 0.8)
-    text("JLCJLCJLCJLC", 0.0, 80.0, 0.8)                    # JLC order number, under the Teensy
+    def put(self, t, candidates, own=None, under=()):
+        """Try (x, y, angle) in mm until the text fits; keep it there. False if none fits."""
+        for x, y, a in candidates:
+            t.SetTextAngleDegrees(a)
+            t.SetPosition(pcbnew.VECTOR2I(MM(x), MM(y)))
+            box = t.GetBoundingBox()
+            if self.free(box, own, under=under):
+                self.taken.append(box)
+                return True
+        return False
+
+    def around(self, t, box, gaps=(0.2, 0.6, 1.1)):
+        """Candidate spots around a courtyard box: above and below first, then the sides (level, then
+        upright), each centred, flush with a corner and past it; big parts also in their middle."""
+        t.SetTextAngleDegrees(0)
+        tb = t.GetBoundingBox()
+        w, h = pcbnew.ToMM(tb.GetWidth()), pcbnew.ToMM(tb.GetHeight())
+        x0, y0 = pcbnew.ToMM(box.GetLeft()), pcbnew.ToMM(box.GetTop())
+        x1, y1 = pcbnew.ToMM(box.GetRight()), pcbnew.ToMM(box.GetBottom())
+        cx, cy, bw, bh = (x0 + x1) / 2, (y0 + y1) / 2, x1 - x0, y1 - y0
+        out = []
+        for g in gaps:
+            for dx in (0, -(bw - w) / 2, (bw - w) / 2, -(bw + w) / 2, (bw + w) / 2):
+                out += [(cx + dx, y0 - g - h / 2, 0), (cx + dx, y1 + g + h / 2, 0)]
+            for dy in (0, -(bh - h) / 2, (bh - h) / 2):
+                out += [(x0 - g - w / 2, cy + dy, 0), (x1 + g + w / 2, cy + dy, 0)]
+            for dy in (0, -(bh - w) / 2, (bh - w) / 2):
+                out += [(x0 - g - h / 2, cy + dy, 90), (x1 + g + h / 2, cy + dy, 90)]
+        if bw * bh > 150:
+            out.append((cx, cy, 0))
+        return out
+
+    def scan(self, w, h, step=0.5):
+        """Centres (u, v) of free w x h boxes, scanned over the board."""
+        n_u, n_v = int((W - w) / step), int((L - h) / step)
+        for i in range(n_v + 1):
+            for j in range(n_u + 1):
+                u, v = -W / 2 + w / 2 + j * step, h / 2 + i * step
+                x, y = XY(u, v)
+                box = pcbnew.BOX2I(pcbnew.VECTOR2I(MM(x - w / 2), MM(y - h / 2)), pcbnew.VECTOR2L(MM(w), MM(h)))
+                if self.free(box):
+                    yield u, v, box
+
+
+def style(t, size=SILK_H, bold=False):
+    t.SetTextSize(pcbnew.VECTOR2I(MM(size), MM(size)))
+    t.SetTextThickness(MM(max(SILK_T, size * (0.2 if bold else 0.15))))
+    t.SetHorizJustify(pcbnew.GR_TEXT_H_ALIGN_CENTER)
+    t.SetVertJustify(pcbnew.GR_TEXT_V_ALIGN_CENTER)
+    t.SetKeepUpright(False)
+
+
+def set_stackup(path=PCB):
+    """JLC 4-layer stackup JLC04161H-7628 with the solder mask colour; pcbnew keeps it once it is in the file."""
+    s = path.read_text(encoding="utf-8")
+    if "(stackup" in s:
+        s = s.replace('(color "Green")', f'(color "{MASK_COLOR}")').replace('(color "Blue")', f'(color "{MASK_COLOR}")')
+    else:
+        mask = f'(color "{MASK_COLOR}")'
+        diel = '(material "FR4") (epsilon_r 4.4) (loss_tangent 0.02)'
+        stack = (
+            '\t\t(stackup\n'
+            '\t\t\t(layer "F.SilkS" (type "Top Silk Screen") (color "White"))\n'
+            '\t\t\t(layer "F.Paste" (type "Top Solder Paste"))\n'
+            f'\t\t\t(layer "F.Mask" (type "Top Solder Mask") {mask} (thickness 0.01))\n'
+            '\t\t\t(layer "F.Cu" (type "copper") (thickness 0.035))\n'
+            f'\t\t\t(layer "dielectric 1" (type "prepreg") (thickness 0.2104) {diel})\n'
+            '\t\t\t(layer "In1.Cu" (type "copper") (thickness 0.0152))\n'
+            f'\t\t\t(layer "dielectric 2" (type "core") (thickness 1.065) {diel})\n'
+            '\t\t\t(layer "In2.Cu" (type "copper") (thickness 0.0152))\n'
+            f'\t\t\t(layer "dielectric 3" (type "prepreg") (thickness 0.2104) {diel})\n'
+            '\t\t\t(layer "B.Cu" (type "copper") (thickness 0.035))\n'
+            f'\t\t\t(layer "B.Mask" (type "Bottom Solder Mask") {mask} (thickness 0.01))\n'
+            '\t\t\t(layer "B.Paste" (type "Bottom Solder Paste"))\n'
+            '\t\t\t(layer "B.SilkS" (type "Bottom Silk Screen") (color "White"))\n'
+            '\t\t\t(copper_finish "ENIG")\n\t\t\t(dielectric_constraints no)\n\t\t)\n')
+        s = s.replace("\t(setup\n", "\t(setup\n" + stack, 1)
+    path.write_text(s, encoding="utf-8")
+
+
+def add_silk(board, fps):
+    """All silkscreen of the board; returns the references that found no free spot (moved to F.Fab)."""
+    import logo
+    front, back = Silk(board, fps), Silk(board, fps, back=True)
+    lost = []
+
+    # fixed items under the Teensy (visible with the Teensy pulled from its sockets)
+    def fixed(s, u, v, size=SILK_H):
+        t = front.text(s, size)
+        t.SetPosition(P(u, v))
+        board.Add(t)
+        front.taken.append(t.GetBoundingBox())
+    fixed("JLCJLCJLCJLC", 0.0, 80.0)                      # JLC order number
     # IMU axes (spec §2): X across (+u), Y toward the nose (+v), Z out of the board
     for (a, b_), lab in zip((((2.2, 60.5), (5.2, 60.5)), ((0.0, 62.7), (0.0, 65.7))), ("X", "Y")):
-        s = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_SEGMENT)
-        s.SetStart(P(*a))
-        s.SetEnd(P(*b_))
-        s.SetLayer(pcbnew.F_SilkS)
-        s.SetWidth(MM(0.15))
-        board.Add(s)
-        for d in (-1, 1):
-            h = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_SEGMENT)
-            h.SetStart(P(*b_))
-            if lab == "X":
-                h.SetEnd(P(b_[0] - 0.7, b_[1] + 0.5 * d))
+        for start, end in [(a, b_)] + [(b_, (b_[0] - 0.7, b_[1] + 0.5 * d) if lab == "X" else (b_[0] + 0.5 * d, b_[1] - 0.7))
+                                       for d in (-1, 1)]:
+            s = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_SEGMENT)
+            s.SetStart(P(*start))
+            s.SetEnd(P(*end))
+            s.SetLayer(pcbnew.F_SilkS)
+            s.SetWidth(MM(SILK_T))
+            board.Add(s)
+    fixed("X", 4.6, 61.6, 0.8)
+    fixed("Y", -1.0, 66.0, 0.8)
+    fixed("IMU Z+", -3.6, 64.3, 0.8)
+
+    # front: connector names, then designators of the parts one has to find (no passives)
+    for ref, label in LABELS.items():
+        fps[ref].Reference().SetLayer(pcbnew.F_Fab)
+        t = front.text(label)
+        if front.put(t, front.around(t, fps[ref].GetCourtyard(pcbnew.F_CrtYd).BBox()), own=ref):
+            board.Add(t)
+        else:
+            lost.append(ref)
+    for ref, fp in sorted(fps.items(), key=lambda kv: -kv[1].GetArea()):
+        f = fp.Reference()
+        if ref in LABELS:
+            continue
+        if ref.startswith(("H", "NT", "TP")) or passive(ref):
+            f.SetLayer(pcbnew.F_Fab)
+            continue
+        f.SetLayer(pcbnew.F_SilkS)
+        style(f)
+        under = ("A1",) if ref == "U4" else ()           # the IMU sits under the Teensy
+        if not front.put(f, front.around(f, fp.GetCourtyard(pcbnew.F_CrtYd).BBox()), own=ref, under=under):
+            f.SetLayer(pcbnew.F_Fab)
+            lost.append(ref)
+    for ref, fp in fps.items():                            # test points by their net
+        if ref.startswith("TP"):
+            t = front.text(TP_LABELS[fp.GetValue()], 0.9)
+            if front.put(t, front.around(t, fp.GetCourtyard(pcbnew.F_CrtYd).BBox(), gaps=(0.15, 0.5)), own=ref):
+                board.Add(t)
             else:
-                h.SetEnd(P(b_[0] + 0.5 * d, b_[1] - 0.7))
-            h.SetLayer(pcbnew.F_SilkS)
-            h.SetWidth(MM(0.15))
-            board.Add(h)
-    text("X", 5.9, 60.5, 0.7)
-    text("Y", 0.0, 66.4, 0.7)
-    text("IMU Z+", -3.4, 64.3, 0.6)
+                lost.append(ref)
+
+    # front logo: small patch without lettering, name and revision beside it
+    mark_d = 6.0
+    for block_w, block_h in ((19.0, 6.4), (6.4, 6.4)):      # mark with name and revision, else the mark
+        spot = next(front.scan(block_w, block_h), None)
+        if not spot:
+            continue
+        u, v, box = spot
+        x, y = XY(u - block_w / 2 + mark_d / 2 + 0.2, v)
+        logo.Patch(x, y, mark_d).shapes(board, pcbnew.F_SilkS)
+        if block_w > block_h:
+            for s, dv, size, bold in ((NAME, 1.2, 1.4, True), (f"{REV[10:]} · 2026-10", -1.3, SILK_H, False)):
+                t = front.text(s, size, bold)
+                t.SetHorizJustify(pcbnew.GR_TEXT_H_ALIGN_LEFT)
+                t.SetPosition(P(u - block_w / 2 + mark_d + 1.0, v + dv))
+                board.Add(t)
+        front.taken.append(box)
+        break
+    else:
+        lost.append("front logo")
+
+    # back: big patch, then the pin-out as one block (two if one does not fit)
+    for d in (20.0, 18.0, 16.0):
+        spot = next(back.scan(d, d + 3.0), None)
+        if spot:
+            u, v, box = spot
+            x, y = XY(u, v + 1.5)
+            logo.Patch(x, y, d, NAME, REV, mirror=True).shapes(board, pcbnew.B_SilkS)
+            t = back.text("2026-10")
+            t.SetPosition(P(u, v + 1.5 - d / 2 - 1.3))
+            board.Add(t)
+            back.taken.append(box)
+            break
+    else:
+        lost.append("back logo")
+
+    pins = {p.ref: p.pins for p in circuit.PARTS}
+    for ref, words in PINOUT.items():
+        assert ref == "J15" or len(words.split()) == len(pins[ref]), (ref, words, pins[ref])
+    # two lines per connector (name, then its pins indented), as one block or split in two or three
+    rows = [(f"{r} {LABELS[r]}", w) for r, w in PINOUT.items()]
+    head = ("STECKER", "PIN 1 ZUERST")
+    pitch, bw = 1.6, 15.5
+    placed = []
+    for blocks in ([rows], [rows[:8], rows[8:]], [rows[:5], rows[5:10], rows[10:]]):
+        blocks = [[head] + blocks[0]] + blocks[1:]
+        n0 = len(back.taken)
+        for blk in blocks:
+            bh = pitch * 2 * len(blk) + 0.6
+            spot = next(back.scan(bw, bh), None)
+            if not spot:
+                break
+            placed.append((blk, spot, bh))
+            back.taken.append(spot[2])
+        if len(placed) == len(blocks):
+            break
+        del back.taken[n0:]
+        placed = []
+    if not placed:
+        lost.append("pin-out")
+    for blk, (u, v, _), bh in placed:
+        for k, (a, b_) in enumerate(blk):
+            for line, (s, du) in enumerate(((a, 0.0), (b_, 1.5))):
+                t = back.text(s, SILK_H, bold=line == 0)
+                t.SetHorizJustify(pcbnew.GR_TEXT_H_ALIGN_LEFT)   # KiCad mirrors the justification with the text
+                t.SetPosition(P(u + bw / 2 - du, v + bh / 2 - 0.3 - pitch * (2 * k + line + 0.5)))
+                board.Add(t)
+    return lost
+
+
+def relabel():
+    """Silkscreen only, on the routed board: placement, tracks and zones stay as they are."""
+    board = pcbnew.LoadBoard(str(PCB))
+    old = [d for d in board.Drawings() if d.GetLayer() in (pcbnew.F_SilkS, pcbnew.B_SilkS)]
+    for d in old:                                          # start over; Delete, not Remove: a removed
+        board.Delete(d)                                    # item freed by Python corrupts the board
+    fps = {fp.GetReference(): fp for fp in board.GetFootprints()}
+    lost = add_silk(board, fps)
+    pcbnew.SaveBoard(str(PCB), board, True)
+    set_stackup()
+    print("silkscreen placed" + (f", no free spot (on F.Fab): {lost}" if lost else ""))
 
 
 def in_poly(u, v, poly):
@@ -612,14 +868,17 @@ def build():
     add_zones(board, fps)
     nvias = add_plane_vias(board, fps)
     print(f"{nvias} plane vias next to SMD pads of GND, GND_PWR, 5V_SYS")
-    add_silk(board, fps)
+    lost = add_silk(board, fps)
     pcbnew.SaveBoard(str(PCB), board, True)
+    set_stackup()
     fix_model_paths()
     print(f"placed {len(placed) - 1} of {len(fps)} footprints")
     if clash:
         print("fixed parts colliding:", clash)
     if failed:
         print("no place found for:", failed)
+    if lost:
+        print("silkscreen without a free spot (on F.Fab):", lost)
     return board
 
 
@@ -796,5 +1055,7 @@ if __name__ == "__main__":
     tag = sys.argv[2] if len(sys.argv) > 2 else ""
     if cmd == "place":
         build()
+    elif cmd == "silk":
+        relabel()
     else:
         {"dsn": export_dsn, "ses": import_ses, "merge": merge_ses, "patch": lambda _: patch_unconnected()}[cmd](tag)

@@ -26,6 +26,7 @@ python scripts/run_sil.py                           # Software-in-the-Loop: C++-
 python scripts/run_sil.py --runs 50                 # SIL-Monte-Carlo -> out/sil_montecarlo.csv
 python scripts/run_sil.py --apogee-sweep            # Apogäum-Schwellen gegen Auslöseverzug
 python scripts/recovery.py --from-sil --plot        # Fallschirm: Sinkrate, Drift, Öffnungsstoß
+python scripts/landing_feasibility.py --plot       # Motorlandung: Fenster für Zündhöhe und Zündverzug
 ```
 
 **Software-in-the-Loop** (`tvcsim/sil.py`, seit 22.10.2026): `--controller sil` bzw. `run_sil.py`

@@ -129,11 +129,18 @@ Dazu prüft es, ob die Luken frei sind, die Steckerräume leer bleiben und die K
 Die M2-Stangen stehen bei (±7, ±29,5) und (±29,5, ±7); zwischen zwei Stangen eines Paars bleiben 12 mm frei.
 Beide Luken sind deshalb 12 mm breit und liegen bei ±y (u = 0). Sie liegen im oberen Rohr, der Rohrstoß (25 mm über der
 Kupplerunterkante) kreuzt sie nicht. Lage der Schrauben: drei M2 bei 45°, 135°, 225° im oberen Rohr, damit der Kuppler nur in
-einer Drehung passt und die Luken zu den Fenstern im Rohr stehen.
+einer Drehung passt und die Luken zu den Fenstern im Rohr stehen. Drei weitere M2 auf halber Steckhöhe im unteren Rohr: ohne sie
+hinge das untere Rohr (Kardan und Motor, ca. 150 g) nur mit 25 mm Reibung am Kuppler und fiele beim Öffnen des Schirms ab.
 
-- **Luke A (Teensy):** v = 25 … 100 mm (z = Platinenanfang + 25 … 100), Micro-USB, Programmiertaste und SD-Slot des
-  Teensy. 21 mm Luft von der Teensy-Oberseite bis zur Kupplerwand für Stecker und Karte; Steckerräume (USB-Stecker 11 mm,
-  SD-Karte 11 mm breit) sind frei.
+Wartung im Erstflug-Aufbau: die drei unteren M2 lösen, das Kabel zum Schlüsselschalter-Kragen am Stecker trennen, unteres Rohr mit
+Kardan abziehen; das Modul bleibt mit dem Kuppler am oberen Rohr. Erst nach dem Lösen der oberen drei M2 kommt es nach unten heraus.
+
+- **Luke A (Teensy):** v = 25 … 115 mm (z = Platinenanfang + 25 … 115), Micro-USB, Programmiertaste und SD-Slot des
+  Teensy. Die Micro-USB-Buchse zeigt in Längsrichtung (+v) und endet bei v = 92,5; ein gerader Stecker mit Knickschutz reicht
+  bis v ≈ 113, deshalb geht die Luke bis 115 (bis zur Prüfung am 22.10. nachmittags endete sie bei 100, dann ging nur ein
+  Winkelstecker). 21 mm Luft von der Teensy-Oberseite bis zur Kupplerwand. Der SD-Slot des Teensy 4.1 sitzt **auf der Unterseite**
+  am USB-fernen Ende (im Modell vereinfacht oben); die Karte wird bei v ≈ 28 längs herausgezogen, zwischen Teensy und Platine,
+  mit Pinzette durch den Lukenanfang bei v = 25. Steckerräume (USB-Stecker und SD-Karte je 11 mm breit) sind frei.
 - **Luke B (Schalterbrett):** v = 24 … 90 mm. Ein 11 mm breites Brett (gedruckt oder Leiterplatte) sitzt zwischen den Stangen
   bei y = −33,1 … −31,1 auf zwei Stützen am Trägerboden; die Bauteile in einer Reihe von unten (TVC) nach oben: Schiebeschalter
   2-polig (v 28–40), USB-C-Buchse (44–53) mit LED (56–59), XT30-Buchse (61–71), XH-3-Buchse für den Balancer (76–83,5). Sie sind

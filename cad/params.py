@@ -267,7 +267,7 @@ KEY_COLLAR_Z = (106.0, 124.0) # Erstflug: Kragen für den Schlüsselschalter im 
 NOSE_BULKHEAD_BELOW_BASE = NOSE_SHOULDER_L - 2.0   # Spant der Spitze: Unterkante 73 mm unter der Spitzenbasis (Rohrende)
 
 # Luken im Flugcomputer-Kuppler, Erstflug. Maße (u quer, v längs der Platine ab dem TVC-Ende), Koordinaten wie die Platine.
-HATCH_A = dict(side=+1, w=12.0, v=(25.0, 100.0))    # Teensy: Micro-USB, Programmiertaste, SD; 14 mm Stangenabstand, 12 mm frei
+HATCH_A = dict(side=+1, w=12.0, v=(25.0, 115.0))    # Teensy: Micro-USB, Programmiertaste, SD; 12 mm frei zwischen den Stangen. Bis v = 115, damit ein gerader Micro-USB-Stecker (Buchse endet bei v = 92,5, Stecker + Knickschutz 20 mm) samt Kabel durch die Luke geht
 HATCH_B = dict(side=-1, w=12.0, v=(24.0, 90.0))     # Schalterbrett gegenüber
 PANEL_W, PANEL_T = 11.0, 2.0                         # Schalterbrett (gedruckt/Platine), zwischen den Stangen bei u = ±6
 PANEL_Y = (-33.1, -31.1)                             # Brett im Freiraum zwischen Trägerboden (y = -14,5) und Kupplerwand (-35,1)

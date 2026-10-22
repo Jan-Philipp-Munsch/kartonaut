@@ -27,6 +27,15 @@ def hatch_cutter():
     return c
 
 
+def _m2_holes(shape, z, phis=(45.0, 135.0, 225.0)):
+    """Drei M2 radial bei 45°, 135°, 225°: der Kuppler passt nur in einer Drehung, die Luken (90°, 270°) liegen dazwischen."""
+    r = P.TUBE_OD / 2
+    for phi in phis:
+        c, s = math.cos(math.radians(phi)), math.sin(math.radians(phi))
+        shape = shape.cut(cyl_between(2.2, (r * 1.2 * c, r * 1.2 * s, z), (r * 0.9 * c, r * 0.9 * s, z)))
+    return shape
+
+
 def nose_profile():
     """Ogiven-ähnliches Profil (r, z-Offset über der Basis) der Klima-Spitze; die echte Kontur nachmessen."""
     R, L = P.TUBE_OD / 2, P.NOSE_L
@@ -58,16 +67,13 @@ def build(parts: Parts):
     if P.CONFIG == "erstflug":
         zk = (P.KEY_COLLAR_Z[0] + P.KEY_COLLAR_Z[1]) / 2
         lower = lower.cut(cyl_between(P.KEY_HOLE_D, (P.TUBE_OD, 0, zk), (P.TUBE_ID / 2 - 3, 0, zk)))
+        # unteres Rohr (Kardan + Motor, ca. 150 g) hängt sonst nur mit 25 mm Reibung am Kuppler: beim Öffnen des Schirms
+        # würde es abfallen. Drei M2 auf halber Steckhöhe.
+        lower = _m2_holes(lower, P.FC_COUPLER_Z[0] + P.COUPLER_INTO_LOWER_EF / 2)
     parts.add("Rohr unten 75x500", lower, "tube", "airframe")
     upper = tube(P.TUBE_OD, P.TUBE_ID, *P.UPPER_TUBE_Z).cut(hatch)
-    # vier Schrauben Rohr–Kuppler oben und unten (M2 radial)
     if P.CONFIG == "erstflug":
-        # drei M2 im oberen Rohr bei 45°, 135°, 225°: eindeutige Lage, die Luken (90°, 270°) liegen dazwischen
-        zs = P.FC_COUPLER_Z[0] + 90.0
-        for phi in (45.0, 135.0, 225.0):
-            c, s_ = math.cos(math.radians(phi)), math.sin(math.radians(phi))
-            upper = upper.cut(cyl_between(2.2, (P.TUBE_OD / 2 * 1.2 * c, P.TUBE_OD / 2 * 1.2 * s_, zs),
-                                          (P.TUBE_OD / 2 * 0.9 * c, P.TUBE_OD / 2 * 0.9 * s_, zs)))
+        upper = _m2_holes(upper, P.FC_COUPLER_Z[0] + 90.0)
     else:
         # vier Schrauben Rohr–Kuppler oben und unten (M2 radial)
         upper = radial_holes(upper, 2.2, P.TUBE_OD / 2, P.JOINT_Z + P.COUPLER_INTO_UPPER / 2, n=4, phi0=45, depth=3)

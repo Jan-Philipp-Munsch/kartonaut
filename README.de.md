@@ -39,7 +39,7 @@ SD-Logger und 433-MHz-LoRa-Funk zur Bodenstation. Das Gesamtsystem wird vor dem 
 
 - Konzept, Massen- und Strombudget; Rumpfteile, Fallschirm und Motoren gekauft.
 - 6DOF-Simulation: MATLAB/Simulink-Modell nach Python portiert, mit 1:1-Kopie des Flugreglers, 21 Tests.
-- Firmware-Module: Sensorik, Höhen-Kalman, SD-Logger mit CSV-Export, Pitch/Yaw- und Rollregler, Takt, Signalgeber.
+- Firmware: Flugkern ohne Hardware-Abhängigkeit (Quaternion aus dem Gyro, Flugzustandsautomat, Pyro-Logik, Telemetrieprotokoll, TVC-Regler) mit Tests auf einem simulierten Flug; Flug-Firmware für Breakouts und Mainboard rev B mit Kalman, Funk, Watchdog, SD-Logger; Kalibrier-Sketches und Testplan.
 - Mainboard rev B spezifiziert: Versorgungsarchitektur, Pinbelegung, Stückliste, Platzierungsplan, Testplan; Design Guide mit Abbildungen und Bestellplan.
 - KiCad-Projekt für rev B aus Code erzeugt: Schaltplan mit sieben Blättern, ERC sauber; Platine auf vier Lagen platziert und geroutet, DRC ohne Fehler.
 - Zweitmeinung-Review von Schaltung und Layout gegen Datenblätter und Spezifikation: acht Punkte vor der Bestellung, Fertiger-Entscheidung, Bestellliste.
@@ -55,7 +55,7 @@ SD-Logger und 433-MHz-LoRa-Funk zur Bodenstation. Das Gesamtsystem wird vor dem 
 **Als Nächstes**
 
 1. Review in rev B einarbeiten, Platine neu erzeugen, letzte Verbindungen schließen, Gerber, BOM und CPL exportieren, Bestellung bei JLCPCB mit SMD-Bestückung (Aisler als EU-Rückfall); die Tischteile jetzt bestellen.
-2. Firmware für rev B: Treiber ICM-42688-P, Quaternion-Lage, Flugzustandsautomat, Pyro-Logik, Watchdog, LoRa-Telemetrie.
+2. Firmware am Gerät prüfen (`docs/Testplan_Firmware_2026-10-22.md`): Achsen, Gyro-Rauschen, Automat mit Lämpchen, Servo-Gain und Sprungantwort am neuen Kardan; Bodenstation übernimmt `KartonautProtocol.h`.
 3. Rakete wiegen und das Massenbudget gegen den Schub des E12 prüfen.
 4. Bodentests: TVC-Prüfstand mit Propellermotor im Kardan (Teile gekauft, Gestell zu bauen), Pyro-Test, Funkreichweite.
 5. Erstflug: geregelter Aufstieg mit einem Motor, Fallschirmbergung.
@@ -206,36 +206,44 @@ Schwarzpulver schon getestet.
 
 ## Firmware
 
-PlatformIO-Projekt für den Teensy 4.1 in [`firmware/`](firmware/README.md). Die Hauptschleife
-läuft mit festen 100 Hz:
+PlatformIO-Projekt für den Teensy 4.1 in [`firmware/`](firmware/README.md), baut für zwei
+Hardwarestände: die heutigen Breakouts und das Mainboard rev B (`-e teensy41_revb`). Die
+Hauptschleife läuft mit festen 100 Hz:
 
-1. **Sensoren lesen.** IMU (Drehrate, Beschleunigung), Barometer, Strommonitor.
-2. **Lage integrieren.** Nur aus dem Gyro: Im Flug sind Kompass und Beschleunigungsstützung unbrauchbar.
-3. **Höhe schätzen.** Ein Kalman-Filter mit zwei Zuständen fusioniert Barometer und Vertikalbeschleunigung.
-4. **Regeln.** Ein PID auf Pitch und Yaw liefert ein Moment, das über `M = l · m · |a| · sin δ` in den
-   Kardanwinkel und dann in Servo-Grad umgerechnet wird; ein zweiter PID treibt den Rollmotor.
-5. **Loggen.** Ein 88-Byte-Frame pro Durchlauf in einen Seitenpuffer; SD-Schreibzugriffe nur in der
-   freien Zeit vor der nächsten Deadline. Am Boden wird das Binärlog als CSV exportiert.
+1. **Sensoren lesen.** IMU (spezifische Kraft, Drehrate), Barometer; Versorgung mit 20 Hz.
+2. **Lage.** Quaternion rein aus dem Gyro, auf der Rampe aus dem Beschleunigungssensor
+   initialisiert; der Regelfehler ist der Oben-Vektor im Körpersystem und bleibt damit auch beim
+   Rollen in der richtigen Servoachse.
+3. **Höhe.** Zwei-Zustands-Kalman: Prädiktion jeden Takt, Messung bei frischem Barometerwert.
+4. **Flugzustandsautomat.** `SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED`, dazu
+   `ABORT`; Start > 2 g für 50 ms, Brennschluss aus der spezifischen Kraft, Apogäum aus vz und
+   Barometer, jeweils mit Zeit-Rückfall. Pyro zündet nur in `APOGEE`/`DESCENT`, nur scharf, nur mit
+   Durchgang, je Kanal einmal, 80 ms.
+5. **Regelung.** PID auf Pitch und Yaw nur im `BOOST`; das Moment wird über
+   `M = l · m · |a| · sin δ` in einen Kardanwinkel und Servo-Grad umgerechnet.
+6. **Telemetrie, Log, Zustandsspeicher.** 22-Byte-Rahmen mit 10 Hz über LoRa/HC-12
+   (`KartonautProtocol.h`), ein 88-Byte-Record je Durchlauf mit SD-Schreiben nur in freier Zeit,
+   Watchdog mit Zustand über den Neustart hinweg.
 
 ```bash
 cd firmware
-pio run                      # Flug-Firmware bauen
-pio run -t upload            # auf den Teensy 4.1 flashen
-pio device monitor           # serielle Konsole, 115200 Bd, Teleplot-kompatibel
-pio run -e radio_beacon      # einen Test-Sketch aus examples/ bauen
+pio run                      # für die Breakouts bauen
+pio run -e teensy41_revb     # für das Mainboard rev B
+pio test -e native           # Tests des Flugkerns ohne Hardware
+pio device monitor           # serielle Konsole, 115200 Bd; 'h' zeigt die Tasten
 ```
 
-Alle Pins, Gewinne, Filterkonstanten und Debug-Schalter liegen in
-[`firmware/src/Config.h`](firmware/src/Config.h). Die Regler sind dort abgeschaltet, bis der
-erste Flugtest ansteht. Offen: Quaternion-Lage, Gyro-Kalibrierung auf der Rampe,
-Flugzustandsautomat mit Pyro-Logik, Telemetrieprotokoll, Treiber für die neue IMU.
+Physik, Gewinne und Schalter stehen in [`firmware/src/Config.h`](firmware/src/Config.h), Pins je
+Platine in `Board.h`. Die Regler bleiben aus, bis der Prüfstand gelaufen ist. Am Gerät ist davon
+noch nichts gelaufen; die Reihenfolge der Tischtests steht in `docs/Testplan_Firmware_2026-10-22.md`.
 
 ## Aufbau des Repos
 
 ```
 firmware/               Flug-Firmware (PlatformIO, Teensy 4.1)             -> firmware/README.md
-  src/                  Module: Sensors, KalmanZ, Control, SDLogger, Timing, Indicators
-  examples/             Test-Sketches (Funk-Beacon, I2C-Scan, Pyro-MOSFET)
+  lib/flightcore/       hardwareunabhängig: Attitude, FlightState, Pyro, KartonautProtocol, TvcController
+  src/                  Schleife, Board/Config, Sensors (Breakout/rev B), Radio, Persist, SDLogger, …
+  examples/, test/      Test- und Kalibrier-Sketches, Unity-Tests mit simuliertem Erstflug
 simulation/             6DOF-Simulation in Python, Paket tvcsim             -> simulation/README.md
   tvcsim/, tests/, scripts/, data/
 hardware/mainboard/     Mainboard rev B: Spezifikation, Bestellplan, Umriss (DXF), Platzierungsplan, Abbildungen
@@ -262,7 +270,8 @@ portiert.
 | [hardware/mainboard/review_kicad_2026-10-21.md](hardware/mainboard/review_kicad_2026-10-21.md) | Zweitmeinung-Review des KiCad-Projekts: Schaltung gegen Datenblätter, Layout gegen Spezifikation, Zukunft, Kosten |
 | [hardware/mainboard/Fertiger_2026-10-21.md](hardware/mainboard/Fertiger_2026-10-21.md) | Fertigervergleich (JLCPCB, PCBWay, Aisler, Eurocircuits) und Entscheidung |
 | [simulation/README.md](simulation/README.md) | Modell, Koordinaten, Annahmen, Ergebnis des Gewinnvergleichs |
-| [firmware/README.md](firmware/README.md) | Firmware-Module, Log-Format, Test-Sketches |
+| [firmware/README.md](firmware/README.md) | Firmware-Module, Flugablauf, Telemetrie, Log-Format, Test-Sketches |
+| [docs/Testplan_Firmware_2026-10-22.md](docs/Testplan_Firmware_2026-10-22.md) | Bodentests, Kalibrierungen, Messdaten für die Simulation |
 | [cad/README.md](cad/README.md) | parametrisches Modell, Parameter, Wartungskonzept |
 | [cad/mass_properties.md](cad/mass_properties.md) | Massenmodell: Methode, Teileliste, Schwerpunkt und Trägheit je Flugzustand |
 | [cad/blender_inventory.md](cad/blender_inventory.md) | was die 16 Blender-Dateien enthalten, was aktuell und was überholt ist |

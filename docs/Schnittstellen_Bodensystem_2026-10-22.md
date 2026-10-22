@@ -56,9 +56,13 @@ Anforderungen an das Pad:
 | Boden → Rakete | Kommandos mit Quittung: PING, CALIBRATE, PAD_READY_QUERY, ABORT |
 | Rahmen | Vorschlag: `0xA5 0x5A`, Typ (1 Byte), Länge (1 Byte), Nutzlast, CRC-16/CCITT |
 
-Das Telemetrieprotokoll gehört der Flug-Firmware (`firmware/`, Punkt E7: design-unabhängig, wird dort
-gerade entworfen). Die Bodenstation übernimmt die Definition von dort, sobald es sie gibt; bis dahin gilt
-der Vorschlag oben als Platzhalter in einer eigenen Datei, die sich austauschen lässt.
+Das Telemetrieprotokoll gehört der Flug-Firmware und liegt seit dem 22.10.2026 abends in
+`firmware/lib/flightcore/KartonautProtocol.h` (reines C, gepackte Strukturen, little-endian): Rahmen wie
+oben, `KnTelemetry` 22 Byte bei 10 Hz (Zeit, Zustand, Flags mit ARM/Durchgang/gezündet, Höhe, vz,
+Quaternion, TVC-Winkel, 1S/2S), `KnStatus` und `KnGps` 1 Hz, `KnEvent` je Zustandsübergang (dreimal),
+`KnCommand` (`PING`, `CALIBRATE`, `PAD_READY_QUERY`, `ABORT`, `SAFE`, `LOG_START/STOP`, `TESTRIG_THRUST`)
+mit `KnAck`. Die Bodenstation kopiert die Datei unverändert; Parser-Referenz ist `Telemetry.cpp`
+(`KnParser`), Prüfwerte in `firmware/test/test_flightcore`.
 
 **Startsperre:** die Bodenstation zündet nur, wenn alle Bedingungen gleichzeitig erfüllt sind:
 1. Der Schlüssel steckt in der Bodenstation und ARM ist eingeschaltet.

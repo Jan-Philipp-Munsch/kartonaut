@@ -20,6 +20,8 @@ python scripts/run_nominal.py --controller firmware --vehicle preload --static-e
 python scripts/run_montecarlo.py            # 100 Läufe à 7 s -> out/montecarlo_*.png, .csv
 python scripts/tune_pid.py --kp-values 2 3.1 5 --ki-values 0 5 --kd-values 0.01 0.1 0.385
 python scripts/compare_gains.py --vehicle preload   # Firmware- gegen Tuner-Gewinne
+python scripts/export_flight_csv.py                 # Erstflug als Sensordatei -> firmware/test/data/flight_e12.csv
+python scripts/analyze_imu_noise.py <calib_imu.csv> # Allan-Abweichung aus dem CSV-Strom von examples/calib_imu
 ```
 
 Alle Ausgaben landen in `simulation/out/` (per `.gitignore` ausgeschlossen). Ein Lauf über
@@ -30,7 +32,7 @@ Wichtige Schalter von `run_nominal.py` (gelten auch für Monte-Carlo und Tuning)
 | Schalter | Bedeutung |
 |---|---|
 | `--controller simulink\|firmware` | Simulink-Regler oder Port von `Control.cpp` |
-| `--vehicle nominal\|preload\|cad` | Fahrzeugparameter aus `TVC6DOF.m`, aus dem PreLoadFcn der `.slx` oder aus `cad/mass_properties.json` (siehe unten) |
+| `--vehicle nominal\|preload\|cad\|erstflug` | Fahrzeugparameter aus `TVC6DOF.m`, aus dem PreLoadFcn der `.slx`, aus `cad/mass_properties.json` (Vollausbau) oder die Erstflug-Variante daraus (761 g, Hebelarm 0,242 m) |
 | `--gains nominal\|tuner\|preload`, `--kp --ki --kd` | Gewinne des Simulink-Reglers |
 | `--fw-kp --fw-ki --fw-kd --fw-mass --fw-servo-gain` | Konstanten des Firmware-Reglers (`Config.h`) |
 | `--servo-gain 6` | Gain-Block hinter `tf5` (Servo-Grad je TVC-Grad; 23 laut `Config.h`) |
@@ -180,7 +182,9 @@ Tischtest zeigen; die Simulation kann es nicht entscheiden.
    wird Simulink x, also `Ix = Izz`, `Iy = Ixx`, `Iz = Iyy`; `m_dry` = 981 g minus 28 g
    Treibstoff = 953 g, die Treibstoffmasse kommt über `fuel_model` dazu (mit `signalbuilder`
    also 1,013 kg beim Start); die seitliche Schwerpunktlage (0,2 / −0,7 mm) geht als
-   `mis_y/mis_z` ein.
+   `mis_y/mis_z` ein. `VehicleParams.erstflug()` (`--vehicle erstflug`, seit 22.10.2026) liest die
+   Variante `erstflug_700` (761 g beim Start, Hebelarm 0,242 m, I quer 0,046, längs 0,00057).
+   Damit erreicht der E12 im Firmware-Regler 54 m Gipfel bei 5,4 s, Landung 8,8 s (`export_flight_csv.py`).
 7. **Beschleunigungssensor.** Das Simulink-Modell verrauscht `rdd`, die inertiale
    Beschleunigung samt g, und bildet daraus `T_est = |rdd| m`. Ein echter Sensor misst die
    spezifische Kraft `Tb/m`. Folge im Modell: bei T = 0 ist `T_est = m g` statt 0, und wenn der

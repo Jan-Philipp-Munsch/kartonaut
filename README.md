@@ -38,7 +38,7 @@ station. The whole system is simulated in a six-degree-of-freedom model before i
 
 - Concept, mass and power budget; airframe parts, parachute and motors bought.
 - 6DOF simulation: MATLAB/Simulink model ported to Python with a 1:1 copy of the flight controller, 21 tests.
-- Firmware modules: sensors, altitude Kalman filter, SD logger with CSV export, pitch/yaw and roll controllers, timing, indicators.
+- Firmware: a hardware-independent flight core (gyro quaternion, flight state machine, pyro logic, telemetry protocol, TVC controller) tested against a simulated flight; flight firmware for both the breakout stack and mainboard rev B with Kalman filter, radio, watchdog and SD logger; calibration sketches and a test plan.
 - Mainboard rev B specified: power architecture, pin map, bill of materials, placement plan, test plan; design guide with figures and order plan.
 - KiCad project for rev B generated from code: schematic with seven sheets, ERC clean; board placed and routed on four layers, DRC without errors.
 - Second-opinion review of schematic and layout against the datasheets and the specification: eight points to change before ordering, manufacturer decision, order list.
@@ -54,7 +54,7 @@ station. The whole system is simulated in a six-degree-of-freedom model before i
 **Next**
 
 1. Work the review into rev B, regenerate the board, close the last connections, export Gerber, BOM and CPL, order at JLCPCB with SMD assembly (Aisler as the EU fallback); order the bench parts now.
-2. Firmware for rev B: ICM-42688-P driver, quaternion attitude, flight state machine, pyro logic, watchdog, LoRa telemetry.
+2. Verify the firmware on hardware (`docs/Testplan_Firmware_2026-10-22.md`): axes, gyro noise, state machine with a test lamp, servo gain and step response on the new gimbal; the ground station adopts `KartonautProtocol.h`.
 3. Weigh the rocket and settle the mass budget against the thrust of the E12.
 4. Ground tests: TVC test rig with a propeller motor in the gimbal (parts bought, rig to be built), pyro test, radio range.
 5. First flight: controlled ascent on one motor, parachute recovery.
@@ -204,36 +204,44 @@ ejection has already been tested with about 1 g of black powder.
 
 ## Firmware
 
-PlatformIO project for the Teensy 4.1 in [`firmware/`](firmware/README.md). The main loop runs
-at a fixed 100 Hz:
+PlatformIO project for the Teensy 4.1 in [`firmware/`](firmware/README.md), building for two
+hardware revisions: today's breakout stack and mainboard rev B (`-e teensy41_revb`). The main loop
+runs at a fixed 100 Hz:
 
-1. **Read the sensors.** IMU (angular rate, acceleration), barometer, power monitor.
-2. **Integrate attitude.** Gyro only: in flight, magnetometer and accelerometer aiding are useless.
-3. **Estimate altitude.** A two-state Kalman filter fuses barometer and vertical acceleration.
-4. **Control.** PID on pitch and yaw outputs a torque that is converted via `M = l · m · |a| · sin δ`
-   into a gimbal angle and then into servo degrees; a second PID drives the roll motor.
-5. **Log.** One 88-byte frame per pass into a page buffer; SD writes only in the spare time before
-   the next deadline. On the ground the binary log is exported as CSV.
+1. **Read the sensors.** IMU (specific force, angular rate), barometer; power rails at 20 Hz.
+2. **Attitude.** Quaternion integrated from the gyro only, initialised from the accelerometer on the
+   pad; the control error is the up vector in body axes, so it stays in the right servo axis even
+   when the rocket rolls.
+3. **Altitude.** A two-state Kalman filter: predict every tick, update on fresh barometer samples.
+4. **Flight state machine.** `SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED`, plus
+   `ABORT`; liftoff > 2 g for 50 ms, burnout from the specific force, apogee from vertical speed and
+   barometer with time fallbacks. Pyro fires only in `APOGEE`/`DESCENT`, only armed, only with
+   continuity, once per channel, 80 ms.
+5. **Control.** PID on pitch and yaw in `BOOST` only; the torque is converted via
+   `M = l · m · |a| · sin δ` into a gimbal angle and servo degrees.
+6. **Telemetry, logging, persistence.** 22-byte frames at 10 Hz over LoRa/HC-12 (`KartonautProtocol.h`),
+   one 88-byte log record per pass with SD writes only in spare time, watchdog with state kept across a
+   reset so a mid-flight restart resumes in the current phase.
 
 ```bash
 cd firmware
-pio run                      # build the flight firmware
-pio run -t upload            # flash the Teensy 4.1
-pio device monitor           # serial console, 115200 baud, Teleplot-compatible
-pio run -e radio_beacon      # one of the test sketches in examples/
+pio run                      # build for the breakout stack
+pio run -e teensy41_revb     # build for mainboard rev B
+pio test -e native           # flight core tests without hardware
+pio device monitor           # serial console, 115200 baud; 'h' lists the bench keys
 ```
 
-All pins, gains, filter constants and debug switches live in
-[`firmware/src/Config.h`](firmware/src/Config.h). The controllers are switched off there until
-the first flight test. Open points: quaternion attitude, gyro calibration on the pad, flight state
-machine with pyro logic, telemetry protocol, driver for the new IMU.
+Physics, gains and switches live in [`firmware/src/Config.h`](firmware/src/Config.h), pins per board
+in `Board.h`. The controllers stay switched off until the test rig run. Nothing of this has run on
+hardware yet; the order of bench tests is in `docs/Testplan_Firmware_2026-10-22.md`.
 
 ## Repository layout
 
 ```
 firmware/               flight firmware (PlatformIO, Teensy 4.1)          -> firmware/README.md
-  src/                  modules: Sensors, KalmanZ, Control, SDLogger, Timing, Indicators
-  examples/             test sketches (radio beacon, I2C scan, pyro MOSFET)
+  lib/flightcore/       hardware-independent: Attitude, FlightState, Pyro, KartonautProtocol, TvcController
+  src/                  main loop, Board/Config, Sensors (breakout / rev B), Radio, Persist, SDLogger, ...
+  examples/, test/      test and calibration sketches, Unity tests with a simulated first flight
 simulation/             6DOF simulation in Python, package tvcsim          -> simulation/README.md
   tvcsim/, tests/, scripts/, data/
 hardware/mainboard/     mainboard rev B: specification, order plan, outline (DXF), placement plan, figures
@@ -259,7 +267,8 @@ the simulation and the Blender files stay outside this repository; their content
 | [hardware/mainboard/review_kicad_2026-10-21.md](hardware/mainboard/review_kicad_2026-10-21.md) | second-opinion review of the KiCad project: circuit against datasheets, layout against the specification, future-proofing, costs |
 | [hardware/mainboard/Fertiger_2026-10-21.md](hardware/mainboard/Fertiger_2026-10-21.md) | manufacturer comparison (JLCPCB, PCBWay, Aisler, Eurocircuits) and decision |
 | [simulation/README.md](simulation/README.md) | model, coordinates, assumptions, results of the gain comparison |
-| [firmware/README.md](firmware/README.md) | firmware modules, log format, test sketches |
+| [firmware/README.md](firmware/README.md) | firmware modules, flight sequence, telemetry, log format, test sketches |
+| [docs/Testplan_Firmware_2026-10-22.md](docs/Testplan_Firmware_2026-10-22.md) | ground tests, calibrations, measurements the simulation needs (German) |
 | [cad/README.md](cad/README.md) | parametric model, parameters, maintenance concept |
 | [cad/mass_properties.md](cad/mass_properties.md) | mass model: method, parts list, centre of gravity and inertia per flight state |
 | [cad/blender_inventory.md](cad/blender_inventory.md) | what the 16 Blender files contain, which is current, which is superseded |

@@ -68,6 +68,11 @@ tools/               run_native_tests.sh, check_board_pins.py
 6. **Landung** (3 s ruhig) → **LANDED**: Ortungspiepen, Log stoppt nach 10 s.
 7. **ABORT** (Kommando, > 70° Kippen im Boost, Sensorausfall im Flug): Regler aus, Servos Mitte; nach dem Start wird die Bergung weiter gezündet.
 
+**Zündsperre:** Jede Bergungszündung braucht zusätzlich einen bestätigten Flug: Kalman oder Barometer
+haben seit dem Start ≥ `FS_MIN_FLIGHT_ALT_M` (10 m) Steigen gesehen. Eine falsche Starterkennung auf
+der Rampe läuft so über die Zeit-Rückfälle zurück nach SAFE (Grund `NO_FLIGHT`), statt die Zündung
+freizugeben. Am Tisch hebt Taste `B` die Sperre auf (nur mit Lämpchen).
+
 Ohne ARM-Messung (Breakouts) oder im `TESTRIG_MODE` verlangt der Automat kein ARM und keinen
 Durchgang; am Tisch erzwingen `r` (PAD_READY) und `l` (Start) die Übergänge.
 
@@ -94,7 +99,7 @@ Durchgang; am Tisch erzwingen `r` (PAD_READY) und `l` (Start) die Übergänge.
 | `LOOP_WARNING`, `VERBOSE`, `SILENT`, `DARK` | Overrun-Meldungen, Kalibrierausgaben, Summer und LEDs stumm |
 
 Tasten am USB-Serial: `h` Hilfe, `c` kalibrieren, `r` PAD_READY erzwingen, `l` Start erzwingen,
-`a` Abbruch, `s` SAFE, `L`/`S` Log an/aus, `x` CSV-Export, `p` Status, `t<N>` Prüfstand-Schub.
+`a` Abbruch, `s` SAFE, `B` Zündsperre aus/an (Tisch), `L`/`S` Log an/aus, `x` CSV-Export, `p` Status, `t<N>` Prüfstand-Schub.
 
 ## Telemetrie (S3)
 

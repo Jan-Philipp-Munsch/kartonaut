@@ -104,6 +104,7 @@ enum KnEventReason {
   KN_REASON_TILT          = 7,   /* Kippwinkel zu groß */
   KN_REASON_RESTORED      = 8,   /* nach Neustart aus dem Zustandsspeicher */
   KN_REASON_SENSOR_FAIL   = 9,
+  KN_REASON_NO_FLIGHT     = 10,  /* Start erkannt, aber kein Steigen gemessen: zurück nach SAFE, keine Zündung */
 };
 
 /* 14 Byte, 1 Hz */

@@ -62,13 +62,15 @@ def test_sil_flight_with_control_follows_the_flight_sequence():
     assert np.all(np.diff(fire) == 1)                    # ein zusammenhängender Puls
 
 
-def test_sil_without_control_tumbles_aborts_and_still_deploys():
+def test_sil_without_control_tumbles_aborts_and_respects_the_safety_gate():
     res, tr = _run(control=False)
     ev = _event_times(tr)
     assert "ABORT" in ev
     assert res.tilt_deg.max() > 70.0
-    # nach dem Start zündet die Bergung auch im ABORT
-    assert (tr["fire"] & 1).any()
+    # im ABORT nach dem Start darf die Bergung zünden, aber erst nach 10 m gemessenem Steigen
+    fire = np.where(tr["fire"] & 1)[0]
+    if len(fire):
+        assert max(tr["alt_m"][: fire[0] + 1].max(), np.nanmax(tr["baro_m"][: fire[0] + 1])) >= 10.0
 
 
 def test_servo_quantisation_matches_control_cpp():

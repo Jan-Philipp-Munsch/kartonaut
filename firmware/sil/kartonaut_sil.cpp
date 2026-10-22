@@ -38,6 +38,7 @@ struct SilConfig {
   float burnout_g; uint32_t burn_max_ms, coast_max_ms;
   float abort_tilt_deg;
   float apogee_vz_ms; uint32_t apogee_hold_ms; float apogee_baro_drop_m;
+  float min_flight_alt_m;
   // Kalman
   float kalman_meas_std_m, kalman_sigma_acc, kalman_init_var;
   // Pyro
@@ -84,6 +85,7 @@ struct Sil {
     f.burnout_g = c.burnout_g; f.burn_max_ms = c.burn_max_ms;
     f.coast_max_ms = c.coast_max_ms; f.abort_tilt_deg = c.abort_tilt_deg;
     f.apogee_vz_ms = c.apogee_vz_ms; f.apogee_hold_ms = c.apogee_hold_ms; f.apogee_baro_drop_m = c.apogee_baro_drop_m;
+    f.min_flight_alt_m = c.min_flight_alt_m;
     return f;
   }
 
@@ -178,7 +180,7 @@ SIL_API void sil_step(void* h, uint32_t t_ms, float dt, const float f_body[3], c
   bool cont[PyroLogic::CHANNELS] = {false, false, false, false};
   cont[s.cfg.chute_channel] = true;
   cont[s.cfg.backup_channel] = true;
-  const bool allowed = s.fs.pyroAllowed() || (s.fs.phase() == FlightPhase::ABORT && s.fs.liftoff_ms() > 0);
+  const bool allowed = s.fs.pyroAllowed();
   s.pyro.update(t_ms, true, cont, allowed);
   if (allowed) {
     s.pyro.fire(s.cfg.chute_channel, t_ms);

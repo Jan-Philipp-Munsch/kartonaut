@@ -81,6 +81,10 @@ Sekunde Verzug bringt ≈ 10 m/s mehr und den Öffnungsstoß ins Quadrat. Deshal
 die Zeit (`FS_COAST_MAX_MS`, 6 s nach Brennschluss) zwar richtig als letzte Sicherung, aber im
 Normalfall soll die Geschwindigkeitserkennung greifen.
 
+**Zündsperre (seit 22.10.2026):** Die Bergung zündet nur nach mindestens 10 m gemessenem Steigen
+(Kalman oder Barometer, `FS_MIN_FLIGHT_ALT_M`). Ein Flug, der unter 10 m bleibt, bekommt also keinen
+Fallschirm; im SIL liegt der Erstflug bei 48–69 m.
+
 ### 4.2 Schwellen: früher auslösen?
 
 `python simulation/scripts/run_sil.py --apogee-sweep` (je 5 Läufe mit Rauschen, vz-Schwelle −0,5 m/s):

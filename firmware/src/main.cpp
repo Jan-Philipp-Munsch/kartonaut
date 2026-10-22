@@ -39,6 +39,7 @@ static FlightStateConfig fsConfig() {
   c.coast_max_ms = FS_COAST_MAX_MS;
   c.apogee_vz_ms = FS_APOGEE_VZ_MS; c.apogee_hold_ms = FS_APOGEE_HOLD_MS; c.apogee_baro_drop_m = FS_APOGEE_BARO_DROP_M;
   c.abort_tilt_deg = FS_ABORT_TILT_DEG; c.pad_max_tilt_deg = FS_PAD_MAX_TILT_DEG;
+  c.min_flight_alt_m = FS_MIN_FLIGHT_ALT_M;
   c.require_arm = HAS_ARM_SENSE && !TESTRIG_MODE;
   c.require_continuity = HAS_PYRO_SENSE && !TESTRIG_MODE;
   return c;
@@ -250,7 +251,13 @@ static void handleKey(int ch) {
   }
   switch (ch) {
     case 'h': Serial.println("c Kalibrieren | r PAD_READY erzwingen | l Start erzwingen | a Abbruch | s SAFE | "
-                             "L Log an | S Log aus | x CSV-Export | p Status | t<N> Schub N (Prüfstand)"); break;
+                             "B Zündsperre aus/an (nur Tisch!) | L Log an | S Log aus | x CSV-Export | p Status | t<N> Schub N (Prüfstand)"); break;
+    case 'B':
+      if (fs.inFlight()) { Serial.println("Zündsperre: im Flug nicht änderbar"); break; }
+      fs.setBenchOverride(!fs.benchOverride());
+      Serial.printf("Zündsperre %s%s\n", fs.benchOverride() ? "AUFGEHOBEN (Tischtest, Pyro zündet ohne Steigen)" : "aktiv",
+                    fs.benchOverride() ? " -- nur mit Lämpchen!" : "");
+      break;
     case 'c': calibrate(); break;
     case 'r': cmd_force_ready = true; break;
     case 'l': cmd_force_liftoff = true; break;
@@ -279,7 +286,8 @@ static void restoreFromPersist(const PersistState& ps) {
   calibrated = ps.calibrated != 0;
   pyro.restoreFiredMask(ps.pyro_fired);
   const uint32_t now = millis();
-  fs.restore(FlightPhase(ps.phase), now, ps.t_since_liftoff_ms ? now - ps.t_since_liftoff_ms : 0);
+  fs.restore(FlightPhase(ps.phase), now, ps.t_since_liftoff_ms ? now - ps.t_since_liftoff_ms : 0,
+             ps.max_alt_m >= FS_MIN_FLIGHT_ALT_M);
   kal.setState(ps.max_alt_m, 0.0f);   // grobe Schätzung, das Barometer zieht es gerade
   Serial.printf("Zustandsspeicher: %s nach Watchdog-Neustart übernommen (Boot %lu)\n",
                 flightPhaseName(fs.phase()), (unsigned long)Persist_bootCount());
@@ -419,7 +427,7 @@ void loop() {
   if (fs.update(in)) onEvent(fs.lastEvent());
   rig.update(now);
 
-  const bool pyro_allowed = fs.pyroAllowed() || (fs.phase() == FlightPhase::ABORT && fs.liftoff_ms() > 0);
+  const bool pyro_allowed = fs.pyroAllowed();   // Phase und Sicherheitssperre (FlightState.h)
   pyro.update(now, armed, continuity, pyro_allowed);
   if (pyro_allowed) {
     pyro.fire(PYRO_CHUTE_CHANNEL, now);                       // lehnt ab, wenn schon gezündet

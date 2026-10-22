@@ -286,10 +286,57 @@ static void test_flightstate_abort_and_timeouts() {
 
   // Zustandsspeicher: Neustart im Coast
   FlightState h(cfg);
-  h.restore(FlightPhase::COAST, 5000, 1000);
+  h.restore(FlightPhase::COAST, 5000, 1000, true);
   TEST_ASSERT_EQUAL((int)FlightPhase::COAST, (int)h.phase());
   TEST_ASSERT_EQUAL(1000, (int)h.liftoff_ms());
   TEST_ASSERT_EQUAL(KN_REASON_RESTORED, h.lastEvent().reason);
+}
+
+static void test_flightstate_false_liftoff_never_fires() {
+  // Stoß auf der Rampe wird als Start erkannt, die Rakete steigt aber nicht: über die Zeit-Rückfälle
+  // darf daraus keine Zündfreigabe werden (Sicherheitssperre, 22.10.2026)
+  FlightStateConfig cfg;
+  FlightState fs(cfg);
+  uint32_t t = 1000;
+  FlightInputs in = padInputs(t); in.cmd_force_ready = true; fs.update(in);
+  for (int i = 0; i < 6; ++i) { in = padInputs(t += 10); in.accel_z_g = 3.0f; fs.update(in); }
+  TEST_ASSERT_EQUAL((int)FlightPhase::BOOST, (int)fs.phase());
+  bool allowed_ever = false, no_flight = false, reached_apogee = false;
+  for (int i = 0; i < 2000; ++i) {
+    in = padInputs(t += 10);
+    in.baro_alt_m = (i % 2) ? 0.4f : -0.4f;    // Barometer-Rauschen, kein Steigen
+    if (fs.update(in)) {
+      no_flight = no_flight || fs.lastEvent().reason == KN_REASON_NO_FLIGHT;
+      reached_apogee = reached_apogee || fs.phase() == FlightPhase::APOGEE;
+    }
+    allowed_ever = allowed_ever || fs.pyroAllowed();
+  }
+  TEST_ASSERT_FALSE(allowed_ever);
+  TEST_ASSERT_FALSE(reached_apogee);
+  TEST_ASSERT_TRUE(no_flight);                   // COAST -> SAFE nach dem Zeit-Rückfall
+  TEST_ASSERT_FALSE(fs.flightConfirmed());
+  TEST_ASSERT_EQUAL(0, (int)fs.liftoff_ms());
+  // danach wieder normal: Rampenbedingungen erfüllt -> PAD_READY
+  TEST_ASSERT_EQUAL((int)FlightPhase::PAD_READY, (int)fs.phase());
+
+  // Tischtest mit aufgehobener Sperre: dieselbe Folge erreicht APOGEE und gibt frei
+  FlightState b(cfg);
+  b.setBenchOverride(true);
+  t = 1000;
+  in = padInputs(t); in.cmd_force_ready = true; b.update(in);
+  in = padInputs(t += 10); in.cmd_force_liftoff = true; b.update(in);
+  bool allowed = false;
+  for (int i = 0; i < 1600 && !allowed; ++i) { b.update(padInputs(t += 10)); allowed = b.pyroAllowed(); }
+  TEST_ASSERT_TRUE(allowed);
+  TEST_ASSERT_EQUAL((int)FlightPhase::APOGEE, (int)b.phase());
+
+  // Echter Flug: 10 m Barometer-Steigen bestätigen den Flug auch ohne Kalman-Höhe
+  FlightState c(cfg);
+  t = 1000;
+  in = padInputs(t); in.cmd_force_ready = true; c.update(in);
+  in = padInputs(t += 10); in.cmd_force_liftoff = true; c.update(in);
+  for (int i = 0; i < 100; ++i) { in = padInputs(t += 10); in.baro_alt_m = i * 0.2f; c.update(in); }
+  TEST_ASSERT_TRUE(c.flightConfirmed());
 }
 
 struct FlightRow { float t, fx, fy, fz, wx, wy, wz, alt, vz, baro, tilt; };
@@ -524,6 +571,7 @@ int main(int, char**) {
   RUN_TEST(test_attitude_norm_stays_one);
   RUN_TEST(test_flightstate_synthetic_sequence);
   RUN_TEST(test_flightstate_abort_and_timeouts);
+  RUN_TEST(test_flightstate_false_liftoff_never_fires);
   RUN_TEST(test_flightstate_on_simulated_flight);
   RUN_TEST(test_kalman_tracks_constant_accel);
   RUN_TEST(test_kalman_baro_pulls_wrong_accel);

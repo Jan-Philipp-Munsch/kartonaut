@@ -115,6 +115,10 @@ constexpr uint32_t FS_APOGEE_HOLD_MS  = 300;
 constexpr float    FS_APOGEE_BARO_DROP_M = 1.0f;
 constexpr float    FS_ABORT_TILT_DEG  = 70.0f;
 constexpr float    FS_PAD_MAX_TILT_DEG = 10.0f;
+// Sicherheitssperre: Bergung zündet erst nach so viel gemessenem Steigen (Kalman oder Barometer).
+// Ohne Steigen läuft eine falsche Starterkennung nach den Zeit-Rückfällen zurück nach SAFE.
+// Tischtest: Taste 'B' hebt die Sperre auf (nur mit Lämpchen).
+constexpr float    FS_MIN_FLIGHT_ALT_M = 10.0f;
 
 // ===== Pyro =====
 constexpr int      PYRO_CHUTE_CHANNEL = 0;      // Kanal 1 = Kolben-Ausstoß

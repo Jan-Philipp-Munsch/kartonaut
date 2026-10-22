@@ -30,10 +30,10 @@ Legende: **Sketch** = PlatformIO-Umgebung, `_revb` für das Mainboard. **Ergebni
 
 | # | Test | Sketch, Taste | Erwartung | Ergebnis → |
 |---|---|---|---|---|
-| 2.1 | Übergänge von Hand | `teensy41`, `c` `r` `l` `a` `s` | Serial zeigt `SAFE -> PAD_READY`, `PAD_READY -> BOOST (Grund 1)`, nach 4,5 s `BOOST -> COAST (Grund 5)`, nach 6 s `COAST -> APOGEE`, `-> DESCENT`, nach 3 s ruhig `-> LANDED`. LEDs grün / weiß / magenta / gelb. | – |
+| 2.1 | Übergänge von Hand | `teensy41`, `c` `r` `l` `a` `s` | Ohne `B`: nach 4,5 s `BOOST -> COAST`, nach weiteren 6 s `COAST -> SAFE (Grund 10)`, **keine** Zündfreigabe (Sicherheitssperre, kein Steigen gemessen). Dann `B` (Sperre aufheben) und noch einmal `c` `r` `l`: Serial zeigt `SAFE -> PAD_READY`, `PAD_READY -> BOOST (Grund 1)`, nach 4,5 s `BOOST -> COAST (Grund 5)`, nach 6 s `COAST -> APOGEE`, `-> DESCENT`, nach 3 s ruhig `-> LANDED`. LEDs grün / weiß / magenta / gelb. | – |
 | 2.2 | Start durch Beschleunigung | `r`, dann die Rakete kräftig nach oben rucken (> 2 g für 50 ms geht nur mit Schwung: fallen lassen und abfangen geht nicht, das ist −1 g) | Entweder `-> BOOST (Grund 3)` oder nichts; ein Stoß auf den Tisch darf **nicht** starten | `FS_LIFTOFF_G`, `FS_LIFTOFF_HOLD_MS` |
 | 2.3 | Apogäum durch Barometer | Nach `l` und 4,5 s (COAST): Teensy 2 m heben, 1 s halten, 2 m senken | `COAST -> APOGEE (Grund 4)` beim Senken, nicht beim Heben | `apogee_baro_drop_m` in `FlightState.h` |
-| 2.4 | Pyro-Regeln mit Lämpchen (rev B) oder MOSFET-Modul (Breakout, Kanal 1) | 12-V-Lämpchen oder 2-Ω-Widerstand am Pyro-Ausgang, **nie eine Ladung**. `PLOT_ELECTRICS` an. Rev B: Schlüssel aus → `p` zeigt `sicher`, `cont 00`; Schlüssel ein → `scharf`, `cont 10`. Dann `c` `r` `l` und warten. Breakout: `PYRO_NO_SENSE_ASSUME_OK = true` (nur für diesen Test, danach zurück), `c` `r` `l`. | Lämpchen blitzt 80 ms bei APOGEE (rev B: Kanal 2 eine Sekunde später); `p` zeigt danach `fired`. Rev B mit Schlüssel aus: kein Blitz, kein PAD_READY. Breakout mit `PYRO_NO_SENSE_ASSUME_OK = false`: kein Blitz. | `PYRO_PULSE_MS`, `BUILD.md` §5 |
+| 2.4 | Pyro-Regeln mit Lämpchen (rev B) oder MOSFET-Modul (Breakout, Kanal 1) | 12-V-Lämpchen oder 2-Ω-Widerstand am Pyro-Ausgang, **nie eine Ladung**. `PLOT_ELECTRICS` an. Rev B: Schlüssel aus → `p` zeigt `sicher`, `cont 00`; Schlüssel ein → `scharf`, `cont 10`. Dann `B` (Zündsperre aufheben, sonst zündet am Tisch nichts), `c` `r` `l` und warten. Breakout: `PYRO_NO_SENSE_ASSUME_OK = true` (nur für diesen Test, danach zurück), `c` `r` `l`. | Lämpchen blitzt 80 ms bei APOGEE (rev B: Kanal 2 eine Sekunde später); `p` zeigt danach `fired`. Rev B mit Schlüssel aus: kein Blitz, kein PAD_READY. Breakout mit `PYRO_NO_SENSE_ASSUME_OK = false`: kein Blitz. | `PYRO_PULSE_MS`, `BUILD.md` §5 |
 | 2.5 | Zustandsspeicher | wie 1.11 aus COAST | Nach dem Neustart `COAST` wiederhergestellt, gezündete Kanäle bleiben gezündet (kein zweiter Blitz) | – |
 | 2.6 | SD-Log | `L` … `S` `x` | CSV mit 44 Spalten, `phase`-Spalte zeigt die Übergänge, `loop_us` plausibel | `BUILD.md` §5 |
 | 2.7 | Servos im Automaten | `PY_CONTROL_ACTIVE = true`, `c` `r` `l`, Rakete im BOOST kippen | Servos folgen nur im BOOST, danach Mitte. Richtung: Spitze nach +x kippen → der Schubvektor muss **unter** die Spitze wandern (Düse nach −x). Stimmt es nicht: Vorzeichen von `SERVO_*_GAIN` | `Config.h` |
@@ -127,11 +127,12 @@ vor dem Gipfel. Ohne Regler kippt die Rakete nach 1,1 s über 70° (ABORT). Deta
    echten Barometer-Mitschnitt (Prüfstand oder Flug) in die Simulation nehmen.
 2. **Starterkennung** 2 g / 50 ms → z. B. 1,3 g / 20 ms: Regler 0,1 s früher, schlimmster
    Monte-Carlo-Fall 15° → 6°. Dagegen: ein Stoß auf der Rampe löst leichter aus.
-3. **Sicherheitslücke bei falscher Starterkennung:** Erkennt der Automat auf der Rampe fälschlich
-   einen Start, läuft er über die Zeit-Rückfälle (4,5 s Brennschluss, 6 s Coast) bis APOGEE und gibt
-   die Zündung frei, ca. 10,5 s später **auf der Rampe**. Vorschlag: Bergungszündung nur, wenn
-   Kalman oder Barometer mindestens 10 m Steigen gesehen haben; sonst zurück nach SAFE ohne Zündung.
-   Für die Tischtests (§2) bleibt ein USB-Befehl, der die Sperre aufhebt.
+3. ~~Sicherheitslücke bei falscher Starterkennung~~ **erledigt 22.10.2026 (Jan: 10 m):** Die Bergung
+   zündet nur, wenn Kalman oder Barometer seit dem Start ≥ `FS_MIN_FLIGHT_ALT_M` (10 m) Steigen gesehen
+   haben. Ohne Steigen läuft eine falsche Starterkennung nach den Zeit-Rückfällen mit Grund 10
+   (`NO_FLIGHT`) zurück nach SAFE. Am Tisch hebt Taste `B` die Sperre auf. Preis: ein echter Flug unter
+   10 m (oder mit beiden Höhenquellen ausgefallen) bekommt keinen Fallschirm; der Erstflug liegt im SIL
+   bei 48–69 m. Punkte 1 und 2 bleiben wie in `Config.h` (Jan, 22.10.).
 
 **Weiter offen:**
 

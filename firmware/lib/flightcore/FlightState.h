@@ -9,6 +9,12 @@
 //   DESCENT ──(ruhig für LANDED_HOLD)──> LANDED
 //   jeder Zustand ──(ABORT-Kommando, Sensorausfall)──> ABORT
 //   PAD_READY ──(SAFE-Kommando oder Bedingung verloren)──> SAFE
+//   COAST ──(Zeit-Rückfall ohne bestätigten Flug)──> SAFE  (Grund NO_FLIGHT)
+//
+// Sicherheitssperre (Jan, 22.10.2026): Die Bergung darf erst zünden, wenn Kalman ODER
+// Barometer seit dem Start mindestens min_flight_alt_m Steigen gesehen haben. Eine falsche
+// Starterkennung auf der Rampe läuft sonst über die Zeit-Rückfälle bis APOGEE und gibt die
+// Zündung auf der Rampe frei. Für Tischtests hebt setBenchOverride(true) die Sperre auf.
 //
 // Zeitbasis ist t_ms des Aufrufers (millis()), damit der Automat in der
 // nativen Testumgebung mit aufgezeichneten oder simulierten Flügen läuft.
@@ -54,6 +60,7 @@ struct FlightStateConfig {
   float    pad_max_tilt_deg = 10.0f;
   float    pad_max_rate_dps = 2.0f;
   float    abort_tilt_deg   = 70.0f;    // im Boost: Regler aus, Fallschirm sobald möglich
+  float    min_flight_alt_m = 10.0f;    // Sicherheitssperre: so viel Steigen muss gemessen sein
   bool     require_arm      = true;     // ohne ARM kein PAD_READY (Tischtest: false)
   bool     require_continuity = true;
 };
@@ -103,10 +110,21 @@ public:
 
   bool inFlight() const { return phase_ >= FlightPhase::BOOST && phase_ <= FlightPhase::DESCENT; }
   bool controlAllowed() const { return phase_ == FlightPhase::BOOST; }
-  bool pyroAllowed() const { return phase_ == FlightPhase::APOGEE || phase_ == FlightPhase::DESCENT; }
+  // Bergungszündung erlaubt: APOGEE/DESCENT, oder ABORT nach einem Start; immer nur mit
+  // bestätigtem Flug (Sicherheitssperre) oder aufgehobener Sperre am Tisch
+  bool pyroAllowed() const {
+    const bool phase_ok = phase_ == FlightPhase::APOGEE || phase_ == FlightPhase::DESCENT ||
+                          (phase_ == FlightPhase::ABORT && t_liftoff_ != 0);
+    return phase_ok && (flight_confirmed_ || bench_override_);
+  }
+  bool flightConfirmed() const { return flight_confirmed_; }
+
+  // Tischtest: Sperre aufheben (USB-Taste 'B' in main.cpp). Nie im Flug benutzen.
+  void setBenchOverride(bool on) { bench_override_ = on; }
+  bool benchOverride() const { return bench_override_; }
 
   // Nach einem Neustart im Flug: Zustand aus dem Zustandsspeicher übernehmen
-  void restore(FlightPhase p, uint32_t t_now_ms, uint32_t t_liftoff_ms);
+  void restore(FlightPhase p, uint32_t t_now_ms, uint32_t t_liftoff_ms, bool flight_confirmed);
 
   const FlightStateConfig& config() const { return cfg_; }
 
@@ -120,4 +138,7 @@ private:
   uint32_t t_phase_ = 0, t_liftoff_ = 0, t_burnout_ = 0, t_apogee_ = 0;
   uint32_t t_cond_ = 0;        // Beginn der aktuell gehaltenen Bedingung, 0 = nicht erfüllt
   float    alt_max_ = 0.0f, baro_max_ = 0.0f;
+  float    alt0_ = 0.0f, baro0_ = 0.0f;   // Höhen beim Start
+  bool     flight_confirmed_ = false;
+  bool     bench_override_ = false;
 };

@@ -22,7 +22,8 @@ void FlightState::transition(FlightPhase to, uint8_t reason, uint32_t t_ms) {
   t_cond_ = 0;
 }
 
-void FlightState::restore(FlightPhase p, uint32_t t_now_ms, uint32_t t_liftoff_ms) {
+void FlightState::restore(FlightPhase p, uint32_t t_now_ms, uint32_t t_liftoff_ms, bool flight_confirmed) {
+  flight_confirmed_ = flight_confirmed;
   last_ = FlightEvent{phase_, p, KN_REASON_RESTORED, t_now_ms};
   phase_ = p;
   t_phase_ = t_now_ms;
@@ -62,6 +63,8 @@ bool FlightState::update(const FlightInputs& in) {
   if (inFlight() || phase_ == FlightPhase::ABORT) {
     if (in.alt_m > alt_max_) alt_max_ = in.alt_m;
     if (in.baro_alt_m > baro_max_) baro_max_ = in.baro_alt_m;
+    if (t_liftoff_ != 0 && (alt_max_ - alt0_ >= cfg_.min_flight_alt_m || baro_max_ - baro0_ >= cfg_.min_flight_alt_m))
+      flight_confirmed_ = true;
   }
 
   switch (phase_) {
@@ -79,13 +82,13 @@ bool FlightState::update(const FlightInputs& in) {
     case FlightPhase::PAD_READY:
       if (in.cmd_safe) { transition(FlightPhase::SAFE, KN_REASON_COMMAND, t); return true; }
       if (in.cmd_force_liftoff) {
-        t_liftoff_ = t; alt_max_ = in.alt_m; baro_max_ = in.baro_alt_m;
+        t_liftoff_ = t; alt_max_ = alt0_ = in.alt_m; baro_max_ = baro0_ = in.baro_alt_m;
         transition(FlightPhase::BOOST, KN_REASON_COMMAND, t);
         return true;
       }
       if (held(t_cond_, in.accel_z_g > cfg_.liftoff_g, t, cfg_.liftoff_hold_ms)) {
         t_liftoff_ = t - cfg_.liftoff_hold_ms;
-        alt_max_ = in.alt_m; baro_max_ = in.baro_alt_m;
+        alt_max_ = alt0_ = in.alt_m; baro_max_ = baro0_ = in.baro_alt_m;
         transition(FlightPhase::BOOST, KN_REASON_ACCEL, t);
         return true;
       }
@@ -123,6 +126,12 @@ bool FlightState::update(const FlightInputs& in) {
         return true;
       }
       if (t - t_phase_ >= cfg_.coast_max_ms) {
+        if (!flight_confirmed_ && !bench_override_) {
+          // Start war falsch erkannt (Stoß auf der Rampe): nichts zünden, zurück in den sicheren Zustand
+          t_liftoff_ = t_burnout_ = 0;
+          transition(FlightPhase::SAFE, KN_REASON_NO_FLIGHT, t);
+          return true;
+        }
         t_apogee_ = t;
         transition(FlightPhase::APOGEE, KN_REASON_TIMEOUT, t);
         return true;

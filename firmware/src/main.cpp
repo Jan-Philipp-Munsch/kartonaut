@@ -48,7 +48,7 @@ static LoopTimer     loopTimer;
 static KalmanZ       kal;
 static Attitude      att;
 static FlightState   fs(fsConfig());
-static PyroLogic     pyro(PyroLogic::Config(PYRO_PULSE_MS));
+static PyroLogic     pyro{PyroLogic::Config(PYRO_PULSE_MS)};
 static TvcController tvc(Control_tvcParams());
 static Radio         radio;
 static Gps           gps;

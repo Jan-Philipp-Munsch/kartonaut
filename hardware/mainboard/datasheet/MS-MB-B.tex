@@ -1,0 +1,471 @@
+% Datenblatt Mission Space Mainboard rev B. Gebaut mit build.py (pdflatex, MiKTeX).
+% Stückliste: bom_generated.tex aus kicad/circuit.py (make_bom.py), nie von Hand.
+\documentclass[10pt,a4paper,twoside]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[ngerman]{babel}
+\usepackage{lmodern}
+\usepackage[sfdefault]{roboto}
+\usepackage{textcomp}
+\usepackage[top=22mm,bottom=20mm,left=18mm,right=18mm,headheight=14pt]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{siunitx}
+\usepackage{tcolorbox}
+\usepackage{caption}
+\usepackage{microtype}
+\usepackage{float}
+\usepackage{needspace}
+\usepackage[hidelinks]{hyperref}
+\input{bom_summary.tex}
+
+\definecolor{msblue}{HTML}{1F4E79}
+\definecolor{msred}{HTML}{C0392B}
+\definecolor{msgrey}{HTML}{555555}
+\definecolor{rowgrey}{HTML}{F2F2F2}
+\sisetup{locale=DE,mode=text,per-mode=symbol,range-phrase={ bis },range-units=single,product-units=single}
+\setlist{nosep,leftmargin=*}
+\captionsetup{font=small,labelfont={bf,color=msblue}}
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\raggedbottom   % sonst dehnt \flushbottom die Seiten vor unverschieblichen Tabellen und Bildern
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcommand{\pn}{MS-MB-B}
+\newcommand{\docrev}{0.1}
+\newcommand{\docdate}{22.\,10.\,2026}
+\newcommand{\pin}[1]{\texttt{#1}}
+
+% --- Kopf- und Fußzeile im Datenblattstil
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\bfseries\color{msblue}\pn{} Flugcomputer-Mainboard rev B}
+\fancyhead[R]{\small\color{msgrey}Mission Space \,·\, Datenblatt \docrev{} \,·\, \docdate}
+\fancyfoot[L]{\scriptsize\color{msgrey}Vorläufig. Schaltung und Layout als KiCad-Projekt \texttt{hardware/mainboard/kicad/}; Stückliste aus \texttt{circuit.py}. Änderungen vom 22.\,10. (Abschnitt~\ref{sec:changes}) sind noch nicht eingearbeitet.}
+\fancyfoot[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.6pt}
+\renewcommand{\headrule}{\color{msblue}\hrule width\headwidth height\headrulewidth}
+
+\titleformat{\section}{\Large\bfseries\color{msblue}}{\thesection}{0.6em}{}[\vspace{-6pt}{\color{msblue}\rule{\textwidth}{0.4pt}}]
+\titleformat{\subsection}{\large\bfseries\color{msblue}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{0.6em}{}
+\titlespacing{\section}{0pt}{14pt}{8pt}
+\titlespacing{\subsection}{0pt}{10pt}{4pt}
+
+\begin{document}
+
+% ============================================================ Seite 1
+\thispagestyle{empty}
+\begin{minipage}[t]{0.62\textwidth}
+  \vspace{0pt}
+  {\color{msblue}\Huge\bfseries \pn}\\[2pt]
+  {\LARGE\bfseries Flugcomputer-Mainboard rev B}\\[4pt]
+  {\large\color{msgrey}Trägerplatine für Teensy 4.1 mit IMU, Barometer, LoRa, Servo- und Pyro-Endstufen für eine 75-mm-Modellrakete mit Schubvektorsteuerung}\\[6pt]
+  {\small\color{msgrey}Mission Space \,·\, Jan-Philipp Munsch \,·\, Datenblatt Version \docrev{} vom \docdate{} \,·\, \textcolor{msred}{\bfseries VORLÄUFIG}}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.34\textwidth}
+  \vspace{0pt}
+  \includegraphics[width=\linewidth]{fig/render_iso.png}
+  \par{\scriptsize\color{msgrey}Platine rev B, Stand 21.\,10.\,2026 (KiCad-Render)}
+\end{minipage}
+
+\vspace{8pt}
+\begin{multicols}{2}
+\subsection*{Merkmale}
+\begin{itemize}
+  \item Teensy 4.1 (i.MX RT1062, \SI{600}{MHz}) als gestecktes Modul, SD-Slot und USB bleiben nutzbar
+  \item 6-Achsen-IMU ICM-42688-P an SPI1, exakt auf der Rollachse, \SI{\pm 16}{g}, \SI{\pm 2000}{\degree/s}
+  \item Barometer BMP390, Strom-/Spannungsmonitor mit \SI{20}{\milli\ohm}-Shunt
+  \item LoRa E22-400T22S (SX1268, \SI{433}{MHz}, \SI{22}{dBm}) auf der Platine, IPEX-Antennenanschluss
+  \item GPS-Anschluss (UART, \SI{3.3}{V}) für u-blox-Modul in der Spitze
+  \item Zwei getrennte Akkupfade: 1S für Elektronik (Buck-Boost \SI{5}{V}/\SI{2}{A}), 2S für Servos, Rollmotor und Pyro
+  \item Zwei TVC-Servos direkt am 2S-Akku (bis \SI{8.4}{V}), Reserve-Servoausgang, DRV8833-Motortreiber
+  \item Zwei Pyro-Kanäle low-side mit externem Arming, Durchgangsprüfung und TVS
+  \item Beide Akkuspannungen und Arming-Zustand am ADC; 2 × WS2812B, Summer, Kamera-Trigger
+  \item Alle Stecker verriegelt (XT30, JST-PH/XH/GH/SH); Erweiterungsleiste mit 11 freien Pins
+  \item \qtyproduct{54 x 120}{mm}, 4 Lagen, ENIG, Bestückung einseitig; passt in einen Kuppler mit \SI{70.2}{mm} Innenmaß
+\end{itemize}
+
+\subsection*{Anwendungen}
+\begin{itemize}
+  \item Flugcomputer einer Modellrakete mit kardanisch aufgehängtem Motor (TVC)
+  \item Lageregelung mit \SI{100}{Hz}, Höhenschätzung, Datenlogger, Telemetrie
+  \item Pyrotechnische Bergung (Kolben-Ausstoß), später Landung mit zweitem Motor
+  \item TVC-Prüfstand mit Propellerantrieb (Gasausgang über freien PWM-Pin)
+\end{itemize}
+
+\subsection*{Beschreibung}
+Das \pn{} ersetzt den Breakout-Aufbau des Flugcomputers durch eine Platine, die den Teensy 4.1 trägt und alle Sensoren, die Funkstrecke, die Versorgung und die Endstufen für Servos, Motor und Zünder enthält. Die beiden Akkus sind so getrennt, dass Servo- und Pyro-Spitzen den Rechner nicht in den Neustart ziehen können. Die IMU liegt auf der Rollachse der Rakete; die Lage entsteht in der Firmware aus dem Gyro, der Chip liefert keine Quaternion. Die Pyro-Kanäle führen nur mit externem Arming Spannung. Die Platine sitzt als Längs-Schlitten in einem Ring-Stack im Kuppler der Rakete und ist mit beiden Akkus als Modul herausziehbar.
+\end{multicols}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{fig/system_blocks.pdf}
+  \caption{Blockschaltbild. Extern bleiben nur Akkus, Schalter, Servos, Motor, Zünder, GPS und Antenne.}
+\end{figure}
+
+\clearpage
+\tableofcontents
+\vfill
+\begin{tcolorbox}[colback=rowgrey,colframe=msblue,title=Stand dieses Datenblatts]
+Schaltung und Layout beschreiben den KiCad-Stand vom 21.\,10.\,2026 (ERC 0/0, DRC 0 Fehler, drei offene Verbindungen). Die Stückliste in Abschnitt~\ref{sec:bom} wird aus \texttt{kicad/circuit.py} erzeugt und zeigt diesen Stand. Das Zweitmeinung-Review vom 21.\,10. und die Entscheidungen vom 22.\,10. (Abschnitt~\ref{sec:changes}) sind beschlossen, aber noch nicht in Schaltung und Layout eingearbeitet; wo sie ein Merkmal ändern, steht es im Text. Verbindlich bleibt die Spezifikation \texttt{hardware/mainboard/README.md}.
+\end{tcolorbox}
+\clearpage
+
+% ============================================================
+\section{Grenzwerte und Betriebsbedingungen}
+
+\subsection{Absolute Grenzwerte}
+Überschreiten kann die Platine dauerhaft beschädigen. Kein Betrieb an diesen Grenzen.
+
+\begin{tabularx}{\textwidth}{L{44mm} L{16mm} L{16mm} L{12mm} X}
+\toprule
+\textbf{Größe} & \textbf{min.} & \textbf{max.} & \textbf{Einheit} & \textbf{Bemerkung}\\
+\midrule
+Spannung J\_BAT1 (1S) gegen GND & $-$16 & 16 & V & Verpolschutz-FET; TPS63070 bis 17 V\\
+Spannung J\_BAT2 (2S) gegen GND & $-$17 & 17 & V & Verpolschutz-FET; TPS563201 EN bis 19 V\\
+Strom 2S-Pfad, Dauer & & 3 & A & Polyfuse F1 (Haltestrom); 6 A Auslösestrom\\
+Strom Pyro-Kanal, Puls & & 5 & A & AO3400A, Puls $\le$ \SI{100}{ms}; Kurzschluss der E-Match möglich\\
+Strom je Servo-Stecker & & 2 & A & JST-XH Kontakt\\
+Spannung an Teensy-Pins & $-$0,3 & 3,6 & V & \SI{3.3}{V}-Logik, \emph{nicht} \SI{5}{V}-tolerant\\
+Spannung an J\_QWIIC, J\_GPS, J\_CAM, J\_LED & $-$0,3 & 3,6 & V & außer Versorgungspins\\
+USB am Teensy gleichzeitig mit Akku & & & & zulässig (Schottky D1, siehe \ref{sec:power})\\
+Lagertemperatur & $-$40 & 85 & \si{\degreeCelsius} & LiPo-Akkus getrennt lagern\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Empfohlene Betriebsbedingungen}
+\begin{tabularx}{\textwidth}{L{44mm} L{12mm} L{12mm} L{12mm} L{12mm} X}
+\toprule
+\textbf{Größe} & \textbf{min.} & \textbf{typ.} & \textbf{max.} & \textbf{Einheit} & \textbf{Bemerkung}\\
+\midrule
+1S-Akku (J\_BAT1) & 3,0 & 3,7 & 4,2 & V & Buck-Boost arbeitet ab \SI{2.0}{V}; Abschaltung siehe \ref{sec:changes}\\
+2S-Akku (J\_BAT2) & 6,0 & 7,4 & 8,4 & V & W5652H bis \SI{8.4}{V}, DRV8833 bis \SI{10.8}{V}\\
+1S-Akku Kapazität / Entladerate & 450 & 500 & 600 & mAh & 20--30 C, \emph{ohne} Schutzschaltung (Spitze \SI{1.6}{A})\\
+2S-Akku Kapazität / Entladerate & 450 & 850 & & mAh & 50 C; 850 mAh für Landung mit zweitem Motor\\
+Strom 5V\_SYS gesamt & & 0,4 & 1,5 & A & TPS63070 \SI{2}{A}; Reserve für Erweiterungen\\
+Strom 3V3\_RF & & 0,15 & 0,5 & A & AP2112K \SI{600}{mA}; LoRa-Sendepuls \SI{110}{mA}\\
+Strom Teensy-3V3 für Sensoren & & 0,02 & 0,25 & A & Teensy-LDO\\
+SPI1-Takt IMU & & 7 & 24 & MHz & \\
+I²C-Takt & & 400 & 1000 & kHz & \SI{4.7}{k\ohm} Pull-ups\\
+Zündpuls Pyro & 20 & 50 & 100 & ms & Firmware begrenzt; E-Match 3--5 A\\
+Betriebstemperatur & $-$10 & 20 & 50 & \si{\degreeCelsius} & begrenzt durch die LiPo-Akkus\\
+\bottomrule
+\end{tabularx}
+
+\Needspace{80mm}
+\subsection{Elektrische Kennwerte}
+Rechenwerte aus Datenblättern und Spezifikation; am Gerät noch nicht gemessen.
+
+\begin{tabularx}{\textwidth}{L{44mm} L{26mm} L{11mm} L{11mm} L{11mm} L{19mm} X}
+\toprule
+\textbf{Parameter} & \textbf{Bedingung} & \textbf{min.} & \textbf{typ.} & \textbf{max.} & \textbf{Einheit} & \textbf{Quelle}\\
+\midrule
+5V\_SYS Ausgangsspannung & 1S 3,0--4,2 V, 0--2 A & 4,9 & 5,0 & 5,1 & V & TPS63070\\
+Teensy VIN & hinter Schottky D1 & & 4,6 & & V & SS14, \SI{0.4}{V}\\
+3V3\_RF & $\le$ \SI{0.5}{A} & 3,23 & 3,3 & 3,37 & V & AP2112K\\
+Ruhestrom 1S-Pfad & Teensy 600 MHz, Funk Empfang & & 0,6 & & A & Strombudget\\
+Betriebsdauer Elektronik & 500 mAh 1S & & 45 & & min & \\
+Strommessung Bereich & 20 m$\Omega$, PGA 320 mV & & & 16 & A & INA219, 2 mA/LSB\\
+Spannungsmessung 1S / 2S & Teiler 100 k / 33 k & & & 13,3 & V & ADC 3,3 V, 12 bit\\
+Servo-Spitzenstrom VSERVO & 2 × W5652H blockiert & & 2 & & A & \SI{1000}{\micro F} Puffer\\
+Pyro-Durchgangsprüfung & Arming an, E-Match gesteckt & & VBAT & & & Teiler 100 k / 33 k am Drain\\
+IMU Rauschen Gyro & ODR 1 kHz, UI-Filter 50 Hz & & 2,8 & & mdps/$\sqrt{\mathrm{Hz}}$ & ICM-42688-P\\
+Barometer Rauschen & OSR ×8, IIR 3 & & 0,085 & & Pa & BMP390 (ca. \SI{1}{cm})\\
+LoRa Sendeleistung & 433 MHz, 2,4 kbps & & 22 & & dBm & E22-400T22S\\
+Masse Platine bestückt & ohne Teensy, Akkus & & 45 & & g & Schätzung\\
+\bottomrule
+\end{tabularx}
+
+% ============================================================
+\section{Anschlüsse und Pinbelegung}
+
+\subsection{Stecker}
+\begin{tabularx}{\textwidth}{L{22mm} L{34mm} L{30mm} X}
+\toprule
+\textbf{Ref} & \textbf{Typ} & \textbf{Belegung} & \textbf{Funktion}\\
+\midrule
+J\_BAT2 (J1) & XT30PW-M liegend & 1 +, 2 $-$ & 2S-LiPo 6,0--8,4 V, Servos, Motor, Pyro\\
+J\_BAT1 (J2) & JST-PH 2 & 1 +, 2 $-$ & 1S-LiPo 3,0--4,2 V, Elektronik\\
+J\_SW (J3) & JST-PH 4 & 1-2 1S, 3-4 2S & zweipoliger Hauptschalter am Rumpf; JP1/JP2 überbrücken am Tisch\\
+J\_ARM (J4) & JST-PH 2 & 1 VBAT, 2 ARMED & Arming-Schlüsselschalter, führt den Zündstrom\\
+J\_SERVO1/2 & JST-XH 3 liegend & S / + / $-$ & TVC Yaw (Pin 28) / Pitch (Pin 29), VSERVO = Akku direkt\\
+J\_SERVO3 (J7) & JST-XH 3 liegend & S / + / $-$ & Fallschirm/Reserve (Pin 9), 5V\_SERVO\\
+J\_MOT (J8) & JST-PH 2 & OUT1, OUT2 & Rollmotor, DRV8833 Brücken parallel\\
+J\_PYRO1/2 & JST-XH 2 & +, $-$ & E-Matches, + von VBAT\_ARMED\\
+J\_GPS (J11) & JST-GH 4 & 3V3\_RF, GND, TX, RX & u-blox-Modul in der Spitze, Serial1\\
+J\_QWIIC (J12) & JST-SH 4 & GND, 3V3, SDA, SCL & I²C-Erweiterung, Qwiic-Belegung\\
+J\_CAM (J13) & JST-GH 3 & 3V3, GND, TRIG & Kamera-Auslöser, Pin 7 über \SI{1}{k\ohm}\\
+J\_LED (J14) & JST-GH 3 & 5V, GND, DATA & externe WS2812B-Kette\\
+J\_EXP (J15) & Stiftleiste 2 × 7 & 3V3, GND, 5V\_SYS, 11 Pins & frei: 10, 11, 12, 14--17, 25, 30, 31, 37\\
+ANT & IPEX (u.FL) am E22 & & Pigtail \SI{10}{cm} zur $\lambda/4$-Antenne in der Spitze\\
+TP1--TP6 & Testpunkte & & VBAT2, VSYS\_IN, 5V\_SYS, VSERVO, 5V\_SERVO, 3V3\_RF\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Teensy 4.1}
+\begin{tabularx}{\textwidth}{L{24mm} L{40mm} X L{40mm}}
+\toprule
+\textbf{Pin} & \textbf{Signal} & \textbf{Ziel} & \textbf{Schnittstelle}\\
+\midrule
+0 / 1 & GPS\_TX / GPS\_RX & J\_GPS & Serial1, \SI{3.3}{V}\\
+2 / 3 & MOT\_IN1 / MOT\_IN2 & DRV8833 AIN1=BIN1 / AIN2=BIN2 & PWM \SI{20}{kHz}\\
+4 & IMU\_INT & ICM-42688-P INT1 & Interrupt\\
+5 / 6 & LED1 / LED2 & 74AHCT1G125 $\to$ WS2812B, J\_LED & Digital\\
+7 & CAM\_TRIG & J\_CAM über \SI{1}{k\ohm} & Digital\\
+8 & MOT\_FAULT & DRV8833 nFAULT, \SI{10}{k\ohm} Pull-up & Digital, Eingang\\
+9 & SERVO\_CHUTE & J\_SERVO3 & PWM Servo\\
+13 & BUZZER & AO3400A $\to$ Summer & Digital\\
+18 / 19 & SDA / SCL & BMP390 (0x77), INA219 (0x40), J\_QWIIC & I²C (Wire)\\
+20 / 21 & PYRO1\_SENSE / PYRO2\_SENSE & Teiler am Drain & ADC\\
+22 / 23 & PYRO2\_FIRE / PYRO1\_FIRE & Gate Q\_P2 / Q\_P1 & Digital, beim Boot tief\\
+24 & ARM\_SENSE & Teiler von VBAT\_ARMED & ADC\\
+26 / 27 / 39 / 38 & MOSI1 / SCK1 / MISO1 / CS & ICM-42688-P & SPI1, \pin{SPI1.setMISO(39)}\\
+28 / 29 & SERVO\_YAW / SERVO\_PITCH & J\_SERVO1 / J\_SERVO2 über \SI{220}{\ohm} & PWM Servo\\
+32 / 33 & LORA\_M1 / LORA\_M0 & E22 Betriebsart & Digital\\
+34 / 35 & LORA\_TXD / LORA\_RXD & E22 UART & Serial8\\
+36 & LORA\_AUX & E22 bereit / Sendepuffer frei & Digital, Eingang\\
+40 / 41 & VBAT2\_SENSE / VBAT1\_SENSE & Teiler 100 k / 33 k & ADC\\
+10--12, 14--17, 25, 30, 31, 37 & EXP\_Dxx & J\_EXP & frei\\
+\bottomrule
+\end{tabularx}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{fig/teensy_pinmap.pdf}
+  \caption{Pinbelegung des Teensy 4.1 auf dem \pn{} (rev B, Stand 21.\,10.). Netzliste gegen diese Tabelle geprüft.}
+\end{figure}
+
+\subsection{Bus-Adressen und Kennungen}
+\begin{tabularx}{\textwidth}{L{26mm} L{30mm} L{48mm} X}
+\toprule
+\textbf{Gerät} & \textbf{Bus} & \textbf{Adresse / Kennung} & \textbf{Bibliothek}\\
+\midrule
+ICM-42688-P & SPI1, CS Pin 38 & WHO\_AM\_I = 0x47 & \texttt{finani/ICM42688} oder eigener Treiber\\
+BMP390 & I²C & 0x77 (SDO an VDDIO), Chip-ID 0x60 & Adafruit \texttt{BMP3XX}\\
+INA219 & I²C & 0x40 & \texttt{INA219\_WE}, \texttt{setShuntSizeInOhms(0.02)}\\
+E22-400T22S & Serial8, 9600 Bd & Adresse/Kanal per M0=M1=1 & eigenes \texttt{Radio.cpp}\\
+W25Q128 & QSPI-Pads des Teensy & JEDEC 0xEF4018 & \texttt{LittleFS}\\
+\bottomrule
+\end{tabularx}
+
+% ============================================================
+\section{Funktionsbeschreibung}
+
+\subsection{Stromversorgung}\label{sec:power}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{fig/power_tree.pdf}
+  \caption{Versorgungsbaum: 1S-Pfad für die Elektronik, 2S-Pfad für Aktoren und Pyro, Sternpunkt der Massen am 2S-Minus.}
+\end{figure}
+
+\textbf{1S-Pfad.} Der 1S-Akku speist über den Verpolschutz-FET Q2 und den Hauptschalter (J\_SW, Kontakt a) den Buck-Boost U2 (TPS63070, Eingang 2--16 V, Ausgang \SI{5}{V} / \SI{2}{A}). Der Buck-Boost statt eines reinen Boosts ist Absicht: Ein versehentlich an J\_BAT1 gesteckter 2S-Akku zerstört nichts. 5V\_SYS versorgt über die Schottky D1 den Teensy (USB darf gleichzeitig stecken; die VIN--VUSB-Brücke auf dem Teensy bleibt), die beiden WS2812B über Pegelwandler, den Summer und über den LDO U3 (AP2112K) die Schiene 3V3\_RF für Funk und GPS. IMU, Barometer und INA219 hängen an den \SI{3.3}{V} des Teensy. Der EN-Teiler des TPS63070 schaltet den Pfad bei \SI{3.44}{V} ein und unter \SI{3.01}{V} ab (Änderung geplant, Abschnitt~\ref{sec:changes}).
+
+\textbf{2S-Pfad.} Der 2S-Akku speist über Q1 und Kontakt b des Hauptschalters das Netz VBAT\_PROT. Davon zweigen vor dem Shunt der Arming-Pfad (J\_ARM $\to$ VBAT\_ARMED $\to$ Pyro) und der Teiler für VBAT2\_SENSE ab. Hinter dem \SI{20}{\milli\ohm}-Shunt (INA219) liegt VBAT\_MEAS, daraus über die Polyfuse F1 die Servo-Schiene VSERVO (Akku direkt, \SI{1000}{\micro F}) für die beiden W5652H, und über den Buck U1 (TPS563201, \SI{3}{A}) die Schiene 5V\_SERVO für den Reserve-Servo und den DRV8833. Zündströme laufen nicht durch die Strommessung.
+
+\textbf{Masse.} GND (Logik, 1S) und GND\_PWR (Servos, Motor, Pyro, 2S) treffen sich in genau einem Punkt, der Netzbrücke NT1 neben dem 2S-Minus. Servo- und Pyro-Rückströme laufen als breite Bahn dorthin, nicht durch die Massefläche unter IMU und Barometer.
+
+\textbf{Strombudget.}
+
+\begin{tabularx}{\textwidth}{L{30mm} X L{40mm} L{14mm}}
+\toprule
+\textbf{Akku / Schiene} & \textbf{Verbraucher} & \textbf{Dauer} & \textbf{Spitze}\\
+\midrule
+1S $\to$ 5V\_SYS & Teensy 0,1 A, 2 × WS2812B 0,12 A, Summer 0,03 A, 3V3\_RF 0,15 A & 0,4 A (0,6 A aus dem Akku) & 0,8 A\\
+2S $\to$ VSERVO & 2 × W5652H, Blockierstrom je ca. 1 A & 0,2 A & 2 A\\
+2S $\to$ 5V\_SERVO & Reserve-Servo 0,65 A, Rollmotor ca. 1 A & 0,3 A & 1,7 A\\
+2S $\to$ Pyro & E-Match 3--5 A für 20 ms & -- & 5 A\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Sensorik}
+\textbf{IMU ICM-42688-P} (U4, LGA-14) an SPI1 mit \SI{7}{MHz}, auf der Rollachse unter der Teensy-Mitte, Chip so gedreht, dass X quer und Y zur Spitze zeigt (\pin{chipToBody(c) = (c.x, -c.z, c.y)}). Betrieb: Gyro \SI{\pm 2000}{\degree/s}, Accel \SI{\pm 16}{g}, ODR \SI{1}{kHz}, UI-Filter ca. \SI{50}{Hz}; die Firmware mittelt auf die \SI{100}{Hz}-Schleife. Kein DMP: Die Lage entsteht als Quaternion aus dem Gyro, auf der Rampe mit dem Beschleunigungssensor initialisiert. INT1 an Pin 4. RESV-Pins und FSYNC an GND (DS-000347). Abblockung VDD \SI{100}{nF} + \SI{2.2}{\micro F}, VDDIO \SI{10}{nF}.
+
+\textbf{Barometer BMP390} (U5, LGA-10) an I²C 0x77; Oversampling Druck ×8, Temperatur ×1, IIR 3, \SI{50}{Hz}. Lage oben im rechten Streifen, fern von Spulen und Teensy-CPU, Schaum darüber; 3--4 Bohrungen \SI{2}{mm} im Rohr auf dieser Höhe. Die Avionik-Sektion ist gegen den Fallschirmraum dicht (Ausstoßdruck).
+
+\textbf{Strommonitor INA219} (U6, SOIC-8) mit \SI{20}{\milli\ohm}-Shunt 2512 (\SI{1}{\percent}, \SI{1}{W}), I²C 0x40. Bei PGA \SI{320}{mV} misst er bis \SI{16}{A} mit \SI{2}{mA} Auflösung. Die Firmware loggt Strom, Spannung und Leistung des 2S-Pfads außerhalb der Regelschleife.
+
+\subsection{Funk und GPS}
+\textbf{LoRa E22-400T22S} (U10, SMD \qtyproduct{16 x 26}{mm}, SX1268) an 3V3\_RF mit \SI{100}{\micro F}; TXD/RXD an Serial8 (\SI{3.3}{V}-Pegel, ohne Widerstände), M0/M1 an Pins 33/32, AUX an Pin 36. Konfiguration (Adresse, Kanal \SI{433}{MHz}, \SI{9600}{Bd}, Luftrate \SI{2.4}{kbps}, \SI{22}{dBm}) einmalig per M0 = M1 = 1 aus der Firmware. IPEX-Buchse zum Pigtail, $\lambda/4$-Antenne (\SI{17}{cm}) in der Spitze, frei von Kupfer und Akku. Das Modul liegt auf einer Massefläche ohne Signale darunter. Die Bodenstation nutzt das DIP-Modul E22-400T22D mit SMA-Antenne.
+
+\textbf{GPS} nicht auf der Platine: u-blox MAX-M10S oder NEO-M9N in der Spitze, Patchantenne nach oben, mindestens \SI{10}{cm} von der LoRa-Antenne, über J\_GPS an Serial1. Dynamikmodell \emph{airborne $<$ 4 g}.
+
+\subsection{Aktoren}
+\textbf{TVC-Servos FrSky Xact W5652H} (\SI{10}{g}, Hall-Sensor, 3,7--8,4 V, \SI{4.8}{kg.cm} und \SI{0.05}{s/60\degree} bei \SI{8.4}{V}) an J\_SERVO1/2, Signal über \SI{220}{\ohm} von Pin 28/29, Versorgung VSERVO = Akku direkt; dort sind sie doppelt so schnell wie an \SI{5}{V}. \textbf{Rollmotor} über U7 DRV8833 mit beiden Brücken parallel (2 × \SI{1.5}{A}), \SI{20}{kHz}-PWM auf Pins 2/3, nFAULT an Pin 8; Versorgung 5V\_SERVO (Änderung geplant: VSERVO, Abschnitt~\ref{sec:changes}). \textbf{Reserve-Servo} J\_SERVO3 an Pin 9 und 5V\_SERVO, als Footprint bestückbar.
+
+\subsection{Pyro-Kanäle und Arming}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{fig/pyro_channel.pdf}
+  \caption{Ein Pyro-Kanal: Plus nur hinter dem externen Arming-Schalter, Low-Side-FET, Durchgangsprüfung am Drain, TVS.}
+\end{figure}
+Jeder Kanal ist ein Low-Side-Schalter AO3400A (\SI{30}{V}, \SI{5.7}{A}) mit \SI{100}{\ohm} am Gate und \SI{100}{k\ohm} Pull-down, damit der FET beim Booten sicher aus bleibt. Plus kommt von VBAT\_ARMED, das nur hinter dem externen Arming-Schalter Spannung führt: Ohne Arming kann die Firmware nichts zünden. Die Durchgangsprüfung misst den Drain über 100 k / 33 k: mit Arming und E-Match liegt er auf VBAT, ohne E-Match ziehen \SI{100}{k\ohm} nach GND. Eine bidirektionale TVS SMBJ12CA fängt die Abschaltspitze der Zuleitung. Stecker JST-XH 2 mit Zugentlastung.
+
+\begin{tcolorbox}[colback=red!4,colframe=msred,title=Sicherheit]
+Tischtests nur mit Glühlämpchen oder \SI{2}{\ohm}-Widerstand, nie mit Ladung. Firmware-Regeln: Zünden nur in den Zuständen \emph{Apogäum} oder \emph{Landung}, Puls 50--100 ms mit Abschaltung bei Durchgangsverlust, jeder Kanal höchstens einmal, ohne ARM\_SENSE keine Freigabe; vor dem Start meldet der Summer den Durchgang. Für Schwarzpulver gilt das Sprengstoffrecht.
+\end{tcolorbox}
+
+\subsection{Anzeige und Signale}
+Zwei WS2812B-2020 auf der Platine mit je einem 74AHCT1G125 als Pegelwandler \SI{3.3}{V} $\to$ \SI{5}{V} (Pins 5/6), Ausgang zu J\_LED für eine externe Kette. Aktiver \SI{5}{V}-Summer (BZ1, \SI{12}{mm}) über AO3400A an Pin 13 mit Freilaufdiode. Kamera-Trigger Pin 7 über \SI{1}{k\ohm} an J\_CAM. Der Program-Taster des Teensy ist durch die Luke erreichbar; ein eigener Reset-Taster entfällt (kein Reset-Pin am Sockel).
+
+% ============================================================
+\section{Mechanik und Einbau}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{fig/installation_side.pdf}
+  \caption{Längsschnitt des Einbaus: Schlitten im Ring-Stack, Akkus im Träger darunter, Antenne in der Spitze.}
+\end{figure}
+
+\begin{itemize}
+  \item \textbf{Platine} \qtyproduct{54 x 120}{mm}, \SI{1.6}{mm}, 4 Lagen, ENIG. Koordinaten: $u$ quer (0 auf der Rollachse), $v$ längs (0 am TVC-Ende). Bestückung nur oben, unten THT-Lötstifte unter \SI{2}{mm} (kürzen, Isolierlage \SI{1}{mm} zum Akkuträger).
+  \item \textbf{Einbau} zwischen den Endringen des Ring-Stacks (Ø \SI{69}{mm}) im Kuppler (innen \SI{70.2}{mm}, \SI{150}{mm} lang). Die 8 M2-Stangen laufen \SI{5.7}{mm} neben den Längskanten. Befestigung 4 × M3 bei $u = \pm 23{,}5$, $v = 3{,}5 / 116{,}5$ auf dem gedruckten Träger.
+  \item \textbf{Akkus} im Träger unter der Platine: 2S (\qtyproduct{56 x 25.5 x 8}{mm}) bei $v \approx 8$--64, 1S (ca. \qtyproduct{50 x 30 x 7}{mm}) bei $v \approx 68$--118, mit Klettband.
+  \item \textbf{Bauhöhe} mittig über \SI{30}{mm} (Teensy auf \SI{8.5}{mm}-Buchsenleisten), am Rand ($|u| > 25$) höchstens \SI{5}{mm}.
+  \item \textbf{Teensy} mittig ($v = 30$--91), SD-Slot zum TVC, USB zur Spitze; Freiflächen \SI{6}{mm} vor dem SD-Slot, \SI{12}{mm} vor USB. Luke im Kuppler bei $v \approx 25$--100.
+  \item \textbf{IMU} bei $(u, v) = (0, 60{,}5)$, Pfeile im Bestückungsdruck; \textbf{Barometer} rechts bei $v \approx 80$; \textbf{Funkmodul} links am Spitzen-Ende, IPEX zur Spitze; \textbf{Wandler} links neben dem Teensy, $\ge$ \SI{15}{mm} von der IMU.
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{fig/mainboard_placement.pdf}
+  \caption{Platzierungsplan und Querschnitt im Kuppler (\texttt{outline.py}): alle Bauteil-Hüllen bleiben im Kuppler und berühren die M2-Stangen nicht.}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.48\textwidth]{fig/render_top.png}\hfill
+  \includegraphics[width=0.48\textwidth]{fig/render_bottom.png}
+  \caption{KiCad-Render der Platine rev B von oben und unten (Stand 21.\,10.\,2026).}
+\end{figure}
+
+\subsection{Lagenaufbau und Layout-Regeln}
+\begin{tabularx}{\textwidth}{L{14mm} L{14mm} X L{60mm}}
+\toprule
+\textbf{Lage} & \textbf{Kupfer} & \textbf{Inhalt} & \textbf{Regel}\\
+\midrule
+F.Cu & 1 oz & Bauteile, Signale, Stromnetze als Flächen & Stromnetze bevorzugt hier\\
+In1.Cu & 0,5 oz & durchgehend GND & keine Bahnen, keine Vias unter der IMU (\SI{5}{mm})\\
+In2.Cu & 0,5 oz & Versorgungsflächen, Signale & keine Stromnetze\\
+B.Cu & 1 oz & GND\_PWR-Rückleitung zu den Pyro-FETs, 5V\_SYS-Fläche & keine Bauteile\\
+\bottomrule
+\end{tabularx}
+
+Bahnbreiten (1 oz, 10 K): VBAT, VSERVO, Pyro \SI{1.0}{mm} auf den Außenlagen mit $\ge$ 4 Vias je Übergang; 5V\_SYS \SI{0.8}{mm}; 3V3 \SI{0.5}{mm}; Signale \SI{0.2}{mm}; Mindestbreite Versorgung \SI{0.4}{mm}. Spulen mit kurzen, breiten Bahnen an die Wandlerpins. DRC mit JLC-Regeln (\SI{0.127}{mm}, Via \SI{0.3}{mm}). Shunt mit Kelvin-Abgriff. Jede Schiene mit Testpunkt.
+
+% ============================================================
+\section{Inbetriebnahme}
+\begin{enumerate}
+  \item Ohne Teensy, beide Akkupfade am Labornetzteil mit \SI{100}{mA} Begrenzung: 1S-Pfad mit \SI{3.7}{V} $\to$ 5V\_SYS und 3V3\_RF messen; 2S-Pfad mit \SI{7.4}{V} $\to$ VSERVO und 5V\_SERVO messen. Verpolung testen.
+  \item Teensy stecken, nur USB: I²C-Scan findet 0x40 und 0x77; ICM-42688-P per SPI (WHO\_AM\_I = 0x47).
+  \item 1S-Akku, Flug-Firmware: Loop-Timing, Teleplot IMU/Baro, beide Akkuspannungen, INA219.
+  \item 2S-Akku dazu: Servos einzeln bis zum Blockieren, Rollmotor; der Teensy darf nicht neu starten (Watchdog-Zähler im Log 0). Einbruch von VBAT2 und 5V\_SYS mit dem Oszilloskop.
+  \item Pyro nur mit Glühlämpchen oder \SI{2}{\ohm}: ohne ARM keine Zündung, ARM\_SENSE, Durchgang, Pulsdauer.
+  \item LoRa-Strecke zur Bodenstation im Freien (Reichweite, Paketverlust), GPS-Fix in der Spitze.
+\end{enumerate}
+
+\textbf{Firmware für rev B} (\texttt{spacecode/}): \texttt{Config.h} mit neuen Pins, \pin{INA\_SHUNT\_OHM = 0.02}, Akkugrenzen, Servo-Pulsgrenzen W5652H; \texttt{Sensors.cpp} mit ICM-42688-P über SPI1 ohne DMP, Gyro-Quaternion, BMP390 über \texttt{BMP3XX}; neu \texttt{Radio.cpp} (E22, AUX-Flusskontrolle) und \texttt{FlightState.cpp} (Pad $\to$ Boost $\to$ Coast $\to$ Apogäum $\to$ Bergung $\to$ Landung, Pyro-Logik mit Arming); Watchdog WDT1 und Zustandsspeicher im EEPROM-Emulat; Rampenkalibrierung des Gyro-Bias.
+
+% ============================================================
+\section{Fertigung und Bestellung}
+\begin{tabularx}{\textwidth}{L{40mm} X}
+\toprule
+\textbf{Parameter} & \textbf{Wert}\\
+\midrule
+Fertiger & JLCPCB, Economic-PCBA (Aisler als Rückfall in der EU, \texttt{Fertiger\_2026-10-21.md})\\
+Platine & \qtyproduct{54 x 120}{mm}, 4 Lagen, \SI{1.6}{mm} FR-4, ENIG, \SI{1}{oz} außen / \SI{0.5}{oz} innen, grün\\
+Stückzahl & 5 Platinen, davon 2 bestückt (Oberseite SMD); THT (Stecker, Buchsenleisten, Elkos, Summer) selbst\\
+Fertigungsdaten & Gerber, Bohrdatei, BOM und CPL aus \texttt{kicad/make.sh}; JLC-Auftragsnummer platziert\\
+Extended-Teile & ICM-42688-P, BMP390/BMP388, TPS63070, E22-400T22S, 74AHCT1G125, WS2812B-2020 (je 3 USD Rüstgebühr)\\
+Lieferrisiken & BMP390 bei LCSC ohne Bestand (Rückfall BMP388 C779278, pinkompatibel); TPS63070-Bestand schwankt (Rückfall TPS63020); ICM-Hersteller am Bestelltag prüfen\\
+Kosten Platinenlauf & ca. 120--180 € inkl. Versand und Zoll (3 € je Warenposition seit 1.\,7.\,2026)\\
+Lieferzeit & 2--3 Wochen ab Upload\\
+Tore vor der Bestellung & Tor 1 Schaltplan (erledigt 21.\,10.), Tor 2 Layout (Review-Punkte A1--A8 offen), Tor 3 Bestellung (\texttt{ORDER.md})\\
+\bottomrule
+\end{tabularx}
+
+\subsection*{Bestellbezeichnung}
+\begin{tabularx}{\textwidth}{L{22mm} X L{52mm}}
+\toprule
+\textbf{Bezeichnung} & \textbf{Beschreibung} & \textbf{Status}\\
+\midrule
+\pn{}-A & rev A, Längs-Schlitten, ein 2S-Akku, ICM-20948, HC-12 & nur Spezifikation (\texttt{rev\_a\_2026-10-15.md})\\
+\pn{} & rev B, zwei Akkus, ICM-42688-P, BMP390, LoRa E22, W5652H & KiCad-Projekt, vor der Bestellung\\
+\pn{}-B1 & rev B mit Review A1--A8 und Änderungen vom 22.\,10. & geplant\\
+\bottomrule
+\end{tabularx}
+
+% ============================================================
+\section{Stückliste}\label{sec:bom}
+Erzeugt aus \texttt{kicad/circuit.py} mit \texttt{make\_bom.py}: \bomParts{} Bauteile in \bomLines{} Positionen, \bomNets{} Netze, Stand 21.\,10.\,2026 (vor den Änderungen aus Abschnitt~\ref{sec:changes}). Gleiche Passivteile eines Blocks sind zusammengefasst. LCSC-Nummern am Bestelltag prüfen; „–“ heißt THT oder noch ohne Nummer.
+
+\small
+\input{bom_generated.tex}
+\normalsize
+
+\subsection*{Extern, nicht auf der Platine}
+\begin{tabularx}{\textwidth}{L{70mm} L{30mm} X}
+\toprule
+\textbf{Teil} & \textbf{Anschluss} & \textbf{Bemerkung}\\
+\midrule
+Teensy 4.1 & 2 × Buchsenleiste 1 × 24 & vorhanden\\
+1S-LiPo 450--600 mAh, JST-PH, ohne PCM & J\_BAT1 & RC-Zelle, 20--30 C\\
+2S-LiPo 450--850 mAh 50 C, XT30 & J\_BAT2 & \\
+Zweipoliger Schiebeschalter & J\_SW & \\
+Schlüsselschalter Arming $\ge$ \SI{3}{A} & J\_ARM & führt den Zündstrom\\
+2 × FrSky Xact W5652H & J\_SERVO1/2 & Servokabel auf JST-XH umcrimpen\\
+Rollmotor & J\_MOT & Nennspannung offen\\
+E-Matches & J\_PYRO1/2 & \\
+u-blox MAX-M10S / NEO-M9N & J\_GPS & in der Spitze\\
+Pigtail IPEX $\to$ Draht \SI{17}{cm} & ANT & $\lambda/4$ in der Spitze\\
+E22-400T22D mit SMA-Antenne & -- & Bodenstation\\
+\bottomrule
+\end{tabularx}
+
+% ============================================================
+\section{Beschlossene Änderungen, noch nicht eingearbeitet}\label{sec:changes}
+Aus dem Zweitmeinung-Review (\texttt{review\_kicad\_2026-10-21.md}, Punkte A1--A8) und der Fragerunde vom 22.\,10. (\texttt{Komponenten\_2026-10-22.md}, E1--E10). Sie ergeben die Bestellfassung \pn{}-B1.
+
+\begin{tabularx}{\textwidth}{L{12mm} X L{40mm}}
+\toprule
+\textbf{Nr.} & \textbf{Änderung} & \textbf{Wirkung im Datenblatt}\\
+\midrule
+A1 & \SI{1000}{\micro F} Hold-up hinter D1 an TEENSY\_VIN; am TPS63070-Ausgang $\le$ \SI{300}{\micro F} & 3.1, Kennwerte\\
+A2 & EN-Teiler 330 k / 115 k: an ab \SI{3.1}{V}, aus unter \SI{2.7}{V} & 1.2, 3.1\\
+A4 & Polyfuse je Akku direkt hinter dem Verpolschutz (2S 3 A/6 A, 1S 2 A); Zündpuls 50--100 ms & 1.1, 3.4\\
+A5 & Shunt mit Kelvin-Footprint oder Sense-Netzen; \SI{100}{nF} am INA-Eingang & 3.2\\
+A6--A8 & Stromnetze nur auf den Außenlagen als Flächen, $\ge$ \SI{0.6}{mm} für VSYS\_IN, Sperrzone \SI{5}{mm} um die IMU & 4.1\\
+E1 & Hauptschalter bleibt mechanisch, schaltet aber nur die Gates zweier P-FET-Lastschalter (Q3/Q4); J\_SW führt Mikroampere & 2.1, 3.1\\
+E2 & Laden in der Rakete: 1S-Lader MCP73831 mit USB-C auf der Platine (STAT-LED), 2S-Ladebuchse XT30 + XH-3 Balancer; beides vor dem Lastschalter & 2.1, 3.1, 4\\
+E3 & Alle Flugsensoren an SPI1: BMP390 mit CS Pin 25, INA239 (SPI) statt INA219; I²C nur noch J\_QWIIC & 2.2, 2.3, 3.2\\
+E4 / E9 & Alle Servo-Stecker und der Rollmotor an VSERVO (2S direkt, PWM-Tastverhältnis begrenzt); TPS563201 und 5V\_SERVO entfallen & 1.2, 2.1, 3.1, 3.3\\
+E5 & Vier Pyro-Kanäle (3/4 DNP), vierter Servo-Stecker (Pin 10), DRV8833 nSLEEP an Pin 11, zweiter BMP390 als DNP (CS 30), E22 NRST an Pin 6 & 2.1, 2.2\\
+B7 / B8 & Summer auf Pin 37; eine WS2812B-Kette mit einem SN74LV1T34 (Pin 5), Pin 6 frei & 2.2, 3.6\\
+E10 & Stapelstecker J\_STACK (2 × 10) statt J\_EXP: SPI1 mit 3 CS aus 74HC138, I²C, IRQ, PWM, ARM, nRST, 3V3\_EXP (eigener LDO), 5V\_SYS, VSERVO; 74HC4051 für die ADC-Eingänge & 2.1, 2.2\\
+B3 / B4 & Polymer-Elkos 7343 statt THT; Ferrit + \SI{10}{\micro F} als 3V3\_SENS für IMU und Barometer & 3.1, 3.2, BOM\\
+\bottomrule
+\end{tabularx}
+
+% ============================================================
+\section{Änderungsverlauf}
+\begin{tabularx}{\textwidth}{L{16mm} L{24mm} X}
+\toprule
+\textbf{Version} & \textbf{Datum} & \textbf{Änderung}\\
+\midrule
+0.1 & \docdate & Erste Fassung aus Spezifikation rev B, KiCad-Projekt (Stand 21.\,10.) und Komponentenübersicht vom 22.\,10. Stückliste aus \texttt{circuit.py}.\\
+\bottomrule
+\end{tabularx}
+
+\vspace{10pt}
+{\small\color{msgrey}\raggedright Quellen im Repository \texttt{mission\_space}: \texttt{hardware/mainboard/README.md} (Spezifikation rev B), \texttt{kicad/} (Schaltung als Code, Schaltplan-PDF in \texttt{kicad/out/}), \texttt{review\_kicad\_2026-10-21.md}, \texttt{ORDER.md}, \texttt{Komponenten\_2026-10-22.md}, \texttt{docs/DesignGuide\_Mainboard\_revB.md}. Datenblätter: TI TPS63070 (SLVSC58B), TPS563201 (SLVSCG8), INA219; TDK ICM-42688-P (DS-000347); Bosch BMP390; Ebyte E22-400T22S; PJRC Teensy 4.1.\par}
+
+\end{document}

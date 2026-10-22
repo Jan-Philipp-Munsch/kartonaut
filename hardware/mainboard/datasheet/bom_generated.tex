@@ -1,0 +1,137 @@
+\begin{longtable}{L{24mm} r L{26mm} L{30mm} L{52mm} L{14mm}}
+\toprule
+\textbf{Ref} & \textbf{n} & \textbf{Wert} & \textbf{Gehäuse} & \textbf{Funktion} & \textbf{LCSC}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Ref} & \textbf{n} & \textbf{Wert} & \textbf{Gehäuse} & \textbf{Funktion} & \textbf{LCSC}\\
+\midrule
+\endhead
+\midrule\multicolumn{6}{r}{\scriptsize Fortsetzung nächste Seite}\\
+\endfoot
+\bottomrule
+\endlastfoot
+\multicolumn{6}{l}{\bfseries Versorgung}\\*\midrule
+J1 & 1 & XT30PW-M & XT30PW-M liegend & 2S-LiPo 6,0-8,4 V, Pin 1 = Plus & –\\
+Q1 & 1 & AO3401A & SOT-23 & Verpolschutz 2S & \texttt{C15127}\\
+R1 & 1 & 10k & 0603 & 2S: Akku, Verpolschutz, Hauptschalter & –\\
+J3 & 1 & J\_SW & JST-PH 4 stehend & zweipoliger Hauptschalter: 1-2 schaltet den 1S-Pfad, 3-4 den 2S-Pfad & –\\
+JP1 & 1 & SJ 1S & Lötbrücke & ueberbrueckt SW1a auf dem Tisch & –\\
+JP2 & 1 & SJ 2S & Lötbrücke & ueberbrueckt SW1b auf dem Tisch & –\\
+R2 & 1 & 100k & 0603 & 2S: Spannungsmessung und Strommessung INA219 & –\\
+R3 & 1 & 33k & 0603 & 2S: Spannungsmessung und Strommessung INA219 & –\\
+C1, C2 & 2 & 100n & 0603 & 2S: Spannungsmessung und Strommessung INA219 & –\\
+R\_SH1 & 1 & 20m 1\% 1W & R 2512 & Shunt 2S-Pfad, Kelvin-Abgriff zum INA219 & –\\
+U6 & 1 & INA219AIDR & SOIC-8 & Strom/Spannung 2S, I2C 0x40 & \texttt{C138706}\\
+F1 & 1 & 3A hold & 1812 & Polyfuse Servo-Schiene, 1812, 3 A Halte-, 6 A Ausloesestrom & –\\
+C3 & 1 & 1000u/16V low-ESR & Elko radial Ø10 mm & 2S: Servo-Schiene VSERVO & –\\
+C4 & 1 & 10u/25V & 0805 & 2S: Servo-Schiene VSERVO & –\\
+U1 & 1 & TPS563201DDCR & SOT-23-6 & Buck 5V\_SERVO, 3 A & \texttt{C116592}\\
+R4 & 1 & 100k & 0603 & 2S: Buck U1 -$>$ 5V\_SERVO & –\\
+C5, C6 & 2 & 10u/25V & 0805 & 2S: Buck U1 -$>$ 5V\_SERVO & –\\
+C7, C8 & 2 & 100n & 0603 & 2S: Buck U1 -$>$ 5V\_SERVO & –\\
+L1 & 1 & 2.2u Isat$>$=4A & 5040 & 5040, Isat $>$= 4 A & –\\
+R5 & 1 & 56k & 0603 & 2S: Buck U1 -$>$ 5V\_SERVO & –\\
+R6 & 1 & 10k & 0603 & 2S: Buck U1 -$>$ 5V\_SERVO & –\\
+C9, C10 & 2 & 22u/10V & 0805 & 2S: Buck U1 -$>$ 5V\_SERVO & –\\
+C11 & 1 & 470u/10V & Elko radial Ø8 mm & 2S: Buck U1 -$>$ 5V\_SERVO & –\\
+J2 & 1 & J\_BAT1 & JST-PH 2 stehend & 1S-LiPo 3,0-4,2 V, Pin 1 = Plus & –\\
+Q2 & 1 & AO3401A & SOT-23 & Verpolschutz 1S & \texttt{C15127}\\
+R7 & 1 & 10k & 0603 & 1S: Akku, Verpolschutz, Spannungsmessung & –\\
+R8 & 1 & 100k & 0603 & 1S: Akku, Verpolschutz, Spannungsmessung & –\\
+R9 & 1 & 33k & 0603 & 1S: Akku, Verpolschutz, Spannungsmessung & –\\
+C12 & 1 & 100n & 0603 & 1S: Akku, Verpolschutz, Spannungsmessung & –\\
+U2 & 1 & TPS63070RNMR & VQFN-15 & Buck-Boost 5V\_SYS aus 1S, 2-16 V ein; PS/SYNC hoch = Stromsparbetrieb bei Teillast & \texttt{C109322}\\
+C13, C14 & 2 & 10u/25V & 0805 & 1S: Buck-Boost U2 -$>$ 5V\_SYS, Teensy-VIN & –\\
+C15 & 1 & 100n & 0603 & 1S: Buck-Boost U2 -$>$ 5V\_SYS, Teensy-VIN & –\\
+L2 & 1 & 1.5u Isat$>$=4A & 5040 & 5040, Isat $>$= 4 A & –\\
+R10 & 1 & 680k & 0603 & 1S: Buck-Boost U2 -$>$ 5V\_SYS, Teensy-VIN & –\\
+R11 & 1 & 130k & 0603 & 1S: Buck-Boost U2 -$>$ 5V\_SYS, Teensy-VIN & –\\
+R12 & 1 & 330k & 0603 & 1S: Buck-Boost U2 -$>$ 5V\_SYS, Teensy-VIN & –\\
+R13 & 1 & 100k & 0603 & 1S: Buck-Boost U2 -$>$ 5V\_SYS, Teensy-VIN & –\\
+C16, C17, C18 & 3 & 22u/10V & 0805 & 1S: Buck-Boost U2 -$>$ 5V\_SYS, Teensy-VIN & –\\
+C19 & 1 & 1000u/10V polymer & Elko radial Ø8 mm & 1S: Buck-Boost U2 -$>$ 5V\_SYS, Teensy-VIN & –\\
+D1 & 1 & SS14 & SMA & 5V\_SYS -$>$ Teensy VIN, USB darf gleichzeitig stecken & \texttt{C2480}\\
+U3 & 1 & AP2112K-3.3TRG1 & SOT-23-5 & LDO 3V3\_RF, 600 mA & \texttt{C51118}\\
+C20, C21 & 2 & 1u & 0603 & LDO U3 -$>$ 3V3\_RF, Sternpunkt, Testpunkte & –\\
+C22 & 1 & 100u/6.3V & 1210 & LDO U3 -$>$ 3V3\_RF, Sternpunkt, Testpunkte & –\\
+NT1 & 1 & NetTie & Netzbrücke & Sternpunkt: einzige Verbindung der beiden Massen, direkt am 2S-Minus & –\\
+TP1 & 1 & VBAT\_PROT & Testpunkt & LDO U3 -$>$ 3V3\_RF, Sternpunkt, Testpunkte & –\\
+TP2 & 1 & VSYS\_IN & Testpunkt & LDO U3 -$>$ 3V3\_RF, Sternpunkt, Testpunkte & –\\
+TP3 & 1 & 5V\_SYS & Testpunkt & LDO U3 -$>$ 3V3\_RF, Sternpunkt, Testpunkte & –\\
+TP4 & 1 & VSERVO & Testpunkt & LDO U3 -$>$ 3V3\_RF, Sternpunkt, Testpunkte & –\\
+TP5 & 1 & 5V\_SERVO & Testpunkt & LDO U3 -$>$ 3V3\_RF, Sternpunkt, Testpunkte & –\\
+TP6 & 1 & 3V3\_RF & Testpunkt & LDO U3 -$>$ 3V3\_RF, Sternpunkt, Testpunkte & –\\
+TP7 & 1 & GND & Testpunkt & LDO U3 -$>$ 3V3\_RF, Sternpunkt, Testpunkte & –\\
+\midrule
+\multicolumn{6}{l}{\bfseries Teensy}\\*\midrule
+A1 & 1 & Teensy 4.1 & Buchsenleisten 2 $\times$ 1$\times$24 & 2x Buchsenleiste 1x24, 2,54 mm, 8,5 mm hoch (THT, selbst loeten) & –\\
+J15 & 1 & J\_EXP & Stiftleiste 2x07 & freie Teensy-Pins 10, 11, 12, 14-17, 25, 30, 31, 37 & –\\
+H1, H2, H3, H4 & 4 & M3 & MountingHole 3.2mm M3 & M3 zum gedruckten Traeger & –\\
+TP8 & 1 & SDA & Testpunkt & Erweiterung, Befestigung, Testpunkte & –\\
+TP9 & 1 & SCL & Testpunkt & Erweiterung, Befestigung, Testpunkte & –\\
+\midrule
+\multicolumn{6}{l}{\bfseries Sensorik}\\*\midrule
+U4 & 1 & ICM-42688-P & LGA-14 & IMU auf der Rollachse; RESV und FSYNC an GND (DS-000347 Tab. 9) & \texttt{C1850418}\\
+C23 & 1 & 100n & 0603 & IMU ICM-42688-P, SPI1 & –\\
+C24 & 1 & 2.2u & 0603 & IMU ICM-42688-P, SPI1 & –\\
+C25 & 1 & 10n & 0603 & IMU ICM-42688-P, SPI1 & –\\
+R14 & 1 & 10k & 0603 & IMU ICM-42688-P, SPI1 & –\\
+U5 & 1 & BMP390 & LGA-10 & I2C 0x77 (SDO an VDDIO); Rueckfall BMP388 C779278, pinkompatibel & \texttt{C5124834}\\
+C26, C27 & 2 & 100n & 0603 & Barometer BMP390 und I2C & –\\
+R15, R16 & 2 & 4.7k & 0603 & Barometer BMP390 und I2C & –\\
+J12 & 1 & J\_QWIIC & JST-SH 4 stehend & Qwiic-Belegung & –\\
+\midrule
+\multicolumn{6}{l}{\bfseries Funk}\\*\midrule
+U10 & 1 & E22-400T22S & SMD-Modul 16 $\times$ 26 mm & Antenne ueber die IPEX-Buchse des Moduls, ANT-Pad offen & \texttt{C2903765}\\
+C28 & 1 & 10u & 0805 & LoRa E22-400T22S, Serial8 & –\\
+C29 & 1 & 100n & 0603 & LoRa E22-400T22S, Serial8 & –\\
+J11 & 1 & J\_GPS & JST-GH 4 stehend & u-blox-Modul in der Spitze: 3V3\_RF, GND, TX (vom GPS), RX (zum GPS) & –\\
+\midrule
+\multicolumn{6}{l}{\bfseries Aktoren}\\*\midrule
+R17, R18, R19 & 3 & 220 & 0603 & Servos & –\\
+J5 & 1 & J\_SERVO1 & JST-XH 3 liegend & S / + / -, VSERVO & –\\
+J6 & 1 & J\_SERVO2 & JST-XH 3 liegend & S / + / -, VSERVO & –\\
+J7 & 1 & J\_SERVO3 & JST-XH 3 stehend & S / + / -, 5V\_SERVO & –\\
+U7 & 1 & DRV8833PWPR & HTSSOP-16-1EP & beide Bruecken parallel, 2x 1,5 A & \texttt{C50506}\\
+R20, R21 & 2 & 10k & 0603 & Rollmotor DRV8833 & –\\
+C30 & 1 & 10u/25V & 0805 & Rollmotor DRV8833 & –\\
+C31 & 1 & 100n & 0603 & Rollmotor DRV8833 & –\\
+C32 & 1 & 10n & 0603 & Rollmotor DRV8833 & –\\
+C33 & 1 & 2.2u & 0603 & Rollmotor DRV8833 & –\\
+J8 & 1 & J\_MOT & JST-PH 2 stehend & Rollmotor & –\\
+\midrule
+\multicolumn{6}{l}{\bfseries Pyro}\\*\midrule
+J4 & 1 & J\_ARM & JST-PH 2 liegend & externer Arming-Schalter & –\\
+R22 & 1 & 100k & 0603 & Arming & –\\
+R23 & 1 & 33k & 0603 & Arming & –\\
+C34 & 1 & 100n & 0603 & Arming & –\\
+J9 & 1 & J\_PYRO1 & JST-XH 2 liegend & E-Match, 1 = Plus (VBAT\_ARMED) & –\\
+Q3 & 1 & AO3400A & SOT-23 & Pyro 1 low-side & \texttt{C20917}\\
+R24 & 1 & 100 & 0603 & Pyro-Kanal 1 & –\\
+R25, R26 & 2 & 100k & 0603 & Pyro-Kanal 1 & –\\
+D2 & 1 & SMBJ12CA & SMB & TVS ueber dem Ausgang (bidirektional, spart die Polaritaetsfrage) & –\\
+R27 & 1 & 33k & 0603 & Pyro-Kanal 1 & –\\
+C35 & 1 & 100n & 0603 & Pyro-Kanal 1 & –\\
+J10 & 1 & J\_PYRO2 & JST-XH 2 liegend & E-Match, 1 = Plus (VBAT\_ARMED) & –\\
+Q4 & 1 & AO3400A & SOT-23 & Pyro 2 low-side & \texttt{C20917}\\
+R28 & 1 & 100 & 0603 & Pyro-Kanal 2 & –\\
+R29, R30 & 2 & 100k & 0603 & Pyro-Kanal 2 & –\\
+D3 & 1 & SMBJ12CA & SMB & TVS ueber dem Ausgang (bidirektional, spart die Polaritaetsfrage) & –\\
+R31 & 1 & 33k & 0603 & Pyro-Kanal 2 & –\\
+C36 & 1 & 100n & 0603 & Pyro-Kanal 2 & –\\
+\midrule
+\multicolumn{6}{l}{\bfseries Signal}\\*\midrule
+U8, U9 & 2 & 74AHCT1G125 & SOT-23-5 & Pegel 3,3 -$>$ 5 V & \texttt{C2870384}\\
+C37, C38, C39, C40 & 4 & 100n & 0603 & Status-LEDs & –\\
+R32, R33 & 2 & 330 & 0603 & Status-LEDs & –\\
+LED1, LED2 & 2 & WS2812B-2020 & LED WS2812B-2020 PLCC4 & Status-LEDs & \texttt{C965555}\\
+J14 & 1 & J\_LED & JST-GH 3 stehend & externe WS2812B, Kette hinter LED1 & –\\
+BZ1 & 1 & aktiv 5V 12mm & THT Ø 12 mm & aktiver Summer, THT & –\\
+D4 & 1 & 1N4148W & SOD-123 & Summer & \texttt{C81598}\\
+Q5 & 1 & AO3400A & SOT-23 & Summer & \texttt{C20917}\\
+R34 & 1 & 100 & 0603 & Summer & –\\
+R35 & 1 & 100k & 0603 & Summer & –\\
+R36 & 1 & 1k & 0603 & Kamera & –\\
+J13 & 1 & J\_CAM & JST-GH 3 stehend & Kamera-Ausloeser (3,3-V-Pegel ueber 1 k) & –\\
+\end{longtable}

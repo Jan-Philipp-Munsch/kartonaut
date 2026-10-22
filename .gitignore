@@ -14,3 +14,10 @@ __pycache__/
 .DS_Store
 Thumbs.db
 *.swp
+
+# Datenblatt: Figuren-Kopien und Zwischendateien werden von datasheet/build.py erzeugt
+hardware/mainboard/datasheet/fig/
+hardware/mainboard/datasheet/*.aux
+hardware/mainboard/datasheet/*.log
+hardware/mainboard/datasheet/*.out
+hardware/mainboard/datasheet/*.toc

@@ -272,9 +272,9 @@ def z1(pdf):
     c = M.CO2
     v.rect(M.CO2_Z0, -c["l"] / 2, M.CO2_Z0 + c["d"], c["l"] / 2, fill="#999", lw=0.4)
     v.rect(M.CHUTE_Z[0], -M.CHUTE["d"] / 2, M.CHUTE_Z[1], M.CHUTE["d"] / 2, fill="#e8a49c", lw=0.4)
-    zr(M.NOSE_SHOULDER_Z0, M.TOP_Z, P.NOSE_SHOULDER_D / 2 - 1.2, P.NOSE_SHOULDER_D / 2, fill="#c9ad86", lw=0.3)
-    hz = M.NOSE_SHOULDER_Z0 + M.NOSE_HOOK_DEPTH
-    v.rect(hz, -P.NOSE_SHOULDER_D / 2 + 1.2, hz + 4, P.NOSE_SHOULDER_D / 2 - 1.2, fill="#a0784c", lw=0.3)
+    zr(*M.NOSE_COUPLER_Z, P.COUPLER_ID / 2, P.COUPLER_OD / 2, fill="#c9ad86", lw=0.3)
+    hz = M.NOSE_COUPLER_Z[1]
+    v.rect(hz, -P.COUPLER_ID / 2, hz + 4, P.COUPLER_ID / 2, fill="#a0784c", lw=0.3)
     import airframe
     prof = airframe.nose_profile()
     pts = [(M.TOP_Z + dz, r) for r, dz in prof] + [(M.TOP_Z + dz, -r) for r, dz in reversed(prof)]
@@ -366,10 +366,10 @@ def z4(pdf):
               [(0, M.SPIGOT_C["z"][1] - M.TUBE_C[0], "Zapfen des Spants"),
                (M.CO2_Z0 - M.TUBE_C[0], M.CO2_Z0 + M.CO2["h"] - M.TUBE_C[0], "CO₂-Modul"),
                (M.CHUTE_Z[0] - M.TUBE_C[0], M.CHUTE_Z[1] - M.TUBE_C[0], "Schirm 100 × Ø 70"),
-               (M.NOSE_SHOULDER_Z0 - M.TUBE_C[0], M.TOP_Z - M.TUBE_C[0], "Schulter der Spitze")],
+               (M.NOSE_COUPLER_Z[0] - M.TUBE_C[0], M.TOP_Z - M.TUBE_C[0], "Kuppler der Spitze (in der Spitze verklebt)")],
               "Z4_rohr_c.png",
-              "Neues Rohr, Länge aus dem Stapel: Zapfen 15, CO₂-Modul 24, Schirm 100, Schnur 40, Schulter 75 (Schulterlänge nach Klima-Zeichnung "
-              "prüfen, ändert die Rohrlänge 1:1). Spantschrauben T3 um 45° versetzt (Kapsel liegt quer zwischen ihnen). Abscherstifte nur, "
+              "Rohr aus dem vorhandenen Reststück, Länge aus dem Stapel: Zapfen 15, CO₂-Modul 24, Schirm 100, dann der zweite halbe Kuppler (75), "
+              "25 mm in der Spitze bis zur Holzplatte verklebt, 50 mm im Rohr C; die Schnur liegt im Kuppler. Spantschrauben T3 um 45° versetzt (Kapsel liegt quer zwischen ihnen). Abscherstifte nur, "
               "wenn der CO₂-Test zeigt, dass sie sicher abscheren. Schablone S4.", 2.0)
 
 
@@ -377,7 +377,7 @@ def z4(pdf):
 def z5(pdf):
     sh = Sheet("Z5", "Avionik-Schlitten mit Spant (ein Druckteil)", "1:1,25",
                "Stehend gedruckt, Band auf dem Bett, PETG, 3 Wände, 25 % Gyroid. Bezugsebene A = Unterseite des Bands (liegt auf der Oberkante "
-               "von Rohr B). Einschmelzmuttern M3 (Ø 4,0 × 5): 4 Augen unten (T2), 4 Augen oben (T3, 45° versetzt), 4 Platinensäulen, 2 Stirnaugen. "
+               "von Rohr B). M3-Muttern in Sechskant-Taschen, von innen eingedrückt: 4 Augen unten (T2), 4 Augen oben (T3, 45° versetzt). Platinensäulen und Stirnaugen: M3 direkt ins Kernloch Ø 2,6. "
                "Platte 5 mm für den CO₂-Druck, Ringschraube M4 und Kabeldurchführung Ø 6 für das CO₂-Servo.")
     s = 1 / 1.25
     A = M.BAND_Z[0]
@@ -497,7 +497,7 @@ def z6(pdf):
     v3.circle(0, 0, rg["id"] - 0.01, lw=0.6)
     v3.dim((-rg["od"] / 2, 0), (rg["od"] / 2, 0), 40, f"Ø {fmt(rg['od'])}")
     v3.dim((-rg["id"] / 2, -8), (rg["id"] / 2, -8), -4, f"Ø {fmt(rg['id'])}")
-    v3.text(-38, 48, f"Schraubring J1, {fmt(rg['z'][1] - rg['z'][0])} hoch, 4 Augen 90°", fontsize=7, weight="bold")
+    v3.text(-38, 48, f"Schraubring J1, {fmt(rg['z'][1] - rg['z'][0])} hoch, 4 Augen 90° mit M3-Mutterntasche innen", fontsize=7, weight="bold")
     sh.save(pdf, "Z6_kleinteile.png")
 
 
@@ -574,7 +574,7 @@ def templates():
     with PdfPages(out) as pdf:
         template(pdf, "S1", "Rohr A, Oberkante (Stoß J1)", C, feats_a(), (M.TUBE_A[1] - M.TUBE_A[0] - 45.0, M.TUBE_A[1] - M.TUBE_A[0]), "oben",
                  "Zuerst den Kuppler J1 in Rohr B kleben und Rohr A aufstecken. Streifen um Rohr A, rote Kante an die Oberkante von A (Stoß), grüne "
-                 "Linie auf die Kardanschraube 0°. Die 4 Löcher T1 Ø 3,4 durch Rohr A und Kuppler bohren. Danach den Schraubring von oben in den "
+                 "Linie auf die Kardanschraube 0°. Die 4 Löcher T1 Ø 3,4 durch Rohr A und Kuppler bohren. Danach den Schraubring (Muttern innen eingedrückt) in den "
                  "Kuppler schieben, mit M3 durch die Löcher ausrichten und erst dann einkleben.", guide_h(M.TUBE_A) - 0)
         template(pdf, "S2", "Rohr B, Unterkante (Luken A1 und B, Schraubschalter)", C, feats_b(), (0.0, 110.0), "unten",
                  "Rohr B mit verklebtem Kuppler, Bezugskante an die Unterkante von B (Stoß), Längslinie von Rohr A über den Stoß verlängert. "

@@ -91,7 +91,8 @@ def j1_ring():
     for phi in M.SCREW_PHI:
         r = r.union(cyl_between(9.0, polar(M.J1_RING["id"] / 2 - 2.5, phi, M.J1_SCREW_Z), polar(M.J1_RING["od"] / 2 - 0.5, phi, M.J1_SCREW_Z))
                     .intersect(cyl(M.J1_RING["od"], z0, z1)))
-        r = r.cut(radial_bore(M.INSERT_HOLE[0], phi, M.J1_SCREW_Z, M.J1_RING["od"] / 2 + 1, M.J1_RING["od"] / 2 - M.INSERT_HOLE[1]))
+        r = r.cut(radial_bore(3.3, phi, M.J1_SCREW_Z, M.J1_RING["od"] / 2 + 1, M.J1_RING["id"] / 2 - 4))
+        r = r.cut(nut_pocket(phi, M.J1_SCREW_Z, M.J1_RING["id"] / 2 - 2.5))
     return r
 
 
@@ -101,8 +102,17 @@ def bosses(shape, z, r_in, r_out, z_top, d=M.BOSS_D, phis=M.SCREW_PHI):
         b = cyl_between(d, polar(r_in, phi, z), polar(r_out, phi, z))
         b = b.union(box_from(-d / 2, d / 2, r_in, r_out, min(z, z_top), max(z, z_top)).rotate((0, 0, 0), (0, 0, 1), phi - 90))
         shape = shape.union(b)
-        shape = shape.cut(radial_bore(M.INSERT_HOLE[0], phi, z, r_out + 1, r_out - M.INSERT_HOLE[1]))
+        shape = shape.cut(radial_bore(3.3, phi, z, r_out + 1, r_in - 1))
+        shape = shape.cut(nut_pocket(phi, z, r_in))
     return shape
+
+
+def nut_pocket(phi, z, r_in):
+    """Sechskant-Tasche für eine M3-Mutter am inneren Ende einer Radialbohrung, offen nach innen (Mutter von innen eindrücken)."""
+    n = M.NUT
+    across = (n["sw"] + n["clear"]) / math.cos(math.pi / 6)
+    pocket = (cq.Workplane("YZ").workplane(offset=r_in - 1.0).polygon(6, across).extrude(n["h"] + 1.2))
+    return pocket.translate((0, 0, z)).rotate((0, 0, 0), (0, 0, 1), phi)
 
 
 def sled():
@@ -131,12 +141,12 @@ def sled():
         z = v0 + v
         s = s.union(box_from(u - M.POST_D / 2, u + M.POST_D / 2, M.TRAY_FLOOR_Y, yb, z - 4.0, z + 4.0))
         s = s.union(box_from(-bw if u < 0 else u, u if u < 0 else bw, M.TRAY_FLOOR_Y, yb, z - 4.0, z + 4.0))
-        s = s.cut(cyl_between(M.INSERT_HOLE[0], (u, yb + 0.5, z), (u, yb - M.INSERT_HOLE[1] - 4.0, z)))
+        s = s.cut(cyl_between(M.TAP_HOLE, (u, yb + 0.5, z), (u, yb - 9.0, z)))
     end = box_from(-bw, bw, M.TRAY_FLOOR_Y, yb, tz0, tz0 + 3.0).cut(box_from(-12, 12, M.TRAY_FLOOR_Y + 3, yb + 1, tz0 - 1, tz0 + 4))
     s = s.union(end)
     for (x, y) in M.TRAY_TO_DISC:
         s = s.union(cyl_between(8.0, (x, y, tz0), (x, y, tz0 + 8.0)))
-        s = s.cut(cyl_between(M.INSERT_HOLE[0], (x, y, tz0 - 1), (x, y, tz0 + M.INSERT_HOLE[1] + 1)))
+        s = s.cut(cyl_between(M.TAP_HOLE, (x, y, tz0 - 1), (x, y, tz0 + 7.0)))
     v_sep = (M.BAT2S["v0"] + M.BAT2S["l"] + M.BAT1S["v0"]) / 2
     s = s.union(box_from(-bw, bw, M.TRAY_FLOOR_Y, M.TRAY_FLOOR_Y + 5.0, v0 + v_sep - 1, v0 + v_sep + 1))
     for bat in (M.BAT2S, M.BAT1S):
@@ -175,7 +185,7 @@ def switch_panel():
         plate = plate.cut(box_from(u - w / 2 - 0.2, u + w / 2 + 0.2, M.PANEL_Y[0] - 1, M.PANEL_Y[1] + 1, v0 + a, v0 + b))
     for (u, v) in M.PANEL_COLS:
         col = cyl_between(M.PANEL_COL_D, (u, M.PANEL_Y[1] - 0.5, v0 + v), (u, M.TRAY_FLOOR_Y, v0 + v))
-        col = col.cut(cyl_between(M.INSERT_HOLE[0], (u, M.TRAY_FLOOR_Y + 0.5, v0 + v), (u, M.TRAY_FLOOR_Y - M.INSERT_HOLE[1] - 0.5, v0 + v)))
+        col = col.cut(cyl_between(M.TAP_HOLE, (u, M.TRAY_FLOOR_Y + 0.5, v0 + v), (u, M.TRAY_FLOOR_Y - 7.0, v0 + v)))
         plate = plate.union(col)
     return plate
 
@@ -217,8 +227,8 @@ def build_all():
     parts.add("CO₂-Modul (Kapsel quer, Servo-Auslösung)", co2, "steel", "bergung")
     parts.add("Fallschirm (gepackt 100 × Ø 70)", cyl(M.CHUTE["d"], *M.CHUTE_Z).edges().fillet(8.0), "chute", "bergung")
     zs = M.NOSE_SHOULDER_Z0
-    parts.add("Spitze Schulter (Klima)", tube(P.NOSE_SHOULDER_D, P.NOSE_SHOULDER_D - 2.4, zs, M.TOP_Z + 2), "coupler", "spitze")
-    parts.add("Spitze Holzplatte mit Haken (Klima)", cyl(P.NOSE_SHOULDER_D - 2.4, zs + M.NOSE_HOOK_DEPTH, zs + M.NOSE_HOOK_DEPTH + 4), "coupler", "spitze")
+    parts.add("Spitze Schulter (Klima)", tube(P.COUPLER_OD, P.COUPLER_ID, *M.NOSE_COUPLER_Z), "coupler", "spitze")
+    parts.add("Spitze Holzplatte mit Haken (Klima)", cyl(M.TUBE_ID - 1.0, M.NOSE_COUPLER_Z[1], M.NOSE_COUPLER_Z[1] + 4), "coupler", "spitze")
     assert abs(P.NOSE_BASE_Z - M.TOP_Z) >= 0       # airframe.nose_cone() setzt bei P.NOSE_BASE_Z an, hier verschoben
     parts.add("Spitze Klima 8539", airframe.nose_cone().translate((0, 0, M.TOP_Z - P.NOSE_BASE_Z)), "nose", "spitze")
     return parts

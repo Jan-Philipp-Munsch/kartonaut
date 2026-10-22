@@ -25,7 +25,9 @@ TUBE_B = (125.0, 301.0)          # [Jan] 176 mm, Avionikraum
 J1_COUPLER = (125.0 - 37.5, 125.0 + 37.5)    # [Jan] Kuppler 75 mm (halber Klima-Kuppler), je 37,5 in A und B; wird in B verklebt
 SCREW_PHI = (0.0, 90.0, 180.0, 270.0)        # [Jan] alle Radialschrauben
 SCREW_HOLE_PAPER = 3.4
-INSERT_HOLE = (4.0, 5.0)         # Einschmelzmutter M3 kurz: Bohrung Ø × Tiefe im Druckteil (am Muster prüfen)
+INSERT_HOLE = (4.0, 5.0)         # nicht mehr benutzt (Stand 2b: Muttern statt Einschmelzmuttern)
+NUT = dict(sw=5.5, h=2.4, clear=0.25)   # M3-Mutter DIN 934 in einer Sechskant-Tasche, von innen eingedrückt (Tropfen Sekundenkleber)
+TAP_HOLE = 2.6                   # Kernloch für M3 direkt im Druck (Platine, Scheibe, Schalterbrett: selten gelöst)
 
 # --------------------------------------------------------------------------- Rohr A: Kardan (gebaut, nur Bestand)
 GIMBAL_SCREW_Z = 44.0            # [Jan] 4 × bei 90°
@@ -62,7 +64,7 @@ BOARD_HOLES = P.BOARD_HOLES
 POST_D = 7.0
 TRAY_FLOOR_Y = -14.5
 TRAY_WALL = 1.6
-BAT2S = dict(l=56.0, w=25.5, h=8.0, v0=6.0)
+BAT2S = dict(l=55.0, w=30.0, h=10.0, v0=6.0)   # [reichelt LRC 2S 450] LemonRC 2S 450 mAh 35C, XT30, 29 g
 BAT1S = dict(l=50.0, w=30.0, h=7.0, v0=64.0)   # endet bei v = 114, unter dem Steg im Zapfenring
 STRAP_SLOT = (2.5, 16.0)
 TRAY_TO_DISC = [(-20.0, -9.0), (20.0, -9.0)]
@@ -94,13 +96,15 @@ ARM_SCREW_SWITCH = dict(phi=270.0, v=70.0, d=3.0)   # Schraubschalter für ARM (
 # --------------------------------------------------------------------------- Rohr C: Bergung
 CO2 = dict(l=65.0, d=18.0, h=24.0, m_aufbau=10.0, m_kapsel=25.0, gas_l=2.0)   # [Jan] Aufbau 10 g, 2 l; Kapsel 8 g CO₂ 18 × 65 [Annahme] liegt quer
 CHUTE = dict(d=70.0, l=100.0)        # [Jan] gepackt
-CORD_BAY = 40.0                       # [Annahme] Schnurpaket Kevlar + Gummi (Klima)
-NOSE_SHOULDER_L = P.NOSE_SHOULDER_L   # [Annahme] 75, laut Klima-Zeichnung nachmessen
-NOSE_HOOK_DEPTH = 25.0                # [Jan] Holzplatte mit Haken 25 mm über dem Schulterende
+CORD_BAY = 0.0                        # Stand 2b: Schnur liegt im Spitzen-Kuppler
+NOSE_COUPLER_L = 75.0                 # [Jan] Spitze außen bündig mit dem Rohr, innen passt der Kuppler: zweiter halber Kuppler
+NOSE_COUPLER_IN_NOSE = 25.0           # [Jan] bis zur Holzplatte mit Haken; dort in der Spitze verklebt
+NOSE_HOOK_DEPTH = NOSE_COUPLER_IN_NOSE
 CO2_Z0 = SPIGOT_C["z"][1] + 1.0      # Kapsel liegt quer über dem Zapfenring (im Rohr C ist Platz für 65 mm)
 CHUTE_Z = (CO2_Z0 + CO2["h"] + 3.0, CO2_Z0 + CO2["h"] + 3.0 + CHUTE["l"])
-NOSE_SHOULDER_Z0 = CHUTE_Z[1] + CORD_BAY
-TOP_Z = NOSE_SHOULDER_Z0 + NOSE_SHOULDER_L          # Rohr C endet an der Spitzenbasis
+NOSE_COUPLER_Z = (CHUTE_Z[1] + 2.0, CHUTE_Z[1] + 2.0 + NOSE_COUPLER_L)   # Schnur liegt im Kuppler (innen 70,2)
+TOP_Z = NOSE_COUPLER_Z[1] - NOSE_COUPLER_IN_NOSE   # Rohr C endet an der Spitzenbasis
+NOSE_SHOULDER_Z0 = NOSE_COUPLER_Z[0]                # Name aus Stand 2: Unterkante des Spitzen-Kupplers
 TUBE_C = (BAND_Z[1], TOP_Z)
 NOSE_TIP_Z = TOP_Z + P.NOSE_L
 SHEAR_PIN_Z = TOP_Z - 15.0
@@ -127,14 +131,17 @@ MASS_REMOVED = [
     ("Schalterbrett", 6.0),
     ("Kolben (Kuppler-Stück, Platte, Ladungsschale)", 31.0),
     ("Spitze Spant + Öse (Klima-Holzplatte ist schon drin)", 3.0),
+    ("Spitze Schulterkuppler (ersetzt durch den zweiten halben Kuppler, siehe unten)", 17.0),
 ]
 MASS_ADDED_HW = [
     ("Kuppler J1 75 mm", P.COUPLER_M / 2),
+    ("Kuppler Spitze 75 mm", P.COUPLER_M / 2),
     ("CO₂-Aufbau (Jan)", CO2["m_aufbau"]),
     ("CO₂-Kapsel 8 g, gefüllt [Annahme]", CO2["m_kapsel"]),
+    ("2S-Akku: LemonRC 450 statt Modellwert 30 g", -1.0),
     ("Schraubschalter", 2.0),
     ("GPS-Modul 20 × 20 [Annahme]", 6.0),
-    ("Einschmelzmuttern und M3-Schrauben (ca. 20)", 8.0),
+    ("M3-Muttern und -Schrauben (ca. 20)", 8.0),
     ("Moosgummi, Schaum, Kabelverschraubung", 2.0),
 ]
 

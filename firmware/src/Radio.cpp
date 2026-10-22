@@ -78,7 +78,7 @@ bool Radio::configure() {
   return ok;
 }
 
-bool Radio::send(uint8_t type, const void* payload, uint8_t len) {
+bool Radio::sendRaw(uint8_t type, const void* payload, uint8_t len) {
   const size_t n = kn_encode(type, payload, len, txbuf_, sizeof txbuf_);
   if (n == 0) { ++dropped_; return false; }
   if (!auxReady() || RADIO_SERIAL.availableForWrite() < int(n)) { ++dropped_; return false; }

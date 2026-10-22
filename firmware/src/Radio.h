@@ -17,8 +17,8 @@ class Radio {
 public:
   void begin();
   bool configure();                  // rev B: E22-Parameter schreiben und prüfen; Breakout: true
-  bool send(uint8_t type, const void* payload, uint8_t len);
-  template <typename T> bool send(uint8_t type, const T& msg) { return send(type, &msg, sizeof(T)); }
+  bool sendRaw(uint8_t type, const void* payload, uint8_t len);
+  template <typename T> bool send(uint8_t type, const T& msg) { return sendRaw(type, &msg, uint8_t(sizeof(T))); }
 
   // Empfang verarbeiten; true, wenn ein Kommando vollständig angekommen ist
   bool poll(KnCommand& cmd);

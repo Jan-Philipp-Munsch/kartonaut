@@ -27,8 +27,8 @@ struct KalmanZ {
   // getrennt: jeden Takt predict(), update() nur mit einer frischen Barometermessung
   void predict(float accel_z);
   void update(float z_meas);
-  float z()  const { return S(0,0); }
-  float vz() const { return S(1,0); }
+  float z()  { return S(0,0); }
+  float vz() { return S(1,0); }
 };
 
 

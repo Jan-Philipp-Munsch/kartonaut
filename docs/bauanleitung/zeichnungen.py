@@ -32,12 +32,12 @@ DATE = "22.10.2026"
 plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 7, "hatch.linewidth": 0.4})
 LW, LW_THIN = 0.7, 0.35
 C_PART, C_DIM, C_HIDDEN, C_HOLE, C_CUT, C_WARN = "#111", "#1f4e9c", "#888", "#c0392b", "#e67e22", "#f2c4c4"
-SEAM = -30.0     # Abwicklung und Schablonen beginnen bei 330°: dort liegt kein Loch, die Längslinie 0° liegt 30° rechts der Naht
+SEAM = -60.0     # Abwicklung und Schablonen beginnen bei 300°: dort liegt kein Loch und kein Fenster, die Längslinie 0° liegt 60° rechts der Naht
 import textwrap  # noqa: E402
 
 
 def sx(phi, C):
-    """Bogenlänge ab der Naht (330°) für den Winkel phi."""
+    """Bogenlänge ab der Naht (300°) für den Winkel phi."""
     return ((phi - SEAM) % 360.0) / 360.0 * C
 
 
@@ -174,6 +174,8 @@ def feats_a():
     z0 = M.TUBE_A[0]
     f = [("old", p, M.GIMBAL_SCREW_Z - z0, None, M.SCREW_HOLE_PAPER, "Kardan (Bestand)") for p in M.SCREW_PHI]
     f += [("hole", p, M.J1_SCREW_Z - z0, None, M.SCREW_HOLE_PAPER, "Stoß J1 M3") for p in M.SCREW_PHI]
+    f += [("oldwin", p, M.GIMBAL_WINDOW["z"][0] - z0, M.GIMBAL_WINDOW["z"][1] - z0, M.GIMBAL_WINDOW["w"], "Servofenster (Bestand)")
+          for p in M.servo_window_phi()]
     return f
 
 
@@ -213,7 +215,7 @@ def draw_development(v, C, L, feats, title, zones=(), gh=0.0):
     x0 = sx(0, C)
     v.line([(x0, 0), (x0, L)], lw=1.1, c="#2a7")
     v.text(x0, -5 / v.s, "Längslinie 0°", ha="center", fontsize=5.6, color="#2a7")
-    v.text(0, -9 / v.s, "Naht 330°", ha="center", fontsize=5.2, color="#777")
+    v.text(0, -9 / v.s, "Naht 300°", ha="center", fontsize=5.2, color="#777")
     if gh > 0:
         for g in M.RAMP_GUIDE_PHI:
             a, b = sx(g - guide_half(), C), sx(g + guide_half(), C)
@@ -227,6 +229,9 @@ def draw_development(v, C, L, feats, title, zones=(), gh=0.0):
         x = sx(phi, C)
         if kind in ("hole", "old"):
             v.hole(x, h0, d, c=C_HOLE if kind == "hole" else "#888", label=f"Ø{fmt(d)}" if kind == "hole" else "alt")
+        elif kind == "oldwin":
+            v.rect(x - d / 2, h0, x + d / 2, h1, lw=0.6, c="#888", fill="#e6e6e6", hatch="..")
+            v.text(x, (h0 + h1) / 2, "Servo (Bestand)", ha="center", va="center", fontsize=4.6, color="#555")
         else:
             v.rect(x - d / 2, h0, x + d / 2, h1, lw=0.7, c=C_CUT, fill="#fbe3cf", hatch="////")
             v.text(x, (h0 + h1) / 2, txt, ha="center", va="center", fontsize=5.0, rotation=90, color="#8a4a12")
@@ -237,7 +242,7 @@ def feature_table(feats, C):
     rows = [["Nr", "Art", "Winkel", "Bogen ab Naht", "h ab Kante", "Maß"]]
     for k, (kind, phi, h0, h1, d, txt) in enumerate(sorted(feats, key=lambda f: (f[2], f[1])), 1):
         s = sx(phi, C)
-        if kind == "win":
+        if kind in ("win", "oldwin"):
             rows.append([k, txt, deg(phi), f"{fmt(s - d / 2)} … {fmt(s + d / 2)}", f"{fmt(h0)} … {fmt(h1)}", f"{fmt(d)} × {fmt(h1 - h0)}"])
         else:
             rows.append([k, txt, deg(phi), fmt(s), fmt(h0), f"Ø {fmt(d)}"])
@@ -348,7 +353,7 @@ def z2(pdf):
               "Z2_rohr_a.png",
               "Gebaut: Kardan mit 4 Schrauben bei 0/90/180/270° auf h = 44, zwei Servofenster ca. 20 × 20 ab h = 60. Neu: nur die 4 Löcher T1 "
               "15 mm unter der Oberkante, gebohrt durch Rohr A UND den aufgesteckten Kuppler (Schablone S1). Die Servofenster dürfen nicht "
-              "unter einer Rampenführung liegen (45/135/225/315°) oder die Führungen werden für diese Rakete gedreht.", 1.0)
+              "unter einer Rampenführung liegen; laut Druckdatei liegen sie bei ca. 207° und 336°, die Führungen deshalb bei 45/135/250°.", 1.4)
 
 
 def z3(pdf):
@@ -525,7 +530,7 @@ def template(pdf, nr, title, C, feats, h_range, ref, note, gh):
         ax.plot([x, x], [P_(0, h0)[1], P_(0, h1)[1]], lw=0.35 if major else 0.15, c="#666" if major else "#bbb", ls=(0, (3, 3)))
         if major:
             ax.text(x, P_(0, h1)[1] + 1.2, f"{k}°", ha="center", va="bottom", fontsize=6)
-    ax.text(*P_(0, h1), "Naht\n330°", ha="center", va="bottom", fontsize=5, color="#777")
+    ax.text(*P_(0, h1), "Naht\n300°", ha="center", va="bottom", fontsize=5, color="#777")
     xg, _ = P_(sx(0, C), h0)
     ax.plot([xg, xg], [P_(0, h0)[1], P_(0, h1)[1]], lw=1.4, c="#2a7")
     ax.text(xg + 1, P_(0, h1)[1] - 3, "Längslinie 0°\n(Kardanschraube)", fontsize=5.5, color="#2a7", va="top")
@@ -544,7 +549,7 @@ def template(pdf, nr, title, C, feats, h_range, ref, note, gh):
             ax.plot([x - 6, x + 6], [y, y], lw=0.3, c=col); ax.plot([x, x], [y - 6, y + 6], lw=0.3, c=col)
             ax.add_patch(Circle((x, y), 0.35, fc="#000"))
             ax.text(x + 2.5, y + 2.5, f"{txt}\nØ {fmt(d)}" + (" (vorhanden: Lage prüfen)" if kind == "old" else ""), fontsize=5.0, color=col)
-        elif kind == "win":
+        elif kind in ("win", "oldwin"):
             lo, hi = max(a, h0), min(b, h1)
             if hi > lo:
                 ax.add_patch(Rectangle(P_(s - d / 2, lo), d, hi - lo, fill=True, fc="#fbe3cf", ec="#e67e22", lw=0.7, hatch="////"))

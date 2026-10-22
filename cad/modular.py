@@ -62,7 +62,8 @@ def hatch_windows():
 def tube_a():
     holes = [(M.SCREW_HOLE_PAPER, p, M.GIMBAL_SCREW_Z) for p in M.SCREW_PHI]
     holes += [(M.SCREW_HOLE_PAPER, p, M.J1_SCREW_Z) for p in M.SCREW_PHI]
-    return tube_with_holes(*M.TUBE_A, M.TUBE_OD, M.TUBE_ID, holes)
+    wins = [(phi, M.GIMBAL_WINDOW["w"], z0, z1) for phi, z0, z1 in servo_windows()]
+    return tube_with_holes(*M.TUBE_A, M.TUBE_OD, M.TUBE_ID, holes, wins)
 
 
 def tube_b():
@@ -190,6 +191,57 @@ def switch_panel():
     return plate
 
 
+def _gimbal_loc():
+    return cq.Location(cq.Vector(0, 0, M.GIMBAL_BASE_Z), cq.Vector(0, 0, 1), M.GIMBAL_ROT_DEG)
+
+
+def servo_geometry():
+    """Je Servo: Körper, Hebel, Draht im Bezugssystem der Druckdatei, dazu die Lage der Welle (für die Fenster)."""
+    out = []
+    L, H, T = M.SERVO_BODY
+    for name, (cx, cy, cz), (rx, ry), s_tan, r_target in M.SERVOS:
+        tx, ty = -ry, rx
+        rad = math.hypot(cx, cy)
+        ang = math.degrees(math.atan2(ry, rx)) - 90.0
+        body = cq.Workplane("XY").box(L, T, H).rotate((0, 0, 0), (0, 0, 1), ang).translate((cx, cy, cz))
+        r_face = rad + T / 2
+        # Welle: radial an der Außenfläche, tangential bei s_tan (vom Achsenschnitt aus), auf Höhe des Kardanpunkts
+        sx, sy = rx * r_face + tx * s_tan, ry * r_face + ty * s_tan
+        z0 = M.SERVO_SHAFT_Z
+        p0, p1 = (sx, sy, z0), (sx + rx * 2.5, sy + ry * 2.5, z0)
+        hub = cyl_between(6.0, p0, p1)
+        tip = (p1[0], p1[1], z0 - M.HORN_R)
+        arm = cyl_between(4.5, (p0[0] + rx * 1.25, p0[1] + ry * 1.25, z0), (p0[0] + rx * 1.25, p0[1] + ry * 1.25, tip[2]))
+        w0 = (tip[0] - rx * 1.0, tip[1] - ry * 1.0, tip[2])      # Draht hakt von innen in den Hebel, läuft innen an der Wand
+        w1 = (w0[0], w0[1], w0[2] + M.WIRE_DROP)
+        k = r_target / math.hypot(w1[0], w1[1])
+        w2 = (w1[0] * k, w1[1] * k, w1[2])
+        wire = cyl_between(M.WIRE_D, w0, w1).union(cyl_between(M.WIRE_D, w1, w2)).union(cq.Workplane("XY").sphere(M.WIRE_D / 2).translate(w1))
+        hook = cyl_between(M.WIRE_D, (tip[0] + rx * 1.0, tip[1] + ry * 1.0, tip[2]), w0)
+        out.append(dict(name=name, body=body, horn=hub.union(arm), wire=wire.union(hook), shaft=(sx, sy, z0)))
+    return out
+
+
+def servo_linkage():
+    loc = _gimbal_loc()
+    out = []
+    for g in servo_geometry():
+        out.append((f"Servo {g['name']}", g["body"].val().moved(loc), "servo"))
+        out.append((f"Servohebel {g['name']}", g["horn"].val().moved(loc), "printed2"))
+        out.append((f"Drahtbügel {g['name']}", g["wire"].val().moved(loc), "steel"))
+    return out
+
+
+def servo_windows():
+    """Lage der Servofenster im Rohr A aus der Wellenlage: (phi in Rohrwinkeln, z0, z1)."""
+    out = []
+    for g in servo_geometry():
+        sx, sy, sz = g["shaft"]
+        phi = (math.degrees(math.atan2(sy, sx)) + M.GIMBAL_ROT_DEG) % 360
+        out.append((phi, M.GIMBAL_WINDOW["z"][0], M.GIMBAL_WINDOW["z"][1]))
+    return out
+
+
 # --------------------------------------------------------------------------- Zusammenbau
 def build_all():
     import airframe
@@ -201,6 +253,8 @@ def build_all():
     parts.add("Schraubring J1", j1_ring(), "printed", "rumpf")
     parts.add("Kardan (gebaut, Hüllkörper)", cyl(P.COUPLER_ID - 2, 3.0, M.GIMBAL_TOP_Z).cut(cyl(24.0, 2.0, M.GIMBAL_TOP_Z + 1)), "printed2", "antrieb")
     parts.add("Motor TSP E12-0", cyl(P.MOTOR_D, 0.0, M.MOTOR_L), "motor", "antrieb")
+    for name, shape, col in servo_linkage():
+        parts.add(name + " (schematisch)", shape, col, "antrieb")
     parts.add("Schlitten mit Spant", sled(), "printed2", "avionik")
     parts.add("Untere Scheibe", lower_disc(), "printed", "avionik")
     parts.add("Schalterbrett", switch_panel(), "printed", "avionik")
@@ -251,6 +305,9 @@ def check(parts):
             [n for n in by if n.startswith("Stecker ")] + [p[0] for p in M.PANEL_PARTS]
     pairs += [(a, b) for a in ("Schlitten mit Spant", "Untere Scheibe", "Schalterbrett") for b in loose]
     pairs += [("GPS-Modul (Patch nach oben)", n) for n in by if n.startswith("Stecker ") or n in ("Platine rev B1", "Teensy 4.1")]
+    for n in by:
+        if n.startswith(("Servo W5652H", "Servohebel")):        # Drahtbügel nur schematisch, Führung am echten Teil anders
+            pairs += [(n, "Rohr A 125 (Kardan, gebaut)"), (n, "Kuppler J1 75 (in B verklebt)"), (n, "Schraubring J1"), (n, "Motor TSP E12-0")]
     pairs += [("Schraubring J1", "Kardan (gebaut, Hüllkörper)"), ("Untere Scheibe", "Kardan (gebaut, Hüllkörper)"),
               ("CO₂-Modul (Kapsel quer, Servo-Auslösung)", "Schlitten mit Spant"),
               ("Fallschirm (gepackt 100 × Ø 70)", "CO₂-Modul (Kapsel quer, Servo-Auslösung)"),
@@ -338,6 +395,8 @@ def main():
         print("  FEHLT", m)
     if not bad and not missing:
         print("  Prüfung frei: Schlitten, Platine, Stecker, Akkus, GPS, LoRa, Schalterbrett, Schraubring, CO₂-Modul, Schirm gegen Rohre, Kuppler und einander")
+    for phi, z0, z1 in servo_windows():
+        print(f"  Servofenster laut Druckdatei: {phi:.0f}° ab der Längslinie, z {z0:.0f} … {z1:.0f}")
     rows = export(parts)
     printed = sum(r["g"] for r in rows)
     for r in rows:

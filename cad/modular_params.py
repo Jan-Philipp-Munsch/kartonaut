@@ -41,6 +41,19 @@ GIMBAL_BASE_Z = GIMBAL_SCREW_Z - 6.0
 GIMBAL_ROT_DEG = -45.0
 GIMBAL_STL = ("Outer_Gimbal_1.001.stl", "Inner_Gimbal.002.stl", "MotorTube.003.stl")
 GIMBAL_SERVO_PHI = (270.0 + GIMBAL_ROT_DEG, 0.0 + GIMBAL_ROT_DEG + 360.0)   # Servotaschen außen (-y) und innen (+x) der Druckdatei → 225°, 315°
+# Servos und Gestänge (schematisch, im Bezugssystem der Druckdatei, vor Drehung und Verschiebung): Servokörper aus den
+# Taschen '5600' der Blender-Dateien, W5652H 23 (tangential) × 19 (axial) × 8 (radial). Welle radial nach außen auf Höhe
+# 7,5 mm über dem Kardanpunkt (Hebel liegt dann in Jans Fenstern bei 60 … 80 mm), 11 mm neben der Drehachse
+# [Annahme]; Hebel 15 mm, hängt in Neutralstellung nach unten [Jan, Foto]; Draht Ø 2 vom Hebelende 30 mm senkrecht nach
+# oben [Jan], dann als Bügel radial nach innen an das angetriebene Teil [Annahme].
+SERVOS = [  # (Name, Mitte des Körpers (x, y, z), radiale Richtung, tangentiale Lage der Welle, Ziel-Radius des Bügels)
+    ("W5652H Außenrahmen (treibt Innenrahmen)", (-5.2, -28.97, 31.5), (0.0, -1.0), -11.0, 24.0),
+    ("W5652H Innenrahmen (treibt Motorrohr)", (25.02, 4.0, 31.5), (1.0, 0.0), 11.0, 17.5),
+]
+SERVO_BODY = (23.0, 19.0, 8.0)
+SERVO_SHAFT_Z = 39.0            # Hebel hängt von 39 bis 24 (Rohr: 77 … 62), also im Fenster 60 … 80
+HORN_R = 15.0                    # [Jan]
+WIRE_D, WIRE_DROP = 2.0, 30.0     # [Jan] Drahtstärke, senkrechte Länge
 SERVO_HORN_R = 15.0              # [Jan] Gestänge 15 mm von der Servoachse
 PUSHROD = dict(d=2.0, l=(29.0, 30.0))   # [Jan]
 
@@ -119,10 +132,20 @@ SHEAR_PIN_PHI = (45.0, 225.0)
 SHEAR_PIN_D = 2.0
 
 # --------------------------------------------------------------------------- Startrampe: Führungen zwischen die Schrauben
-RAMP_GUIDE_PHI = (45.0, 135.0, 225.0, 315.0)   # Vorschlag: vier Führungen, je mitten zwischen zwei Schrauben
+RAMP_GUIDE_PHI = (45.0, 135.0, 250.0)   # zwischen Schrauben (0/90/180/270) und Servofenstern (207°, 336° laut Druckdatei)
 RAMP_GUIDE_H = 160.0
 RAMP_GUIDE_GAP = 1.5
 RAMP_GUIDE_W = 20.0
+
+def servo_window_phi():
+    """Winkel der Servofenster in Rohr A aus der Wellenlage der Servos (Druckdatei gedreht um GIMBAL_ROT_DEG)."""
+    out = []
+    for name, (cx, cy, cz), (rx, ry), s_tan, r_t in SERVOS:
+        rad = math.hypot(cx, cy) + SERVO_BODY[2] / 2
+        sx, sy = rx * rad - ry * s_tan, ry * rad + rx * s_tan
+        out.append((math.degrees(math.atan2(sy, sx)) + GIMBAL_ROT_DEG) % 360)
+    return out
+
 
 PRINT_RHO, PRINT_FILL = 1.27, 0.75
 

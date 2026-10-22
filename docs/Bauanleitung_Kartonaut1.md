@@ -49,7 +49,7 @@ python docs/bauanleitung/build_pdf.py             # diese Anleitung als PDF
 | 3 | K | Die Stecker J5/J6/J1 an der unteren Stirnseite der Platine ragen 12 mm über. | Untere Scheibe mit Steckerfenster, Lage geprüft. |
 | 4 | K | Das CAD-Modell `cad/tvc.py` beschreibt einen Kardan mit der Servowelle direkt auf der Drehachse; gebaut ist ein Schubstangen-Kardan. | Für den Bau gilt der gebaute Kardan; das CAD-Modell ist nachzuziehen (O4). Die Servo-Umrechnung in `Config.h` (Befund 13) am gebauten Kardan messen. |
 | 5 | W | Das alte Massenmodell setzte Druckteile zu leicht an. | Hier aus den CAD-Volumen gerechnet: ≈ 689 g (§2.5). |
-| 6 | W | Die Rampenführungen (Entwurf bei 60/180/300°) liegen auf Schrauben. | Führungen bei **45/135/225/315°**, zwischen den Schrauben (Hinweis an die Startrampe). |
+| 6 | W | Die Rampenführungen (Entwurf bei 60/180/300°) liegen auf Schrauben. | Führungen bei **45/135/250°**, zwischen Schrauben und Servofenstern (Hinweis an die Startrampe). |
 | 7 | W | Gewinde direkt im Druck reißen bei häufigem Lösen aus. | M3-Muttern in Sechskant-Taschen an allen Trennstellen (§4). |
 | 8 | W | Barometerraum war zum Kardan offen. | Untere Scheibe plus Schaum; die 4 alten Löcher in Rohr B sind der Druckausgleich. |
 | 9 | H | Bei 2 l CO₂ im freien Raum unter der Spitze (ca. 780 ml) entstünden bis 2,6 bar, wenn die Spitze klemmt. | Spant 5 mm (ca. 17 MPa bei 2,6 bar), keine Abscherstifte, bis der Test zeigt, dass die Spitze bei kleinem Druck geht. |
@@ -64,7 +64,7 @@ python docs/bauanleitung/build_pdf.py             # diese Anleitung als PDF
 
 | Modul | Teile | Trennstelle |
 |---|---|---|
-| **M1 Antrieb** | Rohr A 125 mit dem gebauten Kardan, 2 × W5652H, Motor E12 (bündig) | T1: 4 × M3 durch Rohr A und Kuppler in den Schraubring |
+| **M1 Antrieb** | Rohr A 125 mit dem gebauten Kardan, 2 × W5652H mit Hebel und Drahtbügel (im Modell schematisch), Motor E12 (bündig) | T1: 4 × M3 durch Rohr A und Kuppler in den Schraubring |
 | **M2 Avionik** | Rohr B 176, Kuppler J1 (in B verklebt), Schlitten mit Spant, Platine, Akkus, GPS, LoRa, Schalterbrett | T2: 4 × M3 durch Rohr B in den Spant |
 | **M3 Bergung** | Rohr C, CO₂-Modul auf dem Spant, Schirm, Schnur | T3: 4 × M3 (45° versetzt) durch Rohr C in den Spant |
 | **M4 Spitze** | Klima 8539 | T4: Passung |
@@ -81,7 +81,9 @@ Längslinie 0° = eine Kardanschraube (markieren). Von außen gesehen, Spitze ob
 | 0°, 90°, 180°, 270° | alle Schrauben von Kardan, T1, T2 und die alten Löcher in B |
 | 90° | Bestückungsseite der Platine, Luken A1 (SD) und A2 (USB) |
 | 270° | Luke B (Schalterbrett), daneben bei 282° das Loch für den Schraubschalter |
-| 45°, 135°, 225°, 315° | Rampenführungen (bis 160 mm Höhe), Schrauben T3 in Rohr C, Abscherstifte bei 45/225° |
+| 45°, 135°, 250° | Rampenführungen (bis 160 mm Höhe) |
+| ca. 207°, 336° | Servofenster in Rohr A (Bestand, Lage aus der Druckdatei) |
+| 45°, 135°, 225°, 315° | Schrauben T3 in Rohr C, Abscherstifte bei 45/225° |
 | Servofenster | wie gebaut; sie dürfen nicht unter einer Rampenführung liegen (prüfen, sonst Führungen drehen) |
 
 Die Platine muss nach dem Kardan ausgerichtet werden (welche Servoachse Nicken ist); Rohr B hat dafür eine Marke über
@@ -335,7 +337,7 @@ Jedes Teil nach dem Druck wiegen.
 
 | Nr. | Punkt |
 |---|---|
-| O1 | Servofenster und Rampenführungen: Laut Druckdatei sitzen die Servotaschen 45° neben den Kardanschrauben (bei 225° und 315° ab der Längslinie), also genau dort, wo ich die Führungen vorgeschlagen hatte (45/135/225/315°). Aus den Fotos sah es eher nach 10° und 25° neben einer Schraube aus. Bitte am Rohr nachsehen; die Führungen dann zwischen Schrauben und Fenster legen, z. B. 45°/135°/250°. Ein Problem ist es nur, wenn ein Servoarm über die Rohroberfläche ragt. |
+| O1 | Servofenster laut Druckdatei und Servo-Lage bei ca. 207° und 336° ab der Längslinie (27° bzw. 24° neben einer Schraube, passt zu deinen Fotos). Rampenführungen deshalb bei **45°/135°/250°** statt im 45°-Raster (Startrampe, Branch `landepad`, anpassen). |
 | O2 | Spitzenlänge (230 mm angenommen) nachmessen; ändert nur die Gesamtlänge. |
 | O3 | Altes GPS-Modul: Typ und Maße, dann den Halter unter dem Spant anpassen (§3.6). |
 | O4 | Gedruckt ist der Kardan aus `outer_gimbal_dual_TVC.blend` und `inner_gimbal_dual_TVC.blend` (12.06.2025, `E:\Archiv_Projekte\Blender\Dateien\`); als Netz in `cad/export/asbuilt/` und im GLB-Gesamtmodell an seiner Lage (Grundfläche 38 mm, Bohrungen auf 44 mm). `cad/tvc.py` (Bild auf GitHub) ist ein späterer Entwurf vom 21.10.2026, nicht gedruckt. Servo-Umrechnung am gebauten Kardan messen. |

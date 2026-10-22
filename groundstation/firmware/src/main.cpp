@@ -1,5 +1,5 @@
 // =====================================================================
-//  Bodenstation Mission Space – Startgerät und Telemetrie (ESP32-S3)
+//  Bodenstation Kartonaut – Startgerät und Telemetrie (ESP32-S3)
 //
 //  Ablauf je Schleifendurchlauf:
 //    igniter::update()  Schlüssel, ARM, Leitungsspannungen, Fehler

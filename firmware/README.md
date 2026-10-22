@@ -2,7 +2,11 @@
 
 PlatformIO-Projekt für den Teensy 4.1. Die Firmware liest die Sensoren, schätzt Lage und
 Höhe, regelt den Schubvektor und loggt jeden Durchlauf auf die SD-Karte. Ein
-Flugzustandsautomat fehlt noch, die Regler sind in `Config.h` abgeschaltet.
+Flugzustandsautomat fehlt noch, die Regler sind in `Config.h` abgeschaltet. Für *Kartonaut 1* (Modulbauweise
+Stand 2b, 22.10.2026) entfällt der Rollmotor; der Rollregler bleibt aus, dafür muss die Lage vor dem Erstflug als
+Quaternion aus dem Gyro mit Oben-Vektor gerechnet werden (`PROJECT.md` Befund 3). Masse 0,723 kg und Hebelarm
+0,186 m aus `cad/mass_stand2b.md` gehören nach dem Wiegen in `Config.h` (`MASS_KG`, `MOMENT_ARM_M`); der
+Fallschirm-Servo an `J_SERVO3` löst die CO₂-Kapsel aus.
 
 ```bash
 pio run                        # Flug-Firmware bauen

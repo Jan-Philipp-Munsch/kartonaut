@@ -1,0 +1,64 @@
+{
+ "source": "cad/mass_stand2b.py aus cad/modular_params.py und export/modular/masses.json, Stabmodell wie mass_model.py",
+ "date": "2026-10-22",
+ "config": "Modulbauweise Kartonaut 1, Stand 2b (Rohr A 125 + B 176 + C 195, CO₂-Ausstoß, kein Rollmotor)",
+ "axes": "z Längsachse (+z zur Spitze), Ursprung Rohrunterkante = Düsenebene; x zum Servo des Innenrahmens",
+ "pivot_from_nozzle_m": 0.0695,
+ "length_mm": 731.0,
+ "configurations": {
+  "liftoff": {
+   "label": "Start, voller Motor",
+   "mass_kg": 0.7233,
+   "cg_from_nozzle_m": 0.256,
+   "cg_lateral_m": [
+    -6e-05,
+    -0.00162
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.021317,
+    "Iyy": 0.021339,
+    "Izz": 0.000473,
+    "Ixy": -1e-06,
+    "Ixz": -8e-06,
+    "Iyz": -0.000131
+   },
+   "lever_arm_m": 0.1865
+  },
+  "burnout": {
+   "label": "Brennschluss, Treibstoff verbraucht",
+   "mass_kg": 0.6953,
+   "cg_from_nozzle_m": 0.2649,
+   "cg_lateral_m": [
+    -6e-05,
+    -0.00168
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.019888,
+    "Iyy": 0.01991,
+    "Izz": 0.000472,
+    "Ixy": -1e-06,
+    "Ixz": -8e-06,
+    "Iyz": -0.000142
+   },
+   "lever_arm_m": 0.1954
+  },
+  "no_motor": {
+   "label": "Ohne Motor (Adapter bleibt)",
+   "mass_kg": 0.6593,
+   "cg_from_nozzle_m": 0.2768,
+   "cg_lateral_m": [
+    -6e-05,
+    -0.00178
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.01805,
+    "Iyy": 0.018071,
+    "Izz": 0.000467,
+    "Ixy": -1e-06,
+    "Ixz": -9e-06,
+    "Iyz": -0.000156
+   },
+   "lever_arm_m": 0.2073
+  }
+ }
+}

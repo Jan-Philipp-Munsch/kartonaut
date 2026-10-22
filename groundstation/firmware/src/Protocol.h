@@ -4,11 +4,11 @@
 // =====================================================================
 //  Protocol.h – Funkprotokoll Rakete <-> Bodenstation (S3)
 //
-//  PLATZHALTER. Das Protokoll gehört der Flug-Firmware (spacecode/, E7).
+//  PLATZHALTER. Das Protokoll gehört der Flug-Firmware (firmware/, E7).
 //  Stand 22.10.2026 gibt es dort noch keine Definition (nur den
 //  HC-12-Beacon "BEACON,<seq>,<millis>"). Diese Datei setzt den Vorschlag
 //  aus docs/Schnittstellen_Bodensystem_2026-10-22.md §S3 um und ist so
-//  geschnitten, dass sie gegen die Definition aus spacecode/ ausgetauscht
+//  geschnitten, dass sie gegen die Definition aus firmware/ ausgetauscht
 //  werden kann: der Rest der Firmware kennt nur die Strukturen und
 //  Funktionen unten.
 //
@@ -47,7 +47,7 @@ enum AckResult : uint8_t {
   ACK_UNKNOWN  = 0x03,
 };
 
-// ----- Flugzustände (Vorschlag; maßgeblich wird der Automat in spacecode/) -----
+// ----- Flugzustände (Vorschlag; maßgeblich wird der Automat in firmware/) -----
 enum FlightState : uint8_t {
   FS_BOOT        = 0,
   FS_IDLE        = 1,   // an, nicht kalibriert

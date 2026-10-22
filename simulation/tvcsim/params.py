@@ -8,7 +8,9 @@ Werte wiedererkennt. Es gibt zwei Nominalsaetze (siehe README, Abschnitt Paramet
   Die gelten, wenn das Modell geoeffnet wird, ohne vorher ``TVC6DOF.m`` auszufuehren,
   also vermutlich bei ``pid_tuner.m``.
 * ``VehicleParams.cad()`` - Masse, Hebelarm und Traegheitsmomente aus dem CAD-Massenmodell
-  ``cad/mass_properties.json`` (Startzustand mit vollem Motor).
+  ``cad/mass_properties.json`` (Startzustand mit vollem Motor, Konfiguration ``voll``, 981 g).
+* ``VehicleParams.stand2b()`` - dasselbe aus ``cad/mass_stand2b.json``, der Modulbauweise
+  Kartonaut 1 Stand 2b (22.10.2026): kuerzeres Rohr, CO2-Ausstoss, kein Rollmotor.
 """
 from __future__ import annotations
 
@@ -20,6 +22,7 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 OUT_DIR = Path(__file__).resolve().parent.parent / "out"
 REPO_DIR = Path(__file__).resolve().parent.parent.parent
 CAD_MASS_FILE = REPO_DIR / "cad" / "mass_properties.json"
+STAND2B_MASS_FILE = REPO_DIR / "cad" / "mass_stand2b.json"
 FUEL_PER_MOTOR_KG = 0.028   # TSP E12: 28 g Treibstoff
 
 
@@ -70,6 +73,11 @@ class VehicleParams:
                    l=cfg["lever_arm_m"], l_meas=cfg["lever_arm_m"],
                    m_dry=cfg["mass_kg"] - FUEL_PER_MOTOR_KG,
                    mis_y=float(lat[0]), mis_z=float(lat[1]))
+
+    @classmethod
+    def stand2b(cls, config: str = "liftoff", path: Path | None = None) -> "VehicleParams":
+        """Massenbudget der Modulbauweise Stand 2b (``cad/mass_stand2b.py``), gleiches Format wie ``cad()``."""
+        return cls.cad(config=config, path=path or STAND2B_MASS_FILE)
 
     @property
     def l_ctrl(self) -> float:

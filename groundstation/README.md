@@ -180,10 +180,10 @@ werden alle 300 ms wiederholt, bis die Quittung kommt (4×, `ABORT` 10×).
 
 ## 6. Abweichungen von S2–S4 und Abstimmung mit der Flug-Firmware
 
-**Telemetrieprotokoll.** `spacecode/` hat am 22.10.2026 noch keine Definition (nur den HC-12-Beacon
+**Telemetrieprotokoll.** Die Flug-Firmware (`firmware/`) hat am 22.10.2026 noch keine Definition (nur den HC-12-Beacon
 `BEACON,<seq>,<millis>` in `examples/radio_beacon`, `main.cpp` nennt Serial8 „noch ohne Protokoll“).
 `Protocol.h` setzt deshalb den Vorschlag aus S3 als Platzhalter um. Sobald die Flug-Firmware ihr
-Protokoll hat, wird nur `Protocol.h/.cpp` ersetzt; am besten als gemeinsame Header-Datei, die beide
+Protokoll hat (Plan 22.10. §2 B4), wird nur `Protocol.h/.cpp` ersetzt; am besten als gemeinsame Header-Datei, die beide
 Projekte einbinden. Abzustimmen:
 
 | Punkt | Vorschlag der Bodenstation |
@@ -192,7 +192,7 @@ Projekte einbinden. Abzustimmen:
 | Typen | `0x01` Telemetrie (27 Byte), `0x02` GPS (12 Byte), `0x10` Kommando (cmd, seq), `0x11` Quittung (cmd, seq, Ergebnis) |
 | Telemetrie | seq, Zustand, Flags, t_ms (u32), Höhe 0,1 m, v<sub>z</sub> cm/s, Quaternion 4 × i16/32767, Kardan Pitch/Yaw 0,01°, 1S/2S in mV |
 | Flags | Bit 0 Rakete scharf (`VBAT_ARMED`), 1/2 Pyro-Durchgang 1/2, 3 GPS-Fix, 4 Log läuft, 5 kalibriert |
-| Flugzustände | `BOOT, IDLE, CALIBRATING, PAD_READY, BOOST, COAST, APOGEE, DESCENT, LANDED, ABORT, FAULT` (0…10); der Automat in `spacecode/` legt sie fest |
+| Flugzustände | `BOOT, IDLE, CALIBRATING, PAD_READY, BOOST, COAST, APOGEE, DESCENT, LANDED, ABORT, FAULT` (0…10); der Automat in `firmware/` legt sie fest |
 | Quaternion | Achsenkonvention; die Oberfläche nimmt die Rumpfachse als z an (Neigungsanzeige) |
 | `ABORT` | Bedeutung auf dem Pad (zurück nach `IDLE`, Pyros sperren) und im Flug (Fallschirm?) legt die Flug-Firmware fest. Die Station sendet es bei jedem Abbruch. |
 | `PAD_READY` | muss während des Countdowns stehen bleiben; die Rakete darf ihn nicht für eine Nachkalibrierung verlassen, sonst bricht die Station ab |

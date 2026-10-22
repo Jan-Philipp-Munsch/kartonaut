@@ -30,7 +30,7 @@ Wichtige Schalter von `run_nominal.py` (gelten auch für Monte-Carlo und Tuning)
 | Schalter | Bedeutung |
 |---|---|
 | `--controller simulink\|firmware` | Simulink-Regler oder Port von `Control.cpp` |
-| `--vehicle nominal\|preload\|cad` | Fahrzeugparameter aus `TVC6DOF.m`, aus dem PreLoadFcn der `.slx` oder aus `cad/mass_properties.json` (siehe unten) |
+| `--vehicle nominal\|preload\|cad\|stand2b` | Fahrzeugparameter aus `TVC6DOF.m`, aus dem PreLoadFcn der `.slx`, aus `cad/mass_properties.json` (Konfiguration `voll`, 981 g) oder aus `cad/mass_stand2b.json` (Modulbauweise *Kartonaut 1*, 723 g; siehe unten) |
 | `--gains nominal\|tuner\|preload`, `--kp --ki --kd` | Gewinne des Simulink-Reglers |
 | `--fw-kp --fw-ki --fw-kd --fw-mass --fw-servo-gain` | Konstanten des Firmware-Reglers (`Config.h`) |
 | `--servo-gain 6` | Gain-Block hinter `tf5` (Servo-Grad je TVC-Grad; 23 laut `Config.h`) |
@@ -229,6 +229,28 @@ Mit Boden erreicht die 1,0-kg-Rakete am E12 also 20 m statt 9 m (ohne Boden), di
 alten Zahlen wieder heraus. Für den zweiten Motor gilt: Bei der `cad`-Rakete ist er mit 7,3 s zu
 spät (Landung bei 6,3 s), ein Landebrennen braucht eine Zündung aus der Höhe statt nach Zeit.
 
+**Nachtrag 22.10.2026 nachts, *Kartonaut 1* Stand 2b** (`--vehicle stand2b`: m_dry 0,695 kg, 0,723 kg beim Start,
+I quer 0,0213, längs 0,00047 kg m², Hebelarm 0,186 m aus `cad/mass_stand2b.json`; `--single-motor`, Boden, Rauschen,
+statischer Fehler 1/0,6°, `--accel specific_force`). Die Modulbauweise ist ein Viertel leichter als `voll`, der
+Hebelarm halb so lang, das Quer-Trägheitsmoment ein Fünftel: die Rakete reagiert viel schneller auf den Kardan.
+
+| Fahrzeug `stand2b` (0,723 kg Start), ein Motor | maxHeight | Kipp max Brenn. | Kipp 3,55 s | seitlich 3,55 s | Landung |
+|---|---|---|---|---|---|
+| Simulink-Regler, Firmware-Gewinne (kp 5 / ki 0 / kd 0,01) | 62,5 m | 3,9° | 2,8° | 1,0 m | 9,2 s |
+| Simulink-Regler, Tuner (3,1 / 5 / 0,385) | 59,8 m | 14,1° | 11,8° | 9,3 m | 9,1 s |
+| Simulink-Regler, TVC6DOF.m (1 / 1 / 0,1) | 59,9 m | 14,7° | 11,7° | 8,3 m | 9,1 s |
+| Firmware 1:1 (`MASS_KG` 0,70, `MOMENT_ARM_M` 0,30, Gain 23) | 63,7 m | 1,9° | 1,0° | 1,0 m | 9,3 s |
+| Firmware, Servo-Gain 6 | 63,6 m | 1,9° | 1,1° | 0,9 m | 9,3 s |
+| Firmware, Gain 6, Kd = 38,5 (Tuner-D) | 60,5 m | 15,6° | 13,6° | 8,6 m | 9,1 s |
+
+Monte-Carlo (`run_montecarlo.py --controller firmware --vehicle stand2b --single-motor --accel specific_force
+--fw-servo-gain 6 --fw-mass 0.723`, 100 Läufe): Gipfel 63,4 ± 0,4 m (61,3 … 63,8 m), seitlicher Versatz bei der
+Landung im Median 6,9 m. Der Kippwinkel nach Brennschluss ist ohne Schub nicht mehr regelbar und deshalb kein Maß
+für den Regler; in der Brennphase bleibt die Firmware mit beiden Servo-Umrechnungen unter 2°. Das Massenproblem aus
+Befund 12 ist mit der Modulbauweise erledigt: 63 m statt 20 m am selben Motor. Nach dem Wiegen der Rakete
+`cad/mass_stand2b.py` korrigieren und diese Tabelle neu rechnen; die Servo-Übertragungsfunktion stammt weiter vom
+SG90-Fit von 2025 und ist am gebauten Schubstangen-Kardan mit den W5652H neu zu messen.
+
 
 `scripts/compare_gains.py` (Rauschen an, statischer Fehler 1°/0,6°, ein Seed). Maßgeblich
 ist die erste Brennphase (0..3,55 s); danach gibt es keinen Schub und keine Stellmöglichkeit,
@@ -329,7 +351,8 @@ entspricht in Gipfelhöhe (48 m gegen 45 m) und Streuung dem MATLAB-Bild `Images
 - Servo-Grad je TVC-Grad (6 oder 23) und die Polung beider Achsen am Tisch messen.
 - Das CAD-Massenmodell (981 g) bestätigt: mit 0,9..1,0 kg trägt die E12 die Rakete nur knapp
   (Gipfel 9..10 m). Masse senken oder F35 rechnen (`--vehicle cad`, Schubkurve `MotorParams(curve="F35")`;
-  dann aber Beschleunigungsbereich ±4 g der IMU prüfen, PROJECT.md §5 Punkt 4).
+  dann aber Beschleunigungsbereich ±4 g der IMU prüfen, PROJECT.md §5 Punkt 4). [Erledigt 22.10.2026 über die
+  Masse: die Modulbauweise *Kartonaut 1* wiegt 723 g (`--vehicle stand2b`) und erreicht 63 m am E12, siehe Nachtrag oben.]
 - Die zweite Zündung bei 7,3 s trifft im Modell die fallende Rakete (ohne Boden) oder kommt nach
   der Landung (mit Boden); für eine Flugvorhersage gehört ein Flugzustandsautomat hinein.
 - Der Vergleich mit dem Simulink-Nominallauf ist nur über das Bild

@@ -41,7 +41,9 @@ nur die Bilder.
 | `testrig.py` | TVC-Prüfstand: Gestell, Rahmen, Klemmkragen, Prop-Adapter mit BR2814 und Propeller, Schutzkäfig (siehe unten) |
 | `build.py` | Zusammenbau, Export, Kollisionsprüfung, Render-Aufrufe |
 | `landingpad.py` | Startrampe: Platte mit Loch, drei verstellbare Beine, Startstützen, Zündkasten; Prüfung gegen die Rakete, eigener Export und Bilder (siehe unten) |
-| `mass_model.py` | Stabmodell für Schwerpunkt und Trägheitstensor |
+| `mass_model.py` | Stabmodell für Schwerpunkt und Trägheitstensor (Konfigurationen `voll` und `erstflug`) |
+| `modular.py`, `modular_params.py` | Modulbauweise *Kartonaut 1* Stand 2b: Rohre A/B/C mit Bohrungen und Luken, Druckteile, gebauter Kardan als Netz, Servos und Gestänge schematisch, Kollisionsprüfung, Gesamtmodell STEP/GLB, Bilder (siehe unten) |
+| `mass_stand2b.py` | Massenbudget der Modulbauweise: Masse, Schwerpunkt, Hebelarm, Trägheit je Flugzustand → `mass_stand2b.md/.json` (liest die Simulation als `--vehicle stand2b`) |
 | `tools/` | Blender-Skripte: Inventur (`blender_inspect.py`, `run_inventory.sh`), Ortho-Ansichten und Radialmaße (`blender_views.py`), Renderer für den Build (`render_parts.py`) |
 
 Koordinaten wie in der Firmware: z ist die Längsachse, z = 0 die Düsenebene, +z zur Spitze. x zeigt zum
@@ -173,17 +175,23 @@ nicht herstellbar; Lukenbreite 12 hatte 0 mm Rand zu den Stangen (jetzt Fenster 
 ## Modulbauweise für den Erstflug (`modular.py`, Stand 2 vom 22.10.2026)
 
 Nach Jans gebautem Kardan (Schubstangen, W5652H, Rohr A 125 mm) und den Entscheidungen vom 22.10. abends: kein
-Ring-Stack, kein Rollmotor, CO₂-Ausstoß, Schirm im Rohr C. Maße in `modular_params.py`: Rohr A 125 + B 176 + C 258,
-Kuppler J1 75 mm in B verklebt mit Schraubring, Schlitten mit Spant (Band Ø 75 zwischen B und C), alle Radialschrauben
-bei 0°/90°/180°/270° (Rohr C 45° versetzt). Grundlage der Bauanleitung `docs/Bauanleitung_Kartonaut1.md`.
+Ring-Stack, kein Rollmotor, CO₂-Ausstoß, Schirm im Rohr C, Spitze über den zweiten halben Kuppler. Maße in
+`modular_params.py` (Stand 2b): Rohr A 125 + B 176 + C 195, Gesamtlänge 731 mm; Kuppler J1 75 mm in B verklebt mit
+Schraubring, Schlitten mit Spant (Band Ø 75 zwischen B und C), alle Radialschrauben bei 0°/90°/180°/270° (Rohr C 45°
+versetzt), Rampenführungen bei 45°/135°/250° zwischen Schrauben und Servofenstern (207°/336° laut Druckdatei).
+Grundlage der Bauanleitung `docs/Bauanleitung_Kartonaut1.md`. Das Massenbudget dazu rechnet `mass_stand2b.py`:
+**723 g** beim Start, Schwerpunkt 256 mm, Hebelarm Kardan–Schwerpunkt 186 mm, Ixx = 0,021, Izz = 0,00047 kg·m²
+(`mass_stand2b.md`; die Überschlagsrechnung in `modular.py` kommt ohne LoRa-Wendel, CO₂-Servo und Schalterbrett-Teile
+auf 689 g).
 
 ```bash
 MS_CONFIG=erstflug python cad/modular.py        # Druckteile nach export/modular/*.stl, Prüfung, masses.json, Bilder
 python cad/modular_params.py                    # nur die Plausibilitätsprüfung der Zahlen
 ```
 
-Der gebaute Kardan ist dort nur ein Hüllkörper: `tvc.py` beschreibt noch den Direktantrieb und ist auf den
-Schubstangen-Kardan umzustellen (Bauanleitung §8 O4). Die Prüfung meldet Durchdringungen von Schlitten, Platine,
+Der gebaute Kardan liegt als Netz aus den Druckdateien vom 12.06.2025 (`export/asbuilt/*.stl`) an seiner Lage im
+Gesamtmodell (Grundfläche 38 mm, Bohrungen auf 44 mm, Drehung −45°), Servos, Hebel und Drahtbügel schematisch dazu;
+`tvc.py` beschreibt noch den Direktantrieb und ist auf den Schubstangen-Kardan umzustellen (Bauanleitung §8 O4). Die Prüfung meldet Durchdringungen von Schlitten, Platine,
 Steckern, Akkus, GPS, LoRa-Wendel, Schalterbrett, Schraubring, CO₂-Modul und Schirm mit Rohren, Kuppler und einander.
 
 ## Prüfstand (`testrig.py`, 21.10.2026)
@@ -301,7 +309,11 @@ Führungen setzen.
 **Abweichungen von S1** (an den Besitzer der Schnittstellendatei): keine Strahlplatte mit seitlichem Abzug, sondern Loch und
 Erde; keine Landefläche Ø 1200 (eigenes Teil für die Konfiguration `voll`, später).
 
-**Offen:** Schrauben, Muttern und Einschlagmuttern der Stützen sind nur als Langlöcher modelliert. Steifigkeit der Stütze mit
+**Offen:** Die Rampe ist gegen das Erstflug-CAD (`build.py --config erstflug`) geprüft, nicht gegen die Modulbauweise:
+dort liegen alle Schrauben bei 0°/90°/180°/270°, die Luken bei 90°/270°, die Servofenster laut Druckdatei bei 207°/336°,
+und es gibt keinen Schlüsselschalter; `modular_params.py` sieht die Führungen bei 45°/135°/250° vor (PROJECT.md Befund 17).
+`STAND_PHI` darauf setzen und gegen `modular.build_all()` prüfen. Schrauben, Muttern und Einschlagmuttern der Stützen
+sind nur als Langlöcher modelliert. Steifigkeit der Stütze mit
 2 × M6 in 18 mm Sperrholz am Muster prüfen. Temperatur der Alu-Auflagen (10 mm über der Düse, seitlich vom Strahl) beim ersten
 Abbrand prüfen. Landefläche für `voll` konstruieren. `export/landingpad.step` ist in `.gitignore` nicht freigegeben.
 

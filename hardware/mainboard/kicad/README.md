@@ -336,7 +336,7 @@ LoRa-Moduls, Umriss-Kreuzungen); JLC schneidet den Druck über Pads weg.
 | U5, U15 | Barometer, zweites (DNP) | NT1 | Sternpunkt GND_PWR/GND |
 ## 8. Nächste Schritte
 
-1. Die 21 offenen Verbindungen aus §5.5 in KiCad ziehen (interaktiver Router mit Schieben, die drei
+1. Die 21 offenen Verbindungen aus §5.5 in KiCad ziehen, Anleitung in `HANDROUTING.md` (interaktiver Router mit Schieben, die drei
    Häufungen DRV8833, J_STACK und Shunt), die Flächen-Punkte entweder dort mit einer Bahn oder im
    Generator (`CORRIDORS`, `add_zones`), dann `./make.sh drc` (Ziel: 0 Fehler, 0 offene Verbindungen) und
    `gen_pcb.py silk` für den Druck. Ab hier ist die Platinendatei die Quelle; `./make.sh pcb` nicht mehr

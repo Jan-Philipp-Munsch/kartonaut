@@ -6,7 +6,7 @@ from common import Parts, tube, cyl, box_from, cyl_between, radial_holes
 
 
 def _window(side, w, v0, v1):
-    c = box_from(-w / 2, w / 2, 0, P.TUBE_OD, P.BOARD_V0_Z + v0, P.BOARD_V0_Z + v1)
+    c = box_from(-w / 2, w / 2, P.HATCH_R0, P.TUBE_OD, P.BOARD_V0_Z + v0, P.BOARD_V0_Z + v1)
     return c.mirror("XZ") if side < 0 else c
 
 
@@ -67,15 +67,19 @@ def build(parts: Parts):
     if P.CONFIG == "erstflug":
         zk = (P.KEY_COLLAR_Z[0] + P.KEY_COLLAR_Z[1]) / 2
         lower = lower.cut(cyl_between(P.KEY_HOLE_D, (P.TUBE_OD, 0, zk), (P.TUBE_ID / 2 - 3, 0, zk)))
-        # unteres Rohr (Kardan + Motor, ca. 150 g) hängt sonst nur mit 25 mm Reibung am Kuppler: beim Öffnen des Schirms
-        # würde es abfallen. Drei M2 auf halber Steckhöhe.
-        lower = _m2_holes(lower, P.FC_COUPLER_Z[0] + P.COUPLER_INTO_LOWER_EF / 2)
+        # Flugcomputer-Kuppler ganz im unteren Rohr, beide Luken darin; 3 × M2 unten und oben (45°/135°/225°, eindeutige Lage)
+        lower = lower.cut(hatch)
+        lower = _m2_holes(lower, P.FC_COUPLER_Z[0] + 12.0)
+        lower = _m2_holes(lower, P.FC_COUPLER_Z[1] - 12.0)
+        # Stoß im Fallschirmraum: 3 × M2 durch das untere Rohr in den Stoßkuppler
+        lower = _m2_holes(lower, P.CHUTE_COUPLER_Z[0] + P.CHUTE_COUPLER_L / 4)
     parts.add("Rohr unten 75x500", lower, "tube", "airframe")
-    upper = tube(P.TUBE_OD, P.TUBE_ID, *P.UPPER_TUBE_Z).cut(hatch)
+    upper = tube(P.TUBE_OD, P.TUBE_ID, *P.UPPER_TUBE_Z)
     if P.CONFIG == "erstflug":
-        upper = _m2_holes(upper, P.FC_COUPLER_Z[0] + 90.0)
+        parts.add("Stoßkuppler (im oberen Rohr verklebt)", tube(P.COUPLER_OD, P.COUPLER_ID, *P.CHUTE_COUPLER_Z), "coupler", "airframe")
     else:
-        # vier Schrauben Rohr–Kuppler oben und unten (M2 radial)
+        # Luke und vier Schrauben Rohr–Kuppler (M2 radial)
+        upper = upper.cut(hatch)
         upper = radial_holes(upper, 2.2, P.TUBE_OD / 2, P.JOINT_Z + P.COUPLER_INTO_UPPER / 2, n=4, phi0=45, depth=3)
     parts.add("Rohr oben 75x500 (mit Luke)", upper, "tube", "airframe")
     z0 = P.NOSE_BASE_Z - P.NOSE_SHOULDER_L

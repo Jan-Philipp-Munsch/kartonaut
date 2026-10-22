@@ -11,10 +11,10 @@ import json, os, subprocess, sys, time
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 # --config erstflug [--tube-l 700]: muss vor dem Import von params stehen (params liest MS_CONFIG / MS_TUBE_L)
 for _i, _a in enumerate(sys.argv):
-    if _a == "--config":
-        os.environ["MS_CONFIG"] = sys.argv[_i + 1]
-    elif _a == "--tube-l":
-        os.environ["MS_TUBE_L"] = sys.argv[_i + 1]
+    if _a in ("--config", "--tube-l"):
+        if _i + 1 >= len(sys.argv):
+            sys.exit(f"{_a} braucht einen Wert")
+        os.environ["MS_CONFIG" if _a == "--config" else "MS_TUBE_L"] = sys.argv[_i + 1]
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -133,10 +133,7 @@ def check_clearance(deg=None):
     pairs = [(a, b) for a in moving_inner for b in fixed] + [(a, b) for a in moving_motor for b in ("Innenrahmen", "Servo Innenrahmen W5652H")]
     bad = []
     for a, b in pairs:
-        try:
-            v = cq.Workplane().add(by[a]).intersect(cq.Workplane().add(by[b])).val().Volume()
-        except Exception:
-            v = 0.0
+        v = _overlap(by, a, b)
         if v > 0.5:
             bad.append((a, b, v))
     print(f"Kollisionsprüfung bei ±{deg:.0f}° Pitch und Yaw: " + ("frei" if not bad else "DURCHDRINGUNG"))
@@ -146,10 +143,13 @@ def check_clearance(deg=None):
 
 
 def _overlap(by, a, b):
-    try:
-        return cq.Workplane().add(by[a]).intersect(cq.Workplane().add(by[b])).val().Volume()
-    except Exception:
-        return 0.0
+    """Schnittvolumen zweier Teile; fehlende Namen sind ein Fehler, kein "frei"."""
+    return _vol(by[a], by[b])
+
+
+def _vol(a, b):
+    r = cq.Workplane().add(a).intersect(cq.Workplane().add(b))
+    return sum(s.Volume() for s in r.vals()) if r.vals() else 0.0
 
 
 def check_rig_clearance():
@@ -201,44 +201,39 @@ def check_erstflug(parts):
                 bad.append(f"{h} / {o}: {v:.0f} mm³")
     for o in rods + sled + ["Kuppler Flugcomputer 150", "Rohr unten 75x500", "Endring unten"]:
         v = _overlap(by, "Schlüsselschalter-Kragen", o)
-        if v > 0.5 and o != "Kuppler Flugcomputer 150":
+        if v > 0.5:
             bad.append(f"Kragen / {o}: {v:.0f} mm³")
     out.append(("Schalterbrett, Bauteile, Schlüsselschalter gegen Stangen/Platine/Akkus/Träger/Rohre/Kuppler", bad))
-    # 2 Steckerräume vor den Steckflächen (Stecker 1,5 mm größer, 8 mm tief nach außen) müssen leer sein
+    # 2 Steckerräume: Stecker/Karte/Finger (Stecker 1,5 mm größer, bis außerhalb des Rohrs) treffen weder Stangen, Platine,
+    #   Akkus und Träger noch die Wand von Kuppler und Rohr (das heißt: die Luke deckt den Steckerraum ab).
     bad = []
     v0 = P.BOARD_V0_Z
-    others = [n for n in by if n not in ("Rohr oben 75x500 (mit Luke)", "Kuppler Flugcomputer 150")]
+    others = list(by)
+    probes = []
     for name, a, b, hwid in P.PANEL_PARTS:
-        probe = cq.Workplane().add(box_from(-min(hwid + 1.5, 5.9), min(hwid + 1.5, 5.9), -P.TUBE_OD, P.PANEL_FACE_Y - 0.01,
-                                            v0 + a - 1.5, v0 + b + 1.5))
+        hw = hwid + 1.5
+        if 2 * hw > P.ROD_GAP:
+            bad.append(f"{name}: {2 * hw:.1f} mm breiter als die Stangenlücke {P.ROD_GAP:.1f}")
+        probes.append((f"Steckerraum {name}", box_from(-hw, hw, -P.TUBE_OD, P.PANEL_FACE_Y - 0.01, v0 + a - 1.5, v0 + b + 1.5), {name}))
+    usb_w, sd_w = 11.0, 11.0   # [Annahme] Micro-USB-Stecker mit Umspritzung; microSD 11 × 15
+    probes.append(("Micro-USB-Stecker (Teensy)", box_from(-usb_w / 2, usb_w / 2, 10.0, P.TUBE_OD,
+                                                       v0 + P.TEENSY["v1"] - 6, v0 + P.TEENSY["v1"] + 20), {"Teensy 4.1"}))
+    # microSD sitzt an der Unterseite des Teensy am USB-fernen Ende, Auswurf nach -v (12 mm über das Modulende hinaus)
+    probes.append(("microSD-Karte (Teensy)", box_from(-sd_w / 2, sd_w / 2, 2.0, P.TUBE_OD,
+                                                   v0 + P.TEENSY["v0"] - 12, v0 + P.TEENSY["v0"] + 8), {"Teensy 4.1"}))
+    for label, probe, skip in probes:
         for n in others:
-            if n == name:
+            if n in skip:
                 continue
-            try:
-                v = probe.intersect(cq.Workplane().add(by[n])).val().Volume()
-            except Exception:
-                v = 0.0
+            v = _vol(probe.val(), by[n])
             if v > 0.5:
-                bad.append(f"Steckerraum {name} / {n}: {v:.0f} mm³")
-    for label, (u, vv0, vv1, y0) in {"Micro-USB-Stecker (Teensy)": (5.5, v0 + P.TEENSY["v1"] - 6, v0 + P.TEENSY["v1"] + 14, 10.0),
-                                     "SD-Karte (Teensy)": (5.5, v0 + P.TEENSY["v0"] - 14, v0 + P.TEENSY["v0"] + 12, 10.0)}.items():
-        probe = cq.Workplane().add(box_from(-u, u, y0, P.TUBE_OD, vv0, vv1))
-        for n in others:
-            try:
-                v = probe.intersect(cq.Workplane().add(by[n])).val().Volume()
-            except Exception:
-                v = 0.0
-            if v > 0.5 and n not in ("Teensy 4.1",):
                 bad.append(f"{label} / {n}: {v:.0f} mm³")
     zk = (P.KEY_COLLAR_Z[0] + P.KEY_COLLAR_Z[1]) / 2
-    probe = cq.Workplane().add(cyl_between(P.KEY_SWITCH_D + 4, (P.TUBE_OD / 2 + 0.01, 0, zk), (P.TUBE_OD / 2 + 30, 0, zk)))
+    probe = cyl_between(P.KEY_SWITCH_D + 4, (P.TUBE_OD / 2 + 0.01, 0, zk), (P.TUBE_OD / 2 + 30, 0, zk))
     for n in by:
         if n.startswith(("Rohr", "Schl", "Spitze")):
             continue
-        try:
-            v = probe.intersect(cq.Workplane().add(by[n])).val().Volume()
-        except Exception:
-            v = 0.0
+        v = _vol(probe.val(), by[n])
         if v > 0.5:
             bad.append(f"Schlüsselschalter-Außenraum / {n}: {v:.0f} mm³")
     out.append(("Steckerräume (USB, SD, Schalterbrett, Schlüssel) frei", bad))
@@ -247,7 +242,7 @@ def check_erstflug(parts):
     piston = [n for n in by if n.startswith("Kolben")]
     for pn in piston:
         for n in by:
-            if n == pn or n.startswith(("Kolben", "Rohr oben")):
+            if n == pn or n.startswith(("Kolben", "Rohr oben", "Rohr unten")):
                 continue
             v = _overlap(by, pn, n)
             if v > 0.5:
@@ -256,20 +251,20 @@ def check_erstflug(parts):
     zmin_p = min(by[n].BoundingBox().zmin for n in piston)
     out.append((f"Kolben (z {zmin_p:.0f} …) gegen Endplatte/Stangen/Kuppler, Luft zur höchsten Kante (z {zmax:.1f}): {zmin_p - zmax:.1f} mm", bad))
     # Bohrung: Innenradius des oberen Rohrs von der Kolbenunterkante bis zur Spitze frei von Einbauten
-    ur = by["Rohr oben 75x500 (mit Luke)"]
+    # Kolben Ø 72,4 läuft im Rohr (ID 72,6) bis zur Spitze; der Stoßkuppler (ID 70,2) und die Spitzenschulter liegen darüber:
+    #   bis zur Unterkante des Stoßkupplers muss die Bohrung Ø 72,4 frei sein, darüber Ø 70,2 (Schirm Ø 60 passt) bis zur Öse der Spitze.
     zz0 = zmin_p
-    bore = cq.Workplane().add(cyl_between(P.COUPLER_OD, (0, 0, zz0), (0, 0, P.NOSE_BASE_Z - P.NOSE_BULKHEAD_BELOW_BASE)))
+    z_narrow = P.CHUTE_COUPLER_Z[0] if P.CONFIG == "erstflug" else P.NOSE_BASE_Z - P.NOSE_SHOULDER_L
+    z_top = P.NOSE_BASE_Z - P.NOSE_BULKHEAD_BELOW_BASE
+    bore = cyl_between(P.COUPLER_OD, (0, 0, zz0), (0, 0, z_narrow)).union(cyl_between(P.COUPLER_ID, (0, 0, z_narrow), (0, 0, z_top)))
     stuck = []
     for n in by:
-        if n.startswith(("Kolben", "Fallschirm", "Rohr", "Spitze", "Kuppler Flugcomputer")):
+        if n.startswith(("Kolben", "Fallschirm", "Rohr", "Kuppler Flugcomputer", "Stoßkuppler", "Spitze Klima", "Spitze Schulter")):
             continue
-        try:
-            v = bore.intersect(cq.Workplane().add(by[n])).val().Volume()
-        except Exception:
-            v = 0.0
+        v = _vol(bore.val(), by[n])
         if v > 0.5:
             stuck.append(f"{n}: {v:.0f} mm³")
-    out.append((f"Bohrung Ø {P.COUPLER_OD} von z {zz0:.0f} bis Spant der Spitze ({P.NOSE_BASE_Z - P.NOSE_BULKHEAD_BELOW_BASE:.0f}) frei von Einbauten", stuck))
+    out.append((f"Bohrung Ø {P.COUPLER_OD} von z {zz0:.0f} bis {z_narrow:.0f}, dann Ø {P.COUPLER_ID} bis zur Öse der Spitze ({z_top:.1f}) frei von Einbauten", stuck))
     for label, bad in out:
         print(f"  {label}: " + ("frei" if not bad else "DURCHDRINGUNG"))
         for x in bad:
@@ -301,7 +296,7 @@ def main_erstflug():
     zc = (P.KEY_COLLAR_Z[0] - 5, z1 + 5)
     for side, view in (("a", "hatch_a"), ("b", "hatch_b")):
         d = write_render_manifest(parts, f"ef_hatch_{side}", only_groups={"avionics", "airframe"},
-                                  exclude=("Rohr unten", "Spitze"), cut=(-200, 200, -200, 200, zc[1], 3000))
+                                  exclude=("Rohr oben", "Spitze", "Stoßkuppler"), cut=(-200, 200, -200, 200, zc[1], 3000))
         render(d, IMG / f"hatches_{side}.png", view)
         render(d, IMG / f"hatches_{side}_iso.png", view + "_iso")
     print(f"fertig in {time.time() - t0:.0f} s")

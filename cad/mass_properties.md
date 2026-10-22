@@ -84,10 +84,11 @@ Das Budget vom Juni 2025 rechnet mit zwei Motoren (128 g), aber ohne Servos, Ada
 Entscheidung Jan 22.10.2026: Aufstieg mit einem Motor (TSP E12-0) und Fallschirm, kein Landesystem, Rohr aus Papier. Gegenüber der Konfiguration oben (`config="voll"`) gilt bei `config="erstflug"` (`MS_CONFIG=erstflug`, `layout()` in `params.py`):
 
 - keine Beine, kein Beinring, kein Aktor (−200 g); der zweite Motor war im Modell schon nicht enthalten.
+- 8 Gewindestangen mit 30 g statt 20 g: die Luken brauchen alle acht als Fensterbegrenzung.
 - 2S-Akku 450 mAh mit 30 g statt 45 g (Abmessungen 56 × 25,5 × 8 der 850er zur Sicherheit beibehalten); Mainboard 54 × 120 mit Teensy 45 g statt 40 g.
-- Hardware der Luken (Schalterbrett, Schlüsselschalter, Kragen) 20 g [Annahme], neu.
+- Hardware der Luken (Schalterbrett, Schlüsselschalter, Kragen) 34 g [Annahme], neu.
 - Kolbenabstand 11 statt 5 mm (auch bei "voll"): die Ladungsschale (8 mm) und die Öse (8,5 mm) der Endplatte durchdrangen sonst die Kolbenplatte.
-- Das Rohr beginnt wie bisher bei z = 20 mm. Über dem Kardan folgt der Schlüsselschalter-Kragen (z = 106 … 124), dann der Kuppler. Der Kuppler steckt nur 25 mm im unteren Rohr; der Stoß liegt bei z = 151 mm, beide Luken liegen im oberen Rohr. Rohrmasse 0,24 g/mm.
+- Das Rohr beginnt wie bisher bei z = 20 mm. Über dem Kardan folgt der Schlüsselschalter-Kragen (z = 107 … 125), dann der Kuppler ganz im unteren Rohr (500 mm Klima-Länge, beide Luken darin). Das obere Rohr (200 mm) stößt bei z = 520 im Fallschirmraum an; ein 80-mm-Kupplerstück (18 g) überbrückt den Stoß. Rohrmasse 0,24 g/mm.
 
 ### Kürzestes Rohr
 
@@ -95,26 +96,28 @@ Rohrlänge = Rohrunterkante (z = 20 mm) bis Spitzenbasis. Die Stapelhöhe über 
 
 | Abschnitt | Länge | z von … bis |
 |---|---|---|
-| Kardan (Motorrohr endet bei 103, mit 7° bis 105) | | 20 … 106 |
-| Schlüsselschalter-Kragen + 2 mm Luft | 20 mm | 106 … 126 |
-| Flugcomputer-Kuppler | 150 mm | 126 … 276 |
-| Gasraum + Kolben | 11 + 40 mm | 276 … 327 |
-| Fallschirm 125 cm (Ø 60 × 230) mit 5 mm Luft | 235 mm | 332 … 562 |
-| Schockschnur | 50 mm | 562 … 612 |
-| Schulter der Spitze bis Spant | 73 mm | … 685 (Rohrende) |
-| **Rohr gesamt (Minimum)** | **665 mm** | |
+| Kardan (Motorrohr endet bei 103, mit 7° bis 105) | | 20 … 107 |
+| Schlüsselschalter-Kragen + 2 mm Luft | 20 mm | 107 … 127 |
+| Flugcomputer-Kuppler | 150 mm | 127 … 277 |
+| Gasraum + Kolben | 11 + 40 mm | 277 … 328 |
+| Fallschirm 125 cm (Ø 60 × 230) mit 5 mm Luft | 235 mm | 333 … 563 |
+| Schockschnur | 50 mm | 563 … 613 |
+| Schulter der Spitze bis Unterkante der Öse am Spant | 81.5 mm | … 695 (Rohrende) |
+| **Rohr gesamt (Minimum)** | **675 mm** | |
 
-Das Minimum hängt an Annahmen: gepackter Fallschirm 230 mm (`CHUTE_L`), 50 mm Raum für die Schockschnur (`CORD_BAY_MIN`), Kolben 40 mm. Jede 10 mm weniger Schirm oder Schnurraum kürzen das Rohr um 10 mm (2,4 g). Beim Packen nachmessen. Bei 700 mm bleiben 85 mm Raum über dem Schirm.
+Das Minimum hängt an Annahmen: gepackter Fallschirm 230 mm (`CHUTE_L`), 50 mm Raum für die Schockschnur (`CORD_BAY_MIN`) bis zur Öse der Spitze, Kolben 40 mm. Jede 10 mm weniger Schirm oder Schnurraum kürzen das Rohr um 10 mm (2,4 g). Beim Packen nachmessen. Bei 700 mm bleiben 76 mm Raum über dem Schirm.
 
 ### Ergebnis
 
 | Konfiguration | Rohr | Start | Schwerpunkt ab Düse | Hebelarm Kardan–CG | Ixx = Iyy | Izz | Brennschluss | Hebelarm BS |
 |---|---|---|---|---|---|---|---|---|
 | voll, Beine, 850-mAh-2S | 1000 mm | **981 g** | 449 mm | 372 mm | 0.1098 kg·m² | 0.00105 kg·m² | 953 g | 384 mm |
-| Erstflug | 700 mm | **719 g** | 308 mm | 232 mm | 0.0442 kg·m² | 0.00053 kg·m² | 691 g | 243 mm |
-| Erstflug, kürzestes Rohr | 665 mm | **711 g** | 299 mm | 222 mm | 0.0397 kg·m² | 0.00052 kg·m² | 683 g | 233 mm |
+| Erstflug | 700 mm | **761 g** | 318 mm | 242 mm | 0.0460 kg·m² | 0.00057 kg·m² | 733 g | 253 mm |
+| Erstflug, kürzestes Rohr | 675 mm | **755 g** | 312 mm | 235 mm | 0.0428 kg·m² | 0.00056 kg·m² | 727 g | 246 mm |
 
-Ziel unter 750 g: erreicht (719 g bei 700 mm, 711 g bei 665 mm). Schub-Gewicht mit 12 N mittlerem Schub bei 700 mm: 1.70.
+Ziel unter 750 g: verfehlt (761 g bei 700 mm, 755 g bei 675 mm). Schub-Gewicht mit 12 N mittlerem Schub bei 700 mm: 1.61.
+
+Hebel, um unter 750 g zu kommen (je einzeln, Modellwerte): Rohr 675 statt 700 mm −6 g; Stoßkuppler 50 statt 80 mm −7 g; 2S-Akku 450 mAh wiegen (30 g angenommen); Kleinteile 20 g (`MISC_M`) nachwiegen; Endringe 25 g und Träger 15 g als Leichtbau-Druckteile; Spitze wiegen (100 g Shop-Angabe). Die Teile des Erstflugs auf der Waage ersetzen die Schätzung.
 
 ### Teileliste Erstflug, Rohr 700 mm (Start)
 
@@ -128,24 +131,25 @@ Ziel unter 750 g: erreicht (719 g bei 700 mm, 711 g bei 665 mm). Schub-Gewicht m
 | Außenrahmen | 22.0 g | 69 mm | Anteil der 50 g |
 | Servo Außenrahmen (y-Achse) | 10.0 g | 76 mm | [BUILD] W5652H 10 g |
 | Servo Innenrahmen (x-Achse) | 10.0 g | 76 mm | [BUILD] W5652H 10 g |
-| Rohr unten | 31.4 g | 86 mm | [Klima] 240 g/m |
-| Rohr oben | 136.6 g | 436 mm | [Klima] 240 g/m |
-| Kuppler Flugcomputer | 34.0 g | 201 mm | [Klima] 34 g |
+| Rohr unten | 120.0 g | 270 mm | [Klima] 240 g/m |
+| Rohr oben | 48.0 g | 620 mm | [Klima] 240 g/m |
+| Kuppler Flugcomputer | 34.0 g | 202 mm | [Klima] 34 g |
 | Spitze Kegel (ABS) | 80.0 g | 797 mm | [Klima] ca. 100 g gesamt; Aufteilung [Annahme] |
 | Spitze Schulterkuppler | 17.0 g | 682 mm | [Annahme] |
 | Spitze Spant + Öse | 3.0 g | 716 mm | [Annahme] |
-| Platine + Teensy + Bauteile | 45.0 g | 196 mm | [Annahme] Anteil der 100 g |
-| Endring unten | 7.5 g | 129 mm | [Annahme] |
-| Endplatte oben (Spant mit Ladungsschale) | 17.5 g | 273 mm | [Annahme] |
-| 8 Gewindestangen M2 | 20.0 g | 201 mm | [Annahme] als Ring auf r = 30,3 |
-| Träger (gedruckt) | 15.0 g | 196 mm | [Annahme] |
-| Akku 2S | 30.0 g | 174 mm | [Vorgabe] 45 g, Maße [BUILD] |
+| Platine + Teensy + Bauteile | 45.0 g | 197 mm | [Annahme] Anteil der 100 g |
+| Endring unten | 7.5 g | 130 mm | [Annahme] |
+| Endplatte oben (Spant mit Ladungsschale) | 17.5 g | 274 mm | [Annahme] |
+| 8 Gewindestangen M2 | 30.0 g | 202 mm | [Annahme] als Ring auf r = 30,3 |
+| Träger (gedruckt) | 15.0 g | 197 mm | [Annahme] |
+| Akku 2S | 30.0 g | 175 mm | [Vorgabe] 45 g, Maße [BUILD] |
 | Akku 1S | 12.0 g | 226 mm | [Vorgabe] 12 g, Maße [Annahme] |
-| Kolben Kuppler-Stück | 9.0 g | 307 mm | [Annahme] 34 g/150 mm × 40 mm |
-| Kolbenplatte | 10.0 g | 290 mm | [Annahme] |
-| Ladungsschale + E-Match + Anker | 12.0 g | 280 mm | [Annahme] |
-| Fallschirm 125 cm mit Schockschnur | 50.0 g | 447 mm | [Vorgabe] 50 g |
-| Schlüsselschalter-Kragen + Schlüsselschalter | 14.0 g | 115 mm | [Annahme] Kragen 8 g, Schalter 6 g |
-| Schalterbrett (Schalter, USB-C, XT30, XH-3, LED) | 6.0 g | 193 mm | [Annahme] Anteil von ERSTFLUG_HATCH_HW_M |
-| Kabel, Schrauben, Kleber | 20.0 g | 151 mm | [Annahme] 20 g |
-| **Summe** | **719 g** | | |
+| Kolben Kuppler-Stück | 9.0 g | 308 mm | [Annahme] 34 g/150 mm × 40 mm |
+| Kolbenplatte | 10.0 g | 291 mm | [Annahme] |
+| Ladungsschale + E-Match + Anker | 12.0 g | 281 mm | [Annahme] |
+| Fallschirm 125 cm mit Schockschnur | 50.0 g | 448 mm | [Vorgabe] 50 g |
+| Schlüsselschalter-Kragen + Schlüsselschalter | 28.0 g | 116 mm | [Annahme] Kragen 8 g, Schalter mit Schlüssel 20 g |
+| Stoßkuppler im Fallschirmraum | 18.1 g | 520 mm | [Klima] 34 g/150 mm × 80 mm; Rohr 500 + 200 |
+| Schalterbrett (Schalter, USB-C, XT30, XH-3, LED) | 6.0 g | 194 mm | [Annahme] Anteil von ERSTFLUG_HATCH_HW_M |
+| Kabel, Schrauben, Kleber | 20.0 g | 520 mm | [Annahme] 20 g |
+| **Summe** | **761 g** | | |

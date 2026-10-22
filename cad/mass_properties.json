@@ -66,14 +66,14 @@
    "voll_1000": {
     "label": "voll, Beine, 850-mAh-2S",
     "tube_mm": 1000.0,
-    "tube_min_mm": 984.0,
+    "tube_min_mm": 992.5,
     "coupler_z_mm": [
      445.0,
      595.0
     ],
     "joint_z_mm": 520.0,
     "total_length_mm": 1250.0,
-    "cord_bay_mm": 66.0,
+    "cord_bay_mm": 57.5,
     "configurations": {
      "liftoff": {
       "mass_kg": 0.981,
@@ -119,105 +119,105 @@
    "erstflug_700": {
     "label": "Erstflug",
     "tube_mm": 700.0,
-    "tube_min_mm": 665.0,
+    "tube_min_mm": 674.5,
     "coupler_z_mm": [
-     126.0,
-     276.0
+     127.0,
+     277.0
     ],
-    "joint_z_mm": 151.0,
+    "joint_z_mm": 520.0,
     "total_length_mm": 950.0,
-    "cord_bay_mm": 85.0,
+    "cord_bay_mm": 75.5,
     "configurations": {
      "liftoff": {
-      "mass_kg": 0.719,
-      "cg_from_nozzle_m": 0.3082,
-      "lever_arm_m": 0.2317,
+      "mass_kg": 0.7611,
+      "cg_from_nozzle_m": 0.3184,
+      "lever_arm_m": 0.2419,
       "inertia_kgm2": {
-       "Ixx": 0.044193,
-       "Iyy": 0.044195,
-       "Izz": 0.000527,
+       "Ixx": 0.045979,
+       "Iyy": 0.045981,
+       "Izz": 0.000572,
        "Ixy": -0.0,
-       "Ixz": 5.4e-05,
-       "Iyz": -0.00012
+       "Ixz": 5.7e-05,
+       "Iyz": -0.000127
       }
      },
      "burnout": {
-      "mass_kg": 0.691,
-      "cg_from_nozzle_m": 0.3193,
-      "lever_arm_m": 0.2428,
+      "mass_kg": 0.7331,
+      "cg_from_nozzle_m": 0.3292,
+      "lever_arm_m": 0.2527,
       "inertia_kgm2": {
-       "Ixx": 0.042011,
-       "Iyy": 0.042014,
-       "Izz": 0.000525,
+       "Ixx": 0.043638,
+       "Iyy": 0.04364,
+       "Izz": 0.000571,
        "Ixy": -0.0,
-       "Ixz": 5.7e-05,
-       "Iyz": -0.000128
+       "Ixz": 5.9e-05,
+       "Iyz": -0.000135
       }
      },
      "no_motor": {
-      "mass_kg": 0.655,
-      "cg_from_nozzle_m": 0.3342,
-      "lever_arm_m": 0.2577,
+      "mass_kg": 0.6971,
+      "cg_from_nozzle_m": 0.3438,
+      "lever_arm_m": 0.2673,
       "inertia_kgm2": {
-       "Ixx": 0.039177,
-       "Iyy": 0.039179,
-       "Izz": 0.00052,
+       "Ixx": 0.040604,
+       "Iyy": 0.040606,
+       "Izz": 0.000566,
        "Ixy": -0.0,
-       "Ixz": 6.1e-05,
-       "Iyz": -0.000139
+       "Ixz": 6.3e-05,
+       "Iyz": -0.000145
       }
      }
     }
    },
    "erstflug_min": {
     "label": "Erstflug, kürzestes Rohr",
-    "tube_mm": 665.0,
-    "tube_min_mm": 665.0,
+    "tube_mm": 675.0,
+    "tube_min_mm": 674.5,
     "coupler_z_mm": [
-     126.0,
-     276.0
+     127.0,
+     277.0
     ],
-    "joint_z_mm": 151.0,
-    "total_length_mm": 915.0,
-    "cord_bay_mm": 50.0,
+    "joint_z_mm": 520.0,
+    "total_length_mm": 925.0,
+    "cord_bay_mm": 50.5,
     "configurations": {
      "liftoff": {
-      "mass_kg": 0.7106,
-      "cg_from_nozzle_m": 0.2986,
-      "lever_arm_m": 0.2221,
+      "mass_kg": 0.7551,
+      "cg_from_nozzle_m": 0.312,
+      "lever_arm_m": 0.2355,
       "inertia_kgm2": {
-       "Ixx": 0.039671,
-       "Iyy": 0.039674,
-       "Izz": 0.000515,
+       "Ixx": 0.042815,
+       "Iyy": 0.042818,
+       "Izz": 0.000564,
        "Ixy": -0.0,
-       "Ixz": 5.2e-05,
-       "Iyz": -0.000113
+       "Ixz": 5.5e-05,
+       "Iyz": -0.000122
       }
      },
      "burnout": {
-      "mass_kg": 0.6826,
-      "cg_from_nozzle_m": 0.3094,
-      "lever_arm_m": 0.2329,
+      "mass_kg": 0.7271,
+      "cg_from_nozzle_m": 0.3227,
+      "lever_arm_m": 0.2462,
       "inertia_kgm2": {
-       "Ixx": 0.037639,
-       "Iyy": 0.037641,
-       "Izz": 0.000514,
+       "Ixx": 0.040578,
+       "Iyy": 0.04058,
+       "Izz": 0.000562,
        "Ixy": -0.0,
-       "Ixz": 5.5e-05,
-       "Iyz": -0.000121
+       "Ixz": 5.8e-05,
+       "Iyz": -0.00013
       }
      },
      "no_motor": {
-      "mass_kg": 0.6466,
-      "cg_from_nozzle_m": 0.324,
-      "lever_arm_m": 0.2475,
+      "mass_kg": 0.6911,
+      "cg_from_nozzle_m": 0.337,
+      "lever_arm_m": 0.2605,
       "inertia_kgm2": {
-       "Ixx": 0.035002,
-       "Iyy": 0.035004,
-       "Izz": 0.000509,
+       "Ixx": 0.037681,
+       "Iyy": 0.037683,
+       "Izz": 0.000558,
        "Ixy": -0.0,
-       "Ixz": 5.8e-05,
-       "Iyz": -0.000131
+       "Ixz": 6.1e-05,
+       "Iyz": -0.00014
       }
      }
     }

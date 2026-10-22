@@ -260,15 +260,21 @@ CONFIG_DEFAULT_TUBE_L = {"voll": 1000.0, "erstflug": 700.0}
 CONFIG = _os.environ.get("MS_CONFIG", "voll")
 ERSTFLUG_BAT2S_M = 30.0       # [Vorgabe] 2S 450 mAh statt 45 g für 850 mAh; Abmessungen der 850er beibehalten (konservativ)
 ERSTFLUG_BOARD_M = 45.0       # [Vorgabe] Mainboard 54 × 120 mit Teensy, ersetzt die Breakouts (40 g im Modell "voll")
-ERSTFLUG_HATCH_HW_M = 20.0    # [Annahme] Schalterbrett (Schiebeschalter, USB-C, XT30, XH-3, LED), Schlüsselschalter, Kragen
+ERSTFLUG_HATCH_HW_M = 34.0    # [Annahme] Schalterbrett 6 g, Kragen 8 g, Schlüsselschalter Ø 12 mit Schlüssel 20 g (Prüfung 22.10.: 6 g waren zu wenig)
+ERSTFLUG_RODS_M = 30.0        # [Annahme] die Luken setzen alle 8 Stangen voraus: 8 × M2 × 154 Stahl 30 g (voll rechnet mit 20 g)
+CHUTE_COUPLER_L = 80.0        # [Annahme] Erstflug: Kupplerstück am Rohrstoß im Fallschirmraum (Klima-Rohr ist 500 mm lang, 700 = 500 + 200), 40 mm je Seite
+CHUTE_COUPLER_M = COUPLER_M * CHUTE_COUPLER_L / COUPLER_L   # 18 g
 CORD_BAY_MIN = 50.0           # [Annahme] Raum über dem Fallschirm für die Schockschnur (3 × Rumpf, gefaltet) vor dem Spant der Spitze
-COUPLER_INTO_LOWER_EF = 25.0  # [Annahme] Erstflug: Kuppler steckt nur 25 mm im unteren Rohr, damit beide Luken im oberen liegen
-KEY_COLLAR_Z = (106.0, 124.0) # Erstflug: Kragen für den Schlüsselschalter im unteren Rohr, 3 mm über dem Kardan (Motorrohr bis 103 + 2 bei 7°)
-NOSE_BULKHEAD_BELOW_BASE = NOSE_SHOULDER_L - 2.0   # Spant der Spitze: Unterkante 73 mm unter der Spitzenbasis (Rohrende)
+KEY_COLLAR_Z = (107.0, 125.0) # Erstflug: Kragen für den Schlüsselschalter im unteren Rohr; Motorrohr-Oberkante bei 7°/7° (Achse 9,9°) bis 105,5
+NOSE_BULKHEAD_BELOW_BASE = NOSE_SHOULDER_L + 6.5   # Unterkante der Öse am Spitzenspant (Spant 2 mm über der Schulterkante, Öse 4,5 darunter): 81,5 mm unter dem Rohrende
 
 # Luken im Flugcomputer-Kuppler, Erstflug. Maße (u quer, v längs der Platine ab dem TVC-Ende), Koordinaten wie die Platine.
-HATCH_A = dict(side=+1, w=12.0, v=(25.0, 115.0))    # Teensy: Micro-USB, Programmiertaste, SD; 12 mm frei zwischen den Stangen. Bis v = 115, damit ein gerader Micro-USB-Stecker (Buchse endet bei v = 92,5, Stecker + Knickschutz 20 mm) samt Kabel durch die Luke geht
-HATCH_B = dict(side=-1, w=12.0, v=(24.0, 90.0))     # Schalterbrett gegenüber
+HATCH_A = dict(side=+1, w=14.0, v=(16.0, 115.0))    # Teensy: Micro-USB, Programmiertaste, SD. Ab v = 16, damit die microSD (Unterseite, Auswurf nach -v) greifbar ist; bis v = 115, damit ein gerader Micro-USB-Stecker (Buchse endet bei v = 92,5, Stecker + Knickschutz 20 mm) samt Kabel durch die Luke geht
+HATCH_B = dict(side=-1, w=14.0, v=(24.0, 90.0))     # Schalterbrett gegenüber
+# Fensterbreite 14: das Fenster sitzt in Kuppler- und Rohrwand (r > 35), die Stangen bei r = 28,5 … 30,5 berühren es nicht. Was durch
+# die Luke muss (Stecker, Karte, Finger), passt zwischen die Stangen: 12 mm Lücke (x = ±6), Stangenbohrung 2,3 → Stecker ≤ 11 mm breit.
+HATCH_R0 = 33.0                                      # Fenster schneidet erst ab r = 33 (Stangen bis 30,5 bleiben im Modell unberührt)
+ROD_GAP = 2 * (abs(FC_RODS[0][1]) - FC_ROD_D / 2) - 0.3   # 11,7 mm lichte Weite zwischen zwei Stangen eines Paars, Bohrspiel abgezogen
 PANEL_W, PANEL_T = 11.0, 2.0                         # Schalterbrett (gedruckt/Platine), zwischen den Stangen bei u = ±6
 PANEL_Y = (-33.1, -31.1)                             # Brett im Freiraum zwischen Trägerboden (y = -14,5) und Kupplerwand (-35,1)
 PANEL_FACE_Y = -35.0                                 # Steckflächen bündig an der Kupplerinnenwand
@@ -298,8 +304,11 @@ def layout(config=None, tube_total=None):
         d["HATCH_HW_M"] = 0.0
     elif config == "erstflug":
         d["FC_COUPLER_Z"] = (KEY_COLLAR_Z[1] + 2.0, KEY_COLLAR_Z[1] + 2.0 + COUPLER_L)
-        d["JOINT_Z"] = d["FC_COUPLER_Z"][0] + COUPLER_INTO_LOWER_EF
-        d["COUPLER_INTO_UPPER"] = COUPLER_L - COUPLER_INTO_LOWER_EF
+        # Klima-Rohr 500 mm: unteres Rohr 500 (Kardan, Kragen, Flugcomputer-Kuppler ganz darin, beide Luken), oberes Rohr der Rest;
+        # Stoß bei z = 520 im Fallschirmraum, überbrückt von CHUTE_COUPLER_L, im oberen Rohr verklebt, 3 × M2 ins untere Rohr
+        d["JOINT_Z"] = TUBE_BOTTOM_Z + TUBE_L
+        d["COUPLER_INTO_UPPER"] = 0.0
+        d["CHUTE_COUPLER_Z"] = (d["JOINT_Z"] - CHUTE_COUPLER_L / 2, d["JOINT_Z"] + CHUTE_COUPLER_L / 2)
         d["LEGS"] = False
         d["BAT2S"] = dict(BAT2S, m=ERSTFLUG_BAT2S_M)
         d["FC_M_BOARD"] = ERSTFLUG_BOARD_M
@@ -315,6 +324,10 @@ def layout(config=None, tube_total=None):
         d["TUBE_TOTAL"] = tube_total or CONFIG_DEFAULT_TUBE_L[config]
         if d["TUBE_TOTAL"] < d["TUBE_MIN"] - 1e-6:
             raise ValueError(f"Rohr {d['TUBE_TOTAL']} mm kürzer als das Minimum {d['TUBE_MIN']:.0f} mm")
+        if d["TUBE_TOTAL"] > 2 * TUBE_L or d["TUBE_TOTAL"] - TUBE_L < CHUTE_COUPLER_L / 2 + 10:
+            raise ValueError("Erstflug-Rohr muss 500 + (50 … 500) mm sein")
+        if not (d["CHUTE_Z0"] + 10 < d["CHUTE_COUPLER_Z"][0] and d["CHUTE_COUPLER_Z"][1] < d["TUBE_TOTAL"] + TUBE_BOTTOM_Z - NOSE_BULKHEAD_BELOW_BASE):
+            raise ValueError("Stoßkuppler liegt nicht im Fallschirmraum")
     top = TUBE_BOTTOM_Z + d["TUBE_TOTAL"]
     d["LOWER_TUBE_Z"] = (TUBE_BOTTOM_Z, d["JOINT_Z"])
     d["UPPER_TUBE_Z"] = (d["JOINT_Z"], top)
@@ -323,7 +336,8 @@ def layout(config=None, tube_total=None):
     d["TOTAL_LENGTH"] = d["NOSE_TIP_Z"]
     d["CORD_BAY"] = top - NOSE_BULKHEAD_BELOW_BASE - d["CHUTE_Z1"]
     d["MISC_Z"] = d["JOINT_Z"]
-    d["FC_M"] = d["FC_M_BOARD"] + FC_M_RINGS + FC_M_RODS + FC_M_CARRIER
+    d["FC_M_RODS"] = ERSTFLUG_RODS_M if config == "erstflug" else FC_M_RODS
+    d["FC_M"] = d["FC_M_BOARD"] + FC_M_RINGS + d["FC_M_RODS"] + FC_M_CARRIER
     return d
 
 
@@ -331,4 +345,4 @@ def layout_ns(config=None, tube_total=None):
     return _types.SimpleNamespace(**layout(config, tube_total))
 
 
-globals().update(layout(CONFIG, float(_os.environ["MS_TUBE_L"]) if "MS_TUBE_L" in _os.environ else None))
+globals().update(layout(CONFIG, float(_os.environ["MS_TUBE_L"]) if "MS_TUBE_L" in _os.environ and CONFIG == "erstflug" else None))

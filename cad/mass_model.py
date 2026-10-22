@@ -105,7 +105,7 @@ def parts(legs_deployed=False, config=None, tube_total=None):
                     L.FC_COUPLER_Z[0] + P.FC_RING_T, "fc", "[Annahme]"))
     ps.append(shell("Endplatte oben (Spant mit Ladungsschale)", P.FC_M_RINGS * 0.7, 0, P.FC_RING_D / 2,
                     L.FC_COUPLER_Z[1] - P.FC_RING_T, L.FC_COUPLER_Z[1], "fc", "[Annahme]"))
-    ps.append(shell("8 Gewindestangen M2", P.FC_M_RODS, 30.3, 30.3, *L.FC_COUPLER_Z, "fc", "[Annahme] als Ring auf r = 30,3"))
+    ps.append(shell("8 Gewindestangen M2", L.FC_M_RODS, 30.3, 30.3, *L.FC_COUPLER_Z, "fc", "[Annahme] als Ring auf r = 30,3"))
     ps.append(box("Träger (gedruckt)", P.FC_M_CARRIER, P.BOARD_W, P.CARRIER_DEPTH, P.BOARD_L,
                   0.0, -P.CARRIER_DEPTH / 2, L.BOARD_V0_Z + P.BOARD_L / 2, "fc", "[Annahme]"))
     b = L.BAT2S
@@ -125,9 +125,11 @@ def parts(legs_deployed=False, config=None, tube_total=None):
                     L.CHUTE_Z0 + P.CHUTE_L, "recovery", "[Vorgabe] 50 g"))
     if L.HATCH_HW_M:
         z0 = P.KEY_COLLAR_Z
-        ps.append(shell("Schlüsselschalter-Kragen + Schlüsselschalter", 14.0, 24.0, P.COUPLER_OD / 2, *z0, "fc",
-                        "[Annahme] Kragen 8 g, Schalter 6 g"))
-        ps.append(box("Schalterbrett (Schalter, USB-C, XT30, XH-3, LED)", L.HATCH_HW_M - 14.0, P.PANEL_W, 8.0, 66.0,
+        ps.append(shell("Schlüsselschalter-Kragen + Schlüsselschalter", 28.0, 24.0, P.COUPLER_OD / 2, *z0, "fc",
+                        "[Annahme] Kragen 8 g, Schalter mit Schlüssel 20 g"))
+        ps.append(shell("Stoßkuppler im Fallschirmraum", P.CHUTE_COUPLER_M, P.COUPLER_ID / 2, P.COUPLER_OD / 2, *L.CHUTE_COUPLER_Z,
+                        "airframe", "[Klima] 34 g/150 mm × 80 mm; Rohr 500 + 200"))
+        ps.append(box("Schalterbrett (Schalter, USB-C, XT30, XH-3, LED)", L.HATCH_HW_M - 28.0, P.PANEL_W, 8.0, 66.0,
                       0.0, -33.0, L.BOARD_V0_Z + 57.0, "fc", "[Annahme] Anteil von ERSTFLUG_HATCH_HW_M"))
     if not L.LEGS:
         ps.append(point("Kabel, Schrauben, Kleber", P.MISC_M, 0.0, 0.0, L.MISC_Z, "misc", "[Annahme] 20 g"))
@@ -290,15 +292,16 @@ def write_erstflug_md(var):
              "Gegenüber der Konfiguration oben (`config=\"voll\"`) gilt bei `config=\"erstflug\"` (`MS_CONFIG=erstflug`, "
              "`layout()` in `params.py`):\n")
     L.append("- keine Beine, kein Beinring, kein Aktor (−200 g); der zweite Motor war im Modell schon nicht enthalten.")
+    L.append(f"- 8 Gewindestangen mit {P.ERSTFLUG_RODS_M:.0f} g statt 20 g: die Luken brauchen alle acht als Fensterbegrenzung.")
     L.append(f"- 2S-Akku 450 mAh mit {P.ERSTFLUG_BAT2S_M:.0f} g statt 45 g (Abmessungen 56 × 25,5 × 8 der 850er zur Sicherheit "
              f"beibehalten); Mainboard 54 × 120 mit Teensy {P.ERSTFLUG_BOARD_M:.0f} g statt 40 g.")
     L.append(f"- Hardware der Luken (Schalterbrett, Schlüsselschalter, Kragen) {P.ERSTFLUG_HATCH_HW_M:.0f} g [Annahme], neu.")
     L.append(f"- Kolbenabstand {P.PISTON_GAP:.0f} statt 5 mm (auch bei \"voll\"): die Ladungsschale (8 mm) und die Öse (8,5 mm) der Endplatte "
              "durchdrangen sonst die Kolbenplatte.")
     L.append(f"- Das Rohr beginnt wie bisher bei z = 20 mm. Über dem Kardan folgt der Schlüsselschalter-Kragen "
-             f"(z = {P.KEY_COLLAR_Z[0]:.0f} … {P.KEY_COLLAR_Z[1]:.0f}), dann der Kuppler. Der Kuppler steckt nur "
-             f"{P.COUPLER_INTO_LOWER_EF:.0f} mm im unteren Rohr; der Stoß liegt bei z = {d['JOINT_Z']:.0f} mm, beide Luken liegen im oberen "
-             "Rohr. Rohrmasse 0,24 g/mm.\n")
+             f"(z = {P.KEY_COLLAR_Z[0]:.0f} … {P.KEY_COLLAR_Z[1]:.0f}), dann der Kuppler ganz im unteren Rohr (500 mm Klima-Länge, "
+             f"beide Luken darin). Das obere Rohr ({d['TUBE_TOTAL'] - P.TUBE_L:.0f} mm) stößt bei z = {d['JOINT_Z']:.0f} im Fallschirmraum an; "
+             f"ein {P.CHUTE_COUPLER_L:.0f}-mm-Kupplerstück ({P.CHUTE_COUPLER_M:.0f} g) überbrückt den Stoß. Rohrmasse 0,24 g/mm.\n")
     L.append("### Kürzestes Rohr\n")
     L.append("Rohrlänge = Rohrunterkante (z = 20 mm) bis Spitzenbasis. Die Stapelhöhe über dem Kardan bestimmt das Minimum:\n")
     L.append("| Abschnitt | Länge | z von … bis |")
@@ -309,10 +312,10 @@ def write_erstflug_md(var):
     L.append(f"| Gasraum + Kolben | {P.PISTON_GAP:.0f} + {P.PISTON_L:.0f} mm | {z[1]:.0f} … {dm['PISTON_Z0'] + P.PISTON_L:.0f} |")
     L.append(f"| Fallschirm 125 cm (Ø {P.CHUTE_D:.0f} × {P.CHUTE_L:.0f}) mit 5 mm Luft | {P.CHUTE_L + 5:.0f} mm | {dm['CHUTE_Z0']:.0f} … {dm['CHUTE_Z1']:.0f} |")
     L.append(f"| Schockschnur | {P.CORD_BAY_MIN:.0f} mm | {dm['CHUTE_Z1']:.0f} … {dm['CHUTE_Z1'] + P.CORD_BAY_MIN:.0f} |")
-    L.append(f"| Schulter der Spitze bis Spant | {P.NOSE_BULKHEAD_BELOW_BASE:.0f} mm | … {dm['NOSE_BASE_Z']:.0f} (Rohrende) |")
+    L.append(f"| Schulter der Spitze bis Unterkante der Öse am Spant | {P.NOSE_BULKHEAD_BELOW_BASE:.1f} mm | … {dm['NOSE_BASE_Z']:.0f} (Rohrende) |")
     L.append(f"| **Rohr gesamt (Minimum)** | **{dm['TUBE_TOTAL']:.0f} mm** | |")
     L.append("")
-    L.append("Das Minimum hängt an Annahmen: gepackter Fallschirm 230 mm (`CHUTE_L`), 50 mm Raum für die Schockschnur (`CORD_BAY_MIN`), "
+    L.append("Das Minimum hängt an Annahmen: gepackter Fallschirm 230 mm (`CHUTE_L`), 50 mm Raum für die Schockschnur (`CORD_BAY_MIN`) bis zur Öse der Spitze, "
              "Kolben 40 mm. Jede 10 mm weniger Schirm oder Schnurraum kürzen das Rohr um 10 mm (2,4 g). Beim Packen nachmessen. "
              f"Bei 700 mm bleiben {d['CORD_BAY']:.0f} mm Raum über dem Schirm.\n")
     L.append("### Ergebnis\n")
@@ -328,6 +331,9 @@ def write_erstflug_md(var):
     L.append(f"Ziel unter 750 g: {'erreicht' if e7['mass_kg'] < 0.75 else 'verfehlt'} "
              f"({e7['mass_kg'] * 1000:.0f} g bei 700 mm, {em['mass_kg'] * 1000:.0f} g bei {dm['TUBE_TOTAL']:.0f} mm). "
              f"Schub-Gewicht mit 12 N mittlerem Schub bei 700 mm: {12 / (e7['mass_kg'] * 9.81):.2f}.\n")
+    L.append("Hebel, um unter 750 g zu kommen (je einzeln, Modellwerte): Rohr 675 statt 700 mm −6 g; Stoßkuppler 50 statt 80 mm −7 g; "
+             "2S-Akku 450 mAh wiegen (30 g angenommen); Kleinteile 20 g (`MISC_M`) nachwiegen; Endringe 25 g und Träger 15 g als "
+             "Leichtbau-Druckteile; Spitze wiegen (100 g Shop-Angabe). Die Teile des Erstflugs auf der Waage ersetzen die Schätzung.\n")
     L.append("### Teileliste Erstflug, Rohr 700 mm (Start)\n")
     L.append("| Teil | Masse | z Schwerpunkt | Quelle / Annahme |")
     L.append("|---|---|---|---|")

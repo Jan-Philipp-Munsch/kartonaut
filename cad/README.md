@@ -58,8 +58,8 @@ Welche davon Pitch und welche Yaw ist, muss mit `Config.h` abgeglichen werden.
 | 445 … 595 | Flugcomputer-Kuppler, symmetrisch um den Rohrstoß bei 520; Platine 455 … 575, Teensy 485 … 546 |
 | 544 … 560 | Luke 16 mm breit auf +y über dem USB-Stecker (im oberen Rohr, 24 mm über dem Stoß) |
 | 595 | obere Endplatte = fester Spant mit Ladungsschale, E-Match-Bohrungen und Öse |
-| 600 … 640 | Kolben |
-| 645 … 875 | Fallschirm |
+| 606 … 646 | Kolben (Gasraum 11 mm über der Endplatte, seit 22.10.) |
+| 651 … 881 | Fallschirm |
 | 945 … 1020 | Schulter der Spitze (lose), 1020 … 1250 Spitze |
 
 ## Wartung und Montage, wie das Modell es vorsieht
@@ -109,16 +109,26 @@ und rechnet alle Varianten in einem Lauf, ohne die Umgebungsvariable.
 
 | | `voll` (Stand 21.10.) | `erstflug` (Entscheidung Jan 22.10.) |
 |---|---|---|
-| Rohr | 2 × 500 mm, Stoß bei z = 520 | 700 mm (Minimum 665): unteres Rohr 131 mm, oberes Rest, Stoß bei z = 151 |
-| Kuppler | zentriert um den Stoß (75 / 75) | 25 mm im unteren Rohr, 125 mm im oberen |
+| Rohr | 2 × 500 mm, Stoß bei z = 520 | 500 + 200 mm (Minimum 675: 500 + 175), Stoß bei z = 520 im Fallschirmraum |
+| Kuppler | zentriert um den Stoß (75 / 75) | Flugcomputer-Kuppler ganz im unteren Rohr (z 127 … 277); am Stoß ein 80-mm-Kupplerstück (18 g), im oberen Rohr verklebt, 3 × M2 ins untere |
 | Landebeine | ja (200 g) | nein |
 | 2S-Akku / Platine | 45 g / 40 g | 30 g (450 mAh) / 45 g (Mainboard mit Teensy) |
 | Luken | eine USB-Luke (+y) | Luke A (+y) und Luke B (−y), Schlüsselschalter-Kragen |
-| Start | 981 g | 719 g (700 mm), 711 g (665 mm) |
+| Start | 981 g | **761 g** (700 mm), 755 g (675 mm): Ziel 750 g um 11 g verfehlt, siehe `mass_properties.md` |
 
 Der Prüfstand (`rig=True`) und die Bilder der Gesamtübersicht gehören zu `voll`; `build.py --config erstflug` schreibt
 `export/erstflug/*` und `export/rocket_erstflug.step` und rendert `rocket_erstflug_*.png` und `hatches_*.png`.
-Dazu prüft es, ob die Luken frei sind, die Steckerräume leer bleiben und die Kolbenbohrung frei ist.
+Dazu prüft es (`check_erstflug`), ob Schalterbrett und Schlüsselschalter frei von Stangen, Platine, Akkus und Rohren sind, ob die
+Steckerräume (Micro-USB, microSD, die fünf Teile des Schalterbretts, Schlüssel) weder Einbauten noch die Wand von Kuppler und Rohr
+treffen (also die Luken sie abdecken), ob der Kolben frei über der Endplatte steht und ob die Bohrung bis zur Öse der Spitze frei
+von Einbauten ist. Fehlende Teilenamen sind ein Fehler, kein "frei". Gegenprobe vom 22.10.: Luke A auf v = 30 … 100 verkürzt,
+die Prüfung meldet USB- und SD-Raum gegen Rohr und Kuppler.
+
+**Warum 500 + 200 und nicht 131 + 569:** Klima-Rohre sind 500 mm lang. Der erste Entwurf vom 22.10. (Kuppler 25 mm im unteren
+Rohr, Stoß bei z = 151, damit die Luken im oberen Rohr liegen) hätte ein 569-mm-Stück gebraucht, das es nicht gibt. Jetzt liegt
+der Flugcomputer-Kuppler mit beiden Luken ganz im unteren 500-mm-Rohr, der Stoß liegt bei z = 520 im Fallschirmraum und wird
+von einem 80-mm-Kupplerstück überbrückt (Bohrung dort 70,2 statt 72,6; der Kolben läuft nur bis z = 328, der Schirm Ø 60 passt).
+Zuschnitt: ein Rohr bleibt 500, das zweite wird auf 200 (bzw. 175) gekürzt.
 
 ### Luken im Flugcomputer-Kuppler (Erstflug)
 
@@ -126,30 +136,38 @@ Dazu prüft es, ob die Luken frei sind, die Steckerräume leer bleiben und die K
 |---|---|
 | ![](../docs/img/cad/hatches_a_iso.png) | ![](../docs/img/cad/hatches_b_iso.png) |
 
-Die M2-Stangen stehen bei (±7, ±29,5) und (±29,5, ±7); zwischen zwei Stangen eines Paars bleiben 12 mm frei.
-Beide Luken sind deshalb 12 mm breit und liegen bei ±y (u = 0). Sie liegen im oberen Rohr, der Rohrstoß (25 mm über der
-Kupplerunterkante) kreuzt sie nicht. Lage der Schrauben: drei M2 bei 45°, 135°, 225° im oberen Rohr, damit der Kuppler nur in
-einer Drehung passt und die Luken zu den Fenstern im Rohr stehen. Drei weitere M2 auf halber Steckhöhe im unteren Rohr: ohne sie
-hinge das untere Rohr (Kardan und Motor, ca. 150 g) nur mit 25 mm Reibung am Kuppler und fiele beim Öffnen des Schirms ab.
+Die M2-Stangen stehen bei (±7, ±29,5) und (±29,5, ±7). Die Fenster in Kuppler- und Rohrwand sind 14 mm breit, bei ±y (u = 0);
+die Stangen liegen 4,6 mm radial innerhalb der Kupplerwand und berühren das Fenster nicht. Was durch die Luke muss, passt aber
+nur zwischen die Stangen: lichte Weite 12 mm, abzüglich 0,3 mm Bohrspiel (`ROD_GAP` = 11,7). Micro-USB-Stecker und microSD
+sind mit 11 mm angenommen (0,35 mm je Seite; am Stecker nachmessen), die Teile des Schalterbretts sind höchstens 6 mm breit.
+Beide Luken liegen im unteren 500-mm-Rohr, kein Stoß kreuzt sie. Schrauben: je drei M2 bei 45°, 135°, 225° am unteren und
+oberen Ende des Kupplers, damit er nur in einer Drehung passt und die Luken zu den Fenstern stehen.
 
-Wartung im Erstflug-Aufbau: die drei unteren M2 lösen, das Kabel zum Schlüsselschalter-Kragen am Stecker trennen, unteres Rohr mit
-Kardan abziehen; das Modul bleibt mit dem Kuppler am oberen Rohr. Erst nach dem Lösen der oberen drei M2 kommt es nach unten heraus.
+Wartung im Erstflug-Aufbau: die drei M2 am Stoß (z = 500) lösen, oberes Rohr mit Stoßkuppler und Spitze abziehen, Schirm und
+Kolben herausnehmen, dann die sechs M2 des Flugcomputer-Kupplers lösen, Kabel zum Schlüsselschalter-Kragen am Stecker trennen und
+das Modul nach oben aus dem unteren Rohr ziehen (250 mm). Der Kragen bleibt im Rohr.
 
-- **Luke A (Teensy):** v = 25 … 115 mm (z = Platinenanfang + 25 … 115), Micro-USB, Programmiertaste und SD-Slot des
+- **Luke A (Teensy):** v = 16 … 115 mm (z = Platinenanfang + 16 … 115), Micro-USB, Programmiertaste und SD-Slot des
   Teensy. Die Micro-USB-Buchse zeigt in Längsrichtung (+v) und endet bei v = 92,5; ein gerader Stecker mit Knickschutz reicht
   bis v ≈ 113, deshalb geht die Luke bis 115 (bis zur Prüfung am 22.10. nachmittags endete sie bei 100, dann ging nur ein
   Winkelstecker). 21 mm Luft von der Teensy-Oberseite bis zur Kupplerwand. Der SD-Slot des Teensy 4.1 sitzt **auf der Unterseite**
-  am USB-fernen Ende (im Modell vereinfacht oben); die Karte wird bei v ≈ 28 längs herausgezogen, zwischen Teensy und Platine,
-  mit Pinzette durch den Lukenanfang bei v = 25. Steckerräume (USB-Stecker und SD-Karte je 11 mm breit) sind frei.
+  am USB-fernen Ende (im Modell vereinfacht oben); die Karte wird bei v ≈ 30 nach −v herausgezogen, zwischen Teensy und Platine,
+  und ragt dabei bis v ≈ 18, deshalb beginnt die Luke bei 16 (bis zur Prüfung bei 25, da wäre die Karte nicht greifbar gewesen).
+  Steckerräume (USB-Stecker und microSD je 11 mm breit) sind frei und von der Luke abgedeckt.
 - **Luke B (Schalterbrett):** v = 24 … 90 mm. Ein 11 mm breites Brett (gedruckt oder Leiterplatte) sitzt zwischen den Stangen
   bei y = −33,1 … −31,1 auf zwei Stützen am Trägerboden; die Bauteile in einer Reihe von unten (TVC) nach oben: Schiebeschalter
   2-polig (v 28–40), USB-C-Buchse (44–53) mit LED (56–59), XT30-Buchse (61–71), XH-3-Buchse für den Balancer (76–83,5). Sie sind
   über Kabel mit der Platine verbunden (`J_SW`, USB-C-Lader, `J_BAT2`-Parallelanschluss). Sie liegen frei von Stangen, Akkus
   (die 2S/1S-Akkus liegen bei y > −10,8, Trägerboden bei −14,5), Träger und Platine, jeder Stecker hat 1,5 mm Luft ringsum.
 - **Schlüsselschalter passt nicht in Luke B** (Körper Ø 12 gegen 12 mm Stangenlücke, dazu 15 mm Einbautiefe). Er sitzt in einem
-  gedruckten **Kragen** im unteren Rohr direkt unter dem Kuppler (z = 106 … 124, 3 mm über dem Kardan), radial nach +x, durch eine
-  Bohrung Ø 12,4 im unteren Rohr. Das kostet 20 mm Rohrlänge (der Kuppler beginnt bei z = 126), das Modul wird weiter nach oben
-  herausgezogen, der Kragen bleibt im Rohr; Kabel zur Platine über Steckverbinder.
+  gedruckten **Kragen** im unteren Rohr direkt unter dem Kuppler (z = 107 … 125; das Motorrohr steigt bei 7°/7° bis 105,5),
+  radial nach +x, durch eine Bohrung Ø 12,4 im unteren Rohr. Das kostet 21 mm Rohrlänge (der Kuppler beginnt bei z = 127);
+  Kabel zur Platine über Steckverbinder. Schalter mit Schlüssel 20 g, Kragen 8 g [Annahme].
+
+Prüfung vom 22.10.2026 (zweite Meinung, Befunde in `mass_properties.md` §Erstflug eingearbeitet): Rohrteilung 131 + 569 war
+nicht herstellbar; Lukenbreite 12 hatte 0 mm Rand zu den Stangen (jetzt Fenster 14, Stangenlücke als eigene Prüfung);
+`check_erstflug` prüfte die Wand nicht (jetzt ja); Öse am Spitzenspant hing 8,5 mm in den Schnurraum (jetzt in
+`NOSE_BULKHEAD_BELOW_BASE`); Stangen 20 → 30 g, Schlüsselschalter 6 → 20 g. Ergebnis: 761 g statt 719 g.
 
 ## Prüfstand (`testrig.py`, 21.10.2026)
 

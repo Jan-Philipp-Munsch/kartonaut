@@ -252,6 +252,7 @@ the simulation and the Blender files stay outside this repository; their content
 |---|---|
 | [PROJECT.md](PROJECT.md) | key data, work packages with status, findings from the reviews, next steps, changelog |
 | [docs/BUILD.md](docs/BUILD.md) | as-built: inventory of bought and printed parts, mechanics, wiring, software on the device, tests, build log |
+| [docs/experiments/README.md](docs/experiments/README.md) | ready-to-run experiments (sketch, evaluation script, instructions, German); E01 servo → gimbal transfer function |
 | [docs/Plan_2026-10-21.md](docs/Plan_2026-10-21.md) | board review with component alternatives and cost estimate, power architecture, layout checklist, simulation port plan, decisions |
 | [hardware/mainboard/README.md](hardware/mainboard/README.md) | mainboard rev B specification |
 | [docs/DesignGuide_Mainboard_revB.md](docs/DesignGuide_Mainboard_revB.md) | the rev B design presented with figures, for review ([PDF](docs/DesignGuide_Mainboard_revB.pdf)) |

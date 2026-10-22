@@ -22,6 +22,7 @@ python scripts/tune_pid.py --kp-values 2 3.1 5 --ki-values 0 5 --kd-values 0.01 
 python scripts/compare_gains.py --vehicle preload   # Firmware- gegen Tuner-Gewinne
 python scripts/ident_servo.py messung.csv   # Experiment E01 auswerten -> out/ident_*.png, .json
 python scripts/ident_servo.py --synthetic   # dasselbe mit einer künstlichen Messung
+python scripts/export_firmware_vectors.py   # Testvektoren für firmware/test/data/ (SIL, Flugprofil)
 ```
 
 Alle Ausgaben landen in `simulation/out/` (per `.gitignore` ausgeschlossen). Ein Lauf über
@@ -60,7 +61,8 @@ simulation/
              plots.py      Höhe/Lage/Servo, 3D-Trajektorien, Servo-Fit
   tests/     Quaternionnorm, Schwebe-Gleichgewicht, Momentenvorzeichen, Regler gegeneinander
   scripts/   run_nominal.py, run_montecarlo.py, tune_pid.py, fit_servo.py, compare_gains.py,
-             ident_servo.py (Experiment E01, Modul tvcsim/ident.py)
+             ident_servo.py (Experiment E01, Modul tvcsim/ident.py),
+             export_firmware_vectors.py (Software-in-the-Loop-Vektoren für die Firmware-Tests)
 ```
 
 ## Modell (wie in Simulink)
@@ -133,7 +135,7 @@ entsprechen also `kp=5, ki=0, kd=0,01`; die Tuner-Gewinne `kp=3,1, ki=5, kd=0,38
 Integrationsschritt vor dem Regler (Simulink integriert bis zum Takt), ihr I-Anteil wird nie
 zurückgesetzt, `|a|` ist tiefpassgefiltert (`A_NORM_ALPHA = 0,1`, Untergrenze 1 m/s²), die
 Masse ist `MASS_KG = 0,70` statt der wahren Masse, das asin-Argument wird auf ±0,99 geklemmt,
-und der Servowinkel wird auf ganze Grad gerundet und auf das mechanische Fenster begrenzt.
+und der Servowinkel wird auf das mechanische Fenster begrenzt (bis 22.10.2026 zusätzlich auf ganze Grad gerundet, `quantize_servo=True`; die Firmware stellt die Servos seitdem als 16-Bit-PWM ohne Rundung).
 
 **Vorzeichen**: die Firmware rechnet `delta = +asin(M/...)`, das Simulink-Modell braucht für
 dasselbe Moment `th = asin(-M/...)`. In der Hardware steckt dieses Vorzeichen in

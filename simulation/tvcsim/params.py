@@ -165,7 +165,8 @@ class FirmwareParams:
     # SERVO_*_GAIN und ist am Tisch zu pruefen; hier ist es ein Parameter.
     axis_sign_yaw: float = -1.0
     axis_sign_pitch: float = -1.0
-    quantize_servo: bool = True   # Servo-Grad auf ganze Zahlen runden wie lroundf()
+    quantize_servo: bool = False  # True = auf ganze Grad runden wie die Firmware bis 22.10.2026 (PWMServo);
+                                  # seitdem 16-Bit-PWM ohne Rundung
     apply_window: bool = True     # mechanische Fenster anwenden
 
 

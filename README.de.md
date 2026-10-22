@@ -55,7 +55,7 @@ SD-Logger und 433-MHz-LoRa-Funk zur Bodenstation. Das Gesamtsystem wird vor dem 
 **Als Nächstes**
 
 1. Review in rev B einarbeiten, Platine neu erzeugen, letzte Verbindungen schließen, Gerber, BOM und CPL exportieren, Bestellung bei JLCPCB mit SMD-Bestückung (Aisler als EU-Rückfall); die Tischteile jetzt bestellen.
-2. Firmware für rev B: Treiber ICM-42688-P, Quaternion-Lage, Flugzustandsautomat, Pyro-Logik, Watchdog, LoRa-Telemetrie.
+2. Firmware am Gerät: erster Lauf des Zustandsautomaten auf dem Breakout-Aufbau, Funktest des Telemetrieprotokolls mit der Bodenstation, auf rev B die IMU-Achsen und LoRa-Parameter eintragen.
 3. Rakete wiegen und das Massenbudget gegen den Schub des E12 prüfen.
 4. Bodentests: TVC-Prüfstand mit Propellermotor im Kardan (Teile gekauft, Gestell zu bauen), Pyro-Test, Funkreichweite.
 5. Erstflug: geregelter Aufstieg mit einem Motor, Fallschirmbergung.
@@ -227,8 +227,10 @@ pio run -e radio_beacon      # einen Test-Sketch aus examples/ bauen
 
 Alle Pins, Gewinne, Filterkonstanten und Debug-Schalter liegen in
 [`firmware/src/Config.h`](firmware/src/Config.h). Die Regler sind dort abgeschaltet, bis der
-erste Flugtest ansteht. Offen: Quaternion-Lage, Gyro-Kalibrierung auf der Rampe,
-Flugzustandsautomat mit Pyro-Logik, Telemetrieprotokoll, Treiber für die neue IMU.
+Prüfstand sie freigibt. Seit dem 22.10.2026 stehen Gyro-Quaternion, Kalibrierung auf dem Pad,
+Flugzustandsautomat mit Pyro-Logik, Telemetrieprotokoll, Watchdog mit Zustandsspeicher und die
+Sensor-Rückenden für Breakouts und rev B; 32 Tests ohne Hardware (`pio test -e native`), nichts
+davon ist bisher am Gerät gelaufen.
 
 ## Aufbau des Repos
 

@@ -3,34 +3,38 @@
   {
    "teil": "Schlitten mit Spant",
    "datei": "cad/export/modular/Schlitten_mit_Spant.stl",
-   "cm3": 77.9,
-   "g": 74.2
+   "cm3": 53.0,
+   "g_75": 50.4,
+   "g": 64.2
   },
   {
    "teil": "Untere Scheibe",
    "datei": "cad/export/modular/Untere_Scheibe.stl",
-   "cm3": 8.7,
-   "g": 8.2
+   "cm3": 5.8,
+   "g_75": 5.5,
+   "g": 7.3
   },
   {
    "teil": "Schalterbrett",
    "datei": "cad/export/modular/Schalterbrett.stl",
    "cm3": 2.1,
-   "g": 2.0
+   "g_75": 2.0,
+   "g": 2.7
   },
   {
    "teil": "Schraubring J1",
    "datei": "cad/export/modular/Schraubring_J1.stl",
-   "cm3": 14.6,
-   "g": 13.9
+   "cm3": 4.5,
+   "g_75": 4.3,
+   "g": 5.8
   }
  ],
- "druckteile_g": 98.3,
+ "druckteile_g": 80.0,
  "rohre_g": {
   "A": 30.0,
   "B": 42.2,
   "C": 46.8
  },
- "start_g": 689.3,
+ "start_g": 671.0,
  "laenge_mm": 731.0
 }

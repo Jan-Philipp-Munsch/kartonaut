@@ -101,8 +101,8 @@ sich die Lageregelung mit TVC am Boden testen, ohne Treibsatz. Siehe `PROJECT.md
 **Stand 22.10.2026, Modulbauweise (`docs/Bauanleitung_Kartonaut1.md`):** vier Module, Rohr A 125 (Kardan, gebaut),
 Rohr B 176 (Avionik: Kuppler J1 mit Schraubring, Schlitten mit Spant, Platine, Akkus, GPS, LoRa-Wendel, Schalterbrett),
 Rohr C 195 (CO₂-Modul, Schirm, Schnur), Klima-Spitze über dem zweiten halben Kuppler; Gesamtlänge 731 mm; Trennstellen
-T1–T3 mit je vier M3 in Muttern-Taschen bei 0°/90°/180°/270° (Rohr C 45° versetzt). Massenbudget 723 g, Schwerpunkt
-256 mm, Hebelarm Kardan–Schwerpunkt 186 mm (`cad/mass_stand2b.md`), alles ungewogen. Die folgenden Absätze beschreiben
+T1–T3 mit je vier M3 in Muttern-Taschen bei 0°/90°/180°/270° (Rohr C 45° versetzt). Massenbudget 705 g (Druckteile Stand 2c), Schwerpunkt
+259 mm, Hebelarm Kardan–Schwerpunkt 190 mm (`cad/mass_stand2b.md`), alles ungewogen. Die folgenden Absätze beschreiben
 den Stand vom 21.10. (Ring-Stack im Kuppler, Pyro-Kolben), der damit überholt ist.
 
 - **Rohr:** Klima 75 mm, innen 72,6 mm. **Der Flugcomputer sitzt im Kuppler** (innen 70,2 mm,

@@ -122,22 +122,26 @@ def sled():
     yb = -M.BOARD_T / 2
     b0, b1 = M.BAND_Z
     sb, sc = M.SPIGOT_B, M.SPIGOT_C
-    # Band (= Spantplatte), Zapfen nach unten in B, Zapfen nach oben in C
-    s = cyl(M.BAND_OD, b0, b1)
+    # Band: außen ein 5 mm hoher Rand (sichtbar, liegt auf Rohr B), innen die Spantplatte M.PLATE_T oben auf der Druckseite.
+    # Zapfen nach unten in B, Zapfen nach oben in C (Wand M.SPIGOT_WALL)
+    p0 = b1 - M.PLATE_T
+    s = tube(M.BAND_OD, sb["id"], b0, b1).union(cyl(sb["id"] + 0.2, p0, b1))
     s = s.union(tube(sb["od"], sb["id"], *sb["z"])).union(tube(sc["od"], sc["id"], *sc["z"]))
     s = s.cut(tube(sb["od"] + 2, sb["od"] - 1.2, sb["z"][0] - 0.1, sb["z"][0] + 0.8))      # Einführfasen
     s = s.cut(tube(sc["od"] + 2, sc["od"] - 1.2, sc["z"][1] - 0.8, sc["z"][1] + 0.1))
-    s = bosses(s, M.SPIGOT_B_SCREW_Z, sb["id"] / 2 - 3.0, sb["od"] / 2 - 0.5, b0)
-    s = bosses(s, M.SPIGOT_C_SCREW_Z, sc["id"] / 2 - 2.0, sc["od"] / 2 - 0.5, b1, phis=M.SPIGOT_C_PHI)
+    s = bosses(s, M.SPIGOT_B_SCREW_Z, sb["id"] / 2 - 4.5, sb["od"] / 2 - 0.5, b0)     # Stand 2c: Augen nach innen, 
+    s = bosses(s, M.SPIGOT_C_SCREW_Z, sc["id"] / 2 - 4.0, sc["od"] / 2 - 0.5, b1, phis=M.SPIGOT_C_PHI)   # ≥ 2,9 mm hinter der Mutter
     # Ringschraube M4 (Schockschnur) und Kabelverschraubung für das Servo der CO₂-Auslösung
     s = s.cut(cyl(4.3, b0 - 1, b1 + 1, 0, -16))
     s = s.cut(cyl(6.0, b0 - 1, b1 + 1, -18, 8))
-    # Träger
-    tz0, tz1 = M.DISC_Z[1], sb["z"][0] + 1.0
+    # Träger: U-Profil (Boden + zwei Wände) bis unter die Spantplatte; im Zapfen läuft der Boden als Sehne bis an die
+    # Zapfenwand (statt des vollen Klotzes von Stand 2b, 11,5 cm³)
+    tz0, tz1 = M.DISC_Z[1], p0
     s = s.union(box_from(-bw, bw, M.TRAY_FLOOR_Y, M.TRAY_FLOOR_Y + M.TRAY_WALL, tz0, tz1))
     walls = box_from(-bw, -bw + M.TRAY_WALL, M.TRAY_FLOOR_Y, yb, tz0, tz1)
     s = s.union(walls).union(walls.mirror("YZ"))
-    s = s.union(box_from(-bw, bw, M.TRAY_FLOOR_Y, -3.0, sb["z"][0] - 0.5, sb["z"][1]).intersect(cyl(sb["id"] + 1, sb["z"][0] - 0.5, sb["z"][1])))
+    s = s.union(box_from(-sb["id"] / 2, sb["id"] / 2, M.TRAY_FLOOR_Y, M.TRAY_FLOOR_Y + M.TRAY_WALL, sb["z"][0], p0)
+                .intersect(cyl(sb["id"] + 1, sb["z"][0], p0)))
     for (u, v) in M.BOARD_HOLES:
         z = v0 + v
         s = s.union(box_from(u - M.POST_D / 2, u + M.POST_D / 2, M.TRAY_FLOOR_Y, yb, z - 4.0, z + 4.0))
@@ -159,11 +163,31 @@ def sled():
         s = s.cut(box_from(-bw - 1, bw + 1, M.TRAY_FLOOR_Y + 4, yb - 3, v0 + vm - ln / 2, v0 + vm + ln / 2))
     for (u, v) in M.PANEL_COLS:
         s = s.cut(cyl_between(3.3, (u, M.TRAY_FLOOR_Y - 1, v0 + v), (u, M.TRAY_FLOOR_Y + 3, v0 + v)))
+    # Stand 2c: Fenster im Boden unter den Akkus, zwischen den Klettschlitzen und Fachenden
+    for v_a, v_b in floor_windows():
+        s = s.cut(box_from(-M.FLOOR_WINDOW_W / 2, M.FLOOR_WINDOW_W / 2, M.TRAY_FLOOR_Y - 1, M.TRAY_FLOOR_Y + M.TRAY_WALL + 0.5,
+                           v0 + v_a, v0 + v_b))
+    for (u, v) in M.PANEL_COLS:      # Auflage der Schalterbrett-Säulen bleibt voll
+        s = s.union(cyl_between(M.PANEL_COL_D + 3.0, (u, M.TRAY_FLOOR_Y, v0 + v), (u, M.TRAY_FLOOR_Y + M.TRAY_WALL, v0 + v)))
+        s = s.cut(cyl_between(3.3, (u, M.TRAY_FLOOR_Y - 1, v0 + v), (u, M.TRAY_FLOOR_Y + 3, v0 + v)))
     # GPS-Halter: zwei Leisten unter der Platte, Patch nach oben
     g = M.GPS
     for x in (-g["w"] / 2 - 2.0, g["w"] / 2):
-        s = s.union(box_from(x, x + 2.0, g["y"][0], g["y"][1], g["z_top"] - g["h"] - 1.5, b0))
+        s = s.union(box_from(x, x + 2.0, g["y"][0], g["y"][1], g["z_top"] - g["h"] - 1.5, p0))
     return s
+
+
+def floor_windows():
+    """v-Bereiche der Bodenfenster: je Akkufach die Stücke zwischen Fachende und den beiden Klettschlitzen."""
+    out, g, half = [], M.FLOOR_WINDOW_GAP, M.STRAP_SLOT[0] / 2
+    for bat in (M.BAT2S, M.BAT1S):
+        vm = bat["v0"] + bat["l"] / 2
+        cuts = [bat["v0"] + g, vm - bat["l"] / 4 - half - g, vm - bat["l"] / 4 + half + g, vm + bat["l"] / 4 - half - g,
+                vm + bat["l"] / 4 + half + g, bat["v0"] + bat["l"] - g]
+        for a, b in zip(cuts[0::2], cuts[1::2]):
+            if b - a > 4.0:
+                out.append((a, b))
+    return out
 
 
 def lower_disc():
@@ -343,7 +367,10 @@ def export(parts):
         exporters.export(shp, str(EXPORT / f"{fn}.stl"), tolerance=0.02, angularTolerance=0.1)
         exporters.export(shp, str(EXPORT / f"{fn}.step"))
         v = by[key].Volume() / 1000
-        rows.append({"teil": key, "datei": f"cad/export/modular/{fn}.stl", "cm3": round(v, 1), "g": round(v * M.PRINT_RHO * M.PRINT_FILL, 1)})
+        shell = min(v, by[key].Area() / 100 * M.PRINT_SHELL / 10)     # cm² × cm
+        g_sl = M.PRINT_RHO * (shell + M.PRINT_INFILL * (v - shell))
+        rows.append({"teil": key, "datei": f"cad/export/modular/{fn}.stl", "cm3": round(v, 1),
+                     "g_75": round(v * M.PRINT_RHO * M.PRINT_FILL, 1), "g": round(g_sl, 1)})
     return rows
 
 
@@ -417,7 +444,8 @@ def main():
         print(f"  {r['datei']}  {r['cm3']} cm³  ≈ {r['g']:.0f} g")
     total = M.mass_estimate(printed)
     tubes = {k: round(M.tube_mass(*z), 1) for k, z in (("A", M.TUBE_A), ("B", M.TUBE_B), ("C", M.TUBE_C))}
-    print(f"  Rohre {tubes}, Druckteile {printed:.0f} g, Start ≈ {total:.0f} g, Länge {M.NOSE_TIP_Z:.0f} mm")
+    print(f"  Rohre {tubes}, Druckteile {printed:.0f} g (Slicer-Modell), Überschlag Start ≈ {total:.0f} g ohne LoRa, CO₂-Servo und "
+          f"Schalterbrett-Bauteile (maßgeblich: python cad/mass_stand2b.py), Länge {M.NOSE_TIP_Z:.0f} mm")
     (EXPORT / "masses.json").write_text(json.dumps({"druckteile": rows, "druckteile_g": round(printed, 1), "rohre_g": tubes,
                                                     "start_g": round(total, 1), "laenge_mm": M.NOSE_TIP_Z},
                                                    indent=1, ensure_ascii=False), encoding="utf-8")

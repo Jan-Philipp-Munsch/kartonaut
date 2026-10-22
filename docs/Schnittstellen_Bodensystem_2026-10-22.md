@@ -19,7 +19,7 @@ Bodenstation getrennt konstruiert werden können. Zahlen der Rakete kommen aus `
 | Rumpf | Ø 75,0 außen, Papprohr, Unterkante 20 mm über der Düse | gleich |
 | Motor | TSP E12-0, Ø 24, ragt 20 mm unter das Rohr | gleich |
 | Gesamtlänge | 950 mm (Stand 2b: **731 mm**) | 1250 mm |
-| Masse / Schwerpunkt | ca. 760 g, 318 mm über der Düse (Stand 2b: **723 g, 256 mm**) | ca. 920 g ohne Treibstoff bei der Landung, 477 mm |
+| Masse / Schwerpunkt | ca. 760 g, 318 mm über der Düse (Stand 2c: **705 g, 259 mm**) | ca. 920 g ohne Treibstoff bei der Landung, 477 mm |
 | Beine | keine | 4, Fuß 35 × 35 auf r ≈ 320 mm, Fußsohle ca. 70 mm unter der Düse |
 
 Anforderungen an das Pad:

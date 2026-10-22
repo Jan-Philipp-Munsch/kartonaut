@@ -229,7 +229,8 @@ Mit Boden erreicht die 1,0-kg-Rakete am E12 also 20 m statt 9 m (ohne Boden), di
 alten Zahlen wieder heraus. Für den zweiten Motor gilt: Bei der `cad`-Rakete ist er mit 7,3 s zu
 spät (Landung bei 6,3 s), ein Landebrennen braucht eine Zündung aus der Höhe statt nach Zeit.
 
-**Nachtrag 22.10.2026 nachts, *Kartonaut 1* Stand 2b** (`--vehicle stand2b`: m_dry 0,695 kg, 0,723 kg beim Start,
+**Nachtrag 22.10.2026 nachts, *Kartonaut 1* Stand 2b** (überholt durch den Nachtrag vom 23.10. unten: diese Läufe rechneten mit dem
+Signal-Builder-Treibstoff von 60 statt 28 g und mit den alten `Config.h`-Werten 0,70 kg / 0,30 m) (`--vehicle stand2b`: m_dry 0,695 kg, 0,723 kg beim Start,
 I quer 0,0213, längs 0,00047 kg m², Hebelarm 0,186 m aus `cad/mass_stand2b.json`; `--single-motor`, Boden, Rauschen,
 statischer Fehler 1/0,6°, `--accel specific_force`). Die Modulbauweise ist ein Viertel leichter als `voll`, der
 Hebelarm halb so lang, das Quer-Trägheitsmoment ein Fünftel: die Rakete reagiert viel schneller auf den Kardan.
@@ -250,6 +251,43 @@ für den Regler; in der Brennphase bleibt die Firmware mit beiden Servo-Umrechnu
 Befund 12 ist mit der Modulbauweise erledigt: 63 m statt 20 m am selben Motor. Nach dem Wiegen der Rakete
 `cad/mass_stand2b.py` korrigieren und diese Tabelle neu rechnen; die Servo-Übertragungsfunktion stammt weiter vom
 SG90-Fit von 2025 und ist am gebauten Schubstangen-Kardan mit den W5652H neu zu messen.
+
+**Nachtrag 23.10.2026, Gewichtspakete und Gewinne** (`scripts/check_stand2b_levers.py`, Massen aus `cad/mass_stand2b.json`
+Abschnitt `levers`: Ausgangslage 705 g mit den Leichtbau-Druckteilen, P1 672 g, P2 631 g, P3 593 g). Firmware-Regler mit
+der wahren Masse und dem wahren Hebelarm, Servo-Umrechnung 6, ein Motor, Treibstoff 28 g (`fuel_model="impulse"`),
+Boden, Rauschen, statischer Fehler 1°/0,6°, spezifische Kraft, kein Luftwiderstand. „Anschlag“ = Anteil der Brennzeit
+am Kardanfenster.
+
+| Paket | Kp / Kd | Gipfel | Kipp max Brenn. | Kipp 3,55 s | seitlich 3,55 s | Anschlag |
+|---|---|---|---|---|---|---|
+| 705 g, Hebelarm 190 mm | 5 / 1 (`Config.h`) | 73 m | 4,3° | 3,3° | 1,2 m | 67 % |
+| 705 g | 1 / 0,5 | 74 m | 3,3° | 2,9° | 3,1 m | 0 % |
+| 705 g | **2 / 0,5** | 74 m | **2,4°** | 1,5° | 1,8 m | **0 %** |
+| 705 g | 2 / 1 | 73 m | 4,8° | 3,7° | 2,5 m | 60 % |
+| 705 g | 3,5 / 0,1 | 68 m | 49° | 50° | 2,6 m | 56 % |
+| P1 672 g, 185 mm | 5 / 1 | 84 m | 5,1° | 3,8° | 1,6 m | 70 % |
+| P1 | **2 / 0,5** | 86 m | **2,5°** | 1,5° | 1,7 m | **0 %** |
+| P2 631 g, 176 mm | 5 / 1 | 102 m | 6,4° | 3,7° | 2,1 m | 73 % |
+| P2 | **2 / 0,5** | 103 m | **2,3°** | 1,4° | 1,7 m | **0 %** |
+| P3 593 g, 157 mm | 5 / 1 | 121 m | 8,5° | 4,2° | 3,0 m | 82 % |
+| P3 | 2 / 0,5 | 123 m | 3,7° | 3,7° | 2,1 m | 36 % |
+| P3 | **2 / 0,25** | 124 m | **2,2°** | 1,3° | 2,0 m | **0 %** |
+
+Kd = 1 setzt den Kardan bei jeder Erstflug-Masse an den Anschlag, auch mit Kp 0,5. Das Quer-Trägheitsmoment ist mit
+0,014 bis 0,021 kg m² fünf- bis achtmal kleiner als bei den Fahrzeugen, für die die Gewinne gefunden wurden; der D-Anteil
+muss mitgehen. Die Läufe vom 22.10. nachts sahen nur deshalb gut aus, weil die Firmware mit 0,30 m statt 0,19 m Hebelarm
+rechnete und so die Verstärkung um etwa den Faktor 1,6 drückte. Ausführlich: `docs/Gewicht_und_Landung_2026-10-23.md` §4.
+
+Das Raster rechnet nur eine Servo-Totzeit (30 ms). **Bayes-Optimierung** (`scripts/tune_bayes.py`, Optimierer
+`tvcsim/bayesopt.py`: Gauß-Prozess mit Expected Improvement; je Punkt vier Flüge, Servo-Totzeit 30 und 50 ms; Kp, Ki, Kd):
+705 g → Kp 2,42 / Ki 1,50 / Kd 0,44, P1 → 1,97 / 1,50 / 0,43, P2 → 1,82 / 1,13 / 0,40, P3 → 1,50 / 0,77 / 0,29, jeweils
+2,1 bis 2,9° Kipp und nie am Anschlag. Gemeinsamer Satz **Kp 2 / Ki 1 / Kd 0,45** für 705 und 672 g (0 % Anschlag, seitlich
+1,3 m); der Raster-Satz 2 / 0 / 0,5 steht mit 50 ms bei 631 g schon 19 % am Anschlag, `Config.h` (5 / 0 / 1) 69 bis 82 %.
+
+```bash
+python scripts/tune_bayes.py --config base --iters 35 --workers 4
+python scripts/tune_bayes.py --eval 2 1 0.45 --configs base P1 P2 P3
+```
 
 
 `scripts/compare_gains.py` (Rauschen an, statischer Fehler 1°/0,6°, ein Seed). Maßgeblich

@@ -180,7 +180,8 @@ Ring-Stack, kein Rollmotor, CO₂-Ausstoß, Schirm im Rohr C, Spitze über den z
 Schraubring, Schlitten mit Spant (Band Ø 75 zwischen B und C), alle Radialschrauben bei 0°/90°/180°/270° (Rohr C 45°
 versetzt), Rampenführungen bei 45°/135°/250° zwischen Schrauben und Servofenstern (207°/336° laut Druckdatei).
 Grundlage der Bauanleitung `docs/Bauanleitung_Kartonaut1.md`. Das Massenbudget dazu rechnet `mass_stand2b.py`:
-**723 g** beim Start, Schwerpunkt 256 mm, Hebelarm Kardan–Schwerpunkt 186 mm, Ixx = 0,021, Izz = 0,00047 kg·m²
+**705 g** beim Start (Druckteile Stand 2c im Leichtbau, 23.10.), Schwerpunkt 259 mm, Hebelarm Kardan–Schwerpunkt 190 mm,
+Ixx = 0,021, Izz = 0,00047 kg·m², dazu eine Hebeltabelle bis 593 g
 (`mass_stand2b.md`; die Überschlagsrechnung in `modular.py` kommt ohne LoRa-Wendel, CO₂-Servo und Schalterbrett-Teile
 auf 689 g).
 

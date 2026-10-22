@@ -383,7 +383,7 @@ def z5(pdf):
     sh = Sheet("Z5", "Avionik-Schlitten mit Spant (ein Druckteil)", "1:1,25",
                "Stehend gedruckt, Band auf dem Bett, PETG, 3 Wände, 25 % Gyroid. Bezugsebene A = Unterseite des Bands (liegt auf der Oberkante "
                "von Rohr B). M3-Muttern in Sechskant-Taschen, von innen eingedrückt: 4 Augen unten (T2), 4 Augen oben (T3, 45° versetzt). Platinensäulen und Stirnaugen: M3 direkt ins Kernloch Ø 2,6. "
-               "Platte 5 mm für den CO₂-Druck, Ringschraube M4 und Kabeldurchführung Ø 6 für das CO₂-Servo.")
+               "Platte 3,5 mm mit 5-mm-Rand für den CO₂-Druck (Stand 2c), Zapfen 2 mm, Ringschraube M4 und Kabeldurchführung Ø 6 für das CO₂-Servo.")
     s = 1 / 1.25
     A = M.BAND_Z[0]
 

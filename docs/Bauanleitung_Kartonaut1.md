@@ -48,11 +48,11 @@ python docs/bauanleitung/build_pdf.py             # diese Anleitung als PDF
 | 2 | K | Antenne und GPS waren in der abgesprengten Spitze vorgesehen. | Beide im Avionikraum (Tabelle oben). |
 | 3 | K | Die Stecker J5/J6/J1 an der unteren Stirnseite der Platine ragen 12 mm über. | Untere Scheibe mit Steckerfenster, Lage geprüft. |
 | 4 | K | Das CAD-Modell `cad/tvc.py` beschreibt einen Kardan mit der Servowelle direkt auf der Drehachse; gebaut ist ein Schubstangen-Kardan. | Für den Bau gilt der gebaute Kardan; das CAD-Modell ist nachzuziehen (O4). Die Servo-Umrechnung in `Config.h` (Befund 13) am gebauten Kardan messen. |
-| 5 | W | Das alte Massenmodell setzte Druckteile zu leicht an. | Hier aus den CAD-Volumen gerechnet: ≈ 689 g (§2.5). |
+| 5 | W | Das alte Massenmodell setzte Druckteile zu leicht an. | Aus den CAD-Volumen gerechnet, Stand 2c mit Slicer-Modell: ≈ 705 g (§2.5, `cad/mass_stand2b.md`). |
 | 6 | W | Die Rampenführungen (Entwurf bei 60/180/300°) liegen auf Schrauben. | Führungen bei **45/135/250°**, zwischen Schrauben und Servofenstern (Hinweis an die Startrampe). |
 | 7 | W | Gewinde direkt im Druck reißen bei häufigem Lösen aus. | M3-Muttern in Sechskant-Taschen an allen Trennstellen (§4). |
 | 8 | W | Barometerraum war zum Kardan offen. | Untere Scheibe plus Schaum; die 4 alten Löcher in Rohr B sind der Druckausgleich. |
-| 9 | H | Bei 2 l CO₂ im freien Raum unter der Spitze (ca. 780 ml) entstünden bis 2,6 bar, wenn die Spitze klemmt. | Spant 5 mm (ca. 17 MPa bei 2,6 bar), keine Abscherstifte, bis der Test zeigt, dass die Spitze bei kleinem Druck geht. |
+| 9 | H | Bei 2 l CO₂ im freien Raum unter der Spitze (ca. 780 ml) entstünden bis 2,6 bar, wenn die Spitze klemmt. | Spantplatte 3,5 mm mit 5-mm-Rand (Stand 2c: 21 bis 34 MPa bei 2,6 bar, PETG 45 bis 50 MPa), keine Abscherstifte, bis der Test zeigt, dass die Spitze bei kleinem Druck geht. |
 
 <hr class="pb">
 
@@ -95,9 +95,11 @@ den Stoß zu Rohr A. T1 passt in vier Lagen, also vor dem Schrauben die Marke pr
 |---|---|---|
 | ![](img/bauanleitung/modular_avionik_rumpf.png) | ![](img/bauanleitung/modular_luke_b.png) | ![](img/bauanleitung/modular_avionik.png) |
 
-Ein Druckteil: oben das **Band** Ø 75 × 5 (liegt auf Rohr B, außen sichtbar) mit **Zapfen nach unten** in Rohr B
-(4 Augen für T2) und **Zapfen nach oben** in Rohr C (4 Augen für T3); darunter der **Träger** mit vier Säulen für die
-Platine und Fächern für den 2S-Akku (v = 6 … 62) und den 1S-Akku (v = 64 … 114). Unter dem Band zwei Leisten für das
+Ein Druckteil: oben das **Band** Ø 75 (ein 5 mm hoher Rand, liegt auf Rohr B, außen sichtbar) mit der **Spantplatte**
+3,5 mm auf der Druckseite, **Zapfen nach unten** in Rohr B (4 Augen für T2) und **Zapfen nach oben** in Rohr C (4 Augen
+für T3), beide mit 2 mm Wand; darunter der **Träger** als U-Profil mit vier Säulen für die Platine und Fächern für den
+2S-Akku (v = 6 … 62) und den 1S-Akku (v = 64 … 114), im Boden unter den Akkus Fenster zwischen den Klettschlitzen
+(Stand 2c, Leichtbau). Unter dem Band zwei Leisten für das
 **GPS-Modul** (20 × 20, Patch nach oben). Unten verschraubt die **untere Scheibe** mit Steckerfenster; durch ihr
 Kabelloch ragt die **LoRa-Wendel** nach unten. Hinter Luke B das **Schalterbrett**. Im Band: Ringschraube M4 für die
 Schnur und eine Kabeldurchführung Ø 6 für das CO₂-Servo (mit Epoxid abdichten).
@@ -108,7 +110,7 @@ Schnur und eine Kabeldurchführung Ø 6 für das CO₂-Servo (mit Epoxid abdicht
 |---|---|
 | 0 … 93 | Motor TSP E12-0, bündig |
 | 0 … 125 | Rohr A, Kardanschrauben bei 44, Servofenster ab 60 |
-| 87,5 … 162,5 | Kuppler J1 (in B verklebt), Schraubring bei 104 … 116, T1 bei 110 |
+| 87,5 … 162,5 | Kuppler J1 (in B verklebt), Schraubring bei 105 … 115, T1 bei 110 |
 | 125 … 301 | Rohr B, alte Löcher bei 169 (Druckausgleich), T2 bei 293 |
 | 155 … 158 | untere Scheibe, LoRa-Wendel 124 … 154 |
 | 167 … 287 | Platine rev B1 |
@@ -121,16 +123,26 @@ Schnur und eine Kabeldurchführung Ø 6 für das CO₂-Servo (mit Epoxid abdicht
 
 ### 2.5 Masse (Schätzung)
 
-| | g |
-|---|---|
-| Rohre A + B + C | 30 + 42 + 47 |
-| neue Druckteile (Schlitten mit Spant 74, Scheibe 8, Schalterbrett 2, Schraubring 14) | 98 |
-| CO₂-Aufbau 10 + Kapsel 25 [Annahme] | 35 |
-| **Start, ein E12** | **≈ 689** |
+Ganzes Stabmodell mit Schwerpunkt und Trägheit: `cad/mass_stand2b.md` (`python cad/mass_stand2b.py`).
 
-Die Druckteil-Massen rechnen mit 75 % des CAD-Volumens. Mit 3 Wänden und 25 % Füllung ist der Schlitten eher bei 60 g:
-seine Wände sind 1,6 bis 5 mm dick und bestehen fast nur aus Wandbahnen, die Füllung wirkt nur in Band, Zapfen und
-Säulen. Wiegen entscheidet. Rechnung in `cad/modular.py`; danach Hebelarm neu bestimmen (§5.6).
+| Baugruppe | g |
+|---|---|
+| Motor E12 mit Treibstoff | 64 |
+| Kardan, zwei W5652H, Hebel, Adapter 29→24 | 88 |
+| Rohre A + B + C, zwei halbe Kuppler | 30 + 42 + 47 + 34 |
+| neue Druckteile Stand 2c (Schlitten mit Spant 64, Scheibe 7, Schalterbrett 3, Schraubring 6) | 80 |
+| Platine, Akkus 2S 29 + 1S 14, GPS, LoRa-Wendel, Schalterbrett-Bauteile | 109 |
+| CO₂-Aufbau 10 + Kapsel 25 + Servo 9 [Annahme] | 44 |
+| Fallschirm mit Schnur | 50 |
+| Spitze mit Holzplatte | 83 |
+| Schrauben, Kabel, Kleber, Schaum | 34 |
+| **Start, ein E12** | **≈ 705** |
+
+**Druckteile Stand 2c (Leichtbau, 23.10.2026):** Spantplatte 3,5 statt 5 mm mit 5-mm-Rand, Zapfen 2 statt 4,1/3,1 mm,
+U-Profil statt des vollen Klotzes zwischen Träger und Zapfen, Fenster im Trägerboden, Scheibe 2 statt 3 mm, Schraubring
+mit 2 statt 6 mm Wand. Das Volumen sinkt von 103 auf 65 cm³, die Druckmasse aber nur von 96 auf 80 g: Die Massen rechnen
+jetzt mit einem Slicer-Modell (Oberfläche × 1 mm voll, Rest 25 % Gyroid), und dünne Wände druckt der Slicer mit drei
+Perimetern ohnehin voll. Die Slicer-Vorschau und die Waage entscheiden. Danach Hebelarm neu bestimmen (§5.6).
 
 <hr class="pb">
 
@@ -235,9 +247,12 @@ abreißt, LoRa auf 14 dBm senken oder ein M10-Modul kaufen. Typ und Maße deines
 
 | Teil | Lage | Wände / Füllung |
 |---|---|---|
-| Schlitten mit Spant | Band auf dem Bett (im Slicer um 180° drehen) | 3 Wände, 25 % Gyroid, keine Stützen |
+| Schlitten mit Spant | Band auf dem Bett (im Slicer um 180° drehen) | 3 Wände, 25 % Gyroid, keine Stützen; 2-mm-Wände werden voll gedruckt |
 | Untere Scheibe, Schraubring | flach | 3 Wände, 25 % |
 | Schalterbrett | flach | 3 Wände, 25 % |
+
+Mehr Perimeter oder Füllung machen die dünnen Teile kaum fester, aber schwerer. Wichtig für die Festigkeit sind die vier
+Augen je Zapfen (die Mutter sitzt mindestens 2,9 mm vor der Außenfläche) und die Spantplatte: dort keine Füllung unter 25 %.
 
 **Muttern statt Einschmelzmuttern.** Alle Schrauben, die bei der Flugvorbereitung gelöst werden (T1, T2, T3), greifen
 in M3-Muttern: Jedes Schraubenauge hat innen eine Sechskant-Tasche, die Mutter wird von innen eingedrückt und mit einem
@@ -290,7 +305,7 @@ Jedes Teil nach dem Druck wiegen.
 2. Schnur: Ringschraube Spant → Kevlar → Wirbel mit Schirm → Gummischnur → Haken der Spitze. Schirm 100 × Ø 70 packen,
    Schnur im Zickzack darüber, Spitze aufsetzen.
 3. Rohr C aufstecken, 4 × M3 bei T3.
-4. **Wiegen** (Schätzung ≈ 689 g) und **Schwerpunkt** auswiegen; Hebelarm Kardanpunkt–Schwerpunkt und Masse in
+4. **Wiegen** (Schätzung ≈ 705 g) und **Schwerpunkt** auswiegen (Modell 259 mm über der Düse); Hebelarm Kardanpunkt–Schwerpunkt und Masse in
    `firmware/src/Config.h` (`MOMENT_ARM_M`, `MASS_KG`) eintragen.
 5. **Servo-Umrechnung messen:** Servo um 10° stellen, Kardanwinkel messen (Befund 13); `SERVO_*_GAIN` setzen.
 6. **CO₂-Bodentest** (draußen, Rakete waagrecht): Spitze fliegt ab, Schirm und Schnur vollständig draußen, Spant und

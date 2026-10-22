@@ -61,21 +61,25 @@ PUSHROD = dict(d=2.0, l=(29.0, 30.0))   # [Jan]
 
 # Stoß J1: Kuppler in B verklebt, 4 × M3 durch Rohr A und Kuppler in einen Schraubring im Kuppler
 J1_SCREW_Z = TUBE_A[1] - 15.0    # 110: 15 mm unter der Oberkante von A
-J1_RING = dict(z=(J1_SCREW_Z - 6.0, J1_SCREW_Z + 6.0), od=P.COUPLER_ID - 0.2, id=58.0)   # gedruckt, im Kuppler verklebt
+J1_RING = dict(z=(J1_SCREW_Z - 5.0, J1_SCREW_Z + 5.0), od=P.COUPLER_ID - 0.2, id=66.0)   # gedruckt, im Kuppler verklebt;
+#   Stand 2c (Leichtbau): Wand 2 mm statt 6 mm, 10 statt 12 mm hoch; die vier Augen tragen die Muttern, der Ring nur die Lage
 
 # --------------------------------------------------------------------------- Rohr B: Avionik-Schlitten
 OLD_HOLES_B_Z = TUBE_B[0] + 44.0     # [Jan] 169: 4 alte Löcher bei 90° vom Ring-Stack, werden Druckausgleich fürs Barometer
 BAND_Z = (TUBE_B[1], TUBE_B[1] + 5.0)   # gedruckter Ring zwischen B und C, Außen-Ø wie das Rohr (sichtbares Band)
 BAND_OD = TUBE_OD
-PLATE_T = 5.0                     # Spantplatte = Band, 5 mm (CO₂-Druck, siehe CO2)
-SPIGOT_B = dict(z=(TUBE_B[1] - 18.0, TUBE_B[1]), od=TUBE_ID - 0.4, id=64.0)   # Zapfen nach unten in B
-SPIGOT_C = dict(z=(BAND_Z[1], BAND_Z[1] + 15.0), od=TUBE_ID - 0.4, id=66.0)   # Zapfen nach oben in C
+PLATE_T = 3.5                     # Stand 2c: Spantplatte 3,5 mm oben im Band (Druckseite), außen bleibt der Rand 5 mm hoch.
+#   Platte Ø 68 bei 2,6 bar (Spitze klemmt, Obergrenze aus co2_pressure_bar): eingespannt 0,75·p·r²/t² = 21 MPa,
+#   frei aufliegend 1,24·p·r²/t² = 34 MPa; PETG in der Ebene ca. 45–50 MPa. Bei < 0,1 bar (Spitze geht ab) unter 2 MPa.
+SPIGOT_WALL = 2.0                 # Stand 2c: Zapfen nur zum Zentrieren, die Last tragen die Schraubenaugen (vorher 4,1 / 3,1 mm)
+SPIGOT_B = dict(z=(TUBE_B[1] - 18.0, TUBE_B[1]), od=TUBE_ID - 0.4, id=TUBE_ID - 0.4 - 2 * SPIGOT_WALL)   # Zapfen nach unten in B
+SPIGOT_C = dict(z=(BAND_Z[1], BAND_Z[1] + 15.0), od=TUBE_ID - 0.4, id=TUBE_ID - 0.4 - 2 * SPIGOT_WALL)   # Zapfen nach oben in C
 SPIGOT_B_SCREW_Z = TUBE_B[1] - 8.0    # 293
 SPIGOT_C_SCREW_Z = BAND_Z[1] + 7.5    # 313,5
 SPIGOT_C_PHI = (45.0, 135.0, 225.0, 315.0)   # Rohr C liegt über den Rampenführungen; so bleibt 0°–180° frei für die quer liegende CO₂-Kapsel
 BOSS_D = 10.0
 
-DISC_Z = (TUBE_B[1] - 146.0, TUBE_B[1] - 143.0)   # untere Scheibe 155 … 158 (unter den alten Löchern bei 169)
+DISC_Z = (TUBE_B[1] - 146.0, TUBE_B[1] - 144.0)   # untere Scheibe 155 … 157, Stand 2c 2 statt 3 mm (nur Staub- und Druckschutz)
 DISC_OD = P.COUPLER_ID - 0.6           # sitzt noch im Kuppler J1 (endet bei 162,5)
 DISC_CABLE_D = 22.0
 DISC_PLUG_WINDOW = (-19.0, 15.0, -2.0, 10.0)
@@ -89,6 +93,8 @@ TRAY_WALL = 1.6
 BAT2S = dict(l=55.0, w=30.0, h=10.0, v0=6.0)   # [reichelt LRC 2S 450] LemonRC 2S 450 mAh 35C, XT30, 29 g
 BAT1S = dict(l=50.0, w=30.0, h=7.0, v0=64.0)   # endet bei v = 114, unter dem Steg im Zapfenring
 STRAP_SLOT = (2.5, 16.0)
+FLOOR_WINDOW_W = 18.0            # Stand 2c: Fenster im Trägerboden unter den Akkus (|x| < 9), zwischen den Klettschlitzen
+FLOOR_WINDOW_GAP = 2.0           # Steg zwischen Fenster und Klettschlitz bzw. Fachgrenze
 TRAY_TO_DISC = [(-20.0, -9.0), (20.0, -9.0)]
 PLUGS_TVC_END = [("Servo Gieren J5", -14.4), ("Servo Nicken J6", -2.8), ("XT30 2S J1", 10.2)]
 PLUG_REACH = 12.0
@@ -150,6 +156,7 @@ def servo_window_phi():
 
 
 PRINT_RHO, PRINT_FILL = 1.27, 0.75
+PRINT_SHELL, PRINT_INFILL = 1.0, 0.25   # Slicer-Modell (Stand 2c): Oberfläche × 1 mm voll (3 Perimeter, 4–5 Lagen), Rest 25 % Gyroid
 
 # Masse: Teile, die gegenüber dem 761-g-Modell (cad/mass_properties.md, Erstflug 700 mm) wegfallen oder sich ändern
 MASS_BASE_ERSTFLUG = 761.0

@@ -27,13 +27,13 @@ motor and pyro channels are reserved for later flights and already provided for 
 |---|---|
 | Airframe | Klima cardboard tube Ø 75 mm (ID 72.6 mm) in three modules: tube A 125 mm (gimbal), tube B 176 mm (avionics), tube C 195 mm (recovery); two half couplers 75 mm, Klima plastic nose cone. Overall length 731 mm. All radial screws M3 at 0°/90°/180°/270° |
 | Motor | TSP E12-0, 24 mm, 39 Ns, 12 N average, 3.5 s burn, no ejection charge; four on hand |
-| Lift-off mass | **723 g** in the state-2b mass budget ([`cad/mass_stand2b.md`](cad/mass_stand2b.md)), centre of gravity 256 mm above the nozzle, lever arm gimbal–CG 186 mm, thrust-to-weight 1.7; the 750 g target is met with 27 g to spare. Nothing weighed yet |
+| Lift-off mass | **705 g** in the mass budget ([`cad/mass_stand2b.md`](cad/mass_stand2b.md), lightweight printed parts state 2c), centre of gravity 259 mm above the nozzle, lever arm gimbal–CG 190 mm, thrust-to-weight 1.7; the 750 g target is met with 45 g to spare. Further levers down to 593 g in [docs/Gewicht_und_Landung_2026-10-23.md](docs/Gewicht_und_Landung_2026-10-23.md). Nothing weighed yet |
 | Flight computer | Teensy 4.1 on mainboard rev B (KiCad from code, routed; review points and decisions E1–E10 being worked in): ICM-42688-P IMU, BMP390 barometer, INA239 power monitor, all on SPI1; LoRa E22-400T22S, microSD, four pyro channels (two populated), stacking connector for add-on boards |
 | Power | two batteries: 1S LiPo for the electronics (buck-boost), 2S LemonRC 450 mAh for the servos; FET load switches behind a mechanical switch, both batteries charged inside the rocket |
 | Actuators | push-rod gimbal with 2 × FrSky Xact W5652H directly on 2S (built and fitted into tube A); one servo releases the CO₂ cartridge. No roll motor on the first flight |
 | Recovery | 8 g CO₂ cartridge (about 2 l) pushes the nose cone off; 125 cm parachute (packed 100 × Ø 70) sits in tube C, shock cord in the nose coupler |
 | Control | attitude from the gyro only, PID on pitch/yaw → torque → gimbal angle via `M = l · T · sin δ`; 100 Hz. Roll stays uncontrolled, which requires a quaternion attitude (TODO before the first flight) |
-| Simulation | Python 6DOF (port of the Simulink model): at 723 g the E12 carries the rocket to about 63 m, tilt during the burn below 2° with the firmware gains |
+| Simulation | Python 6DOF (port of the Simulink model): at 705 g the E12 carries the rocket to about 74 m (no drag); with Kp 2 / Ki 1 / Kd 0.45 (Bayesian optimisation) instead of the firmware gains Kp 5 / Kd 1 the tilt stays below 2.5° and the gimbal never hits its stop |
 | Ground system | ESP32-S3 ground station with a web UI for the phone, ignition over a 15 m line with key, ARM switch and relay; launch stand 600 × 600 mm on three adjustable legs, 6.5 kg, about €86 |
 | Status | gimbal, tube A and tube B built; board in progress; printed parts and order list of the build manual ready; no flight yet |
 
@@ -109,18 +109,22 @@ weighing follows the printing.
 |---|---|---|---|---|---|---|
 | `voll` (21 Oct): 1000 mm, legs, ring stack, piston | 981 g | 449 mm | 372 mm | 0.110 kg·m² | 0.00105 kg·m² | 20 m, thrust-to-weight 1.1 |
 | `erstflug` (22 Oct): 700 mm, no legs, piston, key switch | 761 g | 318 mm | 242 mm | 0.046 kg·m² | 0.00057 kg·m² | – (750 g target missed by 11 g) |
-| **State 2b (22 Oct evening): 496 mm in three modules, CO₂, no roll motor** | **723 g** | 256 mm | 186 mm | 0.021 kg·m² | 0.00047 kg·m² | **63 m**, thrust-to-weight 1.7 |
+| State 2b (22 Oct evening): 496 mm in three modules, CO₂, no roll motor | 723 g | 256 mm | 186 mm | 0.021 kg·m² | 0.00047 kg·m² | – |
+| **State 2c (23 Oct): lightweight printed parts** | **705 g** | 259 mm | 190 mm | 0.021 kg·m² | 0.00047 kg·m² | **74 m**, thrust-to-weight 1.7 |
 
 Where the 258 g against `voll` went: landing system (−200 g), tube 496 instead of 1000 mm (−121 g), no
 threaded rods and end rings, no piston, no key switch; against that the sled with bulkhead as one large
-printed part (74 g), the CO₂ module with cartridge and servo (44 g) and one more half coupler. The
+printed part (64 g since the lightweight redesign of 23 Oct, printed parts 96 → 80 g), the CO₂ module with cartridge and servo (44 g) and one more half coupler. The
 estimate in `modular.py` (689 g) forgot the LoRa helix, the CO₂ servo, the switch-panel parts, the eye
 bolt and the servo horns; the budget includes them (+34 g). By group: tubes and couplers 19 %, flight
-computer with batteries 15 %, nose 14 %, printed parts 14 %, gimbal 12 %.
+computer with batteries 15 %, nose 14 %, gimbal 12 %, printed parts 11 %.
 
-The lever arm of 186 mm is half that of `voll`; the firmware (`MOMENT_ARM_M`, `MASS_KG`) and the
-simulation (`--vehicle stand2b`) use it. The roll inertia remains two orders of magnitude below the old
-placeholder of 0.1 kg·m².
+The lever arm of 190 mm is half that of `voll`, the transverse inertia a fifth. That matters for control: with
+the true values in `Config.h` the gains Kp 5 / Kd 1 are too sharp and the gimbal sits at its stop for two thirds of
+the burn; Kp 2 / Ki 1 / Kd 0.45 from a Bayesian optimisation (`simulation/scripts/tune_bayes.py`, robust against 30 and
+50 ms servo dead time) controls 705 and 672 g cleanly. Further levers (battery, adapter, coupler, spring
+ejection, smaller parachute, printed nose) down to 593 g and their effect on lever arm and controller are in
+[docs/Gewicht_und_Landung_2026-10-23.md](docs/Gewicht_und_Landung_2026-10-23.md).
 
 ## What the simulation says
 
@@ -139,9 +143,12 @@ Four findings that changed the project:
   kd 0.385) have a 40 times larger D term, drive the gimbal straight into its ±5° limit and
   oscillate at 3 to 4 Hz.
 - **The 1 kg rocket was too heavy for an E12** (thrust-to-weight 1.1, apogee 20 m). Instead of a
-  stronger motor the rocket got lighter: *Kartonaut 1* at 723 g reaches **63 m** in the model
-  (100 runs: 63.4 ± 0.4 m), lands after a good 9 s, tilts at most 1.9° during the burn with the
-  firmware gains and drifts 0.9 m sideways by burnout.
+  stronger motor the rocket got lighter: *Kartonaut 1* at 705 g reaches **74 m** in the model
+  (no drag, about 10 % less with it), tilts 2.4° during the burn and drifts 1.3 m sideways by burnout
+  with Kp 2 / Ki 1 / Kd 0.45.
+- **The light rocket needs smaller gains.** With the true mass and lever arm in the firmware, the old
+  gains Kp 5 / Kd 1 drive the gimbal to its stop for two thirds of the burn. The D term has to scale with
+  the moment of inertia (`scripts/check_stand2b_levers.py`).
 - **The servo-to-gimbal ratio decides the control authority.** With the 23 servo degrees per gimbal
   degree in `Config.h` the gimbal only reaches ±1°, with the measured 6 it reaches ±3.75°. To be
   measured on the built push-rod gimbal.
@@ -157,7 +164,8 @@ Four findings that changed the project:
 ```bash
 cd simulation
 python -m pytest tests                 # 25 tests
-python scripts/run_nominal.py --controller firmware --vehicle stand2b --single-motor
+python scripts/run_nominal.py --controller firmware --vehicle stand2b --single-motor --fuel impulse
+python scripts/check_stand2b_levers.py        # weight packages against controller gains
 python scripts/run_montecarlo.py --controller firmware --vehicle stand2b --single-motor
 python scripts/compare_gains.py --vehicle stand2b --single-motor --accel specific_force
 ```

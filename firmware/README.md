@@ -4,8 +4,9 @@ PlatformIO-Projekt für den Teensy 4.1. Die Firmware liest die Sensoren, schätz
 Höhe, regelt den Schubvektor und loggt jeden Durchlauf auf die SD-Karte. Ein
 Flugzustandsautomat fehlt noch, die Regler sind in `Config.h` abgeschaltet. Für *Kartonaut 1* (Modulbauweise
 Stand 2b, 22.10.2026) entfällt der Rollmotor; der Rollregler bleibt aus, dafür muss die Lage vor dem Erstflug als
-Quaternion aus dem Gyro mit Oben-Vektor gerechnet werden (`PROJECT.md` Befund 3). Masse 0,723 kg und Hebelarm
-0,186 m aus `cad/mass_stand2b.md` gehören nach dem Wiegen in `Config.h` (`MASS_KG`, `MOMENT_ARM_M`); der
+Quaternion aus dem Gyro mit Oben-Vektor gerechnet werden (`PROJECT.md` Befund 3). Masse 0,705 kg und Hebelarm
+0,190 m aus `cad/mass_stand2b.md` gehören nach dem Wiegen in `Config.h` (`MASS_KG`, `MOMENT_ARM_M`), und mit ihnen
+kleinere Gewinne (Kp 2, Ki 1, Kd 0,45 statt 5, 0 und 1, `docs/Gewicht_und_Landung_2026-10-23.md` §4b; I-Anteil erst ab der Starterkennung); der
 Fallschirm-Servo an `J_SERVO3` löst die CO₂-Kapsel aus.
 
 ```bash

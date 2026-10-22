@@ -28,13 +28,13 @@ und auf der Platine schon angelegt.
 |---|---|
 | Rumpf | Klima-Papprohr Ø 75 mm (innen 72,6 mm) in drei Modulen: Rohr A 125 mm (Kardan), Rohr B 176 mm (Avionik), Rohr C 195 mm (Bergung); zwei halbe Kuppler 75 mm, Klima-Kunststoffspitze. Gesamtlänge 731 mm. Alle Radialschrauben M3 auf 0°/90°/180°/270° |
 | Motor | TSP E12-0, 24 mm, 39 Ns, 12 N mittel, 3,5 s Brenndauer, ohne Ausstoßladung; vier Stück vorhanden |
-| Startmasse | **723 g** im Massenbudget Stand 2b ([`cad/mass_stand2b.md`](cad/mass_stand2b.md)), Schwerpunkt 256 mm über der Düse, Hebelarm Kardan–Schwerpunkt 186 mm, Schub-Gewicht 1,7; das 750-g-Ziel ist mit 27 g Reserve erreicht. Gewogen ist noch nichts |
+| Startmasse | **705 g** im Massenbudget ([`cad/mass_stand2b.md`](cad/mass_stand2b.md), Druckteile im Leichtbau Stand 2c), Schwerpunkt 259 mm über der Düse, Hebelarm Kardan–Schwerpunkt 190 mm, Schub-Gewicht 1,7; das 750-g-Ziel ist mit 45 g Reserve erreicht. Weitere Hebel bis 593 g in [docs/Gewicht_und_Landung_2026-10-23.md](docs/Gewicht_und_Landung_2026-10-23.md). Gewogen ist noch nichts |
 | Flugcomputer | Teensy 4.1 auf dem Mainboard rev B (KiCad aus Code, geroutet, Review und Entscheidungen E1–E10 werden eingearbeitet): IMU ICM-42688-P, Barometer BMP390, Strommonitor INA239, alle an SPI1; LoRa E22-400T22S, microSD, vier Pyro-Kanäle (zwei bestückt), Stapelstecker für Zusatzplatinen |
 | Versorgung | zwei Akkus: 1S-LiPo für die Elektronik (Buck-Boost), 2S LemonRC 450 mAh für Servos; FET-Lastschalter hinter einem mechanischen Schalter, beide Akkus werden in der Rakete geladen |
 | Aktoren | Schubstangen-Kardan mit 2 × FrSky Xact W5652H direkt am 2S (gebaut und in Rohr A eingepasst); ein Servo löst die CO₂-Kapsel aus. Kein Rollmotor beim Erstflug |
 | Bergung | CO₂-Kapsel 8 g (ca. 2 l) drückt die Spitze ab, Fallschirm 125 cm (gepackt 100 × Ø 70) liegt in Rohr C, Schockschnur im Spitzen-Kuppler |
 | Regelung | Lage nur aus dem Gyro, PID auf Pitch/Yaw → Moment → Kardanwinkel über `M = l · T · sin δ`; 100 Hz. Roll bleibt ungeregelt, dafür muss die Lage als Quaternion gerechnet werden (TODO vor dem Erstflug) |
-| Simulation | Python-6DOF (Port des Simulink-Modells): mit 723 g trägt der E12 die Rakete auf etwa 63 m, Kippwinkel in der Brennphase unter 2° mit den Firmware-Gewinnen |
+| Simulation | Python-6DOF (Port des Simulink-Modells): mit 705 g trägt der E12 die Rakete auf etwa 74 m (ohne Luftwiderstand); mit Kp 2 / Ki 1 / Kd 0,45 (Bayes-Optimierung) statt der Firmware-Gewinne Kp 5 / Kd 1 bleibt der Kippwinkel unter 2,5° und der Kardan nie am Anschlag |
 | Bodensystem | Bodenstation ESP32-S3 mit Weboberfläche fürs Handy, Zündung über 15 m Leitung mit Schlüssel, ARM und Relais; Startrampe 600 × 600 mm mit drei verstellbaren Beinen, 6,5 kg, ca. 86 € |
 | Status | Kardan, Rohr A und Rohr B gebaut; Platine in Arbeit, Druckteile und Bestellliste der Bauanleitung stehen; noch kein Flug |
 
@@ -111,18 +111,23 @@ gewogen wird nach dem Druck.
 |---|---|---|---|---|---|---|
 | `voll` (21.10.): 1000 mm, Beine, Ring-Stack, Kolben | 981 g | 449 mm | 372 mm | 0,110 kg·m² | 0,00105 kg·m² | 20 m, Schub-Gewicht 1,1 |
 | `erstflug` (22.10.): 700 mm, ohne Beine, Kolben, Schlüsselschalter | 761 g | 318 mm | 242 mm | 0,046 kg·m² | 0,00057 kg·m² | – (Ziel 750 g um 11 g verfehlt) |
-| **Stand 2b (22.10. abends): 496 mm in drei Modulen, CO₂, kein Rollmotor** | **723 g** | 256 mm | 186 mm | 0,021 kg·m² | 0,00047 kg·m² | **63 m**, Schub-Gewicht 1,7 |
+| Stand 2b (22.10. abends): 496 mm in drei Modulen, CO₂, kein Rollmotor | 723 g | 256 mm | 186 mm | 0,021 kg·m² | 0,00047 kg·m² | – |
+| **Stand 2c (23.10.): Druckteile im Leichtbau** | **705 g** | 259 mm | 190 mm | 0,021 kg·m² | 0,00047 kg·m² | **74 m**, Schub-Gewicht 1,7 |
 
 Woher die 258 g gegenüber `voll` kommen: Landesystem (−200 g), Rohr 496 statt 1000 mm (−121 g),
 keine Gewindestangen und Endringe, kein Kolben, kein Schlüsselschalter; dagegen der Schlitten mit
-Spant als ein großes Druckteil (74 g), das CO₂-Modul mit Kapsel und Servo (44 g) und ein halber
-Kuppler mehr. Die Schätzung in `modular.py` (689 g) vergaß LoRa-Wendel, CO₂-Servo, Schalterbrett-Bauteile,
+Spant als ein großes Druckteil (64 g), das CO₂-Modul mit Kapsel und Servo (44 g) und ein halber
+Kuppler mehr. Die Druckteile sind seit dem 23.10. leichter (Spantplatte 3,5 mm, Zapfen 2 mm, U-Profil statt Klotz,
+Schraubring 2 mm: 96 → 80 g nach einem Slicer-Modell). Die Schätzung in `modular.py` (689 g) vergaß LoRa-Wendel, CO₂-Servo, Schalterbrett-Bauteile,
 Ringschraube und Servohebel; das Budget rechnet sie mit (+34 g). Nach Baugruppen: Rohre und Kuppler
-19 %, Flugcomputer mit Akkus 15 %, Spitze 14 %, Druckteile 14 %, Kardan 12 %.
+19 %, Flugcomputer mit Akkus 15 %, Spitze 14 %, Kardan 12 %, Druckteile 11 %.
 
-Der Hebelarm von 186 mm ist halb so lang wie bei `voll`; die Firmware (`MOMENT_ARM_M`, `MASS_KG`)
-und die Simulation (`--vehicle stand2b`) rechnen damit. Das Roll-Trägheitsmoment liegt weiter
-zwei Größenordnungen unter dem alten Platzhalter 0,1 kg·m².
+Der Hebelarm von 190 mm ist halb so lang wie bei `voll`, das Quer-Trägheitsmoment ein Fünftel. Das hat
+eine Folge für die Regelung: Setzt man `Config.h` auf die echten Werte, sind die Gewinne Kp 5 / Kd 1 zu scharf,
+der Kardan steht zwei Drittel der Brennzeit am Anschlag; Kp 2 / Ki 1 / Kd 0,45 aus einer Bayes-Optimierung
+(`simulation/scripts/tune_bayes.py`, robust gegen 30 und 50 ms Servo-Totzeit) regelt 705 und 672 g sauber.
+Weitere Hebel (Akku, Adapter, Kuppler, Federausstoß, kleinerer Schirm, gedruckte Spitze) bis 593 g und ihre
+Wirkung auf Hebelarm und Regler stehen in [docs/Gewicht_und_Landung_2026-10-23.md](docs/Gewicht_und_Landung_2026-10-23.md).
 
 ## Was die Simulation sagt
 
@@ -141,9 +146,12 @@ Vier Befunde, die das Projekt verändert haben:
   Gewinne (kp 3,1, ki 5, kd 0,385) haben einen 40-mal größeren D-Anteil, treiben den Kardan sofort
   in die ±5°-Begrenzung und schwingen mit 3 bis 4 Hz.
 - **Die 1-kg-Rakete war für einen E12 zu schwer** (Schub-Gewicht 1,1, Gipfel 20 m). Statt eines
-  stärkeren Motors wurde die Rakete leichter: *Kartonaut 1* mit 723 g erreicht im Modell
-  **63 m** (100 Läufe: 63,4 ± 0,4 m), Landung nach gut 9 s, Kippwinkel in der Brennphase höchstens 1,9°
-  mit den Firmware-Gewinnen und 0,9 m seitlicher Versatz bei Brennschluss.
+  stärkeren Motors wurde die Rakete leichter: *Kartonaut 1* mit 705 g erreicht im Modell
+  **74 m** (ohne Luftwiderstand, mit ihm etwa 10 % weniger), Kippwinkel in der Brennphase 2,4°
+  und 1,3 m seitlicher Versatz bei Brennschluss mit Kp 2 / Ki 1 / Kd 0,45.
+- **Die leichte Rakete braucht kleinere Gewinne.** Mit der echten Masse und dem echten Hebelarm in der
+  Firmware stehen die alten Gewinne Kp 5 / Kd 1 den Kardan zwei Drittel der Brennzeit an den Anschlag. Der
+  D-Anteil muss mit dem Trägheitsmoment mitgehen (`scripts/check_stand2b_levers.py`).
 - **Die Servo-Kardan-Übersetzung entscheidet über die Stellreserve.** Mit den 23 Servo-Grad je
   Kardan-Grad aus `Config.h` erreicht der Kardan nur ±1°, mit den gemessenen 6 sind es ±3,75°.
   Wird am gebauten Schubstangen-Kardan gemessen.
@@ -159,7 +167,8 @@ Vier Befunde, die das Projekt verändert haben:
 ```bash
 cd simulation
 python -m pytest tests                 # 25 Tests
-python scripts/run_nominal.py --controller firmware --vehicle stand2b --single-motor
+python scripts/run_nominal.py --controller firmware --vehicle stand2b --single-motor --fuel impulse
+python scripts/check_stand2b_levers.py        # Gewichtspakete gegen Reglergewinne
 python scripts/run_montecarlo.py --controller firmware --vehicle stand2b --single-motor
 python scripts/compare_gains.py --vehicle stand2b --single-motor --accel specific_force
 ```

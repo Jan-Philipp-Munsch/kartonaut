@@ -335,10 +335,10 @@ Jedes Teil nach dem Druck wiegen.
 
 | Nr. | Punkt |
 |---|---|
-| O1 | Servofenster: aus deinen Fotos liegt eines etwa 10°, das andere etwa 25° neben einer Kardanschraube. Das zweite reicht bis an die Rampenführung (ab 30,6°). Das stört nur, wenn ein Servoarm über die Rohroberfläche ragt (§3.4); sonst Führungen um 10° drehen. |
+| O1 | Servofenster und Rampenführungen: Laut Druckdatei sitzen die Servotaschen 45° neben den Kardanschrauben (bei 225° und 315° ab der Längslinie), also genau dort, wo ich die Führungen vorgeschlagen hatte (45/135/225/315°). Aus den Fotos sah es eher nach 10° und 25° neben einer Schraube aus. Bitte am Rohr nachsehen; die Führungen dann zwischen Schrauben und Fenster legen, z. B. 45°/135°/250°. Ein Problem ist es nur, wenn ein Servoarm über die Rohroberfläche ragt. |
 | O2 | Spitzenlänge (230 mm angenommen) nachmessen; ändert nur die Gesamtlänge. |
 | O3 | Altes GPS-Modul: Typ und Maße, dann den Halter unter dem Spant anpassen (§3.6). |
-| O4 | `cad/tvc.py` auf den gebauten Schubstangen-Kardan umstellen (Hebel 15 mm, Stangen 29/30 mm); Servo-Umrechnung messen. |
+| O4 | Gedruckt ist der Kardan aus `outer_gimbal_dual_TVC.blend` und `inner_gimbal_dual_TVC.blend` (12.06.2025, `E:\Archiv_Projekte\Blender\Dateien\`); als Netz in `cad/export/asbuilt/` und im GLB-Gesamtmodell an seiner Lage (Grundfläche 38 mm, Bohrungen auf 44 mm). `cad/tvc.py` (Bild auf GitHub) ist ein späterer Entwurf vom 21.10.2026, nicht gedruckt. Servo-Umrechnung am gebauten Kardan messen. |
 | O5 | **TODO Firmware:** Lage als Quaternion aus dem Gyro, Regelfehler aus dem Oben-Vektor im Körpersystem (Befund 3 in `PROJECT.md`). Voraussetzung für den Verzicht auf den Rollmotor; vor dem Erstflug. |
 | O6 | CO₂-Modul: Kapselgröße und Anstechmechanismus festlegen, Bodentests. |
 | O7 | Platine rev B1: Antennenlage (GPS, LoRa-Wendel) in die Spezifikation übernehmen; Pyro-Kanäle bleiben für später. |

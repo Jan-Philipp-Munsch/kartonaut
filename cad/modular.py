@@ -276,14 +276,40 @@ def export(parts):
     return rows
 
 
+def asbuilt_gimbal():
+    """Die gedruckten Kardanteile (Dreiecksnetze aus den Blender-Dateien) an ihrer Lage im Rohr A. Nur Netz: für Bild und GLB."""
+    from OCP.RWStl import RWStl
+    from OCP.BRep import BRep_Builder
+    from OCP.TopoDS import TopoDS_Face
+    from OCP.Message import Message_ProgressRange
+    out = []
+    loc = cq.Location(cq.Vector(0, 0, M.GIMBAL_BASE_Z), cq.Vector(0, 0, 1), M.GIMBAL_ROT_DEG)
+    for fn, col in zip(M.GIMBAL_STL, ((0.45, 0.6, 0.35), (0.6, 0.45, 0.4), (0.35, 0.45, 0.75))):
+        f = HERE / "export" / "asbuilt" / fn
+        if not f.exists():
+            continue
+        tri = RWStl.ReadFile_s(str(f), Message_ProgressRange())
+        face = TopoDS_Face()
+        BRep_Builder().MakeFace(face, tri)
+        out.append((f"Kardan gedruckt: {fn[:-4]}", cq.Shape.cast(face).moved(loc), col))
+    return out
+
+
 def export_assembly(parts):
     """Ganze Rakete als farbige Baugruppe: STEP (FreeCAD, Fusion) und GLB (Windows-3D-Viewer, Doppelklick). Rohre halb durchsichtig."""
     assy = cq.Assembly(name="Kartonaut1_Stand2b")
-    for i, (name, shape, col, grp) in enumerate(parts):
-        r, g, b = P.COLORS.get(col, (0.7, 0.7, 0.7))
-        a = 0.35 if grp == "rumpf" and name.startswith(("Rohr", "Kuppler")) else 1.0
-        assy.add(shape, name=f"{i:02d} {name}".replace("/", "-"), color=cq.Color(r, g, b, a))
+    mesh = asbuilt_gimbal()
     for ext in ("step", "glb"):
+        assy = cq.Assembly(name="Kartonaut1_Stand2b")
+        for i, (name, shape, col, grp) in enumerate(parts):
+            if ext == "glb" and mesh and name.startswith("Kardan (gebaut"):
+                continue                                   # im GLB steht der echte Kardan statt des Hüllkörpers
+            r, g, b = P.COLORS.get(col, (0.7, 0.7, 0.7))
+            a = 0.35 if grp == "rumpf" and name.startswith(("Rohr", "Kuppler")) else 1.0
+            assy.add(shape, name=f"{i:02d} {name}".replace("/", "-"), color=cq.Color(r, g, b, a))
+        if ext == "glb":
+            for name, shape, (r, g, b) in mesh:
+                assy.add(shape, name=name, color=cq.Color(r, g, b, 1.0))
         assy.save(str(EXPORT / f"Kartonaut1_Stand2b.{ext}"))
 
 

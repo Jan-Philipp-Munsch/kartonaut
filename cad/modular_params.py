@@ -33,7 +33,14 @@ TAP_HOLE = 2.6                   # Kernloch für M3 direkt im Druck (Platine, Sc
 GIMBAL_SCREW_Z = 44.0            # [Jan] 4 × bei 90°
 GIMBAL_WINDOW = dict(w=20.0, z=(60.0, 80.0), phi=None)   # [Jan] ca. 20 × 20 ab 60 mm; Winkel noch offen (Servos zeigen nach außen)
 MOTOR_L = 93.0                   # [Jan]
-GIMBAL_TOP_Z = 95.0              # [Annahme] Oberkante Servos/Gestänge; der gesteckte Kuppler reicht heute schon bis 87,5
+GIMBAL_TOP_Z = 93.0              # Oberkante Motorrohr (Druckdatei: 38 + 54,6); Rahmen enden bei 86,4
+# Gedruckter Kardan = Blender-Dateien vom 12.06.2025 (E:\Archiv_Projekte\Blender\Dateien\): outer_gimbal_dual_TVC.blend
+# ('Outer Gimbal (1).001', 'MotorTube.003'), inner_gimbal_dual_TVC.blend ('Inner Gimbal.002'), STL in cad/export/asbuilt/.
+# Flanschbohrungen dort bei 45/135/225/315° in Flanschmitte (6 mm): Grundfläche bei z = 44 − 6 = 38, Drehung −45°.
+GIMBAL_BASE_Z = GIMBAL_SCREW_Z - 6.0
+GIMBAL_ROT_DEG = -45.0
+GIMBAL_STL = ("Outer_Gimbal_1.001.stl", "Inner_Gimbal.002.stl", "MotorTube.003.stl")
+GIMBAL_SERVO_PHI = (270.0 + GIMBAL_ROT_DEG, 0.0 + GIMBAL_ROT_DEG + 360.0)   # Servotaschen außen (-y) und innen (+x) der Druckdatei → 225°, 315°
 SERVO_HORN_R = 15.0              # [Jan] Gestänge 15 mm von der Servoachse
 PUSHROD = dict(d=2.0, l=(29.0, 30.0))   # [Jan]
 

@@ -7,4 +7,6 @@ export/*
 !export/modular/
 export/modular/*.step
 !export/modular/Kartonaut1_Stand2b.step
+# gedruckter Kardan als Netz aus den Blender-Dateien vom 12.06.2025
+!export/asbuilt/
 __pycache__/

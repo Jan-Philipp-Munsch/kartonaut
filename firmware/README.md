@@ -86,6 +86,7 @@ nutzen also dieselben Pins aus `Config.h`.
 | `radio_beacon` | Sendet 1×/s eine `BEACON,<seq>,<millis>`-Zeile über den HC-12 an Serial8. Gegenstück: Empfänger im Repo `kartonaut-ground`. |
 | `i2c_scanner` | Listet alle I²C-Adressen auf Wire. Erwartet 0x40, 0x68/0x69 und 0x76. |
 | `pyro_mosfet_test` | Warnblinken, dann ein 1-s-Puls auf `PIN_PYRO1` (23). Nur mit Lämpchen oder Widerstand als Last. |
+| `servo_ident` | **Experiment E01** (`docs/experiments/E01_servo_ident.md`): fährt je TVC-Achse Treppe, Sprünge, Wechselsprünge und zwei Chirps auf den Servo und loggt mit 500 Hz Kommando, Drehrate und Beschleunigung einer ICM-20948 auf dem Motorrohr als CSV über USB. Befehle `?`, `Y`, `P`, `B`, `S`, `A`, `C`, `W`, `F`, `M`, `Z`, `V`, `N`. Aufnahme: `tools/capture_serial.py`, Auswertung: `simulation/scripts/ident_servo.py`. |
 | `revb_bringup` | Inbetriebnahme des Mainboards rev B: sichere Ausgänge, dann Mux (Akkus, ARM, Pyro-Durchgang), ICM-42688-P, BMP390 (×2), INA239, LoRa-Parameter, GPS; je Baustein OK/FEHL, danach Messwerte im Sekundentakt. Nutzt `lib/mainboard_revb/`, nicht `Config.h`. |
 
 Die früheren Monolith-Sketches und kopierten Bibliotheksbeispiele (`sketches/` bis Commit
@@ -114,6 +115,13 @@ Solange sich die Platine ändert, vor dem Flashen die Pins gegen die Schaltung p
 ```bash
 python firmware/tools/check_board_pins.py
 ```
+
+## Werkzeuge (`tools/`)
+
+| Skript | Zweck |
+|---|---|
+| `check_board_pins.py` | vergleicht `BoardRevB.h` mit `kicad/circuit.py` |
+| `capture_serial.py` | schickt dem Sketch `servo_ident` die Befehle und speichert die CSV (`pip install pyserial`) |
 
 ## Bibliotheken
 

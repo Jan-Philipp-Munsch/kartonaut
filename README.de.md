@@ -261,6 +261,7 @@ portiert.
 | [hardware/mainboard/ORDER.md](hardware/mainboard/ORDER.md) | Bestellplan: Vorab-Bestellung, Tore vor der Platinenbestellung, JLCPCB-Parameter, Kosten, Bestellliste nach Händlern |
 | [hardware/mainboard/review_kicad_2026-10-21.md](hardware/mainboard/review_kicad_2026-10-21.md) | Zweitmeinung-Review des KiCad-Projekts: Schaltung gegen Datenblätter, Layout gegen Spezifikation, Zukunft, Kosten |
 | [hardware/mainboard/Fertiger_2026-10-21.md](hardware/mainboard/Fertiger_2026-10-21.md) | Fertigervergleich (JLCPCB, PCBWay, Aisler, Eurocircuits) und Entscheidung |
+| [docs/experiments/README.md](docs/experiments/README.md) | vorgefertigte Versuche: Sketch, Auswertung, Anleitung je Experiment; E01 Servo → Kardan |
 | [simulation/README.md](simulation/README.md) | Modell, Koordinaten, Annahmen, Ergebnis des Gewinnvergleichs |
 | [firmware/README.md](firmware/README.md) | Firmware-Module, Log-Format, Test-Sketches |
 | [cad/README.md](cad/README.md) | parametrisches Modell, Parameter, Wartungskonzept |

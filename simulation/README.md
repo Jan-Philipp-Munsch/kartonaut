@@ -20,6 +20,8 @@ python scripts/run_nominal.py --controller firmware --vehicle preload --static-e
 python scripts/run_montecarlo.py            # 100 Läufe à 7 s -> out/montecarlo_*.png, .csv
 python scripts/tune_pid.py --kp-values 2 3.1 5 --ki-values 0 5 --kd-values 0.01 0.1 0.385
 python scripts/compare_gains.py --vehicle preload   # Firmware- gegen Tuner-Gewinne
+python scripts/ident_servo.py messung.csv   # Experiment E01 auswerten -> out/ident_*.png, .json
+python scripts/ident_servo.py --synthetic   # dasselbe mit einer künstlichen Messung
 ```
 
 Alle Ausgaben landen in `simulation/out/` (per `.gitignore` ausgeschlossen). Ein Lauf über
@@ -57,7 +59,8 @@ simulation/
              tuning.py     Port von pid_tuner.m
              plots.py      Höhe/Lage/Servo, 3D-Trajektorien, Servo-Fit
   tests/     Quaternionnorm, Schwebe-Gleichgewicht, Momentenvorzeichen, Regler gegeneinander
-  scripts/   run_nominal.py, run_montecarlo.py, tune_pid.py, fit_servo.py, compare_gains.py
+  scripts/   run_nominal.py, run_montecarlo.py, tune_pid.py, fit_servo.py, compare_gains.py,
+             ident_servo.py (Experiment E01, Modul tvcsim/ident.py)
 ```
 
 ## Modell (wie in Simulink)
@@ -152,6 +155,13 @@ Tischtest zeigen; die Simulation kann es nicht entscheiden.
    "ersetzen?" im PreLoadFcn); hier ist er die Totzeit des Servomodells, Vorgabe der Fit-Wert
    0,03 s, in Monte-Carlo mit `servo_delay_v = 0,01` gestreut. Die neuen Servos (FrSky W5652H)
    sind nicht vermessen; bis dahin gilt der SG90-Fit, alle Werte in `ServoParams`.
+   **Nachtrag 22.10.2026:** `fit_servo_model` verschiebt den Eingang um ganze Abtastschritte,
+   deshalb hat der Least-Squares-Fit die Totzeit nie bewegt (Startwert 10, 30 oder 60 ms kommt
+   unverändert heraus, mit 25,7, 36,7 oder 147 rad/s als wn). Mit gebrochener Totzeit
+   (`tvcsim.ident.fit_pt2_delay`, drei Startwerte) landet der Fit bei 30,3 ms und wn = 37,8 rad/s,
+   die Werte in `ServoParams` bleiben also gültig. Neue Messungen laufen über Experiment E01
+   (`docs/experiments/E01_servo_ident.md`, Sketch `servo_ident`, Auswertung `ident_servo.py`):
+   Treppe für Gain und Hysterese, Sprünge für Totzeit und Rate, Chirps für den Frequenzgang.
 2. **Servo-Grad je TVC-Grad: 6 oder 23.** `servo_deg_per_tvc_deg = 6` (Vorgabe, Simulink-Gain
    und Identifikation). `Config.h` sagt 23. Mit 23 und dem Fenster 70..115 Servo-Grad hat die
    Firmware nur ±0,98° TVC-Ausschlag, mit 6 wären es ±3,75°. Beides nur Parameter

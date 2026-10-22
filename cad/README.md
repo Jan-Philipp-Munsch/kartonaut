@@ -40,6 +40,7 @@ nur die Bilder.
 | `legs.py` | Hülse am Rohrende, Ring 70 mm darüber, vier Beine mit Haupt- und oberer Strebe, Fuß, Gelenke |
 | `testrig.py` | TVC-Prüfstand: Gestell, Rahmen, Klemmkragen, Prop-Adapter mit BR2814 und Propeller, Schutzkäfig (siehe unten) |
 | `build.py` | Zusammenbau, Export, Kollisionsprüfung, Render-Aufrufe |
+| `landingpad.py` | Start- und Landepad: Deck, Strahlplatte, Startstützen, Zündkasten; Prüfung gegen die Rakete, eigener Export und Bilder (siehe unten) |
 | `mass_model.py` | Stabmodell für Schwerpunkt und Trägheitstensor |
 | `tools/` | Blender-Skripte: Inventur (`blender_inspect.py`, `run_inventory.sh`), Ortho-Ansichten und Radialmaße (`blender_views.py`), Renderer für den Build (`render_parts.py`) |
 
@@ -186,6 +187,85 @@ Nicht modelliert: Kabel (ESC und 4S-Akku sitzen als Klotz auf dem Rahmen), Gurt-
 Maße des BR2814 (Ø 35 × 36, Lochkreuz 16/19, 75 g) sind Annahmen für einen 2814-Außenläufer und am
 Teil nachzumessen; danach `PM_*` in `params.py` anpassen. Der Schwerpunkt verschiebt sich gegenüber
 dem Flugzustand (kein E12, dafür Motor, Propeller und Käfig unten), deshalb vor dem Einbau auswiegen.
+
+## Start- und Landepad (`landingpad.py`, 22.10.2026)
+
+| Start (Erstflug, Aufbauzustand: Shunt steckt) | Stützen und Zündkasten |
+|---|---|
+| ![](../docs/img/cad/landingpad.png) | ![](../docs/img/cad/landingpad_detail.png) |
+| **Schnitt y = 0 durch die Stütze mit Zündkasten** | **Landung (voll, Beine ausgefahren), Stützen abgenommen** |
+| ![](../docs/img/cad/landingpad_section.png) | ![](../docs/img/cad/landingpad_landing.png) |
+
+Anforderungen: [`docs/Schnittstellen_Bodensystem_2026-10-22.md`](../docs/Schnittstellen_Bodensystem_2026-10-22.md), S1 und S2.
+`python cad/landingpad.py` baut das Pad in den Koordinaten der Rakete (z = 0 Düse), prüft es gegen die Rakete aus
+`build.build_all()` (Erstflug mit Kardan ±7°/±7°, Abheben bis 200 mm, voll mit ausgefahrenen Beinen auf dem Deck), schreibt
+`export/landingpad.step` (Pad mit Erstflug-Rakete) und rendert die vier Bilder (`--no-render` ohne Blender). Laufzeit 1 min.
+Das Modul schaltet `params` zur Laufzeit zwischen `erstflug` und `voll` um (`use_config`), ohne die Umgebungsvariable.
+
+**Aufbau** (Maße oben in `landingpad.py`, jede Zahl mit Quelle):
+
+- **Deck:** Achteck 1250 mm über die Flächen (Inkreis Ø 1250 ≥ 1200), Siebdruckplatte 18 mm in zwei Hälften 1250 × 625
+  (Teilung y = 0), oben verzinktes Stahlblech 0,75 mm als nicht brennbare Fläche, verklebt, am Rand Senkschrauben. Darunter
+  zwei Kanthölzer 45 × 70 (flach) bei x = ±250 quer zur Teilung, mit M8 von unten in Einschlagmuttern: sie verbinden die Hälften.
+  Drei Fußklötze mit Stellfüßen M10 auf r = 540 bei 90°/210°/330°: drei Punkte kippeln nicht. Dosenlibelle Ø 40 bündig bei 135°.
+  Deckoberkante 100 mm unter der Düse, 204 mm über dem Boden.
+- **Strahlplatte:** Einsatz in einer Aussparung 320 × 320 über der Teilung: Stahl 2 mm auf Zementfaserplatte 16 mm, darunter
+  Trägerplatte Zementfaser 400 × 400 × 12, von unten mit 4 × M6 an beiden Hälften. Oberkante 0,75 mm unter dem Deckblech,
+  **Düse 100,75 mm darüber** (bei 7° Kardan 99,8; gefordert ≥ 80). Der Strahl trifft senkrecht auf und läuft flach nach allen
+  Seiten ab; zwischen den drei Stützen ist es offen (seitlicher Abzug 360° bis auf drei Fußplatten 50 mm breit).
+- **Startstützen (drei, abnehmbar):** bei 60°, 180°, 300°, also nicht vor dem Schlüsselschalter (+x) und den Luken (±y).
+  Je eine Fußplatte Alu 50 × 5 mit zwei Langlöchern für M6 in Einschlagmuttern (radial ±5 mm einstellbar), ein Vierkantrohr
+  20 × 20 × 1,5 als **Führung, 160 mm über der Rohrunterkante, 1,5 mm Luft** zum Rohr, oben innen angefast, ein Knotenblech
+  Alu 5 mm und ein **Auflage-Klotz** 20 × 5 × 10 innen am Rohr, Oberkante z = 20 unter der Ringfläche (r 34 … 39 deckt
+  36,3 … 37,5). Die Rakete steht nur auf den Auflagen und hebt ohne Klemmung ab. Unter der Rohrunterkante liegt kein Teil
+  innerhalb r = 30 (innerste Kante r = 34; Ausnahme: das biegsame Anzünderkabel). Einstellen mit einem gedruckten Ring Ø 78
+  (Lehre = Rohr + 2 × 1,5) statt der Rakete: Stützen anlegen, M6 festziehen, Lehre nach oben abziehen.
+- **Zündkasten** auf der verlängerten Fußplatte der Stütze bei 180°, geht mit ihr ab: Abzweigkasten 100 × 100 × 55, außen zwei
+  XT30-Buchsen nebeneinander: **LEITUNG** (Stecker der 15-m-Zündleitung, S2) und **SHUNT** (gebrückter XT30-Stecker mit Fahne
+  REMOVE BEFORE FLIGHT). Beide Buchsen liegen parallel am Anzünder; verwechselt man sie, passiert nichts. Oben zwei Polklemmen
+  4 mm für das 30-cm-Kabel mit Krokoklemmen zum Anzünder, vorn zur Düse ein Hitzeschild Stahl 1 mm. Litze 1,5 mm² im Kasten.
+
+**Prüfungen** (alle frei, Stand 22.10.): Rakete Erstflug bei Kardan 0° und allen vier Ecken ±7°/±7° gegen jedes Padteil;
+Düsenabstand; Kardan-Freiraum (Zylinder r = 30 von der Strahlplatte bis z = 20); Auflagen auf z = 20 und über der Ringfläche,
+Luft der Führungen (gemessen 1,50 mm, Grenze 1 … 2) und Höhe ≥ 150; Abheben in Schritten bis 200 mm gegen die Stützen;
+Landung `voll` mit Fußsohle auf dem Deck (Düse dann 86 mm darüber, nicht 70 wie in S1 geschätzt) bei Versatz 0 und 150 mm;
+nichts in der Landekonfiguration über dem Deckblech; Füße bis r = 337, also **263 mm Landeversatz** innerhalb Ø 1200
+(288 mm bis zum Rand). Ein Gegentest (Rakete 5 mm tiefer bzw. 3 mm seitlich) meldet Auflagen und Führungen.
+
+**Stückliste** (Massen aus dem Modell mit Dichten [Annahme], Preise grob, Baumarkt/Online Oktober 2026 [Annahme]):
+
+| Teil | Masse | Preis |
+|---|---|---|
+| Siebdruckplatte 18 mm, Zuschnitt 1250 × 1250, als zwei Achteck-Hälften | 2 × 7,3 kg | 45 € |
+| Stahlblech verzinkt 0,75 mm, 2 × 1250 × 625 (Metallhandel) | 2 × 3,5 kg | 50 € |
+| Kantholz 45 × 70, 3 m: zwei Latten 1160, drei Fußklötze 120 × 120; drei Stellfüße M10 mit Gelenkteller | 4,5 kg | 21 € |
+| Einschlagmuttern M10/M8/M6, M8 × 70, M6 × 30 mit Rändelkopf, Senkschrauben | – | 15 € |
+| Strahlplatten-Einsatz: Stahl 2 mm 316², Zementfaser 16 mm 316², Träger Zementfaser 12 mm 400² | 6,3 kg | 35 € |
+| drei Stützen: Alu-Vierkantrohr 20 × 20 × 1,5 (1 m), Alu-Flach 50 × 5 (1 m), Alu 20 × 10 (Auflagen) | 0,86 kg | 26 € |
+| Zündkasten: Abzweigkasten IP54, 2 × XT30-Buchse, 2 × XT30-Stecker (einer als Shunt), Polklemmen, Krokokabel, Fahne, Hitzeschild | 0,3 kg | 27 € |
+| Dosenlibelle Ø 40; Druckteile PETG (Lehre Ø 78, XT30-Halter, Libellenfassung), ca. 60 g | – | 8 € |
+| **gesamt** | **33,6 kg** | **ca. 230 €** |
+
+**Transport:** zwei Deckhälften 1250 × 625 × 23 mm mit Fußklötzen (je ca. 11 kg), zwei Latten 1160 mm, Strahlplatten-Einsatz
+400 × 400 (6 kg), drei Stützen, Stellfüße abgeschraubt. Passt in einen Kombi oder Kompaktwagen mit umgelegter Rückbank.
+Aufbau: Hälften umgedreht auf den Boden, Latten und Einsatz anschrauben, umdrehen, Stellfüße nach der Libelle einstellen, Stützen
+mit der Lehre setzen, Zündkasten an der Stütze 180° prüfen.
+
+**Sicherheit:**
+- Shunt-Stecker steckt, solange jemand am Pad ist. Reihenfolge: Bodenstation ohne Schlüssel, Zündleitung an LEITUNG,
+  Anzünder einsetzen und an die Polklemmen, Rakete scharf schalten, **zuletzt Shunt ziehen** und mit der Fahne mitnehmen, dann
+  zur Station (≥ 10 m, Leitung 15 m). Bei Abbruch: Schlüssel ziehen, 60 s warten, Shunt wieder stecken, erst dann Anzünder lösen.
+- Der Shunt schließt den Anzünder kurz; die Durchgangsprüfung der Station (≤ 10 mA, S2) sieht dann ebenfalls Durchgang. Die
+  Station kann Shunt und Anzünder nur am Widerstand unterscheiden (Anzünder etwa 1 Ω, Shunt ≈ 0): Hinweis an `groundstation/`.
+- Pad auf festem, ebenem, nicht brennbarem Untergrund (kein trockenes Gras im Umkreis von 2 m), Feuerlöscher oder Wasser bereit.
+  Deckrand nicht betreten: drei Füße auf r = 540, außerhalb davon kippt die Platte.
+- Verzinktes Blech nicht über 200 °C bringen (Zinkdampf); die Strahlplatte im Strahl ist deshalb unverzinkter Stahl.
+
+**Offen:** Schraubbild der Stützen und Einschlagmuttern im Deck sind nur als Langlöcher in den Fußplatten modelliert, Schrauben
+und Muttern fehlen. Steifigkeit der Stütze mit 2 × M6 in 18 mm Sperrholz am Muster prüfen (Wind auf die Rakete ca. 5 N bei 10 m/s
+[Annahme]). Hitzefestigkeit der Zementfaserplatte unter 3 s Strahl und die Temperatur der Alu-Auflagen (10 mm über der Düse,
+seitlich vom Strahl) beim ersten Abbrand prüfen. Bei der Landung mit brennendem Motor trifft der Strahl auch das verzinkte
+Deckblech, wenn die Rakete außerhalb der Strahlplatte aufsetzt. `export/landingpad.step` ist in `.gitignore` nicht freigegeben.
 
 ## Annahmen, am Gerät nachzumessen
 

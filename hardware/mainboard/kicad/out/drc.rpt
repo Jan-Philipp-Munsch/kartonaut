@@ -1,5 +1,5 @@
 ** Drc report for mainboard.kicad_pcb **
-** Created on 2026-10-23T12:47:01 **
+** Created on 2026-10-23T12:52:39 **
 ** Report includes: Errors, Warnings, Exclusions **
 
 ** Found 20 DRC violations **
@@ -81,19 +81,7 @@
     @(127.0000 mm, 90.0000 mm): PCB text 'JLCJLCJLCJLC' on F.Silkscreen
     @(130.1200 mm, 89.0000 mm): Pad 2 [GND] of C17 on F.Cu
 
-** Found 5 unconnected pads **
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(139.4000 mm, 121.3000 mm): PTH pad 1 [MOT_A] of J8
-    @(140.6375 mm, 117.1250 mm): Pad 7 [MOT_A] of U7 on F.Cu
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(140.6375 mm, 117.1250 mm): Pad 7 [MOT_A] of U7 on F.Cu
-    @(140.6375 mm, 113.8750 mm): Pad 2 [MOT_A] of U7 on F.Cu
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(140.6375 mm, 115.1750 mm): Track [MOT_B] on F.Cu, length 0.6500 mm
-    @(141.9000 mm, 121.3000 mm): PTH pad 2 [MOT_B] of J8
+** Found 2 unconnected pads **
 [unconnected_items]: Missing connection between items
     Local override; error
     @(101.4000 mm, 114.7400 mm): Pad 22 [LORA_RXD] of U10 on F.Cu

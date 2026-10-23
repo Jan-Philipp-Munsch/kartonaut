@@ -236,7 +236,7 @@ ist: Teensy 4.1, Breakouts ICM-20948, BMP280, INA219, 2× HC-12, SG90, WS2812B, 
 | 0.12 | Crimpzange JST-XH/PH (Engineer PA-09 ca. 45 €, IWISS SN-01BM ca. 20–25 €) | 1 | Amazon, Reichelt | 20–45 € | |
 | 0.13 | XT30PW-M liegend | 3 | Hobbyking, AliExpress | 3 × 1 € | |
 | 0.14 | Buchsenleiste 1×24, 2,54 mm, 8,5 mm | 4 | Reichelt | 4 × 0,5 € | Stifte nach dem Löten kürzen (Review B18) |
-| 0.15 | Stiftleiste 2×7, 2,54 mm | 2 | Reichelt | 1 € | |
+| 0.15 | Stiftleiste 2×10, 2,54 mm (J_STACK) und Buchsenleiste 2×10 für die Zusatzplatine | je 2 | Reichelt | 2 € | war 2×7; rev B1 hat 20 Pole |
 | 0.16 | Aktiver Summer 5 V, 12 mm, THT | 2 | Reichelt | 2 × 1 € | |
 | 0.17 | Polymer-Elkos: nur noch als Rückfall, wenn JLC die 7343-Typen nicht bestückt (Review B3: 2× 470 µF/6,3 V, 2× 330 µF/16 V, 1× 470 µF/10 V, SMD) | – | Reichelt | – | THT-Elkos entfallen |
 | 0.19 | W25Q128JVSIQ (SOIC-8) | 2 | Reichelt, LCSC | 2 × 1,5 € | unter den Teensy |
@@ -248,6 +248,30 @@ ist: Teensy 4.1, Breakouts ICM-20948, BMP280, INA219, 2× HC-12, SG90, WS2812B, 
 
 Summe ohne GPS und Crimpzange etwa **110–170 €**, mit beiden **150–245 €**. Entfallen gegenüber §1: 0.18 (Taster
 SW_RST, der Reset ist entfallen), die THT-Elkos unter 0.17.
+
+### 7.1a Gegenstecker und Kabel je Buchse (Stand rev B1, 23.10.2026)
+
+Alle Buchsen der Platine und was dazu auf die Liste gehört. JST-GH, JST-SH und Qwiic am besten konfektioniert
+kaufen; XH und PH werden selbst gecrimpt (0.11, 0.12).
+
+| Buchse | Funktion | auf der Platine | Gegenstück |
+|---|---|---|---|
+| J1 | 2S-Akku | XT30PW-M liegend | XT30-Buchse am Akku (bei 2S-Packs meist schon dran) |
+| J2 | 1S-Akku | JST-PH 2-polig stehend | PH-2.0-Stecker am 1S-Akku (RC-Zellen haben ihn) |
+| J3 | Schalterbrett (Hauptschalter) | JST-PH 4-polig | PH-4-Gehäuse + 4 Crimpkontakte, Kabel zur Luke B |
+| J17 | USB-C-Lader 1S am Schalterbrett | JST-PH 3-polig | PH-3-Gehäuse + Kontakte |
+| J18 | 2S-Ladebuchse | JST-PH 2-polig | PH-2-Gehäuse + Kontakte, Ladekabel mit Balancer-Anschluss |
+| J4 | Schlüsselschalter (Arming) | JST-XH 2-polig stehend | XH-2-Gehäuse + Kontakte |
+| J8 | Rollmotor | JST-XH 2-polig stehend | XH-2-Gehäuse + Kontakte (entfällt ohne Rollmotor) |
+| J9, J10 (J19, J20 DNP) | Pyro 1 und 2 | JST-XH 2-polig liegend | XH-2-Gehäuse + Kontakte, E-Match-Leitungen |
+| J5, J6 | TVC-Servos | JST-XH 3-polig liegend | **XH-3-Gehäuse + Kontakte an die Servoleitungen crimpen**: die Servostecker der W5652H (2,54 mm, JR) passen nicht in XH-Buchsen; alternativ Adapterkabel XH-3 → Servobuchse |
+| J7, J16 | Fallschirm, Beine | JST-XH 3-polig stehend | wie J5/J6 |
+| J11 | GPS | JST-GH 4-polig | konfektioniertes GH-4-Kabel 10–15 cm |
+| J13, J14 | Kamera, LEDs | JST-GH 3-polig | konfektionierte GH-3-Kabel |
+| J12 | Qwiic | JST-SH 4-polig | Qwiic-Kabel (SH-4, 1,0 mm) |
+| J15 | Stapelstecker | Stiftleiste 2×10, 2,54 mm | Buchsenleiste 2×10 auf der Zusatzplatine (0.15) |
+| A1 | Teensy 4.1 | 2× Buchsenleiste 1×24 (0.14) | Teensy mit eingelöteten Stiftleisten |
+| U10 | LoRa-Antenne | IPEX/u.FL auf dem Modul | Pigtail IPEX → SMA (0.5), Stabantenne (0.4) |
 
 ### 7.2 Mit der Platine (JLCPCB, Tor 3)
 

@@ -125,7 +125,7 @@ python firmware/tools/check_board_pins.py <circuit.py von claude/rev-b1>
 ```
 
 Tischtest am PC (Versorgung, Flashen, Befehle, Bericht): `python tools/bench_test.py`, Ablauf und
-Befehle in `Tischtest_revB1.md`.
+Befehle in `Tischtest_revB1.md`, Versuchsanleitungen je Messung in `Versuche_revB1.md`.
 
 ## Bibliotheken
 

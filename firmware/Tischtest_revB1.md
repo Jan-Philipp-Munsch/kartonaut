@@ -3,7 +3,8 @@
 Stand 2026-10-23, Ergebnis des Auftrags `Testauftrag_Agent_2026-10-23.md`. Die Platine ist noch
 nicht gefertigt; alles hier ist so gebaut, dass es am ersten Tag auf der echten Platine läuft, und
 ohne Hardware so weit geprüft, wie es geht (Abschnitt 6). Hardwarestand: `circuit.py` auf dem
-Branch `claude/rev-b1`.
+Branch `claude/rev-b1`. Die Versuchsanleitungen mit Geräten, Aufbau, Sollwerten und Protokollfeldern
+stehen in `Versuche_revB1.md`.
 
 ## 1. Was es gibt
 

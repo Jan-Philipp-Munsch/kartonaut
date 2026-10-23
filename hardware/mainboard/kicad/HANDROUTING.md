@@ -1,5 +1,9 @@
 # Handrouting der letzten 21 Verbindungen (Mainboard rev B1)
 
+> **Erledigt 23.10.2026:** alle Verbindungen geschlossen, DRC 0/0. Die Liste unten gilt für den alten Stand
+> `a7fc5f4`; wie es tatsächlich ging (Generator korrigiert, neuer Lauf, Nacharbeit), steht in README §5.5.
+> Die Klick-für-Klick-Anleitung für KiCad: `HANDROUTING_KLICKS.md`.
+
 Stand 23.10.2026, Platine `mainboard.kicad_pcb` auf `claude/rev-b1` (Commit `a7fc5f4`): 0 DRC-Fehler,
 21 offene Verbindungen. Ab hier ist die Platinendatei die Quelle. **`./make.sh pcb` nicht mehr laufen
 lassen**, es würde die Handarbeit überschreiben. `./make.sh sch`, `./make.sh drc`, `./make.sh img` und

@@ -18,11 +18,11 @@ von der Spezifikation abgewichen wurde. Die Fertigerwahl steht in `../Fertiger_2
 | Netzliste gegen Spezifikation §4 (`check_design.py`) | **OK**: 39 Teensy-Pins, 7 Chip-Selects, 7 Mux-Kanäle, 11 Schienen, Kelvin-Abgriff |
 | Platzierung | **alle 166 Footprints**, keine Überschneidung |
 | Strompfade | 2S-Pfad, Pyro-Ausgänge und VSYS_IN als F.Cu-Flächen (§5.4); kein 2S-Netz auf In2 |
-| Routing | 2223 Bahnsegmente, 348 Vias, vier Lagen; `./make.sh pcb` braucht etwa 25 Minuten, danach `close_gaps.py` (§5.5) |
+| Routing | 2463 Bahnsegmente, 374 Vias, vier Lagen; `./make.sh pcb` (etwa 25 Minuten), danach Nacharbeit per Skript und von Hand (§5.5) |
 | DRC (JLC-Regeln) | **0 Fehler**, Schaltplan-Parität **0 Abweichungen** |
-| Offene Verbindungen | **21** nach Freerouting und Skript-Routing; Rest von Hand in KiCad (§5.5) |
+| Offene Verbindungen | **0** (23.10.: 18 nach dem neuen Freerouting-Lauf, alle nachgearbeitet, §5.5) |
 | Abbildungen | Renders oben, unten und schräg, Lagenbilder (`img/`) |
-| Fertigungsdaten (Gerber, BOM, CPL) | offen, nach den offenen Verbindungen (§8) |
+| Fertigungsdaten (Gerber, BOM, CPL) | offen (§8) |
 
 | Oben | Unten |
 |---|---|
@@ -232,41 +232,38 @@ Shunt mit der 2S-Kette. Ein Versuch, den ganzen Bereich x 120..154 / y 85..133 a
 verlegen (`route_gaps.py region`), schloss zwar alle Lücken dort, ließ aber 24 Signalnetze offen: dafür
 braucht es einen echten Autorouter mit Schieben, also KiCads interaktiven Router.
 
-**Die eingecheckte Platine hat 21 offene Verbindungen, 0 DRC-Fehler und keine Abweichung vom Schaltplan.**
-7 davon sind Geometrie der Flächen: Strompfade, die ihr Pad nicht erreichen oder in Inseln
-zerfallen (`CORRIDORS` und `add_zones` in `gen_pcb.py`, oder in KiCad eine Bahn zwischen die Inseln).
-Die übrigen 14 sind in KiCad von Hand zu ziehen (interaktiver Router mit
-Schieben; danach `./make.sh drc`). Koordinaten (u | v) in mm wie in `gen_pcb.py`, KiCad x = 127 + u,
-y = 170 − v:
+**Stand 23.10.2026 nachmittags: 0 offene Verbindungen, 0 DRC-Fehler, 0 Abweichungen vom Schaltplan.**
+Der Weg dahin:
 
-| Art | Netz | Was | Wo (u \| v) |
-|---|---|---|---|
-| Fläche | GND | Pad 7 von U6 ↔ Zone "GND F.Cu" | 6.5 \| 21.3 |
-| Fläche | GND | Zone "GND F.Cu" ↔ Zone "GND F.Cu" | -26.7 \| 0.3 |
-| Fläche | VBAT2_F | Zone "VBAT2_F" ↔ Pad 1 von R4 | 5.6 \| 17.0 |
-| Fläche | VBAT2_RAW | Pad 1 von J18 ↔ Zone "VBAT2_RAW" | 19.0 \| 19.6 |
-| Fläche | VBAT_PROT | Zone "VBAT_PROT" ↔ Zone "VBAT_PROT" | 26.5 \| 78.4 |
-| Fläche | VSERVO | Pad 1 von C36 ↔ Zone "VSERVO" | 16.6 \| 62.2 |
-| Fläche | VSERVO | Zone "VSERVO" ↔ Pad 6 von J15 | 13.7 \| 77.3 |
-| Versorgung | 5V_SYS | Pad 4 von J15 ↔ Bahn | 13.7 \| 79.9 |
-| Versorgung | GND_PWR | Bahn ↔ Pad 2 von C6 | -0.7 \| 22.3 |
-| Versorgung | GND_PWR | Via - B.Cu ↔ Pad 2 von C38 | 12.3 \| 53.5 |
-| Versorgung | VSERVO | Bahn ↔ Bahn | 19.0 \| 47.9 |
-| Versorgung | VSERVO | Pad 12 von U7 ↔ Bahn | 19.4 \| 54.2 |
-| Versorgung | VSERVO | Pad 6 von J15 ↔ Pad 5 von J15 | 13.7 \| 77.3 |
-| Signal | CS_EXT0 | Pad 11 von U12 ↔ Pad 10 von J15 | -2.1 \| 43.4 |
-| Signal | CS_EXT1 | Pad 10 von U12 ↔ Pad 11 von J15 | -1.5 \| 43.4 |
-| Signal | LORA_M1 | Pad 21 von U10 ↔ Pad 24 von A1 | -25.6 \| 56.5 |
-| Signal | MOT_A | Bahn ↔ Pad 2 von U7 | 13.6 \| 52.9 |
-| Signal | MOT_B | Pad 5 von U7 ↔ Pad 2 von J8 | 13.6 \| 54.2 |
-| Signal | PYRO3_NEG | Pad 3 von Q8 ↔ Bahn | 3.3 \| 105.3 |
-| Signal | SEL2 | Pad 9 von U13 ↔ Bahn | 5.4 \| 43.4 |
-| Signal | VBAT1_SENSE | Pad 1 von C7 ↔ Bahn | -4.8 \| 45.6 |
+1. **Von Hand (KiCad, Schiebe-Router) und per Skript** gingen vom alten Stand 7 der 21 zu (Commit `93a348c`).
+   Die übrigen 14 lagen nicht an Enge, sondern an der Platzierung: VBAT_PROT von Q6 zum Shunt musste
+   F1/VBAT2_F und die VSERVO-Schiene kreuzen, C36/C38 saßen 8 bis 14 mm vom DRV8833 entfernt (U7_VINT lief
+   45 mm über die Platine), J15 Pin 5/6 und J18 hatten keinen Strompfad.
+2. **Generator korrigiert** (`gen_pcb.py`, Commit `80559dd`):
+   - `add_corridor_spines()`: in jedem Strompfad eine 0,2 mm breite Sperrfläche auf der Mittellinie (keine
+     Bahnen, keine Vias). Die geschrumpfte Sperre aus `carve_corridors()` verschwand bei Pfaden unter 1,4 mm,
+     und Freerouting schnitt sie durch (LORA_M0 und der R2-Abgriff durch VBAT_PROT über F1, 3V3 durch den
+     VM-Stich des DRV8833). Wie die alten Sperren heißen sie „… frei halten“ und werden nach dem Routen gelöscht.
+   - Q6 0,8 mm nach rechts, festes Via für sein Gate (`ESCAPES`); R2 und R4 fest unter Q6 mit eigenen
+     VBAT2_F-Pfaden; J18 mit eigenem VBAT2_RAW-Pfad zum XT30; VSERVO-Schiene bis v 74 und weiter unter J4
+     durch zu J_STACK Pin 5/6.
+   - C35, C36, C37, C38 fest an U7 bzw. an der VSERVO-Schiene (`ANCHORS`).
+   - Ergebnis `./make.sh pcb`: 18 offen, alle schweren Fälle von vorher verbunden.
+3. **Nacharbeit** der 18 (Commits `4018f02` bis `e9c7124`): Gitter-Router mit B.Cu für Signale
+   (Signale dürfen kurz durch die Versorgungsflächen auf B.Cu, Freigabe 23.10.; Strom-Netze bleiben F.Cu
+   ohne Via) und Einzelkorrekturen: GND-Vias an U6 Pin 7 und U2 Pin 15; PYRO3_SENSE ein Stück über In2,
+   damit PYRO3_NEG Q8 → D5 direkt geht; PYRO4: VBAT_ARMED-Abgriff zu R28 rechts um D6 herum, R44 um 180°
+   gedreht; DRV8833: ISEN-Pins 3 und 6 direkt ans Wärmepad (statt über eigene Vias links), MOT_A über zwei Vias
+   und B.Cu zu J8.1, MOT_B über ein Via und B.Cu zu J8.2; LoRa: Fanout-Via von TXD versetzt, damit RXD eins bekommt.
 
-Die aktuelle Liste mit Positionen schreibt `kicad-cli pcb drc` nach `out/drc.rpt` (Abschnitt „unconnected“).
-Freerouting ist zwischen Läufen nicht reproduzierbar: Ein neuer `./make.sh pcb` überschreibt die Platine und
-hinterlässt eine etwas andere Restliste. Sobald von Hand geroutet wird, ist die Platinendatei die Quelle;
-dann nur noch `./make.sh sch`, `./make.sh drc` und `gen_pcb.py silk`.
+B.Cu-Stücke von Signalen (Schlitze in den Versorgungsflächen; der DRC meldet keine zerfallene Fläche):
+VBAT1_SENSE 10,9 mm, U7_VINT 12 mm (statt 45 mm über In2) im alten Stand; im jetzigen Stand CS_EXT2 16 mm in
+drei Stücken unter dem Teensy, LORA_RXD 6,3 mm entlang der LoRa-Pinreihe, MOT_A 7 mm und MOT_B 5,6 mm unter
+dem DRV8833, 5V_SYS 1,6 mm. LORA_RXD ist 73 mm lang (Luftlinie 38 mm), CS_EXT2 37 mm, PYRO2_SENSE 41 mm.
+
+Die Platinendatei ist wieder die Quelle: ein neuer `./make.sh pcb` erzeugt eine andere Restliste und löscht
+die Nacharbeit. Werkzeuge der Nacharbeit (Planer mit B.Cu, Kupfer-Bilder, Abstandsprüfung, Bearbeitung
+per JSON) lagen im Sitzungsordner, nicht im Repository; die Klick-für-Klick-Anleitung für KiCad steht in `HANDROUTING_KLICKS.md`.
 
 Gemessen mit `../review_check_layout.py`: kein 2S-Netz auf In2 (A6); im Umkreis von 5 mm um die IMU nur
 deren eigene Masse-Vias, keine In2-Bahnen (B16); die Sense-Netze berühren nur die Sense-Pads des Shunts (A5).
@@ -336,13 +333,10 @@ LoRa-Moduls, Umriss-Kreuzungen); JLC schneidet den Druck über Pads weg.
 | U5, U15 | Barometer, zweites (DNP) | NT1 | Sternpunkt GND_PWR/GND |
 ## 8. Nächste Schritte
 
-1. Die 21 offenen Verbindungen aus §5.5 in KiCad ziehen, Anleitung in `HANDROUTING.md` (interaktiver Router mit Schieben, die drei
-   Häufungen DRV8833, J_STACK und Shunt), die Flächen-Punkte entweder dort mit einer Bahn oder im
-   Generator (`CORRIDORS`, `add_zones`), dann `./make.sh drc` (Ziel: 0 Fehler, 0 offene Verbindungen) und
-   `gen_pcb.py silk` für den Druck. Ab hier ist die Platinendatei die Quelle; `./make.sh pcb` nicht mehr
-   laufen lassen.
-2. `../review_check_layout.py` erneut laufen lassen: keine 2S-Bahn auf In2, nichts Fremdes in der
-   IMU-Zone.
+1. ~~Offene Verbindungen schließen~~: erledigt 23.10., 0 offen, 0 DRC-Fehler (§5.5). Ab hier ist die
+   Platinendatei die Quelle; `./make.sh pcb` nicht mehr laufen lassen.
+2. ~~`../review_check_layout.py`~~: 23.10. ohne Befund (kein 2S-Netz auf In2, im IMU-Umfeld nur die fünf
+   GND-Vias, Sense-Netze nur am Shunt, Strom-Netze nur F.Cu ohne Via).
 3. Review mit dem Kollegen anhand von Schaltplan-PDF, `img/layers.pdf` und Design Guide (Tor 1 und 2 in
    `../ORDER.md`). Besonders: Breite und Lage der Strompfade, Masseführung um den Sternpunkt, Abstand
    LoRa ↔ IMU, der Anlauf des TPS63070 mit 940 µF hinter D1.

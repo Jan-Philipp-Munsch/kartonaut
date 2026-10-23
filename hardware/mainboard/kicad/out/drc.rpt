@@ -1,11 +1,8 @@
 ** Drc report for mainboard.kicad_pcb **
-** Created on 2026-10-23T11:05:18 **
+** Created on 2026-10-23T11:26:46 **
 ** Report includes: Errors, Warnings, Exclusions **
 
-** Found 23 DRC violations **
-[via_dangling]: Via is not connected or connected on only one layer
-    Local override; warning
-    @(122.2250 mm, 122.9225 mm): Via [VBAT1_SENSE] on F.Cu - B.Cu
+** Found 22 DRC violations **
 [via_dangling]: Via is not connected or connected on only one layer
     Local override; warning
     @(132.9047 mm, 101.1919 mm): Via [CS_BARO2] on F.Cu - B.Cu
@@ -91,11 +88,7 @@
     @(118.2300 mm, 121.2400 mm): Circle of U10 on F.Silkscreen
     @(119.3800 mm, 120.9300 mm): PTH pad 17 [SEL1] of A1
 
-** Found 16 unconnected pads **
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(122.2250 mm, 124.3625 mm): Track [VBAT1_SENSE] on F.Cu, length 1.4400 mm
-    @(124.5811 mm, 132.4331 mm): Track [VBAT1_SENSE] on In2.Cu, length 2.5888 mm
+** Found 15 unconnected pads **
 [unconnected_items]: Missing connection between items
     Local override; error
     @(140.7400 mm, 92.6800 mm): PTH pad 6 [VSERVO] of J15
@@ -131,7 +124,7 @@
 [unconnected_items]: Missing connection between items
     Local override; error
     @(132.3750 mm, 126.6375 mm): Pad 9 [SEL2] of U13 on F.Cu
-    @(122.9250 mm, 131.2169 mm): Track [SEL2] on F.Cu, length 0.0955 mm
+    @(122.9925 mm, 131.1494 mm): Via [SEL2] on F.Cu - B.Cu
 [unconnected_items]: Missing connection between items
     Local override; error
     @(125.5250 mm, 126.6375 mm): Pad 10 [CS_EXT1] of U12 on F.Cu

@@ -1,5 +1,5 @@
 ** Drc report for mainboard.kicad_pcb **
-** Created on 2026-10-23T00:53:38 **
+** Created on 2026-10-23T11:05:18 **
 ** Report includes: Errors, Warnings, Exclusions **
 
 ** Found 23 DRC violations **
@@ -91,11 +91,11 @@
     @(118.2300 mm, 121.2400 mm): Circle of U10 on F.Silkscreen
     @(119.3800 mm, 120.9300 mm): PTH pad 17 [SEL1] of A1
 
-** Found 19 unconnected pads **
+** Found 16 unconnected pads **
 [unconnected_items]: Missing connection between items
     Local override; error
     @(122.2250 mm, 124.3625 mm): Track [VBAT1_SENSE] on F.Cu, length 1.4400 mm
-    @(121.6005 mm, 135.4137 mm): Track [VBAT1_SENSE] on In2.Cu, length 4.2152 mm
+    @(124.5811 mm, 132.4331 mm): Track [VBAT1_SENSE] on In2.Cu, length 2.5888 mm
 [unconnected_items]: Missing connection between items
     Local override; error
     @(140.7400 mm, 92.6800 mm): PTH pad 6 [VSERVO] of J15
@@ -118,16 +118,8 @@
     @(140.7400 mm, 92.6800 mm): PTH pad 6 [VSERVO] of J15
 [unconnected_items]: Missing connection between items
     Local override; error
-    @(126.3200 mm, 147.7000 mm): Track [GND_PWR] on F.Cu, length 1.8450 mm
-    @(117.5800 mm, 141.7500 mm): Pad 2 [GND_PWR] of C6 on F.Cu
-[unconnected_items]: Missing connection between items
-    Local override; error
     @(139.3000 mm, 116.4750 mm): Via [GND_PWR] on F.Cu - B.Cu
     @(131.8625 mm, 116.2500 mm): Pad 2 [GND_PWR] of C38 on F.Cu
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(140.7400 mm, 90.1400 mm): PTH pad 4 [5V_SYS] of J15
-    @(144.5875 mm, 101.0500 mm): Track [5V_SYS] on F.Cu, length 0.0005 mm
 [unconnected_items]: Missing connection between items
     Local override; error
     @(140.6375 mm, 117.1250 mm): Track [MOT_A] on F.Cu, length 1.0375 mm
@@ -148,10 +140,6 @@
     Local override; error
     @(124.8750 mm, 126.6375 mm): Pad 11 [CS_EXT0] of U12 on F.Cu
     @(140.7400 mm, 97.7600 mm): PTH pad 10 [CS_EXT0] of J15
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(130.2875 mm, 64.7000 mm): Pad 3 [PYRO3_NEG] of Q8 on F.Cu
-    @(133.3500 mm, 68.4000 mm): Pad 2 [PYRO3_NEG] of D5 on F.Cu
 [unconnected_items]: Missing connection between items
     Local override; error
     @(101.4000 mm, 113.4700 mm): Pad 21 [LORA_M1] of U10 on F.Cu

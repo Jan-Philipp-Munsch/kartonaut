@@ -1,14 +1,11 @@
 ** Drc report for mainboard.kicad_pcb **
-** Created on 2026-10-23T12:52:39 **
+** Created on 2026-10-23T12:56:24 **
 ** Report includes: Errors, Warnings, Exclusions **
 
-** Found 20 DRC violations **
+** Found 19 DRC violations **
 [via_dangling]: Via is not connected or connected on only one layer
     Local override; warning
     @(102.7737 mm, 112.2000 mm): Via [LORA_M0] on F.Cu - B.Cu
-[via_dangling]: Via is not connected or connected on only one layer
-    Local override; warning
-    @(125.9199 mm, 125.3017 mm): Via [CS_EXT2] on F.Cu - B.Cu
 [via_dangling]: Via is not connected or connected on only one layer
     Local override; warning
     @(129.1481 mm, 104.4344 mm): Via [CS_IMU] on F.Cu - B.Cu
@@ -81,15 +78,7 @@
     @(127.0000 mm, 90.0000 mm): PCB text 'JLCJLCJLCJLC' on F.Silkscreen
     @(130.1200 mm, 89.0000 mm): Pad 2 [GND] of C17 on F.Cu
 
-** Found 2 unconnected pads **
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(101.4000 mm, 114.7400 mm): Pad 22 [LORA_RXD] of U10 on F.Cu
-    @(134.6200 mm, 133.6300 mm): PTH pad 46 [LORA_RXD] of A1
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(140.7400 mm, 100.3000 mm): PTH pad 12 [CS_EXT2] of J15
-    @(125.9199 mm, 125.3017 mm): Via [CS_EXT2] on F.Cu - B.Cu
+** Found 0 unconnected pads **
 
 ** Found 0 Footprint errors **
 

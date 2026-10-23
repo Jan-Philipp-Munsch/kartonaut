@@ -75,8 +75,11 @@ ANCHORS = {
     # right strip, TVC end: 2S entry, a straight chain up from the XT30 plus pin
     "Q1": (10.8, 17.8, 180),        # reverse protection: drain toward the XT30 plus pin, source up to F1
     "F1": (10.8, 22.6, 90),         # 2S polyfuse
-    "Q6": (15.0, 24.3, 0),          # load switch, drain (+u): VBAT_PROT left over F1 to the shunt, right to the edge
-    "J18": (19.0, 19.6, 0),         # J_CHG2, PH-2 top entry
+    "Q6": (15.8, 24.3, 0),          # load switch, drain (+u): VBAT_PROT left over F1 to the shunt, right to the edge;
+                                    # 0.8 mm right of F1 so the gate has room for its via (Q6_ESC) on the left
+    "R2": (14.86, 20.9, 90),        # Q6 gate pull-up right under the source pin: VBAT2_F pad up to Q6.2, gate pad down
+    "R4": (16.45, 20.9, 270),       # VBAT2 divider top beside it: VBAT2_F pad up (joined to R2.2), sense pad down
+    "J18": (20.0, 19.6, 0),         # J_CHG2, PH-2 top entry; plus pin straight down onto the run to the XT30
     # right strip: actuators
     "J7": (12.4, 34.0, 0),          # servo 3 (chute), XH-3 top entry
     "J16": (12.4, 41.5, 0),         # servo 4 (legs), XH-3 top entry
@@ -106,6 +109,12 @@ ANCHORS = {
     "U14": (19.5, 66.0, 0),         # LDO 3V3_EXP for J_STACK
     "TP1": (EDGE_U_, 44.0, 0),      # test points VBAT_PROT and VSERVO right on their runs along the edge
     "TP4": (RAIL_U_, 66.0, 0),
+    # DRV8833 decoupling in the 2.8 mm channel between the right pin row and the VSERVO rail (hand routing
+    # 23.10.: placed by the placer they landed 8 to 14 mm away, the VINT trace ran 45 mm across the board)
+    "C38": (21.55, 56.1, 90),       # VINT 2.2 uF: pad 1 level with pin 14, GND_PWR pad above to the plane
+    "C36": (22.3, 51.0, 180),       # VM 100 nF: VSERVO pad on the rail, GND_PWR pad beside it
+    "C35": (21.9, 48.4, 180),       # VM 10 uF bulk, the same way below it
+    "C37": (21.86, 40.53, 90),      # VCP 10 nF: where the placer had put it, VSERVO pad up toward the rail stub
     "BZ1": (12.1, 90.7, 0),         # buzzer, 12 mm, clear of the USB plug space
     "J12": (20.3, 101.4, 90),       # Qwiic, SH-4 top entry
 }
@@ -376,7 +385,7 @@ def place_fixed(board, fps):
 # Decoupling and setup parts that belong to one IC although another part shares their net first
 OWNERS = {"C21": "U14", "C22": "U14", "C8": "U11", "C9": "U11", "R13": "U11", "C3": "U6", "C24": "U12",
           "C25": "U13", "C18": "U3", "C19": "U3", "C20": "U3", "C29": "U5", "C30": "U5", "C31": "U15", "C32": "U15",
-          "C33": "U10", "C34": "U10", "C35": "U7", "C36": "U7", "C37": "U7", "C38": "U7", "C44": "U8", "C45": "LED1", "C46": "LED2",
+          "C33": "U10", "C34": "U10",  "C44": "U8", "C45": "LED1", "C46": "LED2",
           "C26": "U4", "C27": "U4", "C28": "U4", "C13": "U2", "C14": "U2", "C15": "U2"}
 
 
@@ -538,6 +547,12 @@ CORRIDORS = [
     ("VBAT2_RAW", 1.2, ["J1.1", "Q1.3"]),
     ("VBAT2_REV", 1.0, ["Q1.2", "F1.1"], "v"),
     ("VBAT2_F", 1.0, ["F1.2", "Q6.2"], "v"),
+    ("VBAT2_F", 0.8, ["R2.2", "Q6.2"], "v"),                 # gate pull-up R2 straight under the source pin
+    ("VBAT2_F", 0.8, ["R4.1", "R2.2"]),                       # VBAT2 divider top beside it
+    # 2S charge plug J18 -> the XT30 plus pin, below Q1's gate pin and above J1's minus pin
+    ("VBAT2_RAW", 1.0, ["J18.1", ("J18.1", 15.85)], "v"),
+    ("VBAT2_RAW", 1.0, [("J18.1", 15.85), (10.8, 15.85)]),
+    ("VBAT2_RAW", 1.0, [(10.8, 15.85), (10.8, 14.6)], "v"),
     # DRV8833 VM straight to the VSERVO rail
     ("VSERVO", 0.6, ["U7.12", (RAIL_U, "U7.12")]),
     # servo 3 and 4: from the inner rail above the pin row (clear of the minus pin) down to the plus pin
@@ -569,7 +584,12 @@ CORRIDORS = [
     ("VSERVO", 1.4, [("C5.1", BUS_V), (RAIL_U, BUS_V)]),
     ("VSERVO", 2.0, [("C5.1", BUS_V), ("C5.1", 10.1)], "v"),
     ("VSERVO", 4.2, [("J5.2", 10.1), ("J6.2", 10.1)]),
-    ("VSERVO", 1.7, [(RAIL_U, 28.1), (RAIL_U, 72.0)], "v"),
+    ("VSERVO", 1.7, [(RAIL_U, 28.1), (RAIL_U, 74.0)], "v"),
+    # VSERVO for J_STACK pins 5 and 6: rail end -> below the arming plug J4 -> channel between J15 and J4
+    ("VSERVO", 1.0, [(RAIL_U, 74.0), (15.35, 74.0)]),
+    ("VSERVO", 1.0, [(15.35, 74.0), (15.35, "J15.6")], "v"),
+    ("VSERVO", 1.0, [(15.35, "J15.6"), "J15.6"]),
+    ("VSERVO", 1.0, ["J15.5", "J15.6"]),
     # 1S input at the buck-boost (A7): wide up to the VQFN pins, the zone fill necks down there
     ("VSYS_IN", 1.0, ["C10.1", ("U2.1", "C10.1")]),
     ("VSYS_IN", 0.8, ["C10.1", ("C10.1", "U2.12")], "v"),
@@ -1091,6 +1111,58 @@ def add_plane_vias(board, fps):
     return n
 
 
+def add_corridor_spines(board, fps):
+    """Rule areas 0.2 mm wide along the centre line of every CORRIDORS segment, no tracks, no vias: the
+    deflated keepout of carve_corridors() vanishes on runs narrower than 1.4 mm, and Freerouting then cut
+    straight through them (LORA_M0 and the VBAT2_F gate pull-up through VBAT_PROT over F1, 3V3 through
+    the VM stub of the DRV8833, 23.10.). Named "... frei halten", so patch_unconnected() deletes them."""
+    def pt(x):
+        if isinstance(x, str):
+            return pad_uv(fps, *x.split("."))
+        a, b = x
+        u = EDGE_U if a == "EDGE" else (pad_uv(fps, *a.split("."))[0] if isinstance(a, str) else a)
+        v = pad_uv(fps, *b.split("."))[1] if isinstance(b, str) else b
+        return u, v
+    n = 0
+    for net, w, way, *opt in CORRIDORS:
+        pts = [pt(x) for x in way]
+        for a, b in zip(pts, pts[1:]):
+            mid = (a[0], b[1]) if opt and opt[0] == "v" else (b[0], a[1])
+            for s0, s1 in ((a, mid), (mid, b)):
+                if math.hypot(s0[0] - s1[0], s0[1] - s1[1]) < 0.3:
+                    continue
+                h = 0.1
+                box = (min(s0[0], s1[0]) - h, max(s0[0], s1[0]) + h, min(s0[1], s1[1]) - h, max(s0[1], s1[1]) + h)
+                rect_zone(board, None, [pcbnew.F_Cu], box, rule={"tracks", "vias"}, name=f"{net} Mitte frei halten")
+                n += 1
+    return n
+
+
+# Fixed escapes set before routing (the router keeps fixed items): pad, via (u, v). The gate of Q6 sits
+# between F1 (VBAT2_F), its own source and the VBAT_PROT run over F1; only a via on its left gets it out.
+ESCAPES = [("Q6", "1", (14.52 - 1.2, 25.25))]
+
+
+def add_escapes(board, fps):
+    for ref, num, (u, v) in ESCAPES:
+        pad = [p for p in fps[ref].Pads() if p.GetNumber() == num][0]
+        net = pad.GetNet()
+        x, y = XY(u, v)
+        via = pcbnew.PCB_VIA(board)
+        via.SetPosition(pcbnew.VECTOR2I(MM(x), MM(y)))
+        via.SetWidth(MM(0.6))
+        via.SetDrill(MM(0.3))
+        via.SetNet(net)
+        board.Add(via)
+        tr = pcbnew.PCB_TRACK(board)
+        tr.SetStart(pad.GetPosition())
+        tr.SetEnd(pcbnew.VECTOR2I(MM(x), MM(y)))
+        tr.SetWidth(MM(0.3))
+        tr.SetLayer(pcbnew.F_Cu)
+        tr.SetNet(net)
+        board.Add(tr)
+
+
 def build():
     board = new_board()
     draw_outline(board)
@@ -1100,7 +1172,10 @@ def build():
         placed[f"~path{i}"] = box
     failed = place_passives(fps, placed)
     add_zones(board, fps)
-    ncorr = len(add_corridors(board, fps))
+    boxes = add_corridors(board, fps)
+    ncorr = len(boxes)
+    add_corridor_spines(board, fps)
+    add_escapes(board, fps)
     nvias = add_plane_vias(board, fps)
     print(f"{ncorr} current-path zones on F.Cu, {carve_corridors(board)} kept after cutting out other pads")
     print(f"{nvias} plane vias next to SMD pads of GND, GND_PWR, 5V_SYS")

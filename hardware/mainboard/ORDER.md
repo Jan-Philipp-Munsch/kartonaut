@@ -102,6 +102,8 @@ easyeda2kicad, **ERC 0 Fehler / 0 Warnungen**. Die Netzliste ist gegen die Pin-T
 
 ### 3.2 Dateien, die hochgeladen werden
 
+Seit 23.10.2026 erzeugt `./make.sh fab` im KiCad-Ordner alle drei Dateien nach `kicad/fab/` (`mainboard_gerber.zip`, `mainboard_bom.csv`, `mainboard_cpl.csv`) und eine Übersicht `FAB.md`, welche Teile noch keine LCSC-Nummer haben, welche von Hand gelötet werden und welche DNP sind. Die Punkte unten gelten weiter für die Prüfung beim Upload.
+
 1. **Gerber + Drill** als ZIP: in KiCad über das Plugin *Fabrication Toolkit* (erzeugt gleich alles) oder
    *Plot* mit Protel-Endungen, Lagen F/B.Cu, In1/In2.Cu, F/B.Mask, F/B.Silkscreen, F.Paste, Edge.Cuts,
    dazu die Bohrdatei (Excellon, PTH und NPTH zusammen).

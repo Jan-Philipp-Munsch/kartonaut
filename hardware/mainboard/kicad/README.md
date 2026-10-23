@@ -62,7 +62,9 @@ gen_pcb.py          Platine: Umriss, Footprints, Platzierung, Flächen, Sperrfl�
                     Bestückungsdruck (`gen_pcb.py silk`: nur der Druck, auf der gerouteten Platine)
 logo.py             Kartonaut-Abzeichen als Polygone, für den Bestückungsdruck und docs/brand/*.svg
 render.py           Lagenbilder zuschneiden und zusammenfügen, Renders auf die Platine zuschneiden
-make.sh             ganze Kette: ./make.sh [sch|pcb|drc|img]
+make.sh             ganze Kette: ./make.sh [sch|pcb|drc|img|fab]
+fab.py              `./make.sh fab`: Bestelldateien für JLCPCB nach fab/ (Gerber/Bohrdaten als ZIP, BOM, CPL, FAB.md)
+widen.py            verbreitert schmale Versorgungsstücke, soweit der DRC es zulässt (nach dem Handrouting)
 snapshot.py         schnelles Bild einzelner Lagen beim Entwickeln
 gaps.py             die offenen Verbindungen aus out/drc.json: was, wo, wie weit; `gaps.py png` mit Bild je Häufung
 close_gaps.py       `dump`: Geometrie der Platine und die offenen Verbindungen nach out/geom.json; `apply`: Ergebnis des
@@ -72,6 +74,7 @@ route_gaps.py       Gitter-Router (System-Python mit numpy/scipy): A* auf 0,05 m
 lib/                lcsc.* (easyeda2kicad), mainboard.* (eigene)
 out/                Schaltplan-PDF, ERC- und DRC-Bericht (alles andere dort ist Zwischenstand)
 img/                Renders und Lagenbilder
+fab/                Bestelldateien (ZIP, BOM, CPL, FAB.md); fab/gerber/ ist der ungepackte Zwischenstand
 ```
 
 Neu erzeugen (Git Bash):
@@ -266,6 +269,14 @@ Die Platinendatei ist wieder die Quelle: ein neuer `./make.sh pcb` erzeugt eine 
 die Nacharbeit. Werkzeuge der Nacharbeit (Planer mit B.Cu, Kupfer-Bilder, Abstandsprüfung, Bearbeitung
 per JSON) lagen im Sitzungsordner, nicht im Repository; die Klick-für-Klick-Anleitung für KiCad steht in `HANDROUTING_KLICKS.md`.
 
+**Breiten der Versorgung nach dem Handrouting (23.10., `widen.py`):** Das Skript setzt jedes Stück der
+Versorgungsnetze unter 0,25 mm und alle Stücke von MOT_A/MOT_B auf 0,6 / 0,4 / 0,3 mm, soweit der DRC es
+zulässt. Ergebnis: VSYS_IN 0,6 mm durchgehend (A7 erfüllt), MOT_A und MOT_B 0,6 mm, an den DRV8833-Pins 0,4;
+der 5V_SYS-Zweig zum LDO 3V3_EXP 0,4 mm auf In2 und 0,3 an U14; der GND_PWR-Stich zu J_SW 0,6 mm. Nicht
+breiter zu bekommen: das 1,9-mm-Stück GND_PWR am DRV8833 Pin 13 (0,15 mm, x 144,5 / y 114,9); der Rückstrom
+der Brücke läuft hauptsächlich über das Wärmepad mit seinen Vias, das Stück ist ein Reviewpunkt. MOT_A und
+MOT_B laufen über zwei Vias auf B.Cu zum Motorstecker J8 und schneiden dort die GND_PWR-Fläche an (Reviewpunkt).
+
 Gemessen mit `../review_check_layout.py`: kein 2S-Netz auf In2 (A6); im Umkreis von 5 mm um die IMU nur
 deren eigene Masse-Vias, keine In2-Bahnen (B16); die Sense-Netze berühren nur die Sense-Pads des Shunts (A5).
 
@@ -343,8 +354,9 @@ LoRa-Moduls, Umriss-Kreuzungen); JLC schneidet den Druck über Pads weg.
    LoRa ↔ IMU, der Anlauf des TPS63070 mit 940 µF hinter D1.
 4. 1:1-Papierausdruck mit Teensy und Steckern in den Kuppler halten; Kabelwege zum Schalterbrett an Luke B
    (J_SW, J_CHG1, J_CHG2) und zum Schlüsselschalter (J_ARM) prüfen.
-5. Fertigungsdaten über `kicad-cli`: Gerber, Bohrdaten, BOM und CPL im JLC-Format; DNP-Teile (Pyro 3/4,
-   zweites BMP390) sind markiert. LCSC-Nummern der Passiven, des SN74LV1T34, des 74HC138/4051, der Polymer-
+5. Fertigungsdaten: `./make.sh fab` erzeugt seit 23.10. Gerber, Bohrdaten, BOM und CPL im JLC-Format nach
+   `fab/` (Übersicht in `fab/FAB.md`); DNP-Teile (Pyro 3/4, zweites BMP390) sind ausgeschlossen. Vor dem Upload
+   nach jeder Änderung an der Platine neu erzeugen. LCSC-Nummern der Passiven, des SN74LV1T34, des 74HC138/4051, der Polymer-
    Elkos und der Polyfuses ergänzen. INA239 bei DigiKey bestellen. Fertiger nach `../Fertiger_2026-10-21.md`.
 6. Datenblatt `../datasheet/MS-MB-B.tex` auf B1 umschreiben (es beschreibt noch rev B; die Stückliste dort
    entsteht aus `circuit.py` und zeigt beim nächsten Bau schon B1).

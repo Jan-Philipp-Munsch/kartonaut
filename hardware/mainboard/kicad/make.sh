@@ -6,6 +6,7 @@
 #   ./make.sh pcb      board: place, route (Freerouting), zones, DRC
 #   ./make.sh drc      DRC only
 #   ./make.sh img      renders and layer plots
+#   ./make.sh fab      JLCPCB order files: Gerber/drill zip, BOM, CPL (fab/)
 #
 # kicad-cli is called from bash on purpose: started from the Microsoft-Store Python it does not find
 # the global library tables (the Store app container hides them), so ERC and renders would be wrong.
@@ -78,10 +79,20 @@ img() {
   rm -f img/_*.pdf
 }
 
+fab() {
+  # JLCPCB order files (ORDER.md section 3.2): Gerber + drill as zip, BOM and CPL in JLC columns, FAB.md summary
+  rm -rf fab && mkdir -p fab/gerber
+  "$CLI" pcb export gerbers -o fab/gerber/ --layers "F.Cu,In1.Cu,In2.Cu,B.Cu,F.Paste,F.Silkscreen,B.Silkscreen,F.Mask,B.Mask,Edge.Cuts"     --subtract-soldermask --no-x2 --no-netlist --precision 6 mainboard.kicad_pcb > /dev/null
+  "$CLI" pcb export drill -o fab/gerber/ --format excellon --excellon-units mm --excellon-zeros-format decimal     --generate-map --map-format gerberx2 mainboard.kicad_pcb > /dev/null
+  "$CLI" pcb export pos -o fab/pos_kicad.csv --format csv --units mm --side front --smd-only --exclude-dnp mainboard.kicad_pcb > /dev/null
+  "$KPY" fab.py
+}
+
 case "${1:-all}" in
   sch) sch ;;
   pcb) pcb ;;
   drc) drc ;;
   img) img ;;
+  fab) fab ;;
   all) sch; pcb; img ;;
 esac

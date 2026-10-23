@@ -9,3 +9,4 @@ fp-info-cache
 __pycache__/
 fab/gerber/
 fab/pos_kicad.csv
+.history/

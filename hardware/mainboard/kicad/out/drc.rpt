@@ -1,5 +1,5 @@
 ** Drc report for mainboard.kicad_pcb **
-** Created on 2026-10-23T12:43:32 **
+** Created on 2026-10-23T12:47:01 **
 ** Report includes: Errors, Warnings, Exclusions **
 
 ** Found 20 DRC violations **
@@ -81,7 +81,7 @@
     @(127.0000 mm, 90.0000 mm): PCB text 'JLCJLCJLCJLC' on F.Silkscreen
     @(130.1200 mm, 89.0000 mm): Pad 2 [GND] of C17 on F.Cu
 
-** Found 8 unconnected pads **
+** Found 5 unconnected pads **
 [unconnected_items]: Missing connection between items
     Local override; error
     @(139.4000 mm, 121.3000 mm): PTH pad 1 [MOT_A] of J8
@@ -96,24 +96,12 @@
     @(141.9000 mm, 121.3000 mm): PTH pad 2 [MOT_B] of J8
 [unconnected_items]: Missing connection between items
     Local override; error
-    @(130.2875 mm, 64.7000 mm): Pad 3 [PYRO3_NEG] of Q8 on F.Cu
-    @(133.3500 mm, 68.4000 mm): Track [PYRO3_NEG] on F.Cu, length 1.2304 mm
-[unconnected_items]: Missing connection between items
-    Local override; error
     @(101.4000 mm, 114.7400 mm): Pad 22 [LORA_RXD] of U10 on F.Cu
     @(134.6200 mm, 133.6300 mm): PTH pad 46 [LORA_RXD] of A1
 [unconnected_items]: Missing connection between items
     Local override; error
     @(140.7400 mm, 100.3000 mm): PTH pad 12 [CS_EXT2] of J15
     @(125.9199 mm, 125.3017 mm): Via [CS_EXT2] on F.Cu - B.Cu
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(138.1750 mm, 71.4450 mm): Pad 1 [PYRO4_NEG] of R44 on F.Cu
-    @(142.8500 mm, 68.4000 mm): Pad 2 [PYRO4_NEG] of D6 on F.Cu
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(142.8500 mm, 68.4000 mm): Pad 2 [PYRO4_NEG] of D6 on F.Cu
-    @(140.2467 mm, 58.9639 mm): Zone 'PYRO4_NEG Strompfad' [PYRO4_NEG] on F.Cu, priority 2
 
 ** Found 0 Footprint errors **
 

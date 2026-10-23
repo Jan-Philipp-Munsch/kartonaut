@@ -22,6 +22,7 @@ von der Spezifikation abgewichen wurde. Die Fertigerwahl steht in `../Fertiger_2
 | DRC (JLC-Regeln) | **0 Fehler**, Schaltplan-Parität **0 Abweichungen** |
 | Offene Verbindungen | **0** (23.10.: 18 nach dem neuen Freerouting-Lauf, alle nachgearbeitet, §5.5) |
 | Abbildungen | Renders oben, unten und schräg, Lagenbilder (`img/`) |
+| Rundgang | `RUNDGANG_PLATINE.pdf`: Anleitung mit Bildern zu Aufbau, Lagen, Strompfaden, Vias und DRC (`guide_dump.py`, `make_guide.py`) |
 | Fertigungsdaten (Gerber, BOM, CPL) | offen (§8) |
 
 | Oben | Unten |

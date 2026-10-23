@@ -20,6 +20,7 @@
 #include "Control.h"
 #include "Timing.h"
 #include "SDLogger.h"
+#include "CalStore.h"     // Kalibrierwerte aus dem EEPROM-Emulat (revb_test: "cal save")
 
 HardwareSerial& hc12 = Serial8;   // Funkmodul HC-12 (Telemetrie, noch ohne Protokoll)
 
@@ -38,8 +39,22 @@ static bool  offset_applied = false;
 static uint32_t log_frames   = 0;
 static bool     log_exported = false;
 
+// Kalibrierung aus dem EEPROM-Emulat. Bei leerem oder beschädigtem Block
+// (falsche CRC, fremde Version) stehen die Standardwerte drin. Die Werte
+// gelten für das Mainboard rev B1; der Breakout-Aufbau hier nutzt noch die
+// Konstanten aus Config.h, die Zuweisung folgt mit dem rev-B-Sensorpfad.
+cal::CalData g_cal;
+
 void setup(){
   Serial.begin(115200);
+
+  const cal::Check cc = cal::load(g_cal);
+  if (cc == cal::Check::OK) {
+    Serial.printf("Kalibrierung geladen: Version %u, gueltig 0x%02lX, %lu. Speicherung\n",
+                  g_cal.version, (unsigned long)g_cal.valid, (unsigned long)g_cal.saved_count);
+  } else {
+    Serial.printf("WARNUNG: Kalibrierung %s, Standardwerte\n", cal::checkName(cc));
+  }
 
   if (LOG_DATA) {
     SDLogger_setup();

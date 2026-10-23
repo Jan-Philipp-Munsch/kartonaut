@@ -2,6 +2,7 @@
 #   firmware    alle PlatformIO-Umgebungen aus firmware/platformio.ini bauen
 #   simulation  Tests des Python-Pakets tvcsim
 #   pins        Pinbelegung der Firmware (BoardRevB.h) gegen die Schaltung (circuit.py)
+#   tischtest   Parser-Tests von tools/bench_test.py und Host-Tests der Kalibrierbibliothek (g++)
 name: CI
 
 on:
@@ -83,3 +84,21 @@ jobs:
             exit 0
           fi
           exit $code
+
+  tischtest:
+    name: Tischtest-Werkzeuge (pytest, g++)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install pytest
+      - name: Parser von bench_test.py
+        run: python -m pytest -q firmware/tools/test_bench_test.py
+      - name: Kalibrierbibliothek (CRC, Ellipsoid-Fit, Achsen) und NMEA auf dem PC
+        run: |
+          g++ -std=c++17 -Wall -Wextra -O1 -I firmware/lib/calstore firmware/test/host/test_calstore.cpp -o /tmp/test_calstore
+          /tmp/test_calstore
+          g++ -std=c++17 -Wall -Wextra -I firmware/examples/revb_test firmware/test/host/test_nmea.cpp -o /tmp/test_nmea
+          /tmp/test_nmea

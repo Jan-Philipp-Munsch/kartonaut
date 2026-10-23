@@ -6,3 +6,6 @@
 .vscode/c_cpp_properties*.json
 .vscode/launch.json
 .vscode/ipch
+
+# Berichte von tools/bench_test.py
+test_reports/

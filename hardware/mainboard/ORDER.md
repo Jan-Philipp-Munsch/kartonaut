@@ -144,6 +144,9 @@ Quelle seit Dezember 2025 1,50 USD).
 | Shunt 20 mΩ 2512 mit Kelvin-Footprint (vier Pads), Review A5 | prüfen | | | 2-Pad-Shunt mit Netzbrücken an den Pads |
 | Ferritperle 0603 600 Ω + 10 µF (3V3_SENS), Review B4 | Basic | | | |
 | W25Q128JVSIQ | C97521 (prüfen) | Basic | | kommt unter den Teensy, nicht auf die Platine |
+| LIS3MDLTR (Magnetometer, 23.10.) | C478483 | Extended | ca. 9500 Stück, 2,6–5 USD; manche Händler führen ihn als abgekündigt, ST und DigiKey als aktiv: am Bestelltag prüfen | BMM350 oder MMC5983MA (I²C, anderer Footprint) |
+| SHT40-AD1B-R3 (Feuchte/Temperatur, 23.10.) | C2848306 | Extended | lieferbar, ca. 1,7 USD | SHT40-AD1B-R2 C2909890 |
+| ADXL375BCCZ (±200 g, DNP) | C579466 | Extended | nur Footprint, wird nicht bestückt | – |
 | Passive 0402/0603, 4,7 k, 100 k, 33 k, 100 Ω, 100 n, 10 n, 10 µ | Basic | | | |
 
 Zählung nach dem Review: etwa **10 bis 13 Extended-Typen** (dazu kommen Polyfuse und Polymer-Elkos, der

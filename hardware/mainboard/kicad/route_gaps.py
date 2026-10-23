@@ -882,7 +882,42 @@ def region(x0, y0, x1, y1, only):
     print(f"routes.json: {len(out)} connections, {len(removed)} tracks and {len(removed_vias)} vias ripped")
 
 
+def drop(refs):
+    """`drop REF-PIN ...`: a stub and a via from that pad onto its net's plane (GND, GND_PWR, 5V_SYS)."""
+    out = []
+    for ref in refs:
+        pad = next(p for p in G["pads"] if p["ref"] == ref)
+        net = pad["net"]
+        item = {"type": "pad", "ref": ref, "x": pad["x"], "y": pad["y"], "layers": pad["layers"]}
+        layers = layers_for(net)
+        for w in (0.3, 0.2):
+            n = Net(net, w, layers)
+            comp = Components(net)
+            pa, sa = endpoint(item, net, layers, comp)
+            cells = drop_cells(net)
+            if cells is None:
+                print(f"{ref}: {NETS[net]['name']} has no plane")
+                break
+            res = astar(n, sa, {l: np.zeros((NY, NX), bool) for l in layers}, cells & n.via)
+            if res is None:
+                continue
+            path, dropped = res
+            segs, vias = to_segments(path, w, pa, None)
+            vias.append((X0 + path[-1][2] * RES, Y0 + path[-1][1] * RES))
+            add_copper(net, segs, vias)
+            out.append({"n": 0, "net": net, "segments": [list(s) for s in segs], "vias": [list(v) for v in vias]})
+            print(f"{ref}: via onto {NETS[net]['name']} plane, stub {sum(math.hypot(x2 - x1, y2 - y1) for x1, y1, x2, y2, l, w_ in segs):.1f} mm")
+            break
+        else:
+            print(f"{ref}: no spot for a via")
+    (HERE / "out" / "routes.json").write_text(json.dumps({"gaps": out, "removed_tracks": [], "removed_vias": []}),
+                                              encoding="utf-8")
+
+
 def main():
+    if sys.argv[1:2] == ["drop"]:
+        drop(sys.argv[2:])
+        return
     if sys.argv[1:2] == ["region"]:
         x0, y0, x1, y1 = (float(a) for a in sys.argv[2:6])
         region(x0, y0, x1, y1, {int(a) for a in sys.argv[6:] if a.isdigit()})
@@ -901,7 +936,25 @@ def main():
         label = " <-> ".join(i.get("ref") or i["type"] for i in (a, b))
         if a["type"] == "zone" and b["type"] == "zone":
             if name == "GND":
-                print(f"{gap['n']:2d} GND          pour islands: handled by the pad gaps (via to In1)")
+                # pour islands of GND: a via to In1 in every island that has none yet
+                n = Net(net, 0.2, ["F.Cu"])
+                done = 0
+                for isl in sorted(a["islands"], key=lambda isl: abs(sum(
+                        x1 * y2 - x2 * y1 for (x1, y1), (x2, y2) in zip(isl[0], isl[0][1:] + isl[0][:1]))))[:-1]:
+                    cells = island_cells([isl])
+                    has_via = any(not v["removed"] and v["net"] == net and cells[cell(v["x"], v["y"])] for v in VIAS)
+                    if has_via:
+                        continue
+                    spots = cells & n.via & ~PADS_F
+                    if not spots.any():
+                        continue
+                    js, is_ = np.nonzero(spots)
+                    k = np.argmin((js - js.mean()) ** 2 + (is_ - is_.mean()) ** 2)
+                    x, y = X0 + is_[k] * RES, Y0 + js[k] * RES
+                    add_copper(net, [], [(x, y)])
+                    out.append({"n": gap["n"], "net": net, "segments": [], "vias": [[x, y]]})
+                    done += 1
+                print(f"{gap['n']:2d} GND          pour islands: {done} vias to In1 added")
                 continue
             islands = sorted(a["islands"], key=lambda isl: -abs(sum(
                 x1 * y2 - x2 * y1 for (x1, y1), (x2, y2) in zip(isl[0], isl[0][1:] + isl[0][:1]))))

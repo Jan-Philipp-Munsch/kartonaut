@@ -315,7 +315,6 @@ R("4.7k", "3V3", "SDA", S)
 R("4.7k", "3V3", "SCL", S)
 add("J12", "Connector_Generic:Conn_01x04", "J_QWIIC", JST + "JST_SH_BM04B-SRSS-TB_1x04-1MP_P1.00mm_Vertical", S,
     {1: "GND", 2: "3V3", 3: "SDA", 4: "SCL"}, func="J_QWIIC", descr="Qwiic-Belegung; nur Zubehoer (E3)")
-
 # ================================================================ Funk (spec 6)
 S = "radio"
 group("LoRa E22-400T22S, Serial8")
@@ -465,6 +464,35 @@ def check():
     assert not used & set(SPARE_PINS)
     assert used | set(SPARE_PINS) == {str(i) for i in range(42)}, "every Teensy pin 0..41 has a role"
 
+
+# ================================================================ Sensoren vom 23.10. (am Ende: die Nummern der Kondensatoren bleiben)
+# All three on the I2C pair and on 3V3 (not 3V3_SENS): they sit at the tip, 45 mm from the sensor island,
+# and none of them is in the flight path.
+S = "sensors"
+group("Magnetometer LIS3MDL, I2C (23.10.)")
+# On the board the field is bent by the servo and motor currents; for the ground, quiet phases and later
+# vehicles. Pins 2 and 12 reserved -> GND, C1 100 nF (DocID024204 Tab. 2); CS high = I2C, SA1 high -> 0x1E.
+add("U16", "lcsc:LIS3MDLTR", "LIS3MDL", "lcsc:LGA-12_L2.0-W2.0-P0.50-BL", S,
+    {1: "SCL", 2: "GND", 3: "GND", 4: "MAG_C1", 5: "3V3", 6: "3V3", 7: None, 8: None,
+     9: "3V3", 10: "3V3", 11: "SDA", 12: "GND"}, lcsc="C478483",
+    descr="3-Achsen-Magnetometer an I2C, Adresse 0x1E (SA1 hoch), CS hoch = I2C; Reserved an GND; im Flug gestoert")
+C("100n", "3V3", "GND", S, descr="Vdd")
+C("100n", "MAG_C1", "GND", S, descr="C1")
+group("Feuchte und Temperatur SHT40, I2C (23.10.)")
+add("U18", "lcsc:SHT40-AD1B-R3", "SHT40-AD1B", "lcsc:DFN-4_L1.5-W1.5-P0.8-TL-EP", S,
+    {1: "SDA", 2: "SCL", 3: "3V3", 4: "GND", 5: None}, lcsc="C2848306",
+    descr="Feuchte und Temperatur an I2C, Adresse 0x44; Die-Pad frei (Sensirion: nicht loeten)")
+C("100n", "3V3", "GND", S, descr="VDD")
+group("Hochbeschleunigung ADXL375, I2C, DNP (23.10.)")
+# +-200 g for stronger motors and hard landings. I2C (CS high, ALT ADDRESS low -> 0x53): SPI1 stays the
+# flight bus under the Teensy, and the tip is only reachable by the I2C pair. Reserved pins 3 and 11 to
+# GND (datasheet: GND or open). Footprint only for now.
+add("U17", "lcsc:ADXL375BCCZ", "ADXL375", "lcsc:LGA-14_L5.0-W3.0-P0.80-BL-1", S,
+    {1: "3V3", 2: "GND", 3: "GND", 4: "GND", 5: "GND", 6: "3V3", 7: "3V3", 8: None, 9: None,
+     10: None, 11: "GND", 12: "GND", 13: "SDA", 14: "SCL"}, lcsc="C579466", dnp=True,
+    descr="Hochbeschleunigung +-200 g an I2C, Adresse 0x53 (CS hoch, ALT ADDRESS tief) - DNP, Footprint fuer spaetere Fluege")
+C("1u", "3V3", "GND", S, descr="VS", dnp=True)
+C("100n", "3V3", "GND", S, descr="VDD I/O", dnp=True)
 
 check()
 

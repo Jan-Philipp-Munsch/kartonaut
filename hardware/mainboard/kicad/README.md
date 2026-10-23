@@ -13,17 +13,17 @@ von der Spezifikation abgewichen wurde. Die Fertigerwahl steht in `../Fertiger_2
 
 | Schritt | Stand |
 |---|---|
-| Schaltung als Daten (`circuit.py`) | 166 Bauteile (9 davon DNP), 113 Netze, 7 Schaltplanblätter |
+| Schaltung als Daten (`circuit.py`) | 174 Bauteile (12 davon DNP), 114 Netze, 7 Schaltplanblätter |
 | ERC | **0 Fehler, 0 Warnungen**, 4 begründete Ausschlüsse (§6) |
 | Netzliste gegen Spezifikation §4 (`check_design.py`) | **OK**: 39 Teensy-Pins, 7 Chip-Selects, 7 Mux-Kanäle, 11 Schienen, Kelvin-Abgriff |
-| Platzierung | **alle 166 Footprints**, keine Überschneidung |
+| Platzierung | **alle 174 Footprints**, keine Überschneidung; die drei Sensoren vom 23.10. mit `add_parts.py` nachgesetzt |
 | Strompfade | 2S-Pfad, Pyro-Ausgänge und VSYS_IN als F.Cu-Flächen (§5.4); kein 2S-Netz auf In2 |
-| Routing | 2463 Bahnsegmente, 374 Vias, vier Lagen; `./make.sh pcb` (etwa 25 Minuten), danach Nacharbeit per Skript und von Hand (§5.5) |
+| Routing | 2982 Bahnsegmente, 418 Vias, vier Lagen; `./make.sh pcb` braucht etwa 25 Minuten, danach `close_gaps.py` (§5.5) |
 | DRC (JLC-Regeln) | **0 Fehler**, Schaltplan-Parität **0 Abweichungen** |
-| Offene Verbindungen | **0** (23.10.: 18 nach dem neuen Freerouting-Lauf, alle nachgearbeitet, §5.5) |
+| Offene Verbindungen | **0** (23.10., nach Handrouting und Skript-Router) |
 | Abbildungen | Renders oben, unten und schräg, Lagenbilder (`img/`) |
 | Rundgang | `RUNDGANG_PLATINE.pdf`: Anleitung mit Bildern zu Aufbau, Lagen, Strompfaden, Vias und DRC (`guide_dump.py`, `make_guide.py`) |
-| Fertigungsdaten (Gerber, BOM, CPL) | offen (§8) |
+| Fertigungsdaten (Gerber, BOM, CPL) | `./make.sh fab` → `fab/`, Stand 23.10. mit den drei Sensoren (§8) |
 
 | Oben | Unten |
 |---|---|
@@ -65,6 +65,8 @@ render.py           Lagenbilder zuschneiden und zusammenfügen, Renders auf die 
 make.sh             ganze Kette: ./make.sh [sch|pcb|drc|img|fab]
 fab.py              `./make.sh fab`: Bestelldateien für JLCPCB nach fab/ (Gerber/Bohrdaten als ZIP, BOM, CPL, FAB.md)
 widen.py            verbreitert schmale Versorgungsstücke, soweit der DRC es zulässt (nach dem Handrouting)
+add_parts.py        setzt neue Bauteile aus circuit.py an feste Positionen in die fertige Platine (Netze, Blattpfad, DNP),
+                    räumt fremdes Kupfer unter ihren Pads weg; danach close_gaps.py / route_gaps.py
 snapshot.py         schnelles Bild einzelner Lagen beim Entwickeln
 gaps.py             die offenen Verbindungen aus out/drc.json: was, wo, wie weit; `gaps.py png` mit Bild je Häufung
 close_gaps.py       `dump`: Geometrie der Platine und die offenen Verbindungen nach out/geom.json; `apply`: Ergebnis des
@@ -277,6 +279,10 @@ breiter zu bekommen: das 1,9-mm-Stück GND_PWR am DRV8833 Pin 13 (0,15 mm, x 144
 der Brücke läuft hauptsächlich über das Wärmepad mit seinen Vias, das Stück ist ein Reviewpunkt. MOT_A und
 MOT_B laufen über zwei Vias auf B.Cu zum Motorstecker J8 und schneiden dort die GND_PWR-Fläche an (Reviewpunkt).
 
+**Zusatzsensoren (23.10.):** Magnetometer, SHT40 und der DNP-ADXL375 wurden nach dem Handrouting mit
+`add_parts.py` gesetzt und ihre Leitungen mit dem Skript-Router gezogen (I²C vom Qwiic-Stecker zur Spitze,
+3V3 vom nächsten Zweig, Masse-Vias in die neuen Inseln der GND-Füllung). Danach DRC 0/0, Parität 0.
+
 Gemessen mit `../review_check_layout.py`: kein 2S-Netz auf In2 (A6); im Umkreis von 5 mm um die IMU nur
 deren eigene Masse-Vias, keine In2-Bahnen (B16); die Sense-Netze berühren nur die Sense-Pads des Shunts (A5).
 
@@ -326,6 +332,7 @@ LoRa-Moduls, Umriss-Kreuzungen); JLC schneidet den Druck über Pads weg.
 | E22 | ANT-Pad offen, Antenne über die IPEX-Buchse; NRST mit 10 k nach 3V3_RF an Pin 6 | B9 |
 | LCSC-Nummern | nur bei den Teilen aus `../ORDER.md` §3.3 und dem Lader | Passive beim Bestellen mit dem JLC-Plugin zuordnen |
 | ERC-Ausschlüsse | DRV8833: Brückenausgänge parallel; AISEN/BISEN direkt an GND_PWR | gewollt |
+| Zusatzsensoren (23.10.) | LIS3MDL (Magnetometer, 0x1E) und SHT40 (Feuchte/Temperatur, 0x44) bestückt, ADXL375 (±200 g, 0x53) als DNP-Footprint; alle drei an I²C und an **3V3** statt 3V3_SENS; Magnetometer und seine Kondensatoren in der linken Spitzenecke (45 mm von der 2S-Schiene), SHT40 neben J_QWIIC, ADXL375 im Streifen hinter dem USB-Ende des Teensy | Zukunftsfähigkeit (Jan, 23.10.); die Spitze ist nur über das I²C-Paar erreichbar, SPI1 bleibt der Flugbus unter dem Teensy; 3V3_SENS liegt 45 mm entfernt; im Flug ist das Magnetometer durch Servo-, Motor- und Pyroströme gestört |
 
 ## 7. Referenzen ↔ Namen der Spezifikation
 
@@ -343,6 +350,8 @@ LoRa-Moduls, Umriss-Kreuzungen); JLC schneidet den Druck über Pads weg.
 | Q5 | Q_BZ | D2, D3, D5, D6 | D_TVS Pyro 1 bis 4 |
 | U12, U13 | CS-Decoder, Analogmux | U11, U14 | Lader, LDO 3V3_EXP |
 | U5, U15 | Barometer, zweites (DNP) | NT1 | Sternpunkt GND_PWR/GND |
+| U16 | Magnetometer LIS3MDL | U18 | SHT40 |
+| U17 | ADXL375 (DNP) | | |
 ## 8. Nächste Schritte
 
 1. ~~Offene Verbindungen schließen~~: erledigt 23.10., 0 offen, 0 DRC-Fehler (§5.5). Ab hier ist die

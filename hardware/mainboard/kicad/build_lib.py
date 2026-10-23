@@ -210,6 +210,12 @@ LCSC_TYPES = {
     "L1": "passive", "L2": "passive",
     "TXD": "output", "RXD": "input", "AUX": "output", "M0": "input", "M1": "input", "RESET": "input",
     "ANT": "passive", "NC": "no_connect",
+    # LIS3MDL, SHT40, ADXL375 (23.10.)
+    "SCL/SPC": "input", "Res": "passive", "C1": "passive", "Vdd": "power_in", "Vdd_IO": "power_in",
+    "DRDY": "output", "SD0/SA1": "input", "CS": "input", "SDA/SDI/SDO": "bidirectional",
+    "SDA": "bidirectional", "SCL": "input", "EP": "passive",
+    "VDDI/O": "power_in", "RESERVED": "passive", "VS": "power_in", "~{CS}": "input", "INT1": "output",
+    "INT2": "output", "SDO/ALTADDRESS": "input", "SDA/SDI/SDIO": "bidirectional", "SCL/SCLK": "input",
 }
 
 

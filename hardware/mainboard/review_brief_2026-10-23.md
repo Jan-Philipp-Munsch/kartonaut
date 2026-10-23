@@ -36,6 +36,9 @@ Abweichung von der Spezifikation mit Grund):
 - A6 2S-Netze nur auf den Außenlagen; A7 VSYS_IN mindestens 0,6 mm; A8 keine 0,15-mm-Stücke in der Servoversorgung.
 - B13 Der 2S-Pfad, die Pyro-Ausgänge und VSYS_IN sind Kupferflächen auf F.Cu (`CORRIDORS` in `gen_pcb.py`), keine Autorouter-Bahnen.
 - E3 BMP390 und INA239 an SPI1 (INA239 statt INA219), E5 alle Servos am 2S, E9 Rollmotor direkt am 2S, E10 J_STACK und Pin-Bilanz mit Decoder und Mux.
+- **Neu am 23.10.:** Magnetometer LIS3MDL und Feuchte/Temperatur SHT40 bestückt, ADXL375 (±200 g) als
+  DNP-Footprint; alle drei an I²C und 3V3, nicht an SPI1/3V3_SENS (`kicad/README.md` §6). Außerdem die
+  schmalen Versorgungsstücke nach dem Handrouting verbreitert (VSYS_IN 0,6 mm, A7).
 
 Das Routing: Freerouting aus dem Generator, danach ein eigener Gitter-Router für die Reste und zum Schluss
 Handarbeit in KiCad (23.10.). Die Platinendatei ist seitdem die Quelle, der Generator erzeugt sie nicht mehr neu.
@@ -55,7 +58,9 @@ Die Punkte, die ich selbst nicht entscheiden kann oder die beim Handrouting ents
 5. **Anlauf des TPS63070** mit 940 µF hinter D1 (Hold-up gegen Neustart im Flug): Inrush und Softstart.
 6. **Abstand LoRa-Modul ↔ IMU** und die Sperrflächen unter dem Modul.
 7. **Lastschalter im 1S-Pfad:** AO3401A bei −3 V Gate knapp (B5); am Bestelltag einen Typ mit −2,5 V-Spezifikation prüfen.
-8. **Bestückung:** 108 Bauteile ohne LCSC-Nummer (Passive, Polyfuses, Polymer-Elkos, JST-Buchsen, INA239,
+8. **Zusatzsensoren:** Magnetometer in der linken Spitzenecke 12 mm von J_PYRO1 und den Pyro-FETs, SHT40 neben
+   J_QWIIC, ADXL375 hinter dem USB-Ende des Teensy; alle an 3V3 statt 3V3_SENS. Störung im Flug ist eingeplant.
+9. **Bestückung:** 108 Bauteile ohne LCSC-Nummer (Passive, Polyfuses, Polymer-Elkos, JST-Buchsen, INA239,
    SN74LV1T34, 74HC138/4051) werden am Bestelltag im JLC-Teileprogramm zugeordnet (`kicad/fab/FAB.md`);
    BMP390 war bei LCSC zuletzt nicht lieferbar, Rückfall BMP388 pinkompatibel.
 

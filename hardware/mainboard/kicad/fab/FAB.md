@@ -6,12 +6,12 @@ Erzeugt mit `./make.sh fab` aus `mainboard.kicad_pcb`. Parameter nach `../ORDER.
 | Datei | Inhalt |
 |---|---|
 | `mainboard_gerber.zip` | F/In1/In2/B.Cu, F.Paste, F/B.Silkscreen, F/B.Mask, Edge.Cuts (Protel-Endungen, ohne X2), Excellon PTH+NPTH in einer Datei, Bohrplan |
-| `mainboard_bom.csv` | 51 Zeilen, 127 bestückte SMD-Bauteile, 19 davon mit LCSC-Nummer |
-| `mainboard_cpl.csv` | 127 Bauteile, Oberseite, Drehung wie KiCad (im Bestellformular prüfen) |
+| `mainboard_bom.csv` | 53 Zeilen, 132 bestückte SMD-Bauteile, 21 davon mit LCSC-Nummer |
+| `mainboard_cpl.csv` | 132 Bauteile, Oberseite, Drehung wie KiCad (im Bestellformular prüfen) |
 
-**Ohne LCSC-Nummer (108 Bauteile, im JLC-Teileprogramm zuordnen):**
+**Ohne LCSC-Nummer (111 Bauteile, im JLC-Teileprogramm zuordnen):**
 
-- 100n: C1, C2, C3, C7, C12, C24, C25, C26, C29, C30, C34, C36, C39, C40, C41, C42, C43, C44, C45, C46
+- 100n: C1, C2, C3, C7, C12, C24, C25, C26, C29, C30, C34, C36, C39, C40, C41, C42, C43, C44, C45, C46, C47, C48, C49
 - 330u/16V polymer: C4, C5
 - 10u/25V: C6, C10, C11, C35
 - 4.7u: C8, C9
@@ -55,4 +55,4 @@ Erzeugt mit `./make.sh fab` aus `mainboard.kicad_pcb`. Parameter nach `../ORDER.
 
 **Kein Bauteil (Löcher, Netzbrücke, Testpunkte, Lötjumper):** H1, H2, H3, H4, JP1, JP2, NT1, TP1, TP2, TP3, TP4, TP5, TP6, TP7
 
-**DNP (9):** C31 (100n), C32 (100n), D5 (SMAJ12CA), D6 (SMAJ12CA), J19 (J_PYRO3), J20 (J_PYRO4), Q8 (AO3400A), Q9 (AO3400A), U15 (BMP390)
+**DNP (12):** C31 (100n), C32 (100n), C50 (1u), C51 (100n), D5 (SMAJ12CA), D6 (SMAJ12CA), J19 (J_PYRO3), J20 (J_PYRO4), Q8 (AO3400A), Q9 (AO3400A), U15 (BMP390), U17 (ADXL375)

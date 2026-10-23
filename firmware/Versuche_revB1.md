@@ -234,6 +234,10 @@ Schritte:
 Protokoll: je Servo Mitte, min, max in µs, Stromaufnahme, Typ des Servos, Auffälligkeiten (Zittern,
 Summen, Nachlaufen).
 
+Die Charakterisierung der TVC-Servos mit dem Kardan (Kennlinie, Sprungantwort, Frequenzgang, externe
+IMU auf dem Motorrohr) ist ein eigener Versuch: `docs/experiments/E02_TVC_Charakterisierung_revB1.md`
+(Konsole `tvc ...`, Aufnahme `tools/capture_tvc.py`).
+
 ---
 
 ## V08 Rollmotor

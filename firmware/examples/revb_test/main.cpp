@@ -19,6 +19,7 @@
 #include "Tests.h"
 #include "Calib.h"
 #include "Watchdog.h"
+#include "Tvc.h"
 
 using namespace board;
 
@@ -35,6 +36,7 @@ static void help() {
   proto::comment("  cal gyro [s] | cal acc | cal mag [s] | cal axes | cal baro [s]");
   proto::comment("  cal adc [kanal] | cal ina | cal servo <1..4>");
   proto::comment("  cal show | cal save | cal load | cal defaults | cal erase");
+  proto::comment("  tvc ...        Versuch E02 Servo -> Kardan (tvc help)");
   proto::comment("  status | help");
 }
 
@@ -81,6 +83,7 @@ static void execute(char* line) {
   Res r = Res::OK;
 
   if (!strcmp(a0, "help") || !strcmp(a0, "?")) { help(); return; }
+  else if (!strcmp(a0, "tvc") && a1 && !strcmp(a1, "help")) { tvcHelp(); return; }
   else if (!strcmp(a0, "status"))  { status(); return; }
   else if (!strcmp(a0, "all"))     r = runAll(a1 && !strcmp(a1, "full"));
   else if (!strcmp(a0, "mux"))     r = testMux();
@@ -109,6 +112,14 @@ static void execute(char* line) {
   else if (!strcmp(a0, "sd"))      r = testSd();
   else if (!strcmp(a0, "timing"))  r = testTiming();
   else if (!strcmp(a0, "watchdog")) r = testWatchdog(a1 && !strcmp(a1, "fire"));
+  else if (!strcmp(a0, "tvc")) {
+    // Rest der Zeile hinter dem Unterbefehl, aus der unzerlegten Kopie (center/window/note brauchen mehrere Wörter)
+    const char* rest = cmdcopy + 3;
+    while (*rest == ' ') ++rest;
+    while (*rest && *rest != ' ') ++rest;
+    while (*rest == ' ') ++rest;
+    r = tvcCommand(a1, a2, rest);
+  }
   else if (!strcmp(a0, "cal")) {
     if (!a1)                          { calShow(); return; }
     else if (!strcmp(a1, "gyro"))     r = calGyro(argFloat(a2, 10.0f));

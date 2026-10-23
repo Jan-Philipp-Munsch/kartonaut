@@ -87,7 +87,7 @@ nutzen also dieselben Pins aus `Config.h`.
 | `i2c_scanner` | Listet alle I²C-Adressen auf Wire. Erwartet 0x40, 0x68/0x69 und 0x76. |
 | `pyro_mosfet_test` | Warnblinken, dann ein 1-s-Puls auf `PIN_PYRO1` (23). Nur mit Lämpchen oder Widerstand als Last. |
 | `revb_bringup` | Inbetriebnahme des Mainboards rev B1: sichere Ausgänge, dann Mux (Akkus, ARM, Pyro-Durchgang), IMU, BMP390 (×2), INA239, LoRa-Parameter, GPS, LIS3MDL, SHT40, ADXL375; je Baustein OK/FEHL, danach Messwerte im Sekundentakt. Nutzt `lib/mainboard_revb/`, nicht `Config.h`. |
-| `revb_test` | Testkonsole und Kalibrierung rev B1: Befehlsmenü über USB-Serial, je Funktion ein Befehl mit `TEST <name> OK/FEHL/SKIP`, geführte Kalibrierung mit `CAL`-Zeilen, Ablage im EEPROM-Emulat. Ablauf in `Tischtest_revB1.md`, PC-Seite `tools/bench_test.py`. |
+| `revb_test` | Testkonsole und Kalibrierung rev B1: Befehlsmenü über USB-Serial, je Funktion ein Befehl mit `TEST <name> OK/FEHL/SKIP`, geführte Kalibrierung mit `CAL`-Zeilen, Ablage im EEPROM-Emulat. Ablauf in `Tischtest_revB1.md`, PC-Seite `tools/bench_test.py`. `tvc ...` fährt Versuch E02 (Servo → Kardan, `docs/experiments/E02_TVC_Charakterisierung_revB1.md`, Aufnahme `tools/capture_tvc.py`). |
 
 Die früheren Monolith-Sketches und kopierten Bibliotheksbeispiele (`sketches/` bis Commit
 `3b152c9`) sind entfernt; sie stehen in der Git-Historie.

@@ -14,6 +14,10 @@
 // nur bei scharfem ARM_SENSE, Puls höchstens 1 s, danach sofort tief.
 // Servos nur im Fenster aus Config.h, Motor nur kurze Pulse mit nFAULT-Überwachung.
 #include <Arduino.h>
+// Direkt eingebunden, damit der PlatformIO-Dependency-Finder lib/mainboard_revb und
+// lib/calstore findet: Header im Beispielordner (Board.h) löst er nicht auf.
+#include "BoardRevB.h"
+#include "CalStore.h"
 #include "Board.h"
 #include "Proto.h"
 #include "Tests.h"

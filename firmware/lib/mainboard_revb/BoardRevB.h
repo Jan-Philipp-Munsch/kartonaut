@@ -2,13 +2,15 @@
 #include <Arduino.h>
 
 // =====================================================================
-//  BoardRevB.h – Pinbelegung und Bauteilwerte des Mainboards rev B
+//  BoardRevB.h – Pinbelegung und Bauteilwerte des Mainboards rev B1
 //
-//  Quelle: hardware/mainboard/kicad/circuit.py (TEENSY, U12 74HC138,
-//  U13 74HC4051, Teiler, Shunt). Stand: Session "Rev B Platine",
-//  22.10.2026, noch nicht bestellt. Der Kommentar hinter jeder
-//  Pin-Konstante ist der Netzname in circuit.py; firmware/tools/
-//  check_board_pins.py vergleicht beides, bevor jemand flasht.
+//  Quelle: hardware/mainboard/kicad/circuit.py auf dem Branch claude/rev-b1
+//  (TEENSY, U12 74HC138, U13 74HC4051, Teiler, Shunt, I²C-Sensoren vom
+//  23.10.2026). Platine fertig geroutet, noch nicht gefertigt. Der
+//  Kommentar hinter jeder Pin-Konstante ist der Netzname in circuit.py;
+//  firmware/tools/check_board_pins.py vergleicht beides, bevor jemand
+//  flasht. Gegenüber rev B sind die Pins unverändert; neu sind die drei
+//  I²C-Bausteine (LIS3MDL, SHT40, ADXL375 als DNP) und die Schiene 3V3_EXP.
 //
 //  Die Flug-Firmware in src/ läuft noch auf den Breakouts (Config.h).
 //  Diese Datei wird erst dort eingebunden, wenn die Platine da ist.
@@ -34,7 +36,7 @@ constexpr uint8_t PIN_PWM_EXT     = 13;   // PWM_EXT  J_STACK
 constexpr uint8_t PIN_PYRO4_FIRE  = 14;   // PYRO4_FIRE (Kanal DNP)
 constexpr uint8_t PIN_NRST_EXT    = 15;   // NRST_EXT J_STACK
 constexpr uint8_t PIN_IRQ_EXT     = 17;   // IRQ_EXT  J_STACK
-constexpr uint8_t PIN_SDA         = 18;   // SDA      nur J_QWIIC
+constexpr uint8_t PIN_SDA         = 18;   // SDA      Wire: LIS3MDL, SHT40, ADXL375 (DNP), J_QWIIC
 constexpr uint8_t PIN_SCL         = 19;   // SCL
 constexpr uint8_t PIN_EXT_TX      = 20;   // EXT_TX   Serial5 auf J_STACK
 constexpr uint8_t PIN_EXT_RX      = 21;   // EXT_RX
@@ -85,11 +87,26 @@ enum class Mux : uint8_t {
   GND   = 7,   // GND (Nullpunkt des ADC)
 };
 
+// ===== I²C-Bausteine an Wire (SDA 18, SCL 19, 4,7 k nach 3V3), rev B1 =====
+constexpr uint8_t I2C_ADDR_LIS3MDL = 0x1E;   // U16 Magnetometer, SA1 hoch
+constexpr uint8_t I2C_ADDR_SHT40   = 0x44;   // U18 Feuchte und Temperatur
+constexpr uint8_t I2C_ADDR_ADXL375 = 0x53;   // U17 ±200 g, ALT ADDRESS tief; DNP
+constexpr bool    ADXL375_FITTED   = false;  // Footprint vorgesehen, nicht bestückt (23.10.)
+constexpr bool    BARO2_FITTED     = false;  // U15, zweites BMP390 (C2), DNP
+constexpr uint32_t I2C_SPEED_HZ    = 400000;
+
 // ===== Bauteilwerte =====
 constexpr float ADC_VREF_V      = 3.3f;
 constexpr float DIVIDER_RATIO   = (100.0f + 33.0f) / 33.0f;   // 100 k / 33 k, Vollausschlag 13,3 V
 constexpr float INA_SHUNT_OHM   = 0.020f;                     // Kelvin-Shunt 2S-Pfad
 constexpr float INA_MAX_CURRENT_A = 8.0f;                     // ±163,84 mV / 20 mΩ = 8,19 A
 constexpr int   LED_COUNT_ONBOARD = 2;                        // LED1, LED2; J_LED hängt dahinter
+
+// ===== Testpunkte rev B1 (Versorgung, gegen GND zu messen) =====
+// VBAT_PROT, VSYS_IN, 5V_SYS, VSERVO, 3V3_RF, 3V3_EXP, GND. VSYS_IN und die
+// 5-V-/3,3-V-Schienen stehen nur bei versorgtem 1S-Zweig (J_BAT1 plus JP1 oder
+// Schalter an J_SW), VBAT_PROT und VSERVO nur bei versorgtem 2S-Zweig (XT30
+// plus JP2 oder Schalter). VIN des Teensy ist vom USB getrennt: ohne 1S läuft
+// der Teensy nicht, USB liefert dann nur die Daten.
 
 }  // namespace revb

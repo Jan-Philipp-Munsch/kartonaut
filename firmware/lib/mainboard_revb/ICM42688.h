@@ -7,18 +7,15 @@
 // ab TEMP_DATA1 (Temperatur, Accel xyz, Gyro xyz, big-endian).
 //
 // Achsen: Chip-Achsen. Die Drehung Chip -> Körpersystem (x, y quer, z
-// Rollachse) hängt von der Lage von U4 auf der Platine und der Platine im
-// Kuppler ab und kommt erst mit der fertigen Platzierung.
+// Rollachse) kommt aus der Kalibrierung (revb_test: "cal axes").
+//
+// Selbsttest nach dem TDK-Referenzablauf (icm426xx_selftest.c): Gyro
+// ±250 °/s und Accel ±2 g bei 1 kHz, Antwort = Mittel mit minus Mittel
+// ohne Testsignal, Vergleich mit dem Werkswert aus Bank 1/2.
+#include "Imu.h"
 #include "BusRevB.h"
 
-struct ImuSample {
-  float acc_ms2[3];    // Beschleunigung (spezifische Kraft), Chip-Achsen
-  float gyro_dps[3];   // Drehrate, Chip-Achsen
-  float temp_c;
-  int16_t raw[7];      // T, ax, ay, az, gx, gy, gz
-};
-
-class ICM42688 {
+class ICM42688 : public ImuDriver {
 public:
   static constexpr uint8_t WHO_AM_I_VALUE = 0x47;
   static constexpr float   ACC_LSB_PER_G    = 2048.0f;   // ±16 g
@@ -26,18 +23,27 @@ public:
 
   explicit ICM42688(BusRevB& bus) : bus_(bus) {}
 
+  const char* name() const override { return "ICM-42688-P"; }
+  uint8_t expectedWhoAmI() const override { return WHO_AM_I_VALUE; }
+  float   sampleRateHz() const override { return 1000.0f; }
+
   // Soft-Reset, WHO_AM_I prüfen, konfigurieren, Sensoren einschalten.
   // Danach braucht der Gyro ca. 45 ms, bis die Werte gelten.
-  bool begin();
-  uint8_t whoAmI();
+  bool begin() override;
+  uint8_t whoAmI() override;
 
   // true, wenn seit dem letzten Lesen ein neuer Satz da ist (INT_STATUS)
-  bool dataReady();
-  void read(ImuSample& s);
+  bool dataReady() override;
+  void read(ImuSample& s) override;
+
+  bool selfTest(ImuSelfTest& r) override;
 
 private:
   uint8_t readReg(uint8_t reg);
   void    writeReg(uint8_t reg, uint8_t val);
+  void    bank(uint8_t b);
+  void    readRaw(int16_t raw[7]);
+  void    average(int32_t sum[6], int n);
 
   BusRevB& bus_;
   // bis 24 MHz erlaubt; 8 MHz ist auf 10 cm Leitung über den Decoder sicher

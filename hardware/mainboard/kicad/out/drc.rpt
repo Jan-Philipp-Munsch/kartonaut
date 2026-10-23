@@ -1,5 +1,5 @@
 ** Drc report for mainboard.kicad_pcb **
-** Created on 2026-10-22T23:55:22 **
+** Created on 2026-10-23T00:53:38 **
 ** Report includes: Errors, Warnings, Exclusions **
 
 ** Found 23 DRC violations **
@@ -91,18 +91,10 @@
     @(118.2300 mm, 121.2400 mm): Circle of U10 on F.Silkscreen
     @(119.3800 mm, 120.9300 mm): PTH pad 17 [SEL1] of A1
 
-** Found 21 unconnected pads **
+** Found 19 unconnected pads **
 [unconnected_items]: Missing connection between items
     Local override; error
-    @(100.3000 mm, 169.7000 mm): Zone 'GND F.Cu' [GND] on F.Cu, priority 0
-    @(100.3000 mm, 169.7000 mm): Zone 'GND F.Cu' [GND] on F.Cu, priority 0
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(133.5000 mm, 148.7000 mm): Pad 7 [GND] of U6 on F.Cu
-    @(100.3000 mm, 169.7000 mm): Zone 'GND F.Cu' [GND] on F.Cu, priority 0
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(122.2250 mm, 124.3625 mm): Pad 1 [VBAT1_SENSE] of C7 on F.Cu
+    @(122.2250 mm, 124.3625 mm): Track [VBAT1_SENSE] on F.Cu, length 1.4400 mm
     @(121.6005 mm, 135.4137 mm): Track [VBAT1_SENSE] on In2.Cu, length 4.2152 mm
 [unconnected_items]: Missing connection between items
     Local override; error
@@ -119,7 +111,7 @@
 [unconnected_items]: Missing connection between items
     Local override; error
     @(146.0152 mm, 122.1227 mm): Track [VSERVO] on F.Cu, length 1.9996 mm
-    @(149.2000 mm, 124.3000 mm): Track [VSERVO] on F.Cu, length 0.0500 mm
+    @(149.0000 mm, 124.5000 mm): Track [VSERVO] on F.Cu, length 0.2828 mm
 [unconnected_items]: Missing connection between items
     Local override; error
     @(151.5592 mm, 97.1689 mm): Zone 'VSERVO Strompfad' [VSERVO] on F.Cu, priority 2
@@ -135,7 +127,7 @@
 [unconnected_items]: Missing connection between items
     Local override; error
     @(140.7400 mm, 90.1400 mm): PTH pad 4 [5V_SYS] of J15
-    @(144.5875 mm, 102.3709 mm): Track [5V_SYS] on F.Cu, length 1.3209 mm
+    @(144.5875 mm, 101.0500 mm): Track [5V_SYS] on F.Cu, length 0.0005 mm
 [unconnected_items]: Missing connection between items
     Local override; error
     @(140.6375 mm, 117.1250 mm): Track [MOT_A] on F.Cu, length 1.0375 mm
@@ -159,7 +151,7 @@
 [unconnected_items]: Missing connection between items
     Local override; error
     @(130.2875 mm, 64.7000 mm): Pad 3 [PYRO3_NEG] of Q8 on F.Cu
-    @(133.3500 mm, 68.4000 mm): Track [PYRO3_NEG] on F.Cu, length 1.2304 mm
+    @(133.3500 mm, 68.4000 mm): Pad 2 [PYRO3_NEG] of D5 on F.Cu
 [unconnected_items]: Missing connection between items
     Local override; error
     @(101.4000 mm, 113.4700 mm): Pad 21 [LORA_M1] of U10 on F.Cu

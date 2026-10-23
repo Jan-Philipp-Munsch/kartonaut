@@ -1,5 +1,5 @@
 ** Drc report for mainboard.kicad_pcb **
-** Created on 2026-10-23T11:26:46 **
+** Created on 2026-10-23T11:34:34 **
 ** Report includes: Errors, Warnings, Exclusions **
 
 ** Found 22 DRC violations **
@@ -88,7 +88,7 @@
     @(118.2300 mm, 121.2400 mm): Circle of U10 on F.Silkscreen
     @(119.3800 mm, 120.9300 mm): PTH pad 17 [SEL1] of A1
 
-** Found 15 unconnected pads **
+** Found 14 unconnected pads **
 [unconnected_items]: Missing connection between items
     Local override; error
     @(140.7400 mm, 92.6800 mm): PTH pad 6 [VSERVO] of J15
@@ -99,12 +99,8 @@
     @(151.5592 mm, 97.1689 mm): Zone 'VSERVO Strompfad' [VSERVO] on F.Cu, priority 2
 [unconnected_items]: Missing connection between items
     Local override; error
-    @(146.3625 mm, 115.8250 mm): Pad 12 [VSERVO] of U7 on F.Cu
     @(144.7363 mm, 121.6008 mm): Track [VSERVO] on F.Cu, length 0.5008 mm
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(146.0152 mm, 122.1227 mm): Track [VSERVO] on F.Cu, length 1.9996 mm
-    @(149.0000 mm, 124.5000 mm): Track [VSERVO] on F.Cu, length 0.2828 mm
+    @(146.3625 mm, 115.8250 mm): Pad 12 [VSERVO] of U7 on F.Cu
 [unconnected_items]: Missing connection between items
     Local override; error
     @(151.5592 mm, 97.1689 mm): Zone 'VSERVO Strompfad' [VSERVO] on F.Cu, priority 2
@@ -124,7 +120,7 @@
 [unconnected_items]: Missing connection between items
     Local override; error
     @(132.3750 mm, 126.6375 mm): Pad 9 [SEL2] of U13 on F.Cu
-    @(122.9925 mm, 131.1494 mm): Via [SEL2] on F.Cu - B.Cu
+    @(120.5119 mm, 133.6300 mm): Track [SEL2] on In2.Cu, length 3.5081 mm
 [unconnected_items]: Missing connection between items
     Local override; error
     @(125.5250 mm, 126.6375 mm): Pad 10 [CS_EXT1] of U12 on F.Cu

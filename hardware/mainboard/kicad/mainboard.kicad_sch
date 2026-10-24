@@ -81,7 +81,7 @@
 			)
 		)
 	)
-	(text "IMU ICM-42688-P und zwei BMP390 an SPI1,\nQwiic an I2C"
+	(text "IMU LSM6DSV16X und zwei BMP390 an SPI1,\nI2C-Sensoren und Qwiic"
 		(exclude_from_sim no)
 		(at 212 56 0)
 		(effects (font (size 1.27 1.27)) (justify left top))

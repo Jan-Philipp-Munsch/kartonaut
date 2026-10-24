@@ -5,6 +5,7 @@
 [![Lizenz: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Firmware: PlatformIO / Teensy 4.1](https://img.shields.io/badge/firmware-PlatformIO%20%C2%B7%20Teensy%204.1-orange.svg)](firmware/)
 [![Simulation: Python 6DOF](https://img.shields.io/badge/simulation-Python%206DOF-3776AB.svg)](simulation/)
+[![CI](https://github.com/Jan-Philipp-Munsch/kartonaut/actions/workflows/ci.yml/badge.svg)](https://github.com/Jan-Philipp-Munsch/kartonaut/actions/workflows/ci.yml)
 
 *English version: [README.md](README.md).*
 
@@ -12,262 +13,250 @@
 
 Eine Modellrakete mit Schubvektorsteuerung (TVC) und selbst entwickeltem Flugcomputer, aufgebaut
 nach dem Vorbild der „Scout F“ von [BPS.space](https://bps.space). Der Motor hängt in einem Kardan
-mit zwei Servos, ein Rollmotor hält die Rollachse, ein pyrotechnisch ausgestoßener Fallschirm
-bringt die Rakete zurück. An Bord sitzt ein Teensy 4.1 mit IMU, Barometer, Strommonitor,
-SD-Logger und 433-MHz-LoRa-Funk zur Bodenstation. Das Gesamtsystem wird vor dem Flug in einem
-6DOF-Modell simuliert.
+mit zwei Servos; ein Teensy 4.1 mit IMU, Barometer, Strommonitor, SD-Logger und 433-MHz-LoRa-Funk
+hält die Lage und spricht mit einer Bodenstation, die vom Handy aus bedient wird. Das Gesamtsystem wird
+vor dem Flug in einem 6DOF-Modell simuliert. *Kartonaut 1* fliegt auf einer TSP E12, hält während des
+Brennens die Lage und kommt am Fallschirm zurück, den eine CO₂-Kartusche ausstößt. Landebeine,
+Landebrennen mit zweitem Motor, Rollmotor und Pyro-Kanäle bleiben späteren Flügen vorbehalten und sind
+auf der Platine schon vorgesehen.
+
+*Stand: 24.10.2026.*
 
 <img src="docs/img/cad/rocket_overall.png" width="200" align="right" alt="Parametrisches CAD-Modell (CadQuery)">
 
-## Auf einen Blick
+## Auf einen Blick: *Kartonaut 1*
 
 | | |
 |---|---|
-| Rumpf | Klima-Papprohr Ø 75 mm (innen 72,6 mm), 2 × 500 mm, Kuppler 150 mm; Kunststoffspitze, Fallschirm 125 cm |
-| Motor | TSP E12-0, 24 mm, 39 Ns, 12 N mittel, 3,5 s Brenndauer, ohne Ausstoßladung; erster Flug mit einem Motor, Landebrennen mit einem zweiten später |
-| Startmasse | 981 g im Massenmodell (`cad/`), Schwerpunkt 448 mm über der Düse; laut Simulation trägt ein E12 das nur 20 m hoch, das Massenbudget wird geprüft |
-| Flugcomputer | Teensy 4.1 auf einem Mainboard (rev B spezifiziert): IMU ICM-42688-P, Barometer BMP390, Strommonitor INA219, LoRa SX1268, microSD, zwei Pyro-Kanäle mit Arming |
-| Versorgung | zwei Akkus: 1S-LiPo für die Elektronik (Buck-Boost), 2S-LiPo für Servos, Rollmotor und Pyro |
-| Aktoren | 2 × FrSky Xact W5652H im Kardan (direkt am 2S), Rollmotor an einem DRV8833, Pyro-Kolbenausstoß |
-| Regelung | Lage nur aus dem Gyro, PID auf Pitch/Yaw → Moment → Kardanwinkel über `M = l · T · sin δ`, PID auf Roll; 100 Hz |
-| Simulation | Python-6DOF (Port des Simulink-Modells): Starrkörper mit Quaternionen, Schubkurve, Servodynamik, Sensorrauschen, Monte-Carlo, Gewinnsuche |
-| Status | am Tisch mit Breakouts getestet, noch kein Flug; Mainboard rev B am 21.10.2026 geroutet und reviewt, die Review-Punkte kommen vor der Platinenbestellung hinein |
+| Rumpf | Klima-Papprohr Ø 75 mm (innen 72,6 mm) in drei Modulen (Kardan, Avionik, Bergung), verbunden über halbe Kuppler mit M3-Schrauben, Klima-Kunststoffspitze; 731 mm lang |
+| Motor | TSP E12-0, 24 mm, 39 Ns, 12 N mittlerer Schub, 3,5 s Brenndauer, ohne Ausstoßladung; vier vorhanden |
+| Startmasse | **705 g** im Massenbudget (Stand 2c), Schwerpunkt 259 mm über der Düse, Hebelarm Kardan–Schwerpunkt 190 mm, Schub-Gewicht 1,7; Ziel unter 750 g erreicht. Noch nichts gewogen |
+| Flugcomputer | Teensy 4.1 auf Mainboard **rev B1** (KiCad aus Code, fertig geroutet, DRC sauber, im Review vor der Bestellung): IMU ICM-42688-P, Barometer BMP390, Strommonitor INA239, alle an SPI1; Magnetometer LIS3MDL und SHT40 an I²C; LoRa E22-400T22S, microSD, vier Pyro-Kanäle (zwei bestückt), Stapelstecker |
+| Versorgung | zwei Akkus: 1S-LiPo für die Elektronik (Buck-Boost), 2S-LiPo für die Servos; FET-Lastschalter hinter einem mechanischen Schalter, beide in der Rakete ladbar |
+| Aktorik | Schubstangen-Kardan mit 2 × FrSky Xact W5652H direkt an 2S (gebaut); ein Servo löst die CO₂-Kartusche aus. Kein Rollmotor beim Erstflug |
+| Bergung | 8-g-CO₂-Kartusche drückt die Spitze ab, Fallschirm 125 cm |
+| Regelung | Lage aus dem Gyro (Quaternion), PID auf Nick/Gier → Moment → Kardanwinkel über `M = l · T · sin δ`; 100 Hz. Rollen bleibt ungeregelt |
+| Simulation | Python-6DOF: mit 705 g trägt eine E12 die Rakete auf etwa 74 m (ohne Luftwiderstand); mit Kp 2 / Ki 1 / Kd 0,45 bleibt die Neigung unter 2,5°, ohne dass der Kardan anschlägt |
+| Bodensystem | ESP32-S3-Bodenstation mit Weboberfläche fürs Handy, Zündung über 15 m Leitung mit Schlüssel und ARM-Schalter; Startrampe 600 × 600 mm auf drei verstellbaren Beinen |
+| Stand | Kardan und zwei Rohrmodule gebaut, Platine rev B1 bestellfertig, Tischtest-Konsole für rev B1 gemergt; **noch kein Flug** |
 
 ## Projektstand
 
-**Fertig**
+**Erledigt**
 
-- Konzept, Massen- und Strombudget; Rumpfteile, Fallschirm und Motoren gekauft.
-- 6DOF-Simulation: MATLAB/Simulink-Modell nach Python portiert, mit 1:1-Kopie des Flugreglers, 21 Tests.
-- Firmware-Module: Sensorik, Höhen-Kalman, SD-Logger mit CSV-Export, Pitch/Yaw- und Rollregler, Takt, Signalgeber.
-- Mainboard rev B spezifiziert: Versorgungsarchitektur, Pinbelegung, Stückliste, Platzierungsplan, Testplan; Design Guide mit Abbildungen und Bestellplan.
-- KiCad-Projekt für rev B aus Code erzeugt: Schaltplan mit sieben Blättern, ERC sauber; Platine auf vier Lagen platziert und geroutet, DRC ohne Fehler.
-- Zweitmeinung-Review von Schaltung und Layout gegen Datenblätter und Spezifikation: acht Punkte vor der Bestellung, Fertiger-Entscheidung, Bestellliste.
-- Parametrisches CAD-Modell als Code (CadQuery) mit Massenmodell: Masse, Schwerpunkt und Trägheitsmomente für die Simulation; die 16 Blender-Dateien inventarisiert und abgelöst.
-- Baudokumentation und Projektdatei mit Befunden und Änderungsprotokoll.
+- Konzept, Massen- und Strombudget; Rumpfteile, Fallschirm, Motoren, CO₂-Kartuschen und Antrieb des Prüfstands gekauft; Schubstangen-Kardan mit den W5652H gebaut.
+- 6DOF-Simulation: MATLAB/Simulink-Modell nach Python portiert, mit 1:1-Kopie des Flugreglers; Fahrzeugsätze aus den CAD-Massenmodellen.
+- Firmware-Grundlage: Sensoren, Höhen-Kalman, SD-Logger mit CSV-Export, Regler, Timing, Anzeigen; SPI-Treiber und Pinbelegung für rev B.
+- **Firmware für den Tischtest rev B1** ([PR #6](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/6), gemergt 23.10.): Treiber für LIS3MDL, SHT40 und ADXL375, IMU-Selbsttest, Testkonsole `revb_test` mit einem Befehl je Funktion, geführte Kalibrierung (Gyro, sechs Lagen, Magnetometer-Ellipsoid, Achszuordnung, ADC, INA239, Servo-Trimm) mit CRC im EEPROM-Emulat, `bench_test.py` zur Steuerung vom PC, zwölf Versuchsanleitungen.
+- CI auf GitHub Actions: alle PlatformIO-Umgebungen, Simulationstests, Host-Tests, Pin-Abgleich gegen die Platine.
+- Mainboard rev B: Spezifikation, Design Guide, Datenblatt, KiCad-Projekt aus Code, Zweitmeinungs-Review, Fertigerentscheidung (JLCPCB), Bestellplan, Entscheidungen E1–E10.
+- Parametrisches CAD (CadQuery) mit Massenmodell, Prüfstand, Erstflug-Konfiguration; die 16 Blender-Dateien inventarisiert und abgelöst.
 
-**In Arbeit**
+**Wartet auf Review und Merge** (Arbeit auf einem Branch fertig, noch nicht in `main`)
 
-- Platine: Review-Punkte in die Schaltung (Ausgangskapazität des Buck-Boost, 1S-Unterspannungsschwelle, Hauptschalter über FETs, Sicherung je Akku, Kelvin-Shunt) und in den Generator (Strompfade als Kupferflächen auf den Außenlagen) einarbeiten, dann neu routen, DRC, Fertigungsdaten.
-- Kardan-Anpassung für die neuen Servos; Servo-Sprungantwort neu messen.
-- Massenbudget: Teile wiegen, Rumpf leichter machen oder stärkeren Motor wählen.
+| Was | Wo |
+|---|---|
+| **Mainboard rev B1**: alle Review-Punkte eingearbeitet, Zusatzsensoren, fertig geroutet (DRC 0 Fehler, 0 offen), Gerber/BOM/CPL für JLCPCB, Review-Brief für eine Zweitmeinung | [PR #5](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/5) |
+| **Flug-Firmware** B1–B8: Gyro-Quaternion, Zustandsautomat `SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED`, Pyro-Logik, Telemetrieprotokoll, Watchdog mit Zustandsspeicher, Sensor-Backends für Breakouts und rev B, 32 native Tests inkl. Software-in-the-Loop gegen die Simulation | [PR #3](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/3) |
+| **Physik-Durchsicht und Landebrennen**: Luftwiderstand, Bodenkontakt, Landebrennen mit zweiter E12, Schubdrossel nach Scout F, in Simulation und Firmware (für den Erstflug abgeschaltet) | [PR #4](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/4) |
+| **Versuch E01**: Übertragungsfunktion Servo → Kardan als fertiger Versuch mit Auswerteskript | [PR #2](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/2) |
+| **Zusammenführung vom 22.10.**: Bauanleitung *Kartonaut 1* in Modulbauweise (Zeichnungen, Bohrschablonen 1:1, Stückliste), Massenbudget Stand 2b/2c (705 g), Reglergewinne per Bayes-Optimierung, Bodenstation (Konzept, Schaltung, ESP32-S3-Firmware), Startrampe, Budgetplan | Branch [`claude/konsolidierung`](https://github.com/Jan-Philipp-Munsch/kartonaut/tree/claude/konsolidierung) |
 
 **Als Nächstes**
 
-1. Review in rev B einarbeiten, Platine neu erzeugen, letzte Verbindungen schließen, Gerber, BOM und CPL exportieren, Bestellung bei JLCPCB mit SMD-Bestückung (Aisler als EU-Rückfall); die Tischteile jetzt bestellen.
-2. Firmware für rev B: Treiber ICM-42688-P, Quaternion-Lage, Flugzustandsautomat, Pyro-Logik, Watchdog, LoRa-Telemetrie.
-3. Rakete wiegen und das Massenbudget gegen den Schub des E12 prüfen.
-4. Bodentests: TVC-Prüfstand mit Propellermotor im Kardan (Teile gekauft, Gestell zu bauen), Pyro-Test, Funkreichweite.
-5. Erstflug: geregelter Aufstieg mit einem Motor, Fallschirmbergung.
+1. Platine prüfen und bestellen: Zweitmeinung zu rev B1, Messbereich der IMU klären (der ICM-42688-P sättigt bei ±16 g, Alternative LSM6DSO32 mit ±32 g), JLCPCB-Angebot mit den rev-B1-Dateien wiederholen und bestellen. Ein Testangebot mit den älteren rev-B-Dateien lag bei etwa 165 $ für zwei bestückte Platinen.
+2. Die offenen PRs und die Zusammenführung nach `main` mergen.
+3. Rakete nach der Anleitung bauen, wiegen, Schwerpunkt auspendeln, Messwerte in `Config.h`.
+4. Tischtest rev B1 mit `revb_test`, dann Bodentests: CO₂-Ausstoß, TVC-Prüfstand mit Propellermotor, Funkreichweite, Startfreigabe vom Handy.
+5. Bodenstation und Startrampe bauen.
+6. *Kartonaut 1*: geregelter Aufstieg auf einem Motor, Bergung am Fallschirm.
 
-Die vollständige Liste der Arbeitspakete, die Befunde aus den Durchsichten und das
-Änderungsprotokoll stehen in [PROJECT.md](PROJECT.md), das Bautagebuch in
-[docs/BUILD.md](docs/BUILD.md), die Planungsrunde vom 21.10.2026 mit Platinen-Review,
-Kostenschätzung und Entscheidungen in [docs/Plan_2026-10-21.md](docs/Plan_2026-10-21.md).
+Arbeitspakete, Befunde und Änderungsverlauf stehen in [PROJECT.md](PROJECT.md), das Baulog in
+[docs/BUILD.md](docs/BUILD.md), der Plan bis zum Erstflug in [docs/Plan_2026-10-22.md](docs/Plan_2026-10-22.md).
 
 ## Was die Simulation sagt
 
-Das Simulink-Modell (Starrkörper mit Quaternionen, Schubkurve des TSP E12, aus Sprungantworten
-identifizierte Servo-Übertragungsfunktion, Sensorrauschen, statische Fehlausrichtung) liegt jetzt
-als Python-Paket `tvcsim` in [`simulation/`](simulation/README.md). Es hat zwei Regler: den aus
-Simulink und einen zeilengenauen Port von `Control.cpp` aus der Firmware, damit sich die Gewinne
-beider Seiten im selben Modell vergleichen lassen.
+Das Simulink-Modell (Starrkörper mit Quaternionen, Schubkurve TSP E12, aus Sprungantworten
+identifizierte Servo-Übertragungsfunktion, Sensorrauschen, statischer Versatz) liegt in
+[`simulation/`](simulation/README.md) als Python-Paket `tvcsim`. Es hat zwei Regler, den aus Simulink
+und eine zeilengenaue Portierung von `Control.cpp` aus der Firmware, damit beide im selben Modell
+vergleichbar sind.
 
 ![Reglervergleich](docs/img/sim/compare_gains_preload.png)
 
-Drei Befunde, die das Projekt verändern:
+Befunde, die das Projekt verändert haben:
 
-- **Die Firmware-Gewinne sind die richtigen.** Kp 5, Ki 0, Kd 1 (auf der Skala −100 der Firmware)
-  halten den Kippwinkel in der Brennphase unter 10°. Die früher per MATLAB-Raster gefundenen
-  Gewinne (kp 3,1, ki 5, kd 0,385) haben einen 40-mal größeren D-Anteil, treiben den Kardan sofort
-  in die ±5°-Begrenzung und schwingen mit 3 bis 4 Hz. Ein kleiner I-Anteil würde den statischen
-  Servo-Fehler ausregeln.
-- **Die Rakete ist für einen E12 zu schwer.** Mit den 1,0 kg des Massenmodells liegt das
-  Schub-Gewichts-Verhältnis bei 1,1 und der Gipfel bei 20 m; mit 0,7 kg bei 62 m. Entweder sinkt die
-  Masse (das Papprohr allein wiegt 240 g) oder der Motor wird eine Klasse stärker.
-- **Die Servo-Kardan-Übersetzung entscheidet über die Stellreserve.** Mit den 23 Servo-Grad je
-  Kardan-Grad aus `Config.h` erreicht der Kardan nur ±1°, mit den gemessenen 6 sind es ±3,75°.
-  Wird am neuen Kardan gemessen.
+- **Die 1-kg-Rakete war zu schwer für eine E12** (Schub-Gewicht 1,1, Gipfel 20 m). Statt eines
+  stärkeren Motors wurde die Rakete leichter: von 981 g (21.10.) über 761 g auf **705 g** für
+  *Kartonaut 1*, die im Modell etwa 74 m erreicht.
+- **Die leichte Rakete braucht kleinere Gewinne.** Hebelarm und Querträgheit schrumpften auf die Hälfte
+  und ein Fünftel. Mit den echten Werten fahren die alten Firmware-Gewinne Kp 5 / Kd 1 den Kardan zwei
+  Drittel des Brennens in den Anschlag; Kp 2 / Ki 1 / Kd 0,45 aus einer Bayes-Optimierung regeln sauber.
+- **Die Gewinne der MATLAB-Gittersuche waren falsch** (D-Anteil 40-mal zu groß, Kardan im Anschlag,
+  Schwingung mit 3 bis 4 Hz).
+- **Das Verhältnis Servo zu Kardan entscheidet über die Stellreserve.** Am gebauten Kardan zu messen
+  (Versuch E01).
+- **Ohne Rollregelung muss die Lage ein Quaternion sein.** Komponentenweise integrierte Winkel legen
+  einen Neigungsfehler in die falsche Servoachse, sobald die Rakete rollt. Das ist die Bedingung für den
+  Verzicht auf den Rollmotor; die Flug-Firmware in PR #3 setzt es um.
 
 <p>
-<img src="docs/img/sim/montecarlo_preload.png" width="48%" alt="Monte-Carlo-Trajektorien">
+<img src="docs/img/sim/montecarlo_preload.png" width="48%" alt="Monte-Carlo-Bahnen">
 <img src="docs/img/sim/servo_fit.png" width="48%" alt="Servo-Sprungantwort und Fit">
 </p>
 
 ```bash
 cd simulation
-python -m pytest tests                 # 21 Tests
+python -m pytest tests                 # Tests, auch in der CI
 python scripts/run_nominal.py          # Nominalflug -> out/
 python scripts/run_montecarlo.py       # 100 Läufe
 python scripts/compare_gains.py --vehicle preload
 ```
 
-## Hardware
+## Hardware: Mainboard rev B / B1
 
-Heute hängen alle Sensoren als Breakouts mit Dupont-Kabeln am Teensy, im Flug das größte
-Ausfallrisiko. [hardware/mainboard/](hardware/mainboard/README.md) spezifiziert deshalb das
-**Mainboard rev B**: ein Schlitten 54 × 120 mm, der längs in einem Kuppler liegt, mit Teensy-Sockel,
-IMU genau auf der Rollachse und allen Steckern an den Stirnseiten.
+Heute hängen alle Sensoren als Breakout-Boards mit Steckbrücken am Teensy, das größte Ausfallrisiko im
+Flug. [hardware/mainboard/](hardware/mainboard/README.md) spezifiziert das Mainboard: einen Schlitten
+54 × 120 mm mit Teensy-Sockel, der IMU genau auf der Rollachse und allen Steckern an den Stirnseiten.
 
-<img src="hardware/mainboard/mainboard_placement.svg" width="100%" alt="Platzierungsplan des Mainboards">
+<img src="hardware/mainboard/kicad/img/render_top.png" width="100%" alt="Mainboard rev B, geroutet, Ansicht von oben">
 
-Der [Design Guide](docs/DesignGuide_Mainboard_revB.md) (auch als
-[PDF](docs/DesignGuide_Mainboard_revB.pdf)) stellt den Entwurf mit Abbildungen vor: Blockschaltbild,
-Versorgungsbaum, Pyro-Kanal, Pinbelegung, Einbau; der [Bestellplan](hardware/mainboard/ORDER.md)
-listet die Vorab-Bestellung, die Tore vor der Platinenbestellung, die JLCPCB-Parameter und die Kosten.
+Das KiCad-Projekt in [hardware/mainboard/kicad/](hardware/mainboard/kicad/README.md) entsteht aus einer
+einzigen Python-Beschreibung der Schaltung (`circuit.py`): sieben Schaltplanblätter, ERC ohne Fehler,
+ein Platinengenerator mit Umriss, vier Lagen, Netzklassen, Sperrflächen und Freerouting
+([Schaltplan-PDF](hardware/mainboard/kicad/out/mainboard_schematic.pdf)). Der
+[Design Guide](docs/DesignGuide_Mainboard_revB.md) ([PDF](docs/DesignGuide_Mainboard_revB.pdf)) stellt
+den Entwurf mit Abbildungen vor, der [Bestellplan](hardware/mainboard/ORDER.md) listet Teile, Schranken
+und Kosten.
 
-<img src="hardware/mainboard/img/system_blocks.svg" width="100%" alt="Blockschaltbild Mainboard rev B">
+Ein [Zweitmeinungs-Review](hardware/mainboard/review_kicad_2026-10-21.md) von rev B fand acht Punkte
+(Ausgangskapazität am Buck-Boost, 1S-Unterspannungsschwelle, Hauptschalter im Strompfad, Sicherung je
+Akku, Kelvin-Shunt, 2S-Ströme auf der Innenlage). Zusammen mit zehn Entscheidungen
+([Komponenten_2026-10-22.md](hardware/mainboard/Komponenten_2026-10-22.md)) sind sie in **rev B1**
+eingeflossen ([PR #5](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/5)):
 
-Das KiCad-Projekt in [hardware/mainboard/kicad/](hardware/mainboard/kicad/README.md) wird aus einer
-einzigen Python-Beschreibung der Schaltung erzeugt (`circuit.py`): sieben Schaltplanblätter mit Netzlabel an
-jedem Pin, in Funktionsblöcke gegliedert, ERC ohne Fehler und Warnungen
-([Schaltplan-PDF](hardware/mainboard/kicad/out/mainboard_schematic.pdf)), dazu ein Platinen-Generator, der
-Umriss, vier Lagen, Netzklassen und Sperrflächen zeichnet, die Teile setzt, die Flächen füllt und das
-Freerouting-Ergebnis übernimmt: alle 134 Teile platziert und geroutet, DRC ohne Fehler
-([Renders und Lagenbilder](hardware/mainboard/kicad/img/)).
+- **Mechanischer Hauptschalter, Strom über FETs**; Polyfuse je Akku; Kelvin-Shunt mit INA239.
+- **Laden in der Rakete**: 1S über USB-C auf der Platine, 2S über eine Balancer-Buchse.
+- **Alle Flugsensoren an SPI1** hinter einem CS-Decoder 74HC138, Analogkanäle über einen Mux 74HC4051;
+  I²C nur noch für Magnetometer, SHT40 und die Qwiic-Erweiterung.
+- **Alle Servos direkt an 2S**, kein 5-V-Wandler.
+- **Platz für spätere Flüge**: vier Pyro-Kanäle, vierter Servostecker, ADXL375 (±200 g) als Footprint,
+  Stapelstecker `J_STACK`.
+- Leistungspfade als Kupferflächen auf der Außenlage, 5-mm-Sperrzone um die IMU; geroutet mit
+  Freerouting, eigenem Gitter-Router und von Hand.
 
-<img src="hardware/mainboard/kicad/img/render_top.png" width="100%" alt="Mainboard rev B, geroutet, Render von oben">
-
-Ein [Zweitmeinung-Review](hardware/mainboard/review_kicad_2026-10-21.md) hat die Schaltung gegen die Datenblätter und das
-Layout gegen die Spezifikation geprüft. Seine acht A-Punkte kommen vor den Fertigungsdaten hinein: Der
-Buck-Boost sieht mehr Ausgangskapazität, als sein Datenblatt erlaubt, die 1S-Unterspannungsabschaltung
-würde den Rechner im Flug abschalten, der Hauptschalter sitzt im Hochstrompfad, nur die Servo-Schiene ist
-abgesichert, der Shunt hat keinen Kelvin-Anschluss, und der Autorouter hat die 2S-Ströme auf die dünne
-Innenlage und an der IMU vorbei gelegt. Der [Fertigervergleich](hardware/mainboard/Fertiger_2026-10-21.md) entscheidet für JLCPCB
-mit Economic-Bestückung und Aisler als EU-Rückfall; der [Bestellplan](hardware/mainboard/ORDER.md) sagt,
-was jetzt gekauft wird.
-
-Entscheidungen, die man kennen sollte:
-
-- **Zwei Akkus.** Ein blockierender Servo oder ein Pyro-Puls darf den Teensy nie in den Neustart
-  ziehen. Die Elektronik läuft deshalb aus einer eigenen 1S-Zelle über einen Buck-Boost, Servos,
-  Rollmotor und Pyro aus einem 2S-Akku. Ein zweipoliger Schalter schaltet beide.
-- **IMU ohne DMP.** Der ICM-20948 ist „not for new designs“; der ICM-42688-P ersetzt ihn an SPI,
-  die Lage wird in der Firmware aus dem Gyro integriert.
-- **LoRa statt HC-12.** Ein SX1268-Modul auf dem Board mit Pigtail-Antenne in der Spitze bringt
-  Kilometer Reichweite statt einiger hundert Meter.
-- **Pyro-Bergung.** Zwei Low-Side-MOSFET-Kanäle hinter einem externen Arming-Schalter, mit
-  Durchgangsprüfung; Schwarzpulver-Tests mit etwa 1 g haben funktioniert.
-- **Servos am Akku.** Die FrSky W5652H laufen direkt am 2S (bis 8,4 V), doppelt so schnell wie an 5 V.
-
-Die Spezifikation enthält das Strombudget je Akku, die vollständige Pinbelegung, eine Stückliste
-mit LCSC-Nummern, Layout-Regeln und den Inbetriebnahme-Plan. Rev A mit der Begründung des
-Schlitten-Layouts bleibt in [`rev_a_2026-10-15.md`](hardware/mainboard/rev_a_2026-10-15.md).
+Die Firmware passt dazu: [`firmware/lib/mainboard_revb/`](firmware/README.md) enthält Pins, Decoder, Mux
+und die Treiber; `check_board_pins.py` vergleicht die Pins mit `circuit.py`, auch in der CI. Rev A und
+die Begründung für das Schlittenlayout stehen in [`rev_a_2026-10-15.md`](hardware/mainboard/rev_a_2026-10-15.md).
 
 ## CAD-Modell
 
-Die Blender-Dateien, die die Rakete bisher beschrieben haben, sind in
-[`cad/blender_inventory.md`](cad/blender_inventory.md) inventarisiert und durch ein parametrisches
-Modell in CadQuery abgelöst ([`cad/`](cad/README.md)): jedes Maß in `cad/params.py` mit Quelle,
-STEP- und STL-Export je Baugruppe, Kollisionsprüfung des Kardans bei ±7°, Renderbilder über Blender
-headless. Dieselben Parameter speisen ein Massenmodell.
+Die Blender-Dateien sind in [`cad/blender_inventory.md`](cad/blender_inventory.md) inventarisiert und
+durch ein parametrisches Modell in CadQuery abgelöst ([`cad/`](cad/README.md)): jedes Maß in
+`cad/params.py` mit Quelle, STEP und STL je Baugruppe, Kollisionsprüfung des Kardans bei ±7°, Renders
+über Blender headless. Dieselben Parameter speisen ein Massenmodell
+([`cad/mass_properties.md`](cad/mass_properties.md)). Die Modulbauweise von *Kartonaut 1* mit ihrem
+Massenbudget liegt auf dem Zusammenführungs-Branch.
 
 <p>
-<img src="docs/img/cad/rocket_section.png" width="24%" alt="Schnitt: Motor, Kardan, Flugcomputer im Kuppler, Kolben, Fallschirm, Spitze">
-<img src="docs/img/cad/rocket_tvc.png" width="37%" alt="Kardan mit den beiden W5652H, 5° und 4° ausgelenkt">
-<img src="docs/img/cad/rocket_avionics.png" width="37%" alt="Flugcomputer-Modul: Kuppler, Stangen, Schlitten, Akkus">
+<img src="docs/img/cad/rocket_section.png" width="24%" alt="Schnitt: Motor, Kardan, Flugcomputer, Fallschirm, Spitze">
+<img src="docs/img/cad/rocket_tvc.png" width="37%" alt="Kardan mit den zwei W5652H, ausgelenkt um 5° und 4°">
+<img src="docs/img/cad/rocket_avionics.png" width="37%" alt="Flugcomputer-Modul">
 </p>
-
-| Zustand | Masse | Schwerpunkt ab Düse | Hebelarm Kardan–Schwerpunkt | Ixx = Iyy | Izz (Roll) |
-|---|---|---|---|---|---|
-| Start, voller Motor | 981 g | 448 mm | 372 mm | 0,110 kg·m² | 0,0011 kg·m² |
-| Brennschluss | 953 g | 460 mm | 384 mm | 0,105 kg·m² | 0,0011 kg·m² |
-| Ohne Motor | 917 g | 477 mm | 400 mm | 0,098 kg·m² | 0,0011 kg·m² |
-
-Zwei Zahlen, die das Massenmodell verändert hat: Das Roll-Trägheitsmoment ist hundertmal kleiner
-als der Platzhalter 0,1 kg·m², mit dem die Simulation gerechnet hat (fast alle Masse liegt innerhalb
-von 37 mm um die Achse), und der Hebelarm beträgt 0,37 m statt 0,30 m. Die 981 g bestätigen das
-Schub-Gewichts-Problem von oben. Nach dem Zusammenbau: Teile wiegen, Schwerpunkt auswiegen,
-Quer-Trägheitsmoment per Bifilarpendel messen und `params.py` korrigieren.
 
 ```bash
 python -m pip install --user cadquery
-python cad/build.py              # STEP/STL nach cad/export/, Bilder nach docs/img/cad/
+python cad/build.py              # STEP/STL nach cad/export/, Renders nach docs/img/cad/
 python cad/mass_model.py         # mass_properties.md und .json
 ```
 
 ## Bodentests
 
-Bevor etwas fliegt, wird die Lageregelung am Boden mit echtem Schub und ohne Treibsatz
-getestet: Die Rakete hängt in einem Gestell, das sie um den Schwerpunkt nicken und gieren
-lässt, und an Stelle des Raketenmotors sitzt ein Brushless-Motor (Racerstar BR2814, 1000 KV,
-11-Zoll-Propeller, 4S-LiPo) im Kardan. Bei Teilgas liefert er die 12 N des E12, und der Teensy
-kann den Regler sogar entlang der E12-Schubkurve fahren. Motor, Regler, Propeller, Akku und
-Ladegeräte sind gekauft. Das Gestell ist in [`cad/testrig.py`](cad/README.md) konstruiert: ein
-zweiachsiger Rahmen auf Kugellagern, ein gedruckter Klemmkragen am Schwerpunkt, ein Prop-Adapter,
-der ins Motorrohr steckt, und ein Schutzkäfig um den Propeller; das Build-Skript prüft, dass bei
-±20° Rig-Auslenkung und ±7° Kardan nichts kollidiert. Der Fallschirmausstoß ist mit etwa 1 g
-Schwarzpulver schon getestet.
+Bevor etwas fliegt, wird die Lageregelung am Boden mit echtem Schub und ohne Raketenmotor getestet: Die
+Rakete hängt in einem Gestell, das Nicken und Gieren um den Schwerpunkt erlaubt, und ein Brushless-Motor
+(Racerstar BR2814, 1000 KV, 11-Zoll-Propeller, 4S-LiPo) sitzt anstelle des Raketenmotors im Kardan. In
+Teillast liefert er die 12 N der E12. Der Antrieb ist gekauft, das Gestell in
+[`cad/testrig.py`](cad/README.md) konstruiert und auf Kollisionen geprüft. Dazu kommen der Test des
+CO₂-Ausstoßes, die Funkreichweite mit zwei E22-Modulen und der Freigabetest vom Handy bis zu einem
+Lämpchen an der Zündleitung. Die Versuche für die Platine stehen in
+[`firmware/Versuche_revB1.md`](firmware/Versuche_revB1.md).
 
 <p>
 <img src="docs/img/cad/testrig.png" width="40%" alt="Prüfstand: Rakete im zweiachsigen Rahmen">
-<img src="docs/img/cad/testrig_drive.png" width="52%" alt="Antriebsende: Propellermotor im Kardan mit Schutzkäfig">
+<img src="docs/img/cad/testrig_drive.png" width="52%" alt="Antriebsseite: Propellermotor im Kardan mit Schutzkäfig">
 </p>
 
 ## Firmware
 
-PlatformIO-Projekt für den Teensy 4.1 in [`firmware/`](firmware/README.md). Die Hauptschleife
-läuft mit festen 100 Hz:
-
-1. **Sensoren lesen.** IMU (Drehrate, Beschleunigung), Barometer, Strommonitor.
-2. **Lage integrieren.** Nur aus dem Gyro: Im Flug sind Kompass und Beschleunigungsstützung unbrauchbar.
-3. **Höhe schätzen.** Ein Kalman-Filter mit zwei Zuständen fusioniert Barometer und Vertikalbeschleunigung.
-4. **Regeln.** Ein PID auf Pitch und Yaw liefert ein Moment, das über `M = l · m · |a| · sin δ` in den
-   Kardanwinkel und dann in Servo-Grad umgerechnet wird; ein zweiter PID treibt den Rollmotor.
-5. **Loggen.** Ein 88-Byte-Frame pro Durchlauf in einen Seitenpuffer; SD-Schreibzugriffe nur in der
-   freien Zeit vor der nächsten Deadline. Am Boden wird das Binärlog als CSV exportiert.
+PlatformIO-Projekt für den Teensy 4.1 in [`firmware/`](firmware/README.md). Die Hauptschleife läuft mit
+festen 100 Hz: Sensoren lesen, Lage aus dem Gyro integrieren, Höhe mit einem Kalman-Filter mit zwei
+Zuständen schätzen (Barometer und Vertikalbeschleunigung), Nick und Gier über den Kardan regeln, je
+Durchlauf einen Rahmen auf die SD-Karte schreiben.
 
 ```bash
 cd firmware
-pio run                      # Flug-Firmware bauen
-pio run -t upload            # auf den Teensy 4.1 flashen
-pio device monitor           # serielle Konsole, 115200 Bd, Teleplot-kompatibel
-pio run -e radio_beacon      # einen Test-Sketch aus examples/ bauen
+pio run                            # Flug-Firmware bauen
+pio run -t upload                  # Teensy 4.1 flashen
+pio device monitor                 # serielle Konsole, 115200 Baud, Teleplot-kompatibel
+pio run -e revb_test -t upload     # Tischtest-Konsole für Mainboard rev B1
+python tools/bench_test.py         # Konsole vom PC aus steuern, Bericht als Markdown + JSON
+python tools/check_board_pins.py   # Firmware-Pins gegen circuit.py
 ```
 
+Der Tischtest Schritt für Schritt steht in [`firmware/Tischtest_revB1.md`](firmware/Tischtest_revB1.md).
 Alle Pins, Gewinne, Filterkonstanten und Debug-Schalter liegen in
-[`firmware/src/Config.h`](firmware/src/Config.h). Die Regler sind dort abgeschaltet, bis der
-erste Flugtest ansteht. Offen: Quaternion-Lage, Gyro-Kalibrierung auf der Rampe,
-Flugzustandsautomat mit Pyro-Logik, Telemetrieprotokoll, Treiber für die neue IMU.
+[`firmware/src/Config.h`](firmware/src/Config.h); die Regler bleiben dort bis zum ersten Flugtest aus.
+Quaternion-Lage, Zustandsautomat, Pyro-Logik, Telemetrie und Watchdog sind in
+[PR #3](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/3).
 
-## Aufbau des Repos
+## Aufbau des Repositorys
 
 ```
-firmware/               Flug-Firmware (PlatformIO, Teensy 4.1)             -> firmware/README.md
+firmware/               Flug-Firmware (PlatformIO, Teensy 4.1)                -> firmware/README.md
   src/                  Module: Sensors, KalmanZ, Control, SDLogger, Timing, Indicators
-  examples/             Test-Sketches (Funk-Beacon, I2C-Scan, Pyro-MOSFET)
-simulation/             6DOF-Simulation in Python, Paket tvcsim             -> simulation/README.md
-  tvcsim/, tests/, scripts/, data/
-hardware/mainboard/     Mainboard rev B: Spezifikation, Bestellplan, Umriss (DXF), Platzierungsplan, Abbildungen
-cad/                    parametrisches CAD-Modell als Code, Massen          -> cad/README.md
-docs/                   Design Guide rev B (Markdown + PDF), Bautagebuch (BUILD.md), Planungsrunde, Bilder
-PROJECT.md              Projektdatei: Eckdaten, Arbeitspakete, Befunde, Änderungsprotokoll
+  lib/mainboard_revb/   Pins, CS-Decoder, Mux, Treiber ICM-42688-P, BMP390, INA239, LIS3MDL, SHT40, ADXL375
+  lib/calstore/         Kalibrierdaten mit CRC, Ellipsoid-Fit, Achszuordnung
+  examples/             Testprogramme (revb_test, revb_bringup, Funkbake, I2C-Scan, Pyro-MOSFET)
+  tools/                bench_test.py, capture_tvc.py, check_board_pins.py
+  test/host/            Host-Tests (g++), laufen in der CI
+simulation/             6DOF-Simulation in Python, Paket tvcsim               -> simulation/README.md
+hardware/mainboard/     Mainboard: Spezifikation, Entscheidungen, KiCad aus Code, Datenblatt, Reviews, Bestellplan
+cad/                    parametrisches CAD, Prüfstand, Massenmodell           -> cad/README.md
+docs/                   Design Guide, Baulog, Pläne, Recherchen, Bilder, Abzeichen
+.github/workflows/      CI: PlatformIO-Umgebungen, Simulationstests, Host-Tests, Pin-Abgleich
+PROJECT.md              Projektdatei: Eckdaten, Arbeitspakete, Befunde, Änderungsverlauf
 ```
 
-Die Bodenstation (Arduino Nano mit dem passenden Funkmodul) ist ein eigenes Repo:
-[kartonaut-ground](https://github.com/Jan-Philipp-Munsch/kartonaut-ground). Das MATLAB/Simulink-Original
-der Simulation und die Blender-Dateien bleiben außerhalb dieses Repos; ihr Inhalt ist hierher
-portiert.
+Die alte Bodenstation (Arduino Nano mit HC-12) ist ein eigenes Repository,
+[kartonaut-ground](https://github.com/Jan-Philipp-Munsch/kartonaut-ground); ihr Nachfolger auf dem
+ESP32-S3 liegt auf dem Zusammenführungs-Branch. Das MATLAB/Simulink-Original der Simulation und die
+Blender-Dateien bleiben außerhalb dieses Repositorys; ihr Inhalt ist hierher portiert.
 
-## Dokumente
+## Dokumentation
 
 | Dokument | Inhalt |
 |---|---|
-| [PROJECT.md](PROJECT.md) | Eckdaten, Arbeitspakete mit Status, Befunde aus den Durchsichten, nächste Schritte, Änderungsprotokoll |
-| [docs/BUILD.md](docs/BUILD.md) | as-built: Inventar der gekauften und gedruckten Teile, Mechanik, Verdrahtung, Software auf dem Gerät, Tests, Bautagebuch |
-| [docs/Plan_2026-10-21.md](docs/Plan_2026-10-21.md) | Platinen-Review mit Bauteilalternativen und Kostenschätzung, Versorgungsarchitektur, Layout-Checkliste, Portierungsplan, Entscheidungen |
-| [hardware/mainboard/README.md](hardware/mainboard/README.md) | Spezifikation Mainboard rev B |
-| [docs/DesignGuide_Mainboard_revB.md](docs/DesignGuide_Mainboard_revB.md) | der Entwurf rev B mit Abbildungen, zum Review ([PDF](docs/DesignGuide_Mainboard_revB.pdf)) |
-| [hardware/mainboard/ORDER.md](hardware/mainboard/ORDER.md) | Bestellplan: Vorab-Bestellung, Tore vor der Platinenbestellung, JLCPCB-Parameter, Kosten, Bestellliste nach Händlern |
-| [hardware/mainboard/review_kicad_2026-10-21.md](hardware/mainboard/review_kicad_2026-10-21.md) | Zweitmeinung-Review des KiCad-Projekts: Schaltung gegen Datenblätter, Layout gegen Spezifikation, Zukunft, Kosten |
-| [hardware/mainboard/Fertiger_2026-10-21.md](hardware/mainboard/Fertiger_2026-10-21.md) | Fertigervergleich (JLCPCB, PCBWay, Aisler, Eurocircuits) und Entscheidung |
-| [simulation/README.md](simulation/README.md) | Modell, Koordinaten, Annahmen, Ergebnis des Gewinnvergleichs |
-| [firmware/README.md](firmware/README.md) | Firmware-Module, Log-Format, Test-Sketches |
-| [cad/README.md](cad/README.md) | parametrisches Modell, Parameter, Wartungskonzept |
-| [cad/mass_properties.md](cad/mass_properties.md) | Massenmodell: Methode, Teileliste, Schwerpunkt und Trägheit je Flugzustand |
-| [cad/blender_inventory.md](cad/blender_inventory.md) | was die 16 Blender-Dateien enthalten, was aktuell und was überholt ist |
+| [PROJECT.md](PROJECT.md) | Eckdaten, Arbeitspakete mit Stand, Befunde, nächste Schritte, Änderungsverlauf |
+| [docs/Plan_2026-10-22.md](docs/Plan_2026-10-22.md) | Plan bis zum Erstflug: Arbeitsstränge Platine, Firmware, Mechanik, Bodensysteme, Meilensteine |
+| [docs/BUILD.md](docs/BUILD.md) | Ist-Stand: gekaufte und gedruckte Teile, Mechanik, Verkabelung, Tests, Baulog |
+| [docs/Schnittstellen_Bodensystem_2026-10-22.md](docs/Schnittstellen_Bodensystem_2026-10-22.md) | Schnittstellen Rakete/Rampe, Zündleitung, Funk, Handy |
+| [docs/Rohrmaterial_2026-10-22.md](docs/Rohrmaterial_2026-10-22.md) | Faserverbundrohre gegen Pappe: Pappe bleibt |
+| [docs/Plan_2026-10-21.md](docs/Plan_2026-10-21.md) | Planungsrunde vom 21.10.: Platinen-Review, Versorgungsarchitektur, Portierungsplan |
+| [hardware/mainboard/README.md](hardware/mainboard/README.md) | Spezifikation des Mainboards |
+| [hardware/mainboard/Komponenten_2026-10-22.md](hardware/mainboard/Komponenten_2026-10-22.md) | Entscheidungen E1–E10, Bauteile nach Schiene und Schnittstelle, Pinbudget |
+| [docs/DesignGuide_Mainboard_revB.md](docs/DesignGuide_Mainboard_revB.md) | der Entwurf rev B mit Abbildungen ([PDF](docs/DesignGuide_Mainboard_revB.pdf)) |
+| [hardware/mainboard/datasheet/](hardware/mainboard/datasheet/) | Datenblatt MS-MB-B (LaTeX, Stückliste aus `circuit.py`) |
+| [hardware/mainboard/ORDER.md](hardware/mainboard/ORDER.md) | Bestellplan: jetzt zu kaufende Teile, Schranken, JLCPCB-Parameter, Kosten |
+| [hardware/mainboard/review_kicad_2026-10-21.md](hardware/mainboard/review_kicad_2026-10-21.md) | Zweitmeinungs-Review von rev B |
+| [hardware/mainboard/Fertiger_2026-10-21.md](hardware/mainboard/Fertiger_2026-10-21.md) | Fertigervergleich und Entscheidung |
+| [firmware/README.md](firmware/README.md) | Firmware-Module, Logformat, Testprogramme, rev-B-Bibliothek |
+| [firmware/Tischtest_revB1.md](firmware/Tischtest_revB1.md) | Tischtest rev B1: Ablauf, Befehle, offene Fragen |
+| [firmware/Versuche_revB1.md](firmware/Versuche_revB1.md) | zwölf Versuchsanleitungen mit Geräten, Aufbau, Sollwerten |
+| [simulation/README.md](simulation/README.md) | Modell, Koordinaten, Annahmen, Ergebnisse |
+| [cad/README.md](cad/README.md) | parametrisches Modell, Prüfstand, Pflegekonzept |
+| [cad/mass_properties.md](cad/mass_properties.md) | Massenmodell der früheren Konfigurationen |
+| [cad/blender_inventory.md](cad/blender_inventory.md) | was die 16 Blender-Dateien enthalten |
 
 ## Lizenz
 
-[MIT](LICENSE). Die BPS.space-Dateien der Scout F, die als Vorlage dienten, sind nicht Teil dieses
-Repos.
+[MIT](LICENSE). Die BPS.space-Scout-F-Dateien, die als Vorlage dienten, sind nicht Teil dieses Repositorys.

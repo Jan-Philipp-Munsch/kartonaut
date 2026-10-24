@@ -17,7 +17,7 @@ rev-B-Firmware und sparen später Wartezeit.
 
 | Nr. | Teil | Stück | Wofür | Quelle (Vorschlag) | ca. |
 |---|---|---|---|---|---|
-| 0.1 | LSM6DSV16X-Breakout (SPI herausgeführt; seit 23.10. statt ICM-42688-P, E12) | 1 | IMU-Treiber und Gyro-Quaternion am Tisch entwickeln, bevor die Platine da ist | Adafruit 4692 (über Berrybase/Eckstein), SparkFun, AliExpress | 10–20 € |
+| 0.1 | LSM6DSV16X-Breakout (SPI herausgeführt; seit 23.10. statt ICM-42688-P, E12) | 1 | IMU-Treiber und Gyro-Quaternion am Tisch entwickeln, bevor die Platine da ist | SparkFun „6DoF IMU Breakout - LSM6DSV16X“ (Qwiic, auch als Micro-Version; über Berrybase, Eckstein, The Pi Hut), AliExpress; Adafruit hat keinen LSM6DSV16X, nur den LSM6DSOX (4438) | 10–20 € |
 | 0.2 | BMP390-Breakout (Adafruit 4816 oder Clone) | 1 | `BMP3XX`-Treiber und Kalman-Rauschwert vorab | Berrybase, Eckstein | 10–15 € |
 | 0.3 | LoRa **E22-400T22D** (DIP, SMA) | 2 | eins für die Bodenstation (bleibt dort), eins als Gegenstelle für den Tisch, bis das SMD-Modul auf der Platine ist | Ebyte über AliExpress/eBay/Tindie | 2 × 8–12 € |
 | 0.4 | 433-MHz-Antenne SMA (Stab, λ/4) | 2 | Bodenstation und Tischtest | dieselbe Bestellung wie 0.3 | 2 × 2–4 € |
@@ -225,7 +225,7 @@ ist: Teensy 4.1, Breakouts ICM-20948, BMP280, INA219, 2× HC-12, SG90, WS2812B, 
 
 | Nr. | Teil | Stück | Quelle | ca. | Hinweis |
 |---|---|---|---|---|---|
-| 0.1 | LSM6DSV16X-Breakout (SPI herausgeführt) | 1 | Adafruit 4692 über Berrybase/Eckstein, SparkFun, AliExpress | 10–20 € | wichtigstes Teil: IMU-Treiber am Tisch; seit 23.10. statt ICM-42688-P (E12) |
+| 0.1 | LSM6DSV16X-Breakout (SPI herausgeführt) | 1 | SparkFun „6DoF IMU Breakout - LSM6DSV16X“ (Qwiic) über Berrybase, Eckstein, The Pi Hut; AliExpress | 10–20 € | wichtigstes Teil: IMU-Treiber am Tisch; seit 23.10. statt ICM-42688-P (E12) |
 | 0.2 | BMP390-Breakout Adafruit 4816 | 1 | Kiwi Electronics (NL) 9,99 € netto, eBay paradisetronic 16,97 €; Berrybase/Eckstein prüfen | 12–17 € | auch als Rückfall an J_QWIIC, falls der Chip nicht bestückt wird |
 | 0.3 | LoRa E22-400T22D (DIP, SMA) | 2 | Ebyte über AliExpress, eBay (Ebyte-Shop) oder Tindie | 2 × 8–12 € | Bodenstation und Tisch-Gegenstelle |
 | 0.4 | 433-MHz-Stabantenne SMA | 2 | dieselbe Bestellung | 2 × 2–4 € | |

@@ -6,7 +6,8 @@
 // einzeln und meldet das Ergebnis auf USB-Serial (115200 Bd):
 //
 //   1. Analogmux: GND-Kanal, beide Akkus, ARM, Durchgang Pyro 1–4
-//   2. ICM-42688-P: WHO_AM_I, Konfiguration, Beschleunigung ≈ 1 g in Ruhe
+//   2. IMU: WHO_AM_I, Konfiguration, Beschleunigung ≈ 1 g in Ruhe (Treiber noch ICM-42688-P;
+//      die Platine rev B1 traegt seit 23.10. einen LSM6DSV16X, WHO_AM_I 0x70, Treiber folgt)
 //   3. BMP390 (und BMP390 #2, falls bestückt): Chip-ID, Druck plausibel
 //   4. INA239: Hersteller- und Geräte-ID, Bus-Spannung ≈ 2S-Akku
 //   5. LoRa E22: Konfigurationsmodus, Parameter lesen (Kanal, Adresse)

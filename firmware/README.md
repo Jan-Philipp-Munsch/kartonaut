@@ -101,7 +101,7 @@ benutzen (heute `revb_bringup`).
 |---|---|
 | `BoardRevB.h` | Teensy-Pins, Chip-Selects (74HC138, `revb::Cs`), Analogkanäle (74HC4051, `revb::Mux`), Teiler und Shunt |
 | `BusRevB.*` | SPI1 auf 26/27/39, Chip-Select über den Decoder, Analogmessung über die Mux |
-| `ICM42688.*` | IMU über SPI, ±2000 °/s, ±16 g, 1 kHz, INT1 Daten bereit |
+| `ICM42688.*` | IMU über SPI, ±2000 °/s, ±16 g, 1 kHz, INT1 Daten bereit. **Offen:** die Platine rev B1 trägt seit 23.10. einen LSM6DSV16X (E12, WHO_AM_I 0x70, gleiche Pins); der Treiber ist noch zu schreiben |
 | `BMP390.*` | Barometer über SPI, Bosch-Kompensation, erkennt auch den BMP388 |
 | `INA239.*` | Strom und Spannung im 2S-Pfad über SPI |
 

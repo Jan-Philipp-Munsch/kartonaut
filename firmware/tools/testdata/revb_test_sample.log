@@ -1,0 +1,46 @@
+# Kartonaut Mainboard rev B1: Testkonsole (revb_test)
+INFO reset_cause Einschalten
+INFO kalibrierung leer -> Standardwerte
+INFO Bausteine: IMU 1 Baro 1 Baro2 0 INA 1 Mag 1 SHT 1 ADXL 0
+INFO 1S 3.98 V, 2S 0.02 V, ARM 0.01 V, nFAULT hoch, Kalibrierung leer, gültig 0x00
+# Befehle (q bricht laufende Messungen ab):
+READY
+TEST mux_gnd OK 0.002 V am ADC (Y7)
+TEST mux_vbat1 OK 3.981 V (1S, 3,0..4,35 V)
+TEST mux_vbat2 SKIP 0.02 V, 2S nicht versorgt
+TEST mux_arm SKIP ohne 2S
+TEST mux_pyro1 SKIP ohne 2S
+TEST mux_pyro2 SKIP ohne 2S
+TEST mux_pyro3 SKIP ohne 2S
+TEST mux_pyro4 SKIP ohne 2S
+END mux SKIP
+READY
+TEST imu_whoami OK 0x47 soll 0x47 (ICM-42688-P)
+TEST imu_config OK Flugkonfiguration zurückgelesen
+TEST imu_rate OK 1000 Hz soll 1000
+TEST imu_rest OK |a| 9.79 m/s2 a=[0.12 -0.05 9.79] |w| 0.31 dps T 24.3 C
+TEST imu_selftest_gyro OK Antwort 112 118 109 dps, Verhältnis 1.02 1.05 0.98, Offset 0.3 -0.2 0.1
+TEST imu_selftest_acc OK Antwort 0.212 0.198 0.305 g, Verhältnis 0.97 1.01 1.03
+END imu OK
+READY
+TEST baro1 OK Chip-ID 0x60, 98712 Pa, 25.1 C
+TEST baro2 SKIP nicht bestückt (DNP), Chip-ID 0x00
+END baro SKIP
+READY
+INFO Gyro-Nullpunkt: Platine 10 s ruhig liegen lassen (q bricht ab)
+CAL gyro_bias_dps 0.3120 -0.1980 0.0470
+CAL gyro_bias_temp_c 24.31
+CAL gyro_noise_dps 0.0412 0.0398 0.0401
+TEST cal_gyro OK Nullpunkt 0.312 -0.198 0.047 dps bei 24.3 C
+END cal gyro 10 OK
+READY
+CAL adc_gain 4 1.00210
+TEST cal_adc4 OK gemessen 3.981 V, Multimeter 3.989 V, Faktor 1.0021
+CAL servo_us 1 1480 1120 1860
+TEST cal_servo1 OK Mitte 1480, min 1120, max 1860 us
+TEST cal_save OK EEPROM 216 Byte, Version 1, CRC 0x1A2B3C4D, 1. Speicherung
+END cal save OK
+READY
+TEST timing_loop FEHL 300 Durchläufe bei 100 Hz: Mittel 820 us, Maximum 6100 us, Überläufe 0
+END timing FEHL
+READY

@@ -1,4 +1,4 @@
-// revb_bringup – Inbetriebnahme des Mainboards rev B
+// revb_bringup – Inbetriebnahme des Mainboards rev B1
 //
 // Erstes Programm auf der bestückten Platine. Es setzt zuerst alle
 // Ausgänge in den sicheren Zustand (Pyro tief, Rollmotor schlafend,
@@ -6,33 +6,46 @@
 // einzeln und meldet das Ergebnis auf USB-Serial (115200 Bd):
 //
 //   1. Analogmux: GND-Kanal, beide Akkus, ARM, Durchgang Pyro 1–4
-//   2. IMU: WHO_AM_I, Konfiguration, Beschleunigung ≈ 1 g in Ruhe (Treiber noch ICM-42688-P;
-//      die Platine rev B1 traegt seit 23.10. einen LSM6DSV16X, WHO_AM_I 0x70, Treiber folgt)
+//   2. IMU (Treiber ICM-42688-P): WHO_AM_I, Konfiguration, Beschleunigung ≈ 1 g in Ruhe;
+//      die Platine rev B1 trägt seit 23.10. einen LSM6DSV16X (WHO_AM_I 0x70), Treiber folgt
 //   3. BMP390 (und BMP390 #2, falls bestückt): Chip-ID, Druck plausibel
 //   4. INA239: Hersteller- und Geräte-ID, Bus-Spannung ≈ 2S-Akku
 //   5. LoRa E22: Konfigurationsmodus, Parameter lesen (Kanal, Adresse)
 //   6. GPS an Serial1: kommen NMEA-Zeilen an (38400 oder 9600 Bd)?
+//   7. Magnetometer LIS3MDL (I²C 0x1E): WHO_AM_I, Feld plausibel
+//   8. SHT40 (I²C 0x44): Seriennummer, Temperatur und Feuchte
+//   9. ADXL375 (I²C 0x53, DNP): nur erkennen
 //
 // Danach laufen die Messwerte im Sekundentakt. Pyro-Kanäle werden nicht
-// gezündet; dafür bleibt examples/pyro_mosfet_test mit Lämpchen als Last.
+// gezündet; dafür gibt es examples/revb_test ("pyro <n>" mit Lämpchen).
+// Die Einzelprüfungen mit Befehlsmenü und die Kalibrierung sind in revb_test.
 #include <Arduino.h>
 #include <FastLED.h>
 #include "BoardRevB.h"
 #include "BusRevB.h"
+#include "Imu.h"
 #include "ICM42688.h"
 #include "BMP390.h"
 #include "INA239.h"
+#include "I2cRevB.h"
+#include "LIS3MDL.h"
+#include "SHT40.h"
+#include "ADXL375.h"
 
 using namespace revb;
 
-static BusRevB  bus;
-static ICM42688 imu(bus);
-static BMP390   baro(bus, Cs::BARO);
-static BMP390   baro2(bus, Cs::BARO2);
-static INA239   ina(bus, INA_SHUNT_OHM, INA_MAX_CURRENT_A);
-static CRGB     leds[LED_COUNT_ONBOARD];
+static BusRevB    bus;
+static ICM42688   icm(bus);
+static ImuDriver& imu = icm;
+static BMP390     baro(bus, Cs::BARO);
+static BMP390     baro2(bus, Cs::BARO2);
+static INA239     ina(bus, INA_SHUNT_OHM, INA_MAX_CURRENT_A);
+static LIS3MDL    mag(I2C_ADDR_LIS3MDL);
+static SHT40      sht(I2C_ADDR_SHT40);
+static ADXL375    adxl(I2C_ADDR_ADXL375);
+static CRGB       leds[LED_COUNT_ONBOARD];
 
-static bool ok_imu = false, ok_baro = false, ok_baro2 = false, ok_ina = false;
+static bool ok_imu = false, ok_baro = false, ok_baro2 = false, ok_ina = false, ok_mag = false, ok_sht = false;
 
 static void safeOutputs() {
   for (uint8_t p : PYRO_FIRE_PINS) { digitalWrite(p, LOW); pinMode(p, OUTPUT); }
@@ -87,11 +100,11 @@ static void checkMux() {
 }
 
 static void checkImu() {
-  Serial.println("\n2. IMU ICM-42688-P (CS Y0)");
+  Serial.printf("\n2. IMU %s (CS Y0)\n", imu.name());
   char buf[64];
   const uint8_t id = imu.whoAmI();
-  snprintf(buf, sizeof buf, "0x%02X (soll 0x47)", id);
-  report("WHO_AM_I", id == ICM42688::WHO_AM_I_VALUE, buf);
+  snprintf(buf, sizeof buf, "0x%02X (soll 0x%02X)", id, imu.expectedWhoAmI());
+  report("WHO_AM_I", id == imu.expectedWhoAmI(), buf);
   ok_imu = imu.begin();
   report("Konfiguration", ok_imu);
   if (!ok_imu) return;
@@ -194,9 +207,50 @@ static void checkGps() {
   report("NMEA", false, "nichts empfangen (angesteckt?)");
 }
 
+static void checkMag() {
+  Serial.println("\n7. Magnetometer LIS3MDL (I2C 0x1E)");
+  char buf[64];
+  const uint8_t id = mag.whoAmI();
+  snprintf(buf, sizeof buf, "0x%02X (soll 0x3D)", id);
+  report("WHO_AM_I", id == LIS3MDL::WHO_AM_I_VALUE, buf);
+  ok_mag = mag.begin();
+  report("Konfiguration", ok_mag);
+  if (!ok_mag) return;
+  delay(30);
+  MagSample s;
+  const uint32_t t0 = millis();
+  while (!(mag.dataReady() && mag.read(s)) && millis() - t0 < 200) delay(2);
+  const float b = sqrtf(s.mag_gauss[0] * s.mag_gauss[0] + s.mag_gauss[1] * s.mag_gauss[1] + s.mag_gauss[2] * s.mag_gauss[2]);
+  snprintf(buf, sizeof buf, "|B| = %.3f gauss, %.1f °C (unkalibriert)", b, s.temp_c);
+  report("Feld 0,1..1,5 gauss", b > 0.1f && b < 1.5f, buf);
+}
+
+static void checkSht() {
+  Serial.println("\n8. Feuchte/Temperatur SHT40 (I2C 0x44)");
+  char buf[64];
+  ok_sht = sht.begin();
+  snprintf(buf, sizeof buf, "Seriennummer %08lX", (unsigned long)sht.serial());
+  report("Seriennummer", ok_sht, buf);
+  if (!ok_sht) return;
+  ShtSample s;
+  const bool ok = sht.read(s);
+  snprintf(buf, sizeof buf, "%.2f °C, %.1f %%rF, CRC %s", s.temp_c, s.rh_pct, ok ? "ok" : "falsch");
+  report("Messung", ok && s.temp_c > -10.0f && s.temp_c < 60.0f, buf);
+}
+
+static void checkAdxl() {
+  Serial.println("\n9. Hochbeschleunigung ADXL375 (I2C 0x53)");
+  char buf[64];
+  if (!adxl.present()) { report("ADXL375", !ADXL375_FITTED, ADXL375_FITTED ? "kein ACK" : "nicht bestückt (DNP)"); return; }
+  const uint8_t id = adxl.devId();
+  snprintf(buf, sizeof buf, "DEVID 0x%02X (soll 0xE5)", id);
+  report("ADXL375", id == ADXL375::DEVID_VALUE, buf);
+}
+
 void setup() {
   safeOutputs();
   bus.begin();
+  revb_i2c::begin(I2C_SPEED_HZ);
   FastLED.addLeds<WS2812B, PIN_LED_DATA, GRB>(leds, LED_COUNT_ONBOARD);
   fill_solid(leds, LED_COUNT_ONBOARD, CRGB(0, 0, 40));
   FastLED.show();
@@ -204,7 +258,7 @@ void setup() {
   Serial.begin(115200);
   const uint32_t t0 = millis();
   while (!Serial && millis() - t0 < 4000) {}
-  Serial.println("\n=== Kartonaut Mainboard rev B: Inbetriebnahme ===");
+  Serial.println("\n=== Kartonaut Mainboard rev B1: Inbetriebnahme ===");
   Serial.printf("DRV8833 nFAULT: %s\n", digitalRead(PIN_MOT_FAULT) ? "ok (hoch)" : "FEHLER (tief)");
 
   checkMux();
@@ -215,8 +269,11 @@ void setup() {
   checkIna();
   checkLora();
   checkGps();
+  checkMag();
+  checkSht();
+  checkAdxl();
 
-  const bool all = ok_imu && ok_baro && ok_ina;
+  const bool all = ok_imu && ok_baro && ok_ina && ok_mag && ok_sht;
   fill_solid(leds, LED_COUNT_ONBOARD, all ? CRGB(0, 60, 0) : CRGB(60, 0, 0));
   FastLED.show();
   digitalWrite(PIN_BUZZER, HIGH); delay(all ? 80 : 600); digitalWrite(PIN_BUZZER, LOW);
@@ -242,6 +299,14 @@ void loop() {
     PowerSample s;
     ina.read(s);
     Serial.printf("2S %.2f V %.0f mA  ", s.bus_V, s.current_A * 1000.0f);
+  }
+  if (ok_mag) {
+    MagSample m;
+    if (mag.read(m)) Serial.printf("B=[%.3f %.3f %.3f] G  ", m.mag_gauss[0], m.mag_gauss[1], m.mag_gauss[2]);
+  }
+  if (ok_sht) {
+    ShtSample h;
+    if (sht.read(h)) Serial.printf("%.1f °C %.0f %%rF  ", h.temp_c, h.rh_pct);
   }
   Serial.printf("1S %.2f V  ARM %.2f V\n", bus.readMuxInputV(Mux::VBAT1), bus.readMuxInputV(Mux::ARM));
 }

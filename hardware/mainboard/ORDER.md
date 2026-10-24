@@ -17,7 +17,7 @@ rev-B-Firmware und sparen später Wartezeit.
 
 | Nr. | Teil | Stück | Wofür | Quelle (Vorschlag) | ca. |
 |---|---|---|---|---|---|
-| 0.1 | ICM-42688-P-Breakout (SPI herausgeführt) | 1 | IMU-Treiber ohne DMP und Gyro-Quaternion am Tisch entwickeln, bevor die Platine da ist | Berrybase, Eckstein, AliExpress | 8–15 € |
+| 0.1 | LSM6DSV16X-Breakout (SPI herausgeführt; seit 23.10. statt ICM-42688-P, E12) | 1 | IMU-Treiber und Gyro-Quaternion am Tisch entwickeln, bevor die Platine da ist | Adafruit 4692 (über Berrybase/Eckstein), SparkFun, AliExpress | 10–20 € |
 | 0.2 | BMP390-Breakout (Adafruit 4816 oder Clone) | 1 | `BMP3XX`-Treiber und Kalman-Rauschwert vorab | Berrybase, Eckstein | 10–15 € |
 | 0.3 | LoRa **E22-400T22D** (DIP, SMA) | 2 | eins für die Bodenstation (bleibt dort), eins als Gegenstelle für den Tisch, bis das SMD-Modul auf der Platine ist | Ebyte über AliExpress/eBay/Tindie | 2 × 8–12 € |
 | 0.4 | 433-MHz-Antenne SMA (Stab, λ/4) | 2 | Bodenstation und Tischtest | dieselbe Bestellung wie 0.3 | 2 × 2–4 € |
@@ -55,7 +55,7 @@ easyeda2kicad, **ERC 0 Fehler / 0 Warnungen**. Die Netzliste ist gegen die Pin-T
 
 - Die Hinweise aus der Prüfung einarbeiten: TPS63070 FB2 (Pin 6) offen lassen statt GND; Kommentar zu den
   zusammengefassten Doppelpins 7/8 und 12/13 im Footprint; E22 NRST über 10 k an 3V3_RF oder an einen
-  Teensy-Pin; ICM-42688-P RESV-Pins gegen DS-000347 Tabelle 9 halten.
+  Teensy-Pin; IMU-Pins gegen das Datenblatt halten (seit 23.10. LSM6DSV16X, AN5763 Tabelle 1: 9–11 offen).
 - **Zweitmeinung-Review vom 21.10.2026** (`review_kicad_2026-10-21.md`): die Punkte A1 bis A5 in `circuit.py`
   einarbeiten (Hold-up-Elko hinter D1, EN-Teiler des TPS63070 auf 2,7 V, Hauptschalter über FETs, Sicherung je
   Akku, Kelvin-Shunt), dazu die B-Punkte nach Aufwand; Jan entscheidet A3 (FET-Schalter) und B6 (BMP390 an SPI).
@@ -102,6 +102,8 @@ easyeda2kicad, **ERC 0 Fehler / 0 Warnungen**. Die Netzliste ist gegen die Pin-T
 
 ### 3.2 Dateien, die hochgeladen werden
 
+Seit 23.10.2026 erzeugt `./make.sh fab` im KiCad-Ordner alle drei Dateien nach `kicad/fab/` (`mainboard_gerber.zip`, `mainboard_bom.csv`, `mainboard_cpl.csv`) und eine Übersicht `FAB.md`, welche Teile noch keine LCSC-Nummer haben, welche von Hand gelötet werden und welche DNP sind. Die Punkte unten gelten weiter für die Prüfung beim Upload.
+
 1. **Gerber + Drill** als ZIP: in KiCad über das Plugin *Fabrication Toolkit* (erzeugt gleich alles) oder
    *Plot* mit Protel-Endungen, Lagen F/B.Cu, In1/In2.Cu, F/B.Mask, F/B.Silkscreen, F.Paste, Edge.Cuts,
    dazu die Bohrdatei (Excellon, PTH und NPTH zusammen).
@@ -120,7 +122,7 @@ Quelle seit Dezember 2025 1,50 USD).
 
 | Bauteil | LCSC | Klasse | Stand 21.10. | Falls nicht lieferbar |
 |---|---|---|---|---|
-| ICM-42688-P | C1850418 | Extended | ca. 5500 Stück, ab 2,1 USD bei 1000 (Einzelpreis höher). **Achtung:** das bei LCSC verlinkte Datenblatt trägt die Marke Tokmas, nicht TDK; Hersteller im JLC-Teileprogramm prüfen, nur TDK InvenSense nehmen | keine Alternative auf der Achse; dann warten, Breakout oder anderer Anbieter |
+| LSM6DSV16X (23.10., E12; davor ICM-42688-P C1850418: bei JLC 21,5 USD, 453 Stück) | C5267406 | Extended | über 7000 Stück, ca. 3,4 USD bei JLC; ST-Original | LSM6DSO (C5267404-Familie, gleicher Footprint, Pin 9–11 ebenso offen) oder ICM-42688-P zurück |
 | BMP390 | C5124834 | Extended | LCSC am 21.10. nachts: **„Not available now“**, kein Bestand, kein Preis | **BMP388 (C779278, gleiches LGA-10, gleiche Bibliothek): 7362 Stück auf Lager, 7,67 USD (ab 10: 7,06)**, bei Bosch abgekündigt, für einen Lauf von 5 Platinen egal; ob JLC ihn bestückt, am Bestelltag prüfen, sonst Breakout an J_QWIIC oder BMP390 bei Mouser/DigiKey (Lieferzeit 4 bis 13 Wochen) |
 | INA219AIDR | C138706 | prüfen | ca. 1200–4400 Stück, 0,76 USD | INA219BIDR |
 | TPS63070RNMR | C109322 | Extended | Bestand schwankte zwischen 0 und 18 000, 1,37 USD | TPS63020DSJR (1,8–5,5 V ein, 2 A; dann kein Schutz gegen versehentlich 2S) |
@@ -142,6 +144,9 @@ Quelle seit Dezember 2025 1,50 USD).
 | Shunt 20 mΩ 2512 mit Kelvin-Footprint (vier Pads), Review A5 | prüfen | | | 2-Pad-Shunt mit Netzbrücken an den Pads |
 | Ferritperle 0603 600 Ω + 10 µF (3V3_SENS), Review B4 | Basic | | | |
 | W25Q128JVSIQ | C97521 (prüfen) | Basic | | kommt unter den Teensy, nicht auf die Platine |
+| LIS3MDLTR (Magnetometer, 23.10.) | C478483 | Extended | ca. 9500 Stück, 2,6–5 USD; manche Händler führen ihn als abgekündigt, ST und DigiKey als aktiv: am Bestelltag prüfen | BMM350 oder MMC5983MA (I²C, anderer Footprint) |
+| SHT40-AD1B-R3 (Feuchte/Temperatur, 23.10.) | C2848306 | Extended | lieferbar, ca. 1,7 USD | SHT40-AD1B-R2 C2909890 |
+| ADXL375BCCZ (±200 g, DNP) | C579466 | Extended | nur Footprint, wird nicht bestückt | – |
 | Passive 0402/0603, 4,7 k, 100 k, 33 k, 100 Ω, 100 n, 10 n, 10 µ | Basic | | | |
 
 Zählung nach dem Review: etwa **10 bis 13 Extended-Typen** (dazu kommen Polyfuse und Polymer-Elkos, der
@@ -195,7 +200,7 @@ also **2 bis 3 Wochen** ab Upload. Die DHL-Option ist eine Woche schneller und 1
 | E22-400T22S falsch gedreht oder Pads unter dem Modul nicht benetzt | Funk tot | CPL-Vorschau prüfen; das Modul hat nur Randpads, Nachlöten ist möglich |
 | WS2812B erzwingt Standard-PCBA | +17 USD Setup | LEDs als DNP, selbst löten (2020-Gehäuse, Heißluft) oder 5050-Gehäuse nehmen |
 | Teensy-Sockelreihen 0,1 mm versetzt | Teensy klemmt | Footprint `Teensy41_Socket` aus `build_lib.py`, Papierausdruck mit echtem Teensy |
-| ICM-42688-P von einem Zweithersteller (Tokmas-Datenblatt bei LCSC) | anderes Rauschen, andere Register | Hersteller im JLC-Teileprogramm prüfen, sonst Chip selbst beschaffen |
+| LSM6DSV16X von einem Zweithersteller | anderes Rauschen, andere Register | Hersteller im JLC-Teileprogramm prüfen (nur ST), sonst Chip selbst beschaffen |
 | Drehung der VQFN-15 (TPS63070) in der CPL | Wandler kaputt beim ersten Einschalten | Pin-1-Punkt in der JLC-Vorschau, erster Start am Netzteil mit 100 mA |
 | Servo-Achsenlage zum Schlitten noch offen (`README.md` §11) | Achsentausch in der Firmware | kein Platinenrisiko, Stecker sind gleich |
 
@@ -220,7 +225,7 @@ ist: Teensy 4.1, Breakouts ICM-20948, BMP280, INA219, 2× HC-12, SG90, WS2812B, 
 
 | Nr. | Teil | Stück | Quelle | ca. | Hinweis |
 |---|---|---|---|---|---|
-| 0.1 | ICM-42688-P-Breakout (SPI herausgeführt) | 1 | AliExpress/Amazon („ICM-42688-P module“); kein deutscher Händler gefunden, Eval-Board DK-42688-P bei DigiKey 53 Wochen | 8–15 € | wichtigstes Teil: IMU-Treiber ohne DMP am Tisch |
+| 0.1 | LSM6DSV16X-Breakout (SPI herausgeführt) | 1 | Adafruit 4692 über Berrybase/Eckstein, SparkFun, AliExpress | 10–20 € | wichtigstes Teil: IMU-Treiber am Tisch; seit 23.10. statt ICM-42688-P (E12) |
 | 0.2 | BMP390-Breakout Adafruit 4816 | 1 | Kiwi Electronics (NL) 9,99 € netto, eBay paradisetronic 16,97 €; Berrybase/Eckstein prüfen | 12–17 € | auch als Rückfall an J_QWIIC, falls der Chip nicht bestückt wird |
 | 0.3 | LoRa E22-400T22D (DIP, SMA) | 2 | Ebyte über AliExpress, eBay (Ebyte-Shop) oder Tindie | 2 × 8–12 € | Bodenstation und Tisch-Gegenstelle |
 | 0.4 | 433-MHz-Stabantenne SMA | 2 | dieselbe Bestellung | 2 × 2–4 € | |
@@ -234,7 +239,7 @@ ist: Teensy 4.1, Breakouts ICM-20948, BMP280, INA219, 2× HC-12, SG90, WS2812B, 
 | 0.12 | Crimpzange JST-XH/PH (Engineer PA-09 ca. 45 €, IWISS SN-01BM ca. 20–25 €) | 1 | Amazon, Reichelt | 20–45 € | |
 | 0.13 | XT30PW-M liegend | 3 | Hobbyking, AliExpress | 3 × 1 € | |
 | 0.14 | Buchsenleiste 1×24, 2,54 mm, 8,5 mm | 4 | Reichelt | 4 × 0,5 € | Stifte nach dem Löten kürzen (Review B18) |
-| 0.15 | Stiftleiste 2×7, 2,54 mm | 2 | Reichelt | 1 € | |
+| 0.15 | Stiftleiste 2×10, 2,54 mm (J_STACK) und Buchsenleiste 2×10 für die Zusatzplatine | je 2 | Reichelt | 2 € | war 2×7; rev B1 hat 20 Pole |
 | 0.16 | Aktiver Summer 5 V, 12 mm, THT | 2 | Reichelt | 2 × 1 € | |
 | 0.17 | Polymer-Elkos: nur noch als Rückfall, wenn JLC die 7343-Typen nicht bestückt (Review B3: 2× 470 µF/6,3 V, 2× 330 µF/16 V, 1× 470 µF/10 V, SMD) | – | Reichelt | – | THT-Elkos entfallen |
 | 0.19 | W25Q128JVSIQ (SOIC-8) | 2 | Reichelt, LCSC | 2 × 1,5 € | unter den Teensy |
@@ -247,6 +252,30 @@ ist: Teensy 4.1, Breakouts ICM-20948, BMP280, INA219, 2× HC-12, SG90, WS2812B, 
 Summe ohne GPS und Crimpzange etwa **110–170 €**, mit beiden **150–245 €**. Entfallen gegenüber §1: 0.18 (Taster
 SW_RST, der Reset ist entfallen), die THT-Elkos unter 0.17.
 
+### 7.1a Gegenstecker und Kabel je Buchse (Stand rev B1, 23.10.2026)
+
+Alle Buchsen der Platine und was dazu auf die Liste gehört. JST-GH, JST-SH und Qwiic am besten konfektioniert
+kaufen; XH und PH werden selbst gecrimpt (0.11, 0.12).
+
+| Buchse | Funktion | auf der Platine | Gegenstück |
+|---|---|---|---|
+| J1 | 2S-Akku | XT30PW-M liegend | XT30-Buchse am Akku (bei 2S-Packs meist schon dran) |
+| J2 | 1S-Akku | JST-PH 2-polig stehend | PH-2.0-Stecker am 1S-Akku (RC-Zellen haben ihn) |
+| J3 | Schalterbrett (Hauptschalter) | JST-PH 4-polig | PH-4-Gehäuse + 4 Crimpkontakte, Kabel zur Luke B |
+| J17 | USB-C-Lader 1S am Schalterbrett | JST-PH 3-polig | PH-3-Gehäuse + Kontakte |
+| J18 | 2S-Ladebuchse | JST-PH 2-polig | PH-2-Gehäuse + Kontakte, Ladekabel mit Balancer-Anschluss |
+| J4 | Schlüsselschalter (Arming) | JST-XH 2-polig stehend | XH-2-Gehäuse + Kontakte |
+| J8 | Rollmotor | JST-XH 2-polig stehend | XH-2-Gehäuse + Kontakte (entfällt ohne Rollmotor) |
+| J9, J10 (J19, J20 DNP) | Pyro 1 und 2 | JST-XH 2-polig liegend | XH-2-Gehäuse + Kontakte, E-Match-Leitungen |
+| J5, J6 | TVC-Servos | JST-XH 3-polig liegend | **XH-3-Gehäuse + Kontakte an die Servoleitungen crimpen**: die Servostecker der W5652H (2,54 mm, JR) passen nicht in XH-Buchsen; alternativ Adapterkabel XH-3 → Servobuchse |
+| J7, J16 | Fallschirm, Beine | JST-XH 3-polig stehend | wie J5/J6 |
+| J11 | GPS | JST-GH 4-polig | konfektioniertes GH-4-Kabel 10–15 cm |
+| J13, J14 | Kamera, LEDs | JST-GH 3-polig | konfektionierte GH-3-Kabel |
+| J12 | Qwiic | JST-SH 4-polig | Qwiic-Kabel (SH-4, 1,0 mm) |
+| J15 | Stapelstecker | Stiftleiste 2×10, 2,54 mm | Buchsenleiste 2×10 auf der Zusatzplatine (0.15) |
+| A1 | Teensy 4.1 | 2× Buchsenleiste 1×24 (0.14) | Teensy mit eingelöteten Stiftleisten |
+| U10 | LoRa-Antenne | IPEX/u.FL auf dem Modul | Pigtail IPEX → SMA (0.5), Stabantenne (0.4) |
+
 ### 7.2 Mit der Platine (JLCPCB, Tor 3)
 
 Die SMD-Teile kommen von JLC/LCSC über BOM und CPL (§3.2, §3.3). Neu nach dem Review: 2× Polyfuse 1812 (3 A und
@@ -256,7 +285,7 @@ am INA219-Eingang. Die Stückliste in `README.md` §7 wird beim Einarbeiten nach
 
 ### 7.3 Reserve-Chips bei LCSC (eine Bestellung, ca. 10 € Versand)
 
-Für Nachlöten und eine dritte Platine: 2× ICM-42688-P (C1850418, ca. 3,4 USD), 2× E22-400T22S (C2903765, ca. 4,2 USD),
+Für Nachlöten und eine dritte Platine: 2× LSM6DSV16X (C5267406, ca. 3,4 USD), 2× E22-400T22S (C2903765, ca. 4,2 USD),
 2× TPS63070RNMR (C109322, ca. 1,4 USD), 2× BMP388 (C779278, 7,67 USD, 7362 auf Lager am 21.10.) oder BMP390, sobald
 wieder gelistet; dazu 2× DRV8833PWPR, 2× INA219AIDR. Zusammen etwa 40 USD plus Versand und Einfuhrabgaben. Lohnt nur,
 wenn die zweite bestückte Platine nicht als Reserve reicht; sonst weglassen.

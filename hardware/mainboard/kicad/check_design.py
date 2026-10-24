@@ -1,4 +1,4 @@
-"""Gate 1 of ORDER.md: the netlist against the pin table of the spec (README.md §4).
+"""Gate 1 of ORDER.md: the netlist against the pin table of the spec (README.md §4, rev B1).
 
 For every Teensy pin in the table the check follows its net to the part the spec names, allowing
 one series resistor (servo, gate, camera and divider resistors). It reads the netlist that KiCad
@@ -17,30 +17,43 @@ from sexpr import find, findall, parse
 HERE = Path(__file__).resolve().parent
 CLI = Path(os.environ["LOCALAPPDATA"]) / "Programs/KiCad/10.0/bin/kicad-cli.exe"
 
-# Teensy pin -> list of (ref, pin) the spec says it must reach (README.md §4)
+# Teensy pin -> list of (ref, pin) it must reach: spec README.md section 4 with the rev B1 changes
+# (Komponenten_2026-10-22.md section 5, 8, 9; kicad/README.md section 7)
+SPI_DEVICES = [("U4", "14", "13", "1"), ("U5", "4", "2", "5"), ("U15", "4", "2", "5"), ("U6", "2", "5", "4")]
+               # (ref, MOSI, SCK, MISO) on SPI1; J_STACK is on SPI0 since 23.10.
 EXPECT = {
     "0": [("J11", "3")], "1": [("J11", "4")],                          # GPS TX -> RX1, RX <- TX1
     "2": [("U7", "16"), ("U7", "9")], "3": [("U7", "15"), ("U7", "10")],   # DRV8833 AIN1=BIN1, AIN2=BIN2
     "4": [("U4", "4")],                                                # IMU INT1
-    "5": [("U8", "2")], "6": [("U9", "2")],                            # LED level shifters
+    "5": [("U8", "2")],                                                # LED chain level shifter (B8)
+    "6": [("U10", "1")],                                               # LoRa NRST (B9)
     "7": [("J13", "2")],                                               # camera via 1 k
-    "8": [("U7", "8")],                                                # nFAULT (not in the spec, see README §4)
-    "9": [("J7", "1")],                                                # chute servo via 220
-    "13": [("Q5", "1")],                                               # buzzer FET gate via 100
-    "18": [("U5", "4"), ("U6", "3"), ("J12", "3")],                    # SDA: BMP390, INA219, Qwiic
-    "19": [("U5", "2"), ("U6", "4"), ("J12", "4")],                    # SCL
-    "20": [("Q3", "3")], "21": [("Q4", "3")],                          # pyro sense: drain via divider
-    "22": [("Q4", "1")], "23": [("Q3", "1")],                          # pyro fire: gate via 100
-    "24": [("J4", "2")],                                               # ARM_SENSE from VBAT_ARMED
-    "26": [("U4", "14")], "27": [("U4", "13")], "39": [("U4", "1")], "38": [("U4", "12")],   # SPI1
+    "8": [("U7", "8")],                                                # nFAULT
+    "9": [("J7", "1")], "10": [("J16", "1")],                          # chute servo, landing-leg servo (E5)
+    "40": [("U7", "1")],                                               # DRV8833 nSLEEP (C1), since 23.10. on 40
+    "11": [("J15", "8")], "12": [("J15", "9")], "13": [("J15", "7")],  # SPI0 MOSI/MISO/SCK to J_STACK (23.10.)
+    "41": [("Q8", "1")], "14": [("Q9", "1")],                          # pyro 3 (on 41 since 23.10.) / 4 fire (E5)
+    "33": [("J15", "18")], "15": [("J15", "20")], "17": [("J15", "13")],   # J_STACK PWM (on 33 since 23.10.), nRST, IRQ
+    "18": [("J12", "3"), ("J15", "14")], "19": [("J12", "4"), ("J15", "15")],   # I2C: Qwiic and J_STACK only (E3)
+    "20": [("J15", "17")], "21": [("J15", "16")],                      # Serial5 TX/RX to J_STACK
+    "22": [("Q4", "1")], "23": [("Q3", "1")],                          # pyro 2/1 fire: gate via 100
+    "24": [("U13", "3")],                                              # analog mux output
+    "38": [("U12", "1"), ("U13", "11")], "25": [("U12", "2"), ("U13", "10")], "30": [("U12", "3"), ("U13", "9")],
+    "31": [("U12", "4")],                                              # decoder enable (active low)
+    "26": [(r, m) for r, m, _, _ in SPI_DEVICES], "27": [(r, k) for r, _, k, _ in SPI_DEVICES],
+    "39": [(r, i) for r, _, _, i in SPI_DEVICES],                      # SPI1 to every device (E3)
     "28": [("J5", "1")], "29": [("J6", "1")],                          # TVC servos via 220
-    "32": [("U10", "21")], "33": [("U10", "20")],                      # LoRa M1, M0
+    "32": [("U10", "21")], "16": [("U10", "20")],                      # LoRa M1, M0 (on 16 since 23.10.)
     "34": [("U10", "23")], "35": [("U10", "22")], "36": [("U10", "24")],   # RX8 <- TXD, TX8 -> RXD, AUX
-    "40": [("J3", "4")],                                               # VBAT2_SENSE from VBAT_PROT
-    "41": [("J3", "2")],                                               # VBAT1_SENSE from VSYS_IN
+    "37": [("Q5", "1")],                                               # buzzer FET gate via 100 (B7)
 }
-EXP_PINS = ["10", "11", "12", "14", "15", "16", "17", "25", "30", "31", "37"]
-
+SPARE = []
+# decoder output -> chip select pin, mux input -> what it measures (through one divider resistor)
+CHIP_SELECTS = {("U12", "15"): ("U4", "12"), ("U12", "14"): ("U5", "6"), ("U12", "13"): ("U15", "6"),
+                ("U12", "12"): ("U6", "1"), ("U12", "11"): ("J15", "10"), ("U12", "10"): ("J15", "11"),
+                ("U12", "9"): ("J15", "12")}
+MUX = {("U13", "13"): ("Q3", "3"), ("U13", "14"): ("Q4", "3"), ("U13", "15"): ("Q8", "3"),
+       ("U13", "12"): ("Q9", "3"), ("U13", "1"): ("F2", "2"), ("U13", "5"): ("F1", "2"), ("U13", "2"): ("J4", "2")}
 
 def netlist():
     out = HERE / "out" / "mainboard.net"
@@ -88,28 +101,42 @@ def main():
         for t in targets:
             if t not in got:
                 errors.append(f"Teensy {tpin} ({net}): erreicht {t[0]}.{t[1]} nicht")
-    for i, tpin in enumerate(EXP_PINS):
-        net = pin_net.get(("A1", teensy_pad(tpin)))
-        if ("J15", str(3 + i)) not in nets.get(net, []):
-            errors.append(f"Teensy {tpin}: nicht auf J_EXP Pin {3 + i}")
-    used = set(EXPECT) | set(EXP_PINS)
+    for (u, pin), target in list(CHIP_SELECTS.items()) + list(MUX.items()):
+        net = pin_net.get((u, pin))
+        if net is None or target not in reach(net, nets, pin_net):
+            errors.append(f"{u}.{pin} ({net}): erreicht {target[0]}.{target[1]} nicht")
+    for tpin in SPARE:
+        if pin_net.get(("A1", teensy_pad(tpin))) not in (None, ""):
+            net = pin_net.get(("A1", teensy_pad(tpin)))
+            if not net.startswith("unconnected"):
+                errors.append(f"Teensy {tpin}: als Reserve gedacht, haengt an {net}")
+    used = set(EXPECT) | set(SPARE)
     unused = [str(i) for i in range(42) if str(i) not in used]
     if unused:
         errors.append(f"Teensy-Pins ohne Ziel in der Pruefung: {unused}")
     # power rails and their sources
     rails = {"TEENSY_VIN": [("A1", teensy_pad("VIN")), ("D1", "1")], "3V3_RF": [("U3", "5"), ("U10", "25"), ("J11", "1")],
-             "5V_SYS": [("U2", "7"), ("D1", "2"), ("U3", "1")], "VSERVO": [("F1", "2"), ("J5", "2"), ("J6", "2")],
-             "5V_SERVO": [("L1", "2"), ("J7", "2"), ("U7", "12")], "VBAT_ARMED": [("J4", "2"), ("J9", "1"), ("J10", "1")]}
+             "5V_SYS": [("U2", "7"), ("D1", "2"), ("U3", "1"), ("U14", "1"), ("J15", "4")],
+             "VSYS_IN": [("Q7", "3"), ("U2", "1"), ("U2", "12")], "VBAT_PROT": [("Q6", "3"), ("R_SH1", "1"), ("J4", "1")],
+             "VSERVO": [("R_SH1", "4"), ("J5", "2"), ("J6", "2"), ("J7", "2"), ("J16", "2"), ("U7", "12"), ("J15", "5")],
+             "VBAT_ARMED": [("J4", "2"), ("J9", "1"), ("J10", "1"), ("J19", "1"), ("J20", "1")],
+             "3V3_SENS": [("FB1", "2"), ("U4", "5"), ("U4", "8"), ("U5", "10"), ("U15", "10")],
+             "3V3_EXP": [("U14", "5"), ("J15", "3")], "VBAT1_F": [("F2", "2"), ("Q7", "2"), ("U11", "3")],
+             "VBAT2_RAW": [("J1", "1"), ("J18", "1"), ("Q1", "3")]}
+    # Kelvin (A5): the sense nets reach the shunt only at its sense pads
+    for net, pad in (("ISENS_P", ("R_SH1", "2")), ("ISENS_N", ("R_SH1", "3"))):
+        if [n for n in nets.get(net, []) if n[0] == "R_SH1"] != [pad]:  # VBUS of U6 on ISENS_N is fine
+            errors.append(f"{net}: Kelvin-Abgriff nicht nur am Sense-Pad {pad[1]}")
     for rail, nodes in rails.items():
         for node in nodes:
             if node not in nets.get(rail, []):
                 errors.append(f"{rail}: {node[0]}.{node[1]} fehlt")
     if values.get("R_SH1") != "20m 1% 1W":
         errors.append("Shunt ist nicht 20 mOhm")
-    print(f"{len(EXPECT) + len(EXP_PINS)} Teensy-Pins und {len(rails)} Schienen geprueft")
+    print(f"{len(EXPECT)} Teensy-Pins, {len(CHIP_SELECTS)} Chip-Selects, {len(MUX)} Mux-Kanaele und {len(rails)} Schienen geprueft")
     for e in errors:
         print("FEHLER:", e)
-    print("OK: Netzliste entspricht README.md §4" if not errors else f"{len(errors)} Abweichungen")
+    print("OK: Netzliste entspricht README.md §4 mit den B1-Aenderungen" if not errors else f"{len(errors)} Abweichungen")
     sys.exit(1 if errors else 0)
 
 

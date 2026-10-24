@@ -1,81 +1,78 @@
 ** Drc report for mainboard.kicad_pcb **
-** Created on 2026-10-22T13:20:08 **
+** Created on 2026-10-24T11:22:03 **
 ** Report includes: Errors, Warnings, Exclusions **
 
-** Found 15 DRC violations **
-[via_dangling]: Via is not connected or connected on only one layer
-    Local override; warning
-    @(151.7494 mm, 118.1869 mm): Via [U7_VCP] on F.Cu - B.Cu
-[silk_overlap]: Silkscreen clearance
+** Found 17 DRC violations **
+[silk_edge_clearance]: Silkscreen clipped by board edge
     Rule: Einschränkungen aus Platinenkonfiguration zum Bestückungsdruck; warning
-    @(117.9300 mm, 108.2400 mm): Circle of U10 on F.Silkscreen
-    @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
+    @(100.0000 mm, 52.0000 mm): Segment on Edge.Cuts
+    @(114.5000 mm, 128.9000 mm): PCB text '1:GND 2:GNDP 3:3V3 4:5V 5,6:VSRV' on B.Silkscreen
 [silk_overlap]: Silkscreen clearance
     Rule: Einschränkungen aus Platinenkonfiguration zum Bestückungsdruck; warning
     @(127.0000 mm, 107.3000 mm): Segment on F.Silkscreen
     @(127.4200 mm, 106.7567 mm): Reference field of U4
+[silk_overlap]: Silkscreen clearance
+    Rule: Einschränkungen aus Platinenkonfiguration zum Bestückungsdruck; warning
+    @(118.2300 mm, 121.2400 mm): Circle of U10 on F.Silkscreen
+    @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(118.2300 mm, 121.2400 mm): Circle of U10 on F.Silkscreen
+    @(119.3800 mm, 120.9300 mm): PTH pad 17 [SEL1] of A1
 [silk_over_copper]: Silkscreen clipped by solder mask
     Local override; warning
     @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
-    @(117.1000 mm, 106.8200 mm): Pad 1 [unconnected-(U10-RESET-Pad1)] of U10 on F.Cu
+    @(117.4000 mm, 99.7200 mm): Pad 11 [GND] of U10 on F.Cu
 [silk_over_copper]: Silkscreen clipped by solder mask
     Local override; warning
     @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
-    @(117.1000 mm, 105.5500 mm): Pad 2 [GND] of U10 on F.Cu
+    @(117.4000 mm, 98.4500 mm): Pad 12 [unconnected-(U10-ANT-Pad12)] of U10 on F.Cu
 [silk_over_copper]: Silkscreen clipped by solder mask
     Local override; warning
     @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
-    @(117.1000 mm, 104.2800 mm): Pad 3 [unconnected-(U10-NC-Pad3)] of U10 on F.Cu
+    @(117.4000 mm, 97.1800 mm): Pad 13 [GND] of U10 on F.Cu
 [silk_over_copper]: Silkscreen clipped by solder mask
     Local override; warning
     @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
-    @(117.1000 mm, 103.0100 mm): Pad 4 [unconnected-(U10-NC-Pad4)] of U10 on F.Cu
+    @(117.4000 mm, 113.4700 mm): Pad 6 [unconnected-(U10-NC-Pad6)] of U10 on F.Cu
 [silk_over_copper]: Silkscreen clipped by solder mask
     Local override; warning
     @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
-    @(117.1000 mm, 101.7400 mm): Pad 5 [unconnected-(U10-NC-Pad5)] of U10 on F.Cu
+    @(117.4000 mm, 112.2000 mm): Pad 7 [unconnected-(U10-NC-Pad7)] of U10 on F.Cu
 [silk_over_copper]: Silkscreen clipped by solder mask
     Local override; warning
     @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
-    @(117.1000 mm, 86.7200 mm): Pad 11 [GND] of U10 on F.Cu
+    @(117.4000 mm, 110.9300 mm): Pad 8 [GND] of U10 on F.Cu
 [silk_over_copper]: Silkscreen clipped by solder mask
     Local override; warning
     @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
-    @(117.1000 mm, 85.4500 mm): Pad 12 [unconnected-(U10-ANT-Pad12)] of U10 on F.Cu
+    @(117.4000 mm, 117.2800 mm): Pad 3 [unconnected-(U10-NC-Pad3)] of U10 on F.Cu
 [silk_over_copper]: Silkscreen clipped by solder mask
     Local override; warning
     @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
-    @(117.1000 mm, 84.1800 mm): Pad 13 [GND] of U10 on F.Cu
+    @(117.4000 mm, 116.0100 mm): Pad 4 [unconnected-(U10-NC-Pad4)] of U10 on F.Cu
 [silk_over_copper]: Silkscreen clipped by solder mask
     Local override; warning
     @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
-    @(117.1000 mm, 100.4700 mm): Pad 6 [unconnected-(U10-NC-Pad6)] of U10 on F.Cu
+    @(117.4000 mm, 114.7400 mm): Pad 5 [unconnected-(U10-NC-Pad5)] of U10 on F.Cu
 [silk_over_copper]: Silkscreen clipped by solder mask
     Local override; warning
     @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
-    @(117.1000 mm, 99.2000 mm): Pad 7 [unconnected-(U10-NC-Pad7)] of U10 on F.Cu
+    @(117.4000 mm, 119.8200 mm): Pad 1 [LORA_NRST] of U10 on F.Cu
 [silk_over_copper]: Silkscreen clipped by solder mask
     Local override; warning
     @(118.0300 mm, 78.7200 mm): Rectangle of A1 on F.Silkscreen
-    @(117.1000 mm, 97.9300 mm): Pad 8 [GND] of U10 on F.Cu
+    @(117.4000 mm, 118.5500 mm): Pad 2 [GND] of U10 on F.Cu
 [silk_over_copper]: Silkscreen clipped by solder mask
     Local override; warning
-    @(129.2000 mm, 109.5000 mm): Segment on F.Silkscreen
-    @(130.0000 mm, 109.6850 mm): Pad 2 [IMU_CS] of R14 on F.Cu
+    @(127.0000 mm, 90.0000 mm): PCB text 'JLCJLCJLCJLC' on F.Silkscreen
+    @(130.1200 mm, 89.0000 mm): Pad 2 [GND] of C17 on F.Cu
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(127.0000 mm, 90.0000 mm): PCB text 'JLCJLCJLCJLC' on F.Silkscreen
+    @(123.8800 mm, 89.0000 mm): Pad 1 [TEENSY_VIN] of C17 on F.Cu
 
-** Found 3 unconnected pads **
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(150.7500 mm, 83.4550 mm): Track [SDA] on F.Cu, length 0.7260 mm
-    @(149.2800 mm, 85.0000 mm): Pad 4 [SDA] of U5 on F.Cu
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(150.1250 mm, 123.8625 mm): Pad 7 [MOT_A] of U7 on F.Cu
-    @(146.8750 mm, 124.9339 mm): Track [MOT_A] on F.Cu, length 1.0714 mm
-[unconnected_items]: Missing connection between items
-    Local override; error
-    @(146.8750 mm, 117.4969 mm): Track [MOT_IN2] on F.Cu, length 0.6406 mm
-    @(150.1250 mm, 118.1375 mm): Pad 10 [MOT_IN2] of U7 on F.Cu
+** Found 0 unconnected pads **
 
 ** Found 0 Footprint errors **
 

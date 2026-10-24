@@ -7,3 +7,6 @@ out/*
 fp-info-cache
 *.kicad_prl
 __pycache__/
+fab/gerber/
+fab/pos_kicad.csv
+.history/

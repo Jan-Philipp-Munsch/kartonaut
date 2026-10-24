@@ -103,7 +103,7 @@ Bibliothek nur in Umgebungen, die sie benutzen (`revb_bringup`, `revb_test`).
 | `BoardRevB.h` | Teensy-Pins, Chip-Selects (74HC138, `revb::Cs`), Analogkanäle (74HC4051, `revb::Mux`), I²C-Adressen, Teiler und Shunt |
 | `BusRevB.*` | SPI1 auf 26/27/39, Chip-Select über den Decoder, Analogmessung über die Mux |
 | `Imu.h` | Schmale IMU-Schnittstelle (`begin`, `whoAmI`, `dataReady`, `read`, `selfTest`); ein zweiter Treiber (LSM6DSV16X) käme ohne Umbau des Rests dazu |
-| `ICM42688.*` | IMU über SPI, ±2000 °/s, ±16 g, 1 kHz, INT1 Daten bereit, Werksselbsttest |
+| `ICM42688.*` | IMU über SPI, ±2000 °/s, ±16 g, 1 kHz, INT1 Daten bereit, Werksselbsttest. **Offen:** die Platine rev B1 trägt seit 23.10. einen LSM6DSV16X (E12, WHO_AM_I 0x70, gleiche Pins); der Treiber hinter `Imu.h` ist noch zu schreiben |
 | `BMP390.*` | Barometer über SPI, Bosch-Kompensation, erkennt auch den BMP388 |
 | `INA239.*` | Strom und Spannung im 2S-Pfad über SPI |
 | `I2cRevB.h`, `LIS3MDL.*`, `SHT40.*`, `ADXL375.*` | I²C an Wire (18/19): Magnetometer 0x1E mit Selbsttest, Feuchte/Temperatur 0x44, ±200 g 0x53 (DNP, nur erkennen) |

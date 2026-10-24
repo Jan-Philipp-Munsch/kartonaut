@@ -1,13 +1,37 @@
-# Mainboard rev B – Spezifikation
+# Mainboard rev B1 – Spezifikation
 
-Stand 2026-10-21. Rev B ersetzt rev A (`rev_a_2026-10-15.md`, dort stehen die Begründungen,
+Stand 2026-10-22. Rev B ersetzt rev A (`rev_a_2026-10-15.md`, dort stehen die Begründungen,
 die hier unverändert gelten). Die Planungsrunde vom 21.10.2026 (`docs/Plan_2026-10-21.md`, §2)
 hat die Sensorik, den Funk, die Servos und vor allem die Versorgung neu entschieden. Ziel bleibt:
 ein Board, das den Teensy 4.1 trägt und alles enthält, was heute als Breakout mit Dupont-Kabeln
-am Teensy hängt. Das ist die Vorgabe für das KiCad-Projekt in `kicad/`. Stand 21.10.2026: Der Schaltplan
-ist fertig (ERC sauber, Netzliste gegen §4 geprüft). Die Platine ist platziert und bis auf drei Verbindungen
-geroutet, DRC ohne Fehler. Abweichungen von dieser Spezifikation und ihre Gründe stehen in
-`kicad/README.md` §6, die Fertigerwahl in `Fertiger_2026-10-21.md`.
+am Teensy hängt. Das ist die Vorgabe für das KiCad-Projekt in `kicad/`.
+
+**Rev B1** ist die Bestellfassung. Sie enthält das Zweitmeinung-Review (`review_kicad_2026-10-21.md`,
+Punkte A1 bis A8 und die B-Punkte, die wenig kosten) und die Entscheidungen vom 22.10.2026
+(`Komponenten_2026-10-22.md`, E1 bis E10). Was sich gegenüber rev B ändert, steht in §0; §3 bis §7 beschreiben
+den Stand B1. Abweichungen von dieser Spezifikation und ihre Gründe stehen in `kicad/README.md` §6,
+die Fertigerwahl in `Fertiger_2026-10-21.md`.
+
+## 0. Was sich gegenüber rev B ändert (B1, 22.10.2026)
+
+| Nr. | Änderung |
+|---|---|
+| A1 | 2 × 470 µF Polymer (7343) als Hold-up hinter D1 an TEENSY_VIN; am Ausgang des TPS63070 nur 3 × 22 µF |
+| A2 | EN-Teiler 330 k / 115 k: an ab 3,1 V, aus unter 2,7 V |
+| A3, E1 | Hauptschalter schaltet nur die Gates zweier P-FET-Lastschalter (Q6 2S, Q7 1S); J_SW trägt Mikroampere. J_ARM und J_MOT als JST-XH |
+| A4 | Polyfuse je Akku direkt hinter dem Verpolschutz (F1 2S 3 A/6 A, F2 1S 2 A); Zündpuls 50 bis 100 ms |
+| A5 | Shunt mit geteilten Kelvin-Pads, INA-Eingang mit 2 × 10 Ω und 100 nF |
+| A6 bis A8 | 2S-Pfad als Kupferflächen auf F.Cu, nie auf In2; VSYS_IN 0,6 mm; 5V_SERVO entfällt (E9) |
+| E2 | 1S-Lader MCP73831 auf der Platine, USB-C und Lade-LED am Schalterbrett; 2S-Ladeanschluss J_CHG2 parallel zu J_BAT2 |
+| E3 | BMP390 an SPI1, **INA239** (SPI) statt INA219; I²C nur noch für J_QWIIC und J_STACK |
+| E4, E9 | Alle Servos und der Rollmotor an VSERVO (2S direkt); TPS563201 und 5V_SERVO entfallen |
+| E5 | Vier Pyro-Kanäle (3 und 4 DNP), vierter Servo-Stecker, DRV8833 nSLEEP an Pin 11, zweites BMP390 als DNP, E22 NRST an Pin 6 |
+| E10 | Stapelstecker J_STACK (2 × 10) statt J_EXP; 74HC138 für die SPI-Chip-Selects, 74HC4051 für die Analogeingänge, eigener LDO 3V3_EXP |
+| E11 | **SPI0 (Pins 11/12/13) auf J_STACK statt SPI1** (23.10.): ein Fehler auf der Zusatzplatine kann den Flugbus nicht stören; dafür nSLEEP → 40, PYRO3_FIRE → 41, PWM_EXT → 33, LORA_M0 → 16; keine Reservepins mehr; Wire2 bewusst nicht. Layout: SPI0_MISO läuft 114 mm mit 16 Vias, der SPI0-Takt zur Zusatzplatine bleibt bei höchstens 8 MHz |
+| B3 | Polymer-Elkos 7343 statt stehender THT-Elkos |
+| B4 | Ferrit + 10 µF: eigene Sensor-Versorgung 3V3_SENS für IMU und Barometer |
+| B7, B8 | Summer auf Pin 37; eine WS2812B-Kette hinter einem SN74LV1T34 (Pin 5) |
+| B16, B17 | 5 mm ohne fremde Vias und ohne In2-Bahnen um die IMU; Funkmodul 0,5 mm vom Rand |
 
 ![Platzierungsplan](mainboard_placement.svg)
 
@@ -19,7 +43,7 @@ dass alle Bauteil-Hüllen im Kuppler bleiben und die M2-Stangen nicht berühren.
 | Thema | rev A | rev B | Grund |
 |---|---|---|---|
 | Versorgung | ein 2S-LiPo, zwei 5-V-Bucks | **zwei Akkus**: 1S für die Elektronik über Buck-Boost, 2S für Servos, Rollmotor, Pyro | Servo- und Pyro-Spitzen dürfen den Teensy nie in den Neustart ziehen (Plan §2.5) |
-| IMU | ICM-20948 an SPI1 | **ICM-42688-P** an SPI1 | ICM-20948 ist *Not For New Designs*; der 42688-P rauscht weniger, misst ±16 g, braucht keinen DMP |
+| IMU | ICM-20948 an SPI1 | **LSM6DSV16X** an SPI1 (21.–22.10. ICM-42688-P) | ICM-20948 ist *Not For New Designs*; der ICM-42688-P kostet bei JLC 21,5 USD bei 453 Stück Bestand, der LSM6DSV16X 3,4 USD bei über 7000, rauscht in derselben Klasse (3,8 statt 2,8 mdps/√Hz), ±16 g, ±4000 °/s, Sensorfusion im Chip; gleicher LGA-14-Footprint, Pins 1–8 und 12–14 funktionsgleich, 9–11 offen (E12) |
 | Barometer | BMP280 | **BMP390** | halbes Rauschen, gleiche Bibliotheksfamilie |
 | Funk | HC-12 gesteckt | **LoRa E22-400T22S** (SMD, SX1268, 433 MHz, 22 dBm) auf dem Board, IPEX-Pigtail zur Spitze | Reichweite; die SMD-Variante passt in den Funk-Streifen, die DIP-Variante (24 × 43 mm) nicht |
 | TVC-Servos | SG90 an 5V_SERVO | **FrSky Xact W5652H direkt am 2S-Akku** (bis 8,4 V) | bestellt; am Akku doppelt so schnell wie an 5 V |
@@ -51,9 +75,10 @@ zwei WS2812B und Summer, W25Q128 unter dem Teensy.
 - **IMU** bei (u = 0, v = 60,5) unter der Teensy-Mitte, maximal 3 mm hoch, Chip so gedreht, dass X quer
   (+u) und Y zur Spitze (+v) zeigt. Firmware: `chipToBody(c) = (c.x, -c.z, c.y)` wie rev A §2.
   Pfeile im Bestückungsdruck.
-- **Barometer** oben im rechten Streifen (v ≈ 80), Schaum darüber, 3 bis 4 Bohrungen Ø 2 mm im Rohr
-  auf dieser Höhe. Die Avionik-Sektion ist gegen den Fallschirmraum dicht (Ausstoßdruck).
-- **Funk** im linken Streifen am Spitzen-Ende, IPEX-Buchse zeigt zur Spitze, Pigtail (10 cm) zu einer
+- **Barometer** im rechten Streifen (B1: v ≈ 60, neben dem DRV8833; für das Review: weiter zur Spitze
+  rücken, falls Wärme oder Luftzug vom Motortreiber stören), Schaum darüber, 3 bis 4 Bohrungen Ø 2 mm im
+  Rohr auf dieser Höhe. Die Avionik-Sektion ist gegen den Fallschirmraum dicht (Ausstoßdruck).
+- **Funk** im linken Streifen (B1: v ≈ 48 bis 74), IPEX-Buchse zeigt zur Spitze, Pigtail (10 cm) zu einer
   λ/4-Antenne (17 cm Draht oder Stab) in der Klima-Spitze, frei von Kupfer und Akku.
 - **GPS** nicht auf dem Board: Modul (u-blox M9/M10) in der Spitze, Patchantenne nach oben,
   mindestens 10 cm von der LoRa-Antenne, Kabel über J_GPS.
@@ -61,177 +86,241 @@ zwei WS2812B und Summer, W25Q128 unter dem Teensy.
 ## 3. Stromversorgung
 
 ```
-1S LiPo (3,0–4,2 V) ─ J_BAT1 (JST-PH 2) ─ Q2 Verpolschutz AO3401A ─ SW1a (J_SW) ─ VSYS_IN
-   ├─ 100 k / 33 k → Pin 41 (VBAT1_SENSE)
-   └─ U2 TPS63070 Buck-Boost (2–16 V ein, 5 V / 2 A, 1,5 µH) → 5V_SYS, 1000 µF Polymer
-         ├─ D1 Schottky SS14 → Teensy VIN (USB darf gleichzeitig stecken)
-         ├─ 2× WS2812B über 74AHCT1G125, Summer über AO3400A
-         └─ U3 AP2112K-3.3 → 3V3_RF (100 µF): LoRa E22, GPS (J_GPS)
-   Teensy 3V3 (≤ 250 mA) → ICM-42688-P, BMP390, INA219, I²C-Pull-ups
+1S LiPo (3,0–4,2 V) ─ J_BAT1 (JST-PH 2) ─ Q2 Verpolschutz ─ F2 Polyfuse 2 A ─ VBAT1_F ─ Q7 Lastschalter ─ VSYS_IN
+   ├─ VBAT1_F: 100 k / 33 k → Mux-Kanal 4 (VBAT1_SENSE, auch bei ausgeschalteter Rakete)
+   ├─ VBAT1_F: U11 MCP73831 1S-Lader 500 mA ← J_CHG1 (USB-C VBUS und Lade-LED am Schalterbrett)
+   └─ VSYS_IN: U2 TPS63070 Buck-Boost (2–16 V ein, 5 V / 2 A, 1,5 µH, EN an ab 3,1 V) → 5V_SYS, 3 × 22 µF
+         ├─ D1 Schottky SS14 → TEENSY_VIN, 2 × 470 µF Polymer Hold-up (USB darf gleichzeitig stecken)
+         ├─ WS2812B-Kette über SN74LV1T34, Summer über AO3400A
+         ├─ U3 AP2112K-3.3 → 3V3_RF (100 µF): LoRa E22, GPS (J_GPS)
+         └─ U14 AP2112K-3.3 → 3V3_EXP: Zusatzplatinen an J_STACK
+   Teensy 3V3 (≤ 250 mA) → INA239, 74HC138, 74HC4051, I²C-Pull-ups
+         └─ Ferrit FB1 + 10 µF → 3V3_SENS: LSM6DSV16X, BMP390 (und das zweite, DNP)
 
-2S LiPo (6,0–8,4 V) ─ J_BAT2 (XT30) ─ Q1 Verpolschutz AO3401A ─ SW1b (J_SW) ─ VBAT_PROT
-   ├─ 100 k / 33 k → Pin 40 (VBAT2_SENSE)
-   ├─ J_ARM (Arming-Schalter) ─ VBAT_ARMED ─ Pyro 1/2 (+), TVS, 100 k / 33 k → Pin 24 (ARM_SENSE)
-   └─ R_SHUNT 20 mΩ 2512 (INA219, Kelvin) ─ VBAT_MEAS
-         ├─ F1 Polyfuse 3 A → VSERVO (= Akku direkt), 1000 µF Low-ESR: J_SERVO1/2 (W5652H)
-         └─ U1 TPS563201 Buck → 5V_SERVO (3 A), 470 µF: J_SERVO3 (Fallschirm, Reserve), DRV8833 (Rollmotor)
+2S LiPo (6,0–8,4 V) ─ J_BAT2 (XT30) ─ Q1 Verpolschutz ─ F1 Polyfuse 3 A/6 A ─ VBAT2_F ─ Q6 Lastschalter ─ VBAT_PROT
+   ├─ VBAT2_RAW: J_CHG2 (JST-PH 2) parallel zum Akku, Kabel zur XT30-Ladebuchse am Schalterbrett
+   ├─ VBAT2_F: 100 k / 33 k → Mux-Kanal 5 (VBAT2_SENSE)
+   ├─ J_ARM (JST-XH 2, Schlüsselschalter ≥ 5 A) ─ VBAT_ARMED ─ Pyro 1–4 (+), TVS, 100 k / 33 k → Mux-Kanal 6
+   └─ R_SHUNT 20 mΩ 2512 (INA239, Kelvin) ─ VSERVO (= Akku direkt), 2 × 330 µF Polymer
+         └─ J_SERVO1..4 (W5652H-Klasse), DRV8833 (Rollmotor, PWM begrenzt), J_STACK (Reserve)
 
-GND beider Akkus an einem Sternpunkt am 2S-Minus neben dem Shunt.
+Hauptschalter J_SW: Pol a zieht das Gate von Q7 auf GND, Pol b das Gate von Q6 auf GND_PWR.
+GND beider Akkus an einem Sternpunkt (NT1) am 2S-Minus.
 ```
 
-- **J_SW** ist ein vierpoliger JST-PH für einen zweipoligen Schiebeschalter am Rumpf. Zwei
-  Lötbrücken **JP1 (1S)** und **JP2 (2S)** überbrücken ihn auf dem Tisch.
+- **J_SW** ist ein vierpoliger JST-PH zum Schalterbrett an Luke B. Der zweipolige Schiebeschalter schaltet
+  nur die Gates der Lastschalter (je 100 k nach Source, 1 k zum Stecker), der Akkustrom bleibt auf der
+  Platine (E1). Zwei Lötbrücken **JP1 (1S)** und **JP2 (2S)** ersetzen den Schalter auf dem Tisch.
+  Ohne gesteckten Schalter ist die Rakete aus.
+- **Laden in der Rakete (E2):** beide Ladeanschlüsse liegen vor den Lastschaltern, laden also bei
+  ausgeschalteter Rakete. Die Teiler für beide Akkuspannungen liegen ebenfalls davor; der Teensy am USB
+  sieht beide Akkus.
 - **TPS63070** statt eines reinen Boosts, weil er 2 bis 16 V nimmt: Ein versehentlich an J_BAT1
   gesteckter 2S-Akku zerstört nichts. Falls JLC ihn nicht bestücken kann: TPS63020 (1,8–5,5 V ein,
-  2 A) als 1S-Variante.
-- **Pyro** liegt vor dem Shunt, Zündströme laufen nicht durch den INA219. Die Firmware begrenzt den
-  Zündpuls auf ≤ 1 s. Bei 20 mΩ Shunt und PGA 320 mV misst der INA219 bis 16 A mit 2 mA Auflösung;
-  `INA219_WE::setShuntSizeInOhms(0.02)` (Funktion beim Bibliotheks-Update prüfen).
-- **Was die Firmware loggt und meldet:** beide Akkuspannungen (ADC), Strom und Spannung des
-  2S-Pfads (INA219), ARM-Zustand. Warnton bei 1S < 3,5 V oder 2S < 6,6 V; kein Start-Freigabeton
-  ohne beide Akkus.
+  2 A) als 1S-Variante. Am Ausgang höchstens 470 µF (Datenblatt); der Hold-up sitzt deshalb hinter D1 (A1).
+- **Pyro** liegt vor dem Shunt, Zündströme laufen nicht durch den INA239. Die Firmware begrenzt den
+  Zündpuls auf **50 bis 100 ms** und schaltet ab, sobald der Durchgang verloren ist (A4). Der INA239
+  misst mit 20 mΩ bis ±8 A (ADCRANGE 0, ±163,84 mV); `SHUNT_CAL` aus 20 mΩ.
+- **Was die Firmware loggt und meldet:** beide Akkuspannungen und ARM über den Analogmux, Strom und
+  Spannung von VSERVO (INA239), ARM-Zustand. Warnton bei 1S < 3,5 V oder 2S < 6,6 V; kein
+  Start-Freigabeton ohne beide Akkus.
 
 **Strombudget**
 
 | Akku / Schiene | Verbraucher | Dauer | Spitze |
 |---|---|---|---|
 | 1S → 5V_SYS | Teensy 600 MHz 0,1 A, 2× WS2812B 0,12 A, Summer 0,03 A, 3V3_RF 0,15 A | 0,4 A an 5 V (0,6 A aus dem 1S) | 0,8 A (LoRa-Sendepuls 110 mA an 3,3 V plus Summer) |
-| 2S → VSERVO | 2× W5652H, Blockierstrom je ca. 1 A bei 8,4 V | 0,2 A | 2 A |
-| 2S → 5V_SERVO | Fallschirm-Servo 0,65 A, Rollmotor ca. 1 A | 0,3 A | 1,7 A |
+| 2S → VSERVO | 2× W5652H (TVC), Blockierstrom je ca. 1 A bei 8,4 V | 0,2 A | 2 A |
+| 2S → VSERVO | Servo 3 und 4 (Fallschirm, Beine), Rollmotor ca. 1 A (PWM begrenzt) | 0,3 A | 2 A |
 | 2S → Pyro | E-Match 3–5 A für 20 ms | – | 5 A |
 
 Akku-Vorschlag: 1S 450–600 mAh 20 C mit JST-PH (10–12 g), 2S 450–850 mAh 50 C mit XT30 (30–55 g).
 
 ## 4. Pinbelegung Teensy 4.1
 
-Alle Pins aus `Config.h` bleiben. ★ = neu gegenüber `Config.h`, ☆ = anders als rev A.
+Stand B1 (Komponenten §5 und §9). ★ = neu oder anders als rev B. Die Netzlistenprüfung
+`kicad/check_design.py` prüft genau diese Tabelle.
 
 | Pin | Signal | Ziel | Status |
 |---|---|---|---|
-| 0 / 1 | RX1 / TX1 | GPS (J_GPS, JST-GH 4: 3V3_RF, GND, TX, RX) | ★ |
-| 2 / 3 | MOT_IN1 / MOT_IN2 | DRV8833 AIN1=BIN1 / AIN2=BIN2 (Brücken parallel) | wie bisher |
-| 4 | IMU_INT | ICM-42688-P INT1 | ★ |
-| 5 / 6 | LED1 / LED2 | 74AHCT1G125 → WS2812B auf dem Board und J_LED | wie bisher |
-| 7 | CAM_TRIG | 1 kΩ → J_CAM (JST-GH 3) | ★ |
-| 8 | MOT_FAULT | DRV8833 nFAULT, 10 kΩ nach 3V3 | ★ (KiCad-Projekt 21.10.2026) |
-| 9 | SERVO_CHUTE | J_SERVO3 (5V_SERVO) | wie bisher, Reserve |
-| 13 | BUZZER | AO3400A → aktiver 5-V-Summer | wie bisher |
-| 18 / 19 | SDA0 / SCL0 | BMP390 (0x77), INA219 (0x40), J_QWIIC | wie bisher, 4,7 kΩ Pull-ups |
-| 20 (A6) | PYRO1_SENSE | Teiler am Drain Pyro 1 | ★ |
-| 21 (A7) | PYRO2_SENSE | Teiler am Drain Pyro 2 | ★ |
-| 22 | PYRO2_FIRE | Gate Q_P2 | ★ |
-| 23 | PYRO1_FIRE | Gate Q_P1 | wie `PIN_PYRO1` |
-| 24 (A10) | ARM_SENSE | 100 k / 33 k von VBAT_ARMED | ★ ☆ (rev A: 41) |
-| 26 / 27 / 39 / 38 | MOSI1 / SCK1 / MISO1 / CS1 | ICM-42688-P SPI, `SPI1.setMISO(39)`, bis 24 MHz | ★ |
-| 28 / 29 | SERVO_YAW / SERVO_PITCH | J_SERVO1 / J_SERVO2 (VSERVO) | wie bisher |
-| 32 / 33 | LORA_M1 / LORA_M0 | E22 Betriebsart (00 = Normal, 11 = Konfiguration) | ★ ☆ (33 war HC12_SET) |
-| 34 / 35 | RX8 / TX8 | E22 TXD / RXD | wie bisher (Serial8) |
-| 36 | LORA_AUX | E22 AUX (Sendepuffer frei, Modul bereit) | ★ |
-| 40 (A16) | VBAT2_SENSE | 100 k / 33 k von VBAT_PROT (2S) | ★ |
-| 41 (A17) | VBAT1_SENSE | 100 k / 33 k von VSYS_IN (1S) | ★ ☆ |
-| 10, 11, 12, 14, 15, 16, 17, 25, 30, 31, 37 | frei | J_EXP 2×7 mit 3V3, 5V_SYS, GND | – |
+| 0 / 1 | RX1 / TX1 | GPS (J_GPS, JST-GH 4: 3V3_RF, GND, TX, RX) | |
+| 2 / 3 | MOT_IN1 / MOT_IN2 | DRV8833 AIN1=BIN1 / AIN2=BIN2 (Brücken parallel) | |
+| 4 | IMU_INT | LSM6DSV16X INT1 | |
+| 5 | LED_DATA | SN74LV1T34 → LED1 → LED2 → J_LED (eine Kette) | ★ B8 |
+| 6 | LORA_NRST | E22 NRST, 10 kΩ nach 3V3_RF, Open-Drain betreiben | ★ B9 |
+| 7 | CAM_TRIG | 1 kΩ → J_CAM (JST-GH 3) | |
+| 8 | MOT_FAULT | DRV8833 nFAULT, 10 kΩ nach 3V3 | |
+| 9 | SERVO_CHUTE | J_SERVO3 (VSERVO) | ★ E4 |
+| 10 | SERVO_LEGS | J_SERVO4 (VSERVO), Landebeine | ★ E5 |
+| 11 | SPI0_MOSI | J_STACK Pin 8: SPI0 zur Zusatzplatine, SPI1 bleibt der Flugbus auf der Platine | ★ E11 |
+| 12 | SPI0_MISO | J_STACK Pin 9 | ★ E11 |
+| 14 | PYRO4_FIRE | Gate Pyro 4 (DNP) | ★ E5 |
+| 13 | SPI0_SCK | J_STACK Pin 7 | ★ E11 |
+| 15 | NRST_EXT | J_STACK Pin 20 (Open-Drain) | ★ E10 |
+| 16 | LORA_M0 | E22 Betriebsart M0 (seit 23.10.; linke Reihe, zum Modul hin) | E11 |
+| 17 | IRQ_EXT | J_STACK Pin 13 | ★ E10 |
+| 18 / 19 | SDA0 / SCL0 | J_QWIIC und J_STACK, 4,7 kΩ Pull-ups; kein Flugsensor | ★ E3 |
+| 20 / 21 | TX5 / RX5 | J_STACK Pin 17 / 16 (Serial5) | ★ E10 |
+| 22 / 23 | PYRO2_FIRE / PYRO1_FIRE | Gate Pyro 2 / 1 über 100 Ω | |
+| 24 (A10) | MUX_OUT | 74HC4051 Ausgang (alle langsamen Analogsignale) | ★ |
+| 38 / 25 / 30 | SEL0 / SEL1 / SEL2 | Adresse für 74HC138 und 74HC4051 gemeinsam | ★ |
+| 31 | CS_EN | 74HC138 Freigabe (aktiv tief, 10 kΩ nach 3V3: beim Booten alle CS hoch) | ★ |
+| 26 / 27 / 39 | MOSI1 / SCK1 / MISO1 | IMU, BMP390, BMP390 (DNP), INA239, nur auf der Platine; `SPI1.setMISO(39)` | ★ E3, E11 |
+| 28 / 29 | SERVO_YAW / SERVO_PITCH | J_SERVO1 / J_SERVO2 (VSERVO) | |
+| 32 | LORA_M1 | E22 Betriebsart (00 = Normal, 11 = Konfiguration), M0 an Pin 16 | |
+| 40 | MOT_NSLEEP | DRV8833 nSLEEP (interner Pull-down: Motor aus beim Booten); seit 23.10., rechte Reihe neben dem DRV8833 | ★ C1, E11 |
+| 33 | PWM_EXT | J_STACK Pin 18 (PWM-fähig) | ★ E10, E11 |
+| 34 / 35 | RX8 / TX8 | E22 TXD / RXD | |
+| 36 | LORA_AUX | E22 AUX (Sendepuffer frei, Modul bereit) | |
+| 37 | BUZZER | AO3400A → aktiver 5-V-Summer | ★ B7 (war 13) |
+| 41 | PYRO3_FIRE | Gate Pyro 3 (DNP); beim Booten hochohmig, der Gate-Widerstand hält den FET aus | ★ E5, E11 |
+
+**Chip-Selects (74HC138, Y0 bis Y7):** Y0 IMU, Y1 BMP390, Y2 BMP390 Nr. 2 (DNP), Y3 INA239,
+Y4 bis Y6 CS_EXT0 bis 2 an J_STACK, Y7 frei. Die Firmware setzt die Adresse an SEL0 bis 2 und zieht
+dann CS_EN auf tief; zwischen zwei Transfers bleibt CS_EN hoch.
+
+**Analogmux (74HC4051, Kanal 0 bis 7):** 0 bis 3 PYRO1_SENSE bis PYRO4_SENSE, 4 VBAT1_SENSE,
+5 VBAT2_SENSE, 6 ARM_SENSE, 7 GND (Nullpunkt). Gelesen wird bei CS_EN hoch, also ohne laufenden
+SPI-Transfer. Alle Teiler 100 k / 33 k mit 100 nF am Mux-Eingang, Vollausschlag 13,3 V.
 
 ## 5. Pyro-Kanäle
 
 Wie rev A §5: je Kanal ein AO3400A low-side mit 100 Ω Gate-Widerstand und 100 kΩ Pull-down, Plus an
-VBAT_ARMED, Durchgangsprüfung über 100 k / 33 k am Drain, SMBJ12A über dem Ausgang. Stecker
-**JST-XH 2-polig** statt Schraubklemme, Kabel mit Kabelbinder an der Platine gesichert.
-Firmware: Zünden nur im Zustand *Apogäum* bzw. *Landung*, Puls ≤ 1 s, jeder Kanal höchstens einmal,
-ohne ARM_SENSE keine Freigabe, Durchgang vor dem Start per Summer gemeldet.
+VBAT_ARMED, Durchgangsprüfung über 100 k / 33 k am Drain (über den Analogmux), SMAJ12CA über dem
+Ausgang. Vier Kanäle (E5): 1 und 2 bestückt, 3 und 4 nur als Footprint (FET, TVS, Stecker DNP, die
+Teiler sind bestückt). Stecker **JST-XH 2-polig** liegend an der Spitzen-Kante, Kabel mit Kabelbinder
+gesichert. Firmware: Zünden nur im Zustand *Apogäum* bzw. *Landung*, Puls **50 bis 100 ms** mit Abbruch,
+sobald der Durchgang weg ist (A4), jeder Kanal höchstens einmal, ohne ARM_SENSE keine Freigabe,
+Durchgang vor dem Start per Summer gemeldet.
 
 ## 6. Sensorik und Funk
 
-**ICM-42688-P (LGA-14, 2,5 × 3 mm).** SPI1 mit 7 MHz (bis 24 MHz möglich), VDD und VDDIO an Teensy-3V3,
-100 nF + 10 nF an jedem Versorgungspin, INT1 an Pin 4. Betrieb: Gyro ±2000 °/s, Accel ±16 g, ODR
-1 kHz, interner Tiefpass (UI-Filter) auf ca. 50 Hz, Firmware mittelt auf die 100-Hz-Schleife.
-Bibliothek: `finani/ICM42688` (Arduino, SPI) oder eigener Registertreiber. Kein DMP, keine
-Quaternion vom Chip; die Lage entsteht in der Firmware aus dem Gyro (Plan, Befund 3).
+**LSM6DSV16X (LGA-14, 2,5 × 3 mm; bis 22.10. ICM-42688-P, E12).** SPI1 mit 7 MHz (bis 10 MHz möglich), Vdd und
+Vdd_IO an 3V3_SENS, 100 nF + 2,2 µF an Vdd, 10 nF an Vdd_IO, INT1 an Pin 4. SDx/SCx (2, 3) an GND (Hilfsbus aus),
+INT2, OCS_Aux und SDO_Aux (9–11) offen (AN5763 Tab. 1). Betrieb: Gyro ±2000 °/s, Accel ±16 g, ODR 960 Hz,
+Tiefpass auf ca. 50 Hz, Firmware mittelt auf die 100-Hz-Schleife. WHO_AM_I = 0x70. Bibliothek: `STMicroelectronics/LSM6DSV16X`
+(Arduino, SPI) oder eigener Registertreiber. Die Sensorfusion im Chip (SFLP-Quaternion) ist eine Option, der Plan
+bleibt die Gyro-Quaternion in der Firmware (Befund 3). Achsenlage des Chips zur Platine in der Firmware prüfen,
+sie unterscheidet sich vom ICM.
 
-**BMP390 (LGA-10, 2 × 2 mm).** I²C 0x77 (SDO an VDDIO), VDD/VDDIO an Teensy-3V3, Oversampling
-Druck ×8, Temperatur ×1, IIR-Koeffizient 3, ODR 50 Hz. Bibliothek: Adafruit `BMP3XX`.
+**BMP390 (LGA-10, 2 × 2 mm).** SPI1 im 4-Draht-Modus (E3), CS aus dem Decoder (Y1), VDD/VDDIO an
+3V3_SENS, Oversampling Druck ×8, Temperatur ×1, IIR-Koeffizient 3, ODR 50 Hz. Bibliothek: Adafruit
+`BMP3XX` im SPI-Modus. Ein zweites BMP390 (Y2) ist als DNP-Footprint vorgesehen (Review C2).
 
 **LoRa E22-400T22S (SMD, 16 × 26 mm, SX1268).** VCC an 3V3_RF mit 100 µF, TXD/RXD an Serial8 (3,3-V-Pegel,
 keine Widerstände nötig), M0/M1/AUX an Pins 33/32/36, IPEX-Buchse zum Pigtail. Konfiguration
 (Adresse, Kanal 433 MHz, 9600 Bd UART, Luftrate 2,4 kbps, 22 dBm) einmalig per M0=M1=1 aus der
 Firmware. Die Bodenstation bekommt das DIP-Modul E22-400T22D mit SMA-Antenne.
 
-**INA219 (SOIC-8)** mit 20-mΩ-Shunt (2512, 1 %, 1 W), Kelvin-Anschluss, Adresse 0x40.
+**INA239 (VSSOP-10)** an SPI1 (CS Y3) mit 20-mΩ-Shunt (2512, 1 %, 1 W). Der Footprint teilt beide
+Lötflächen des Shunts in Strom- und Messfläche (Kelvin). Je 10 Ω und 100 nF dazwischen filtern die
+Servo-PWM. Nur Telemetrie, nicht in der 100-Hz-Schleife. Bezug DigiKey, Handlötung (bei LCSC nicht
+gelistet); Rückfall INA238 (I²C, anderes Pinout).
 
-## 7. Stückliste rev B (Entwurf)
+## 7. Stückliste rev B1
 
-LCSC-Nummern mit „prüfen“ beim Bestellen verifizieren; Verfügbarkeit bei JLC schwankt.
+Die vollständige Stückliste mit Werten und Footprints entsteht aus `kicad/circuit.py` (Datenblatt
+MS-MB-B, Abschnitt Stückliste). Hier die Bauteile, die man kennen muss. LCSC-Nummern mit „prüfen“ beim
+Bestellen verifizieren; Verfügbarkeit bei JLC schwankt.
 
 | Ref | Bauteil | Gehäuse | Anz. | LCSC | Funktion |
 |---|---|---|---|---|---|
-| U_TEENSY | Teensy 4.1 + 2× Buchsenleiste 1×24 | THT | 1 | – | MCU (vorhanden) |
-| U4 | TDK ICM-42688-P | LGA-14 | 1 | C1850418 | IMU |
-| U5 | Bosch BMP390 | LGA-10 | 1 | prüfen | Barometer |
-| U6 | TI INA219AIDR | SOIC-8 | 1 | prüfen | Strom/Spannung 2S |
-| R_SHUNT | 20 mΩ 1 % 1 W | 2512 | 1 | prüfen | Shunt |
-| U1 | TI TPS563201DDCR + 2,2 µH (≥ 4 A) | SOT-23-6 | 1 | C116592 | 5V_SERVO |
-| U2 | TI TPS63070RNMR + 1,5 µH (≥ 3 A) | VQFN-15 | 1 | prüfen | 5V_SYS aus 1S |
-| U3 | Diodes AP2112K-3.3 | SOT-23-5 | 1 | C51118 | 3V3_RF |
-| U7 | TI DRV8833PWPR | HTSSOP-16 | 1 | C50506 | Rollmotor |
-| U8, U9 | 74AHCT1G125 | SOT-23-5 | 2 | prüfen | Pegel 3,3 → 5 V für WS2812B |
+| A1 (U_TEENSY) | Teensy 4.1 + 2× Buchsenleiste 1×24 | THT | 1 | – | MCU (vorhanden) |
+| U4 | ST LSM6DSV16X | LGA-14 | 1 | C5267406 | IMU (E12, war ICM-42688-P C1850418) |
+| U5, U15 | Bosch BMP390 | LGA-10 | 1 + 1 DNP | C5124834 | Barometer, zweites als Footprint |
+| U6 | TI INA239AIDGSR | VSSOP-10 | 1 | – (DigiKey) | Strom/Spannung VSERVO, SPI, Handlötung |
+| R_SH1 | 20 mΩ 1 % 1 W | 2512, Kelvin-Pads | 1 | prüfen | Shunt |
+| U2 | TI TPS63070RNMR + 1,5 µH (≥ 4 A) | VQFN-15 | 1 | C109322 | 5V_SYS aus 1S |
+| U3, U14 | Diodes AP2112K-3.3 | SOT-23-5 | 2 | C51118 | 3V3_RF, 3V3_EXP |
+| U11 | Microchip MCP73831T-2ACI/OT | SOT-23-5 | 1 | C424093 | 1S-Lader 500 mA |
+| U7 | TI DRV8833PWPR | HTSSOP-16 | 1 | C50506 | Rollmotor an VSERVO |
+| U8 | TI SN74LV1T34DBVR | SOT-23-5 | 1 | prüfen | Pegel 3,3 → 5 V für die WS2812B-Kette |
+| U12 | 74HC138PW | TSSOP-16 | 1 | prüfen | SPI-Chip-Selects |
+| U13 | 74HC4051PW | TSSOP-16 | 1 | prüfen | Analogmux |
 | U10 | Ebyte E22-400T22S | SMD-Modul | 1 | C2903765 | LoRa |
-| LED1, LED2 | WS2812B-2020 | 2020 | 2 | prüfen | Status |
+| LED1, LED2 | WS2812B-2020 | 2020 | 2 | C965555 | Status |
 | Q1, Q2 | AO3401A | SOT-23 | 2 | C15127 | Verpolschutz 2S / 1S |
-| Q_P1, Q_P2, Q_BZ | AO3400A | SOT-23 | 3 | C20917 | Pyro 1/2, Summer |
+| Q6, Q7 | AO3401A | SOT-23 | 2 | C15127 | Lastschalter 2S / 1S (E1) |
+| Q3, Q4, Q8, Q9 | AO3400A | SOT-23 | 2 + 2 DNP | C20917 | Pyro 1 bis 4 |
+| Q5 | AO3400A | SOT-23 | 1 | C20917 | Summer |
 | D1 | SS14 | SMA | 1 | C2480 | VIN-Entkopplung |
-| D_TVS | SMBJ12A | SMB | 2 | prüfen | Pyro-Ausgänge |
-| F1 | Polyfuse 3 A | 1812 | 1 | prüfen | VSERVO |
+| D2, D3, D5, D6 | SMAJ12CA | SMA | 2 + 2 DNP | prüfen | TVS Pyro-Ausgänge |
+| F1, F2 | Polyfuse 3 A/6 A, 2 A | 1812 | 2 | prüfen | je Akku hinter dem Verpolschutz |
+| FB1 | Ferrit 600 Ω bei 100 MHz | 0603 | 1 | prüfen | 3V3_SENS |
+| C4, C5 / C16, C17 | 330 µF/16 V / 470 µF/6,3 V Polymer | 7343 | 2 + 2 | prüfen | Puffer VSERVO / Hold-up TEENSY_VIN |
 | BZ1 | aktiver Summer 5 V, 12 mm | THT | 1 | – | Signalgeber |
-| C_BULK | 1000 µF/10 V Polymer (5V_SYS), 1000 µF/16 V Low-ESR (VSERVO), 470 µF/10 V (5V_SERVO) | Elko stehend ≤ 12 mm | 3 | prüfen | Puffer |
-| J_BAT2 | XT30PW-M liegend | THT | 1 | prüfen | 2S |
-| J_BAT1 | JST-PH 2 liegend | THT | 1 | prüfen | 1S |
-| J_SW | JST-PH 4 | THT | 1 | prüfen | zweipoliger Hauptschalter |
-| J_ARM | JST-PH 2 | THT | 1 | prüfen | Arming |
-| J_SERVO1..3 | JST-XH 3 liegend (S / + / −) | THT | 3 | prüfen | Servos; Servokabel auf XH umcrimpen |
-| J_MOT | JST-PH 2 | THT | 1 | prüfen | Rollmotor |
-| J_PYRO1, J_PYRO2 | JST-XH 2 | THT | 2 | prüfen | E-Matches |
-| J_GPS, J_QWIIC | JST-GH 4 / JST-SH 4 | SMD | 1+1 | prüfen | GPS, I²C |
-| J_CAM, J_LED | JST-GH 3 | SMD | 1+1 | prüfen | Kamera, externe LEDs |
-| J_EXP | Stiftleiste 2×7 | THT | 1 | – | freie Pins |
+| J1 (J_BAT2) | XT30PW-M liegend | THT | 1 | prüfen | 2S |
+| J2 (J_BAT1) | JST-PH 2 stehend | THT | 1 | prüfen | 1S |
+| J3 (J_SW) | JST-PH 4 stehend | THT | 1 | prüfen | Hauptschalter (nur Gates) |
+| J17 (J_CHG1) | JST-PH 3 stehend | THT | 1 | prüfen | 1S-Laden: VBUS, GND, Lade-LED |
+| J18 (J_CHG2) | JST-PH 2 stehend | THT | 1 | prüfen | 2S-Laden parallel zu J_BAT2 |
+| J4 (J_ARM) | JST-XH 2 stehend | THT | 1 | prüfen | Arming, Schlüsselschalter ≥ 5 A |
+| J5, J6 | JST-XH 3 liegend (S / + / −) | THT | 2 | prüfen | TVC-Servos |
+| J7, J16 | JST-XH 3 stehend (S / + / −) | THT | 2 | prüfen | Servo 3 (Fallschirm), Servo 4 (Beine) |
+| J8 (J_MOT) | JST-XH 2 stehend | THT | 1 | prüfen | Rollmotor |
+| J9, J10, J19, J20 | JST-XH 2 liegend | THT | 2 + 2 DNP | prüfen | E-Matches |
+| J11, J12 | JST-GH 4 / JST-SH 4 | SMD | 1 + 1 | prüfen | GPS, Qwiic |
+| J13, J14 | JST-GH 3 | SMD | 1 + 1 | prüfen | Kamera, externe LEDs |
+| J15 (J_STACK) | Stiftleiste 2×10, 2,54 mm | THT | 1 | – | Zusatzplatinen (Flachband) |
 | JP1, JP2 | Lötbrücke | – | 2 | – | Schalter überbrücken (Tisch) |
-| TP1..6 | Testpunkte VBAT2, VSYS_IN, 5V_SYS, VSERVO, 5V_SERVO, 3V3_RF | – | 6 | – | Inbetriebnahme |
-| ~~SW_RST~~ | Taster 6 × 6 mm | SMD | 0 | – | entfallen (KiCad 21.10.2026): der Teensy 4.1 hat am Sockel keinen Reset-Pin, der Program-Taster auf dem Teensy ist durch die Luke erreichbar |
+| TP1..7 | Testpunkte VBAT_PROT, VSYS_IN, 5V_SYS, VSERVO, 3V3_RF, 3V3_EXP, GND | – | 7 | – | Inbetriebnahme |
 
+Entfallen gegenüber rev B: U1 TPS563201 mit Spule und 470-µF-Elko (E9), INA219 (E3), zweiter
+74AHCT1G125 (B8), Polyfuse vor VSERVO (A4), drei THT-Elkos (B3), J_EXP (E10), Testpunkte 5V_SERVO, SDA, SCL.
 Dazu die üblichen Abblock- und Teiler-Bauteile (0402/0603) und ein W25Q128 (SOIC-8) unter dem Teensy.
 
 ## 8. Layout-Regeln
 
-Die vollständige Prüfliste steht in `docs/Plan_2026-10-21.md` §2.6. Kurzfassung:
+Die vollständige Prüfliste steht in `docs/Plan_2026-10-21.md` §2.6. Kurzfassung, Stand B1:
 
-- Lage 2 durchgehend GND, Lage 3 Versorgungsflächen. Sternpunkt der beiden Akku-Massen am
-  2S-Minus neben dem Shunt; Servo- und Pyro-Rückleitungen als breite Bahn auf Lage 1 dorthin, nicht
-  durch die Fläche unter IMU und Barometer.
-- VBAT, VSERVO, Pyro 2 mm auf beiden Außenlagen mit ≥ 4 Vias je Übergang; 5V_SYS 0,8 mm; 3V3 0,5 mm.
-- Wandler und Spulen im Streifen WANDLER links neben dem Teensy, mindestens 15 mm von der IMU;
-  5 mm Freiraum um die IMU auf allen Lagen, ruhige Massefläche darunter.
-- BMP390 weg von Spulen und Teensy-CPU. LoRa-Modul auf einer Massefläche, keine Signale darunter.
+- In1 durchgehend GND; B.Cu geteilte Versorgungsfläche (GND_PWR unter allem, was am 2S hängt,
+  5V_SYS unter der 1S-Seite). Sternpunkt NT1 der beiden Akku-Massen am 2S-Minus; Servo- und
+  Pyro-Rückströme laufen über die GND_PWR-Fläche dorthin, nicht durch die Fläche unter IMU und Barometer.
+- 2S-Pfad (VBAT_PROT, VBAT_ARMED, VSERVO) als Kupferflächen auf F.Cu, die der Generator vor dem Routing
+  zieht; der Autorouter darf diese Netze nur auf F.Cu verlegen, nie auf In2 (Review A6, B13). Breite
+  der Flächen 1,4 bis 4,2 mm, Stichbahnen 1,0 mm. VSYS_IN 0,6 mm, an den VQFN-Pins als Fläche (A7);
+  5V_SYS als Fläche auf B.Cu.
+- Wandler und Spule im linken Streifen, mindestens 25 mm von der IMU.
+  Im Radius 5 mm um die IMU keine fremden Vias und keine Bahnen auf In2 (B16); unter dem Chip gar keine Vias.
+- BMP390 weg von Spulen und Teensy-CPU. LoRa-Modul auf einer Massefläche, keine Signale darunter,
+  0,5 mm vom Rand (B17).
 - Stecker nur oben, verriegelt, Pin 1 und S/+/− im Bestückungsdruck, Steckrichtung axial.
 - DRC mit JLC-Regeln (0,127 mm, Via 0,3 mm), 3D-Ansicht gegen die Hüllen aus `outline.py`,
   1:1-Papierausdruck in den Kuppler halten.
 
 ## 9. Inbetriebnahme (Testplan)
 
-1. Ohne Teensy, beide Akkupfade am Labornetzteil mit 100 mA Begrenzung: 1S-Pfad mit 3,7 V →
-   5V_SYS und 3V3_RF messen; 2S-Pfad mit 7,4 V → VSERVO und 5V_SERVO messen. Verpolung testen.
-2. Teensy stecken, nur USB: I²C-Scan findet 0x40 und 0x77; ICM-42688-P per SPI (WHO_AM_I = 0x47).
-3. 1S-Akku, Flug-Firmware: Loop-Timing, Teleplot IMU/Baro, beide Akkuspannungen, INA219.
-4. 2S-Akku dazu: Servos einzeln bis zum Blockieren, Rollmotor; der Teensy darf nicht neu starten
-   (Watchdog-Zähler im Log muss 0 bleiben). Einbruch von VBAT2 und 5V_SYS mit dem Oszilloskop.
+1. Ohne Teensy, beide Akkupfade am Labornetzteil mit 100 mA Begrenzung, Schalter über JP1/JP2:
+   1S-Pfad mit 3,7 V → 5V_SYS, 3V3_RF und 3V3_EXP messen; 2S-Pfad mit 7,4 V → VSERVO messen.
+   Verpolung testen. Lastschalter: ohne JP1/JP2 und ohne Schalterbrett muss alles aus sein.
+   Beim ersten Einschalten des 1S-Pfads den Anlauf von 5V_SYS mit dem Oszilloskop ansehen: der
+   TPS63070 lädt die 940 µF hinter D1 in der Strombegrenzung.
+2. Teensy stecken, nur USB: beide Akkuspannungen über den Analogmux; LSM6DSV16X (WHO_AM_I = 0x70),
+   BMP390 (CHIP_ID = 0x60) und INA239 (Manufacturer-ID 0x5449) über SPI1 und den Decoder.
+3. 1S-Akku, Flug-Firmware: Loop-Timing, Teleplot IMU/Baro, beide Akkuspannungen, INA239.
+   Lader: USB-C am Schalterbrett, Rakete aus, Ladestrom 500 mA, Lade-LED.
+4. 2S-Akku dazu: Servos einzeln bis zum Blockieren, Rollmotor mit begrenztem Tastverhältnis; der Teensy
+   darf nicht neu starten (Watchdog-Zähler im Log muss 0 bleiben). Einbruch von VBAT2 und 5V_SYS mit
+   dem Oszilloskop.
 5. Pyro nur mit Glühlämpchen oder 2-Ω-Widerstand: ohne ARM keine Zündung, ARM_SENSE, Durchgang,
-   Pulsdauer. **Nie mit Ladung auf dem Tisch.**
+   Pulsdauer 50 bis 100 ms, Abbruch bei Durchgangsverlust. **Nie mit Ladung auf dem Tisch.**
 6. LoRa-Strecke zur Bodenstation im Freien (Reichweite, Paketverlust), GPS-Fix in der Spitze.
 
-## 10. Firmware-Änderungen für rev B
+Hinweis (B11): Die VIN-VUSB-Brücke auf dem Teensy bleibt geschlossen. D1 trennt 5V_SYS vom USB.
 
-- `Config.h`: neue Pins (§4), `INA_SHUNT_OHM = 0.02`, Akkugrenzen, `SERVO_PULSE_*` für die W5652H.
-- `Sensors.cpp`: Treiber ICM-42688-P über SPI1, ohne DMP; Gyro-Quaternion und Oben-Vektor für den
-  Regler (Plan, Befund 3); BMP390 über `BMP3XX`; beide Akkuspannungen über ADC.
-- Neu `Radio.cpp`: E22-Konfiguration über M0/M1, einfaches Telemetrieprotokoll mit AUX-Flusskontrolle.
-- Neu `FlightState.cpp`: Pad → Boost → Coast → Apogäum → Bergung → Landung, Pyro-Logik mit Arming.
+## 10. Firmware-Änderungen für rev B1
+
+- `Config.h`: Pins nach §4 (`PIN_LED_DATA 5`, `PIN_LORA_NRST 6`, `PIN_SERVO_LEGS 10`, `PIN_MOT_NSLEEP 11`,
+  Pyro 3/4 auf 12/14, `PIN_BUZZER 37`, `PIN_MUX 24`, `PIN_SEL0..2 38/25/30`, `PIN_CS_EN 31`), `INA_SHUNT_OHM = 0.02`,
+  Akkugrenzen, `SERVO_PULSE_*` für die W5652H, `ROLL_PWM_MAX` (etwa 60 %, 5 V aus 8,4 V).
+- Neu: Chip-Select über den 74HC138 (Adresse setzen, dann CS_EN tief) und Analogeingänge über den 74HC4051
+  (nur bei CS_EN hoch umschalten, 10 µs Einschwingzeit).
+- `Sensors.cpp`: Treiber LSM6DSV16X über SPI1 (der ICM-42688-P-Treiber in `lib/mainboard_revb` entfällt); Gyro-Quaternion und Oben-Vektor für den
+  Regler (Plan, Befund 3); BMP390 über `BMP3XX` im SPI-Modus; INA239 über SPI, außerhalb der 100-Hz-Schleife.
+- Neu `Radio.cpp`: E22-Konfiguration über M0/M1, NRST bei hängendem Modul, Telemetrieprotokoll mit
+  AUX-Flusskontrolle.
+- Neu `FlightState.cpp`: Pad → Boost → Coast → Apogäum → Bergung → Landung, Pyro-Logik mit Arming,
+  Zündpuls 50 bis 100 ms mit Abbruch bei Durchgangsverlust.
 - Watchdog (WDT1 des i.MX RT) und Zustandsspeicher im EEPROM-Emulat, damit ein Neustart im Flug
   in der laufenden Phase weitermacht.
 - Rampenkalibrierung des Gyro-Bias (Befund 5).
@@ -240,11 +329,10 @@ Die vollständige Prüfliste steht in `docs/Plan_2026-10-21.md` §2.6. Kurzfassu
 
 Seit dem 21.10.2026 liegt die Schaltung als KiCad-Projekt in `kicad/` (Schaltplan und Platine aus
 `circuit.py`, siehe `kicad/README.md`). Abweichungen von dieser Spezifikation, die das Projekt
-begründet trifft, stehen dort in §4; die Prüfung der Netzliste gegen §4 dieser Datei steht in
-`review_netlist_2026-10-21.md` (Ergebnis: konform; Hinweise zu TPS63070-Doppelpins, FB2, ICM-Hersteller und E22-NRST).
-Das Zweitmeinung-Review von Schaltung und Layout steht in `review_kicad_2026-10-21.md`; seine A-Punkte ändern
-diese Spezifikation an fünf Stellen (§3: Hold-up-Elko hinter D1, Sicherung je Akku, Hauptschalter über FETs,
-EN-Schwelle des TPS63070; §6: Kelvin-Shunt) und werden mit dem Einarbeiten hier nachgezogen.
+begründet trifft, stehen dort in §6. `kicad/check_design.py` prüft die Netzliste gegen §4 dieser Datei
+(Teensy-Pins, Chip-Selects, Mux-Kanäle, Schienen, Kelvin-Abgriff). Die Prüfung von rev B steht in
+`review_netlist_2026-10-21.md`, das Zweitmeinung-Review in `review_kicad_2026-10-21.md`; beide sind in
+B1 eingearbeitet (§0).
 
 ## 12. Offen
 
@@ -252,7 +340,8 @@ EN-Schwelle des TPS63070; §6: Kelvin-Shunt) und werden mit dem Einarbeiten hier
   W5652H neu konstruiert (`cad/`), dabei festlegen.
 - Länge der Avionik-Sektion: Schlitten 120 mm plus Endringe im 150-mm-Kuppler. Passt, wenn die
   Endringe ≤ 15 mm hoch sind.
-- Wo genau die Luke im Kuppler und im Rohr sitzt (USB, SD, Reset, Schalter).
-- Ob der Fallschirm-Servo-Ausgang bestückt wird oder nur als Footprint bleibt.
+- Schalterbrett an Luke B (Schiebeschalter, USB-C mit CC-Widerständen 5,1 kΩ, Lade-LED mit Vorwiderstand,
+  XT30- und XH-3-Ladebuchse): Platine oder gedruckt, Kabel zu J_SW, J_CHG1 und J_CHG2 (`cad/README.md`).
 - Kamera: 3,3 V oder 5 V am Auslöser.
 - TPS63070 bei JLC verfügbar? Sonst TPS63020.
+- INA239 bei DigiKey bestellen (Handlötung); LSM6DSV16X (LCSC C5267406) am Bestelltag auf Bestand prüfen.

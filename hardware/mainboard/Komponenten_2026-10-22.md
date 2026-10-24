@@ -42,7 +42,7 @@ Review `review_kicad_2026-10-21.md`. Spalte **Änderung** zeigt den Zielzustand 
 
 | Bauteil | Funktion | Versorgung | CS / INT | Takt | Änderung 22.10. |
 |---|---|---|---|---|---|
-| U4 ICM-42688-P | IMU, Gyro ±2000 °/s, Accel ±16 g, 1 kHz | `3V3_SENS` | CS Pin 38, INT1 Pin 4 | 7 MHz (bis 24) | bleibt |
+| U4 LSM6DSV16X (23.10., E12; war ICM-42688-P) | IMU, Gyro ±2000 °/s, Accel ±16 g, 960 Hz | `3V3_SENS` | CS aus dem Decoder, INT1 Pin 4 | 7 MHz (bis 10) | gleicher Footprint, Pins 9–11 offen |
 | U5 BMP390 | Barometer, Apogäum | `3V3_SENS` | CS Pin 25 | ≤ 10 MHz | **von I²C nach SPI** (B6, E3); SDO wird MISO, SDI MOSI, CSB an Pin 25 |
 | U5b BMP390 (DNP) | zweites Barometer, Plausibilität | `3V3_SENS` | CS Pin 30 | | **neu als Footprint** (C2, E5) |
 | U6 INA239 | Strom/Spannung 2S-Pfad, 20 mΩ Kelvin-Shunt, 16 bit | `3V3_SENS` (VS), misst `VBAT_PROT` bis 85 V | CS Pin 31, ALERT frei | ≤ 10 MHz | **statt INA219** (E3). Nicht in der 100-Hz-Schleife lesen, nur Telemetrie (B6). Sense-Netze über NetTie (A5). |

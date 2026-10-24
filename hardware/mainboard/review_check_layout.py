@@ -1,11 +1,11 @@
-"""Layout checks of the rev B review (review_kicad_2026-10-21.md, section 5). Read-only.
+"""Layout checks of the rev B review (review_kicad_2026-10-21.md, section 5), updated for rev B1. Read-only.
 
 Run with KiCad's Python on a COPY of the board (the .kicad_pro must lie next to the copy):
 
     "%LOCALAPPDATA%/Programs/KiCad/10.0/bin/python.exe" review_check_layout.py <copy>/mainboard.kicad_pcb
 
-Prints: width, length, layers and vias of every power net; the copper path of the INA219 sense pins
-to the shunt pads; vias, tracks and parts within 5 mm of the IMU; parts at the edge (|u| > 25), under the
+Prints: width, length, layers and vias of every power net (tracks) and the copper zones per net and layer;
+2S tracks on In2 (A6: none); the Kelvin taps of the INA239; vias, tracks and parts within 5 mm of the IMU; parts at the edge (|u| > 25), under the
 Teensy and over the outline; zones; silkscreen references.
 """
 import math
@@ -35,9 +35,10 @@ vias = [t for t in board.GetTracks() if t.GetClass() == "PCB_VIA"]
 print(f"board: {len(fps)} footprints, {len(tracks)} track segments, {len(vias)} vias, {len(list(board.Zones()))} zones")
 
 # 1. widths and vias per net (power nets)
-NETS = ["VBAT2_RAW", "VBAT2_REV", "VBAT_PROT", "VBAT_MEAS", "VSERVO", "VBAT_ARMED", "PYRO1_NEG", "PYRO2_NEG",
-        "GND_PWR", "VBAT1_RAW", "VBAT1_PROT", "VSYS_IN", "U2_L1", "U2_L2", "5V_SYS", "5V_SERVO", "3V3_RF",
-        "TEENSY_VIN", "MOT_A", "MOT_B", "U1_SW", "3V3", "GND"]
+STROM = ["VBAT2_RAW", "VBAT2_REV", "VBAT2_F", "VBAT_PROT", "VSERVO", "VBAT_ARMED", "PYRO1_NEG", "PYRO2_NEG",
+         "PYRO3_NEG", "PYRO4_NEG"]
+NETS = STROM + ["GND_PWR", "VBAT1_RAW", "VBAT1_REV", "VBAT1_F", "VSYS_IN", "U2_L1", "U2_L2", "5V_SYS", "3V3_RF",
+                "3V3_EXP", "TEENSY_VIN", "MOT_A", "MOT_B", "VBUS_CHG", "3V3", "3V3_SENS", "GND"]
 bynet = defaultdict(list)
 for t in tracks:
     bynet[t.GetNetname()].append(t)
@@ -59,7 +60,20 @@ for n in NETS:
     print(f"  {n:12s} w {min(ws) if ws else 0:.2f}-{max(ws) if ws else 0:.2f}  L {ln:6.1f}  {','.join(layers):18s}  vias {len(vs):3d} {vd}"
           + (f"  <0.45mm: {len(narrow)} seg, {sum(MM(t.GetLength()) for t in narrow):.1f} mm" if narrow else ""))
 
-# 2. Kelvin: where do the INA219 sense pads (U6 pin 7/8) reach the shunt pads? BFS over tracks of the net.
+print("\n== 2S-Netze auf In2 (A6: keine)")
+in2 = board.GetLayerID("In2.Cu")
+bad = {n: round(sum(MM(t.GetLength()) for t in bynet.get(n, []) if t.GetLayer() == in2), 1) for n in STROM}
+print("  " + (", ".join(f"{n} {v} mm" for n, v in bad.items() if v) or "keine"))
+print("\n== Kupferflaechen der Stromnetze auf F.Cu (gefuellt, mm2)")
+area = defaultdict(float)
+for z in board.Zones():
+    if z.GetIsRuleArea() or z.GetNetname() not in STROM + ["VSYS_IN"]:
+        continue
+    area[z.GetNetname()] += z.GetFilledArea() / 1e12 if hasattr(z, "GetFilledArea") else 0
+for n, a in sorted(area.items()):
+    print(f"  {n:12s} {a:7.1f}")
+
+# 2. Kelvin: where do the INA sense pins reach the shunt? BFS over tracks of the net.
 def pad(ref, num):
     for p in fps[ref].Pads():
         if p.GetNumber() == num:
@@ -105,20 +119,10 @@ def bfs_path(start_pad, target_pad, net):
     return None, "nur ueber Flaeche/Pad verbunden"
 
 
-print("\n== Kelvin-Abgriff INA219 (U6 Pin 8 = IN+ auf VBAT_PROT, Pin 7 = IN- auf VBAT_MEAS) zum Shunt R_SH1")
-for upin, spin, net in (("8", "1", "VBAT_PROT"), ("7", "2", "VBAT_MEAS")):
-    d, why = bfs_path(pad("U6", upin), pad("R_SH1", spin), net)
-    pu, ps = uv_of(pad("U6", upin)), uv_of(pad("R_SH1", spin))
-    direct = math.hypot(pu[0] - ps[0], pu[1] - ps[1])
-    print(f"  U6.{upin} -> R_SH1.{spin} ({net}): Luftlinie {direct:.1f} mm, Bahnweg {d if d is None else round(d, 1)} ({why})")
-    # which other pads of the net lie closer to the U6 pad than the shunt pad (possible attachment points)
-    near = []
-    for ref, fp in fps.items():
-        for p in fp.Pads():
-            if p.GetNetname() == net and ref not in ("U6", "R_SH1"):
-                q = uv_of(p)
-                near.append((round(math.hypot(pu[0] - q[0], pu[1] - q[1]), 1), f"{ref}.{p.GetNumber()}"))
-    print("    andere Pads des Netzes (Abstand mm):", sorted(near)[:5])
+print("\n== Kelvin-Abgriff: Sense-Netze des Shunts R_SH1 (Pad 2 = ISENS_P, Pad 3 = ISENS_N)")
+for net in ("ISENS_P", "ISENS_N"):
+    pads_ = [f"{r}.{q.GetNumber()}" for r, fp in fps.items() for q in fp.Pads() if q.GetNetname() == net]
+    print(f"  {net}: Pads {pads_} - nur Sense-Pad und Filterwiderstand, Kelvin durch die Netzliste")
 
 # 3. IMU surroundings
 IMU = (0.0, 60.5)

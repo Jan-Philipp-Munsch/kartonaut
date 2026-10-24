@@ -1,7 +1,7 @@
 """Project library for the mainboard rev B.
 
-Writes lib/mainboard.kicad_sym (Teensy 4.1 on two 1x24 sockets) and
-lib/mainboard.pretty/Teensy41_Socket.kicad_mod, and fixes the pin types of the four parts that
+Writes lib/mainboard.kicad_sym (Teensy 4.1 on two 1x24 sockets, INA239) and
+lib/mainboard.pretty (Teensy41_Socket, R_2512_Kelvin for the shunt), and fixes the pin types of the four parts that
 easyeda2kicad converted from LCSC into lib/lcsc.kicad_sym (it marks every pin "unspecified",
 which ERC cannot check). The LCSC parts themselves are fetched once with
 
@@ -86,9 +86,70 @@ def teensy_symbol():
             body, unit]
 
 
+def ic_symbol(name, ref, left, right, fp, ds, descr):
+    """Plain box symbol: left/right are lists of (number, name, type), top to bottom."""
+    n = max(len(left), len(right))
+    w, top = 7.62, (n - 1) * PITCH / 2
+    pins = [_pin(num, nm, kind, -w - 2.54, top - i * PITCH, 0) for i, (num, nm, kind) in enumerate(left)]
+    pins += [_pin(num, nm, kind, w + 2.54, top - i * PITCH, 180) for i, (num, nm, kind) in enumerate(right)]
+    body = ["symbol", Q(f"{name}_0_1"),
+            ["rectangle", ["start", -w, top + 2.54], ["end", w, top - n * PITCH],
+             ["stroke", ["width", 0.254], ["type", "default"]], ["fill", ["type", "background"]]]]
+    return ["symbol", Q(name), ["exclude_from_sim", "no"], ["in_bom", "yes"], ["on_board", "yes"],
+            _prop("Reference", ref, 0, top + 5.08), _prop("Value", name, 0, top + 3.6),
+            _prop("Footprint", fp, 0, top - n * PITCH - 2.54, True),
+            _prop("Datasheet", ds, 0, top - n * PITCH - 5.08, True),
+            _prop("Description", descr, 0, top - n * PITCH - 7.62, True),
+            body, ["symbol", Q(f"{name}_1_1")] + pins]
+
+
+def ina239_symbol():
+    """TI INA239 (SLYS027A, DGS VSSOP-10, Fig. 5-1): SPI power monitor, 85 V common mode."""
+    left = [("10", "IN+", "input"), ("9", "IN-", "input"), ("8", "VBUS", "input"), ("6", "VS", "power_in"),
+            ("7", "GND", "power_in")]
+    right = [("1", "~{CS}", "input"), ("5", "SCLK", "input"), ("2", "MOSI", "input"), ("4", "MISO", "tri_state"),
+             ("3", "~{ALERT}", "open_collector")]
+    return ic_symbol("INA239", "U", left, right, "Package_SO:MSOP-10_3x3mm_P0.5mm",
+                     "https://www.ti.com/lit/ds/symlink/ina239.pdf",
+                     "85-V 16-bit SPI power monitor, VSSOP-10 (DGS)")
+
+
+def write_kelvin_footprint():
+    """2512 shunt land split for a Kelvin connection (Device:R_Shunt: 1/4 current, 2/3 sense).
+
+    Each land of R_2512_6332Metric (1.225 x 3.35 mm at +-2.9625) is cut 0.25 mm from its -y end: the
+    big part carries the current, the 0.65 mm strip is the sense tap. Both sit under the same terminal
+    of an ordinary two-terminal 2512 shunt, the solder joins them, and the sense line can only reach
+    the resistor body, never the current path."""
+    x, w = 2.9625, 1.225
+    y0, y1 = -1.675, 1.675
+    ys = y0 + 0.65                       # sense strip from y0 to ys (the -y side)
+    yp = ys + 0.25                       # current land from yp to y1
+    pads = []
+    for num, cx, (a, b) in (("1", -x, (yp, y1)), ("2", -x, (y0, ys)), ("3", x, (y0, ys)), ("4", x, (yp, y1))):
+        pads.append(f'\t(pad "{num}" smd roundrect (at {cx:.4f} {(a + b) / 2:.4f}) (size {w} {b - a:.4f}) '
+                    f'(layers "F.Cu" "F.Mask" "F.Paste") (roundrect_rratio 0.15))')
+    body = [
+        '(footprint "R_2512_Kelvin"', '\t(version 20241229)', '\t(generator "build_lib.py")', '\t(layer "F.Cu")',
+        '\t(descr "2512 shunt, lands split for Kelvin sensing: pads 1/4 current, 2/3 sense (-y side)")',
+        '\t(attr smd)',
+        '\t(property "Reference" "REF**" (at 0 -2.8 0) (layer "F.SilkS") (effects (font (size 1 1) (thickness 0.15))))',
+        '\t(property "Value" "R_2512_Kelvin" (at 0 2.8 0) (layer "F.Fab") (effects (font (size 1 1) (thickness 0.15))))',
+        '\t(fp_rect (start -3.15 -1.6) (end 3.15 1.6) (stroke (width 0.1) (type solid)) (fill no) (layer "F.Fab"))',
+        '\t(fp_line (start -2.0 -1.71) (end 2.0 -1.71) (stroke (width 0.12) (type solid)) (layer "F.SilkS"))',
+        '\t(fp_line (start -2.0 1.71) (end 2.0 1.71) (stroke (width 0.12) (type solid)) (layer "F.SilkS"))',
+        '\t(fp_rect (start -3.83 -1.93) (end 3.83 1.93) (stroke (width 0.05) (type solid)) (fill no) (layer "F.CrtYd"))',
+    ] + pads + [
+        '\t(model "${KICAD10_3DMODEL_DIR}/Resistor_SMD.3dshapes/R_2512_6332Metric.step" (offset (xyz 0 0 0)) '
+        '(scale (xyz 1 1 1)) (rotate (xyz 0 0 0)))', ')']
+    fp = "\n".join(body) + "\n"
+    (LIB / "mainboard.pretty").mkdir(exist_ok=True)
+    (LIB / "mainboard.pretty" / "R_2512_Kelvin.kicad_mod").write_text(fp, encoding="utf-8")
+
+
 def write_symbols():
     lib = ["kicad_symbol_lib", ["version", "20241209"], ["generator", Q("build_lib.py")],
-           ["generator_version", Q("1.0")], teensy_symbol()]
+           ["generator_version", Q("1.0")], teensy_symbol(), ina239_symbol()]
     (LIB / "mainboard.kicad_sym").write_text(dumps(lib) + "\n", encoding="utf-8")
 
 
@@ -143,12 +204,21 @@ LCSC_TYPES = {
     "VDD": "power_in", "VDDIO": "power_in", "GND": "power_in", "VSS": "power_in", "PGND": "power_in",
     "VCC": "power_in", "Vin": "power_in", "Vout": "power_out", "Vaux": "passive",
     "AP_CS": "input", "AP_SCL/AP_SCLK": "input", "AP_SDA/AP_SDIO/AP_SDI": "bidirectional",
-    "AP_SDO/AP_AD0": "output", "INT1/INT": "output", "INT2/FSYNC/CLKIN": "input", "RESV": "passive",
-    "SCK": "input", "SDI": "bidirectional", "SDO": "input", "CSB": "input", "INT": "output",
+    "AP_SDO/AP_AD0": "tri_state", "INT1/INT": "output", "INT2/FSYNC/CLKIN": "input", "RESV": "passive",
+    "SCK": "input", "SDI": "bidirectional", "SDO": "tri_state", "CSB": "input", "INT": "output",
     "EN": "input", "PS/SYNC": "input", "Vsel": "input", "PG": "open_collector", "FB": "input", "FB2": "passive",
     "L1": "passive", "L2": "passive",
     "TXD": "output", "RXD": "input", "AUX": "output", "M0": "input", "M1": "input", "RESET": "input",
     "ANT": "passive", "NC": "no_connect",
+    # LIS3MDL, SHT40, ADXL375 (23.10.)
+    "SCL/SPC": "input", "Res": "passive", "C1": "passive", "Vdd": "power_in", "Vdd_IO": "power_in",
+    "DRDY": "output", "SD0/SA1": "input", "CS": "input", "SDA/SDI/SDO": "bidirectional",
+    "SDA": "bidirectional", "SCL": "input", "EP": "passive",
+    "VDDI/O": "power_in", "RESERVED": "passive", "VS": "power_in", "~{CS}": "input", "INT1": "output",
+    "INT2": "output", "SDO/ALTADDRESS": "input", "SDA/SDI/SDIO": "bidirectional", "SCL/SCLK": "input",
+    # LSM6DSV16X (23.10.)
+    "SDO/SA0": "tri_state", "SDx/AH1/Qvar1": "passive", "SCx/AH2/Qvar2": "passive", "OCS_Aux": "passive",
+    "SDO_Aux": "passive",
 }
 
 
@@ -224,8 +294,9 @@ def fix_lcsc_pin_types():
 if __name__ == "__main__":
     write_symbols()
     write_footprint()
+    write_kelvin_footprint()
     fix_lcsc_pin_types()
     fix_lcsc_model_paths()
     teensy_model()
     xt30_model()
-    print("lib/mainboard.kicad_sym, lib/mainboard.pretty/Teensy41_Socket.kicad_mod written; lcsc pin types set")
+    print("lib/mainboard.kicad_sym (Teensy, INA239), lib/mainboard.pretty (Teensy41_Socket, R_2512_Kelvin) written; lcsc pin types set")

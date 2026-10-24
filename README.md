@@ -25,12 +25,12 @@ station. The whole system is simulated in a six-degree-of-freedom model before i
 | Airframe | Klima cardboard tube Ø 75 mm (ID 72.6 mm), 2 × 500 mm, couplers 150 mm; plastic nose cone, 125 cm parachute |
 | Motor | TSP E12-0, 24 mm, 39 Ns, 12 N average, 3.5 s burn, no ejection charge; first flight on one motor, landing burn on a second one later |
 | Lift-off mass | 981 g in the mass model (`cad/`), centre of gravity 448 mm above the nozzle; the simulation says one E12 lifts this to only 20 m, so the mass budget is under review |
-| Flight computer | Teensy 4.1 on a mainboard (rev B specified): ICM-42688-P IMU, BMP390 barometer, INA219 power monitor, LoRa SX1268, microSD, two pyro channels with arming |
+| Flight computer | Teensy 4.1 on the rev B1 mainboard (fully routed): LSM6DSV16X IMU, BMP390 barometer, INA239 power monitor with Kelvin shunt, E22-400T22S LoRa, microSD, four pyro channels with arming (two populated), stacking header for add-on boards |
 | Power | two batteries: 1S LiPo for the electronics (buck-boost), 2S LiPo for servos, roll motor and pyro |
 | Actuators | 2 × FrSky Xact W5652H in the gimbal (direct on 2S), roll motor on a DRV8833, pyro piston ejection |
 | Control | attitude from the gyro only, PID on pitch/yaw → torque → gimbal angle via `M = l · T · sin δ`, PID on roll; 100 Hz |
 | Simulation | Python 6DOF (port of the Simulink model): rigid body with quaternions, thrust curve, servo dynamics, sensor noise, Monte Carlo, gain search |
-| Status | bench-tested on breakout boards, no flight yet; mainboard rev B routed and reviewed on 21 Oct 2026, the review's changes go in before the PCB order |
+| Status | bench-tested on breakout boards, no flight yet; mainboard rev B1 fully routed on 23 Oct 2026 (DRC 0/0), order files generated, review before the order under way (`hardware/mainboard/review_brief_2026-10-23.md`, German) |
 
 ## Project status
 
@@ -40,7 +40,7 @@ station. The whole system is simulated in a six-degree-of-freedom model before i
 - 6DOF simulation: MATLAB/Simulink model ported to Python with a 1:1 copy of the flight controller, 21 tests.
 - Firmware modules: sensors, altitude Kalman filter, SD logger with CSV export, pitch/yaw and roll controllers, timing, indicators.
 - Mainboard rev B specified: power architecture, pin map, bill of materials, placement plan, test plan; design guide with figures and order plan.
-- KiCad project for rev B generated from code: schematic with seven sheets, ERC clean; board placed and routed on four layers, DRC without errors.
+- KiCad project for rev B1 generated from code: schematic with seven sheets, ERC clean; board placed, routed and finished by hand on four layers, DRC 0 errors, 0 open connections; all review points of 21 Oct worked in; Gerber, BOM and CPL for JLCPCB generated.
 - Second-opinion review of schematic and layout against the datasheets and the specification: eight points to change before ordering, manufacturer decision, order list.
 - Parametric CAD model in code (CadQuery) with a mass model: mass, centre of gravity and moments of inertia for the simulation; the 16 Blender files inventoried and superseded.
 - Build documentation and project file with findings and changelog.
@@ -54,7 +54,7 @@ station. The whole system is simulated in a six-degree-of-freedom model before i
 **Next**
 
 1. Work the review into rev B, regenerate the board, close the last connections, export Gerber, BOM and CPL, order at JLCPCB with SMD assembly (Aisler as the EU fallback); order the bench parts now.
-2. Firmware for rev B: ICM-42688-P driver, quaternion attitude, flight state machine, pyro logic, watchdog, LoRa telemetry.
+2. Firmware for rev B: LSM6DSV16X driver, quaternion attitude, flight state machine, pyro logic, watchdog, LoRa telemetry.
 3. Weigh the rocket and settle the mass budget against the thrust of the E12.
 4. Ground tests: TVC test rig with a propeller motor in the gimbal (parts bought, rig to be built), pyro test, radio range.
 5. First flight: controlled ascent on one motor, parachute recovery.

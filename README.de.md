@@ -26,12 +26,12 @@ SD-Logger und 433-MHz-LoRa-Funk zur Bodenstation. Das Gesamtsystem wird vor dem 
 | Rumpf | Klima-Papprohr Ø 75 mm (innen 72,6 mm), 2 × 500 mm, Kuppler 150 mm; Kunststoffspitze, Fallschirm 125 cm |
 | Motor | TSP E12-0, 24 mm, 39 Ns, 12 N mittel, 3,5 s Brenndauer, ohne Ausstoßladung; erster Flug mit einem Motor, Landebrennen mit einem zweiten später |
 | Startmasse | 981 g im Massenmodell (`cad/`), Schwerpunkt 448 mm über der Düse; laut Simulation trägt ein E12 das nur 20 m hoch, das Massenbudget wird geprüft |
-| Flugcomputer | Teensy 4.1 auf einem Mainboard (rev B spezifiziert): IMU ICM-42688-P, Barometer BMP390, Strommonitor INA219, LoRa SX1268, microSD, zwei Pyro-Kanäle mit Arming |
+| Flugcomputer | Teensy 4.1 auf dem Mainboard rev B1 (fertig geroutet): IMU LSM6DSV16X, Barometer BMP390, Strommonitor INA239 mit Kelvin-Shunt, LoRa E22-400T22S, microSD, vier Pyro-Kanäle mit Arming (zwei bestückt), Stapelstecker für Zusatzplatinen |
 | Versorgung | zwei Akkus: 1S-LiPo für die Elektronik (Buck-Boost), 2S-LiPo für Servos, Rollmotor und Pyro |
 | Aktoren | 2 × FrSky Xact W5652H im Kardan (direkt am 2S), Rollmotor an einem DRV8833, Pyro-Kolbenausstoß |
 | Regelung | Lage nur aus dem Gyro, PID auf Pitch/Yaw → Moment → Kardanwinkel über `M = l · T · sin δ`, PID auf Roll; 100 Hz |
 | Simulation | Python-6DOF (Port des Simulink-Modells): Starrkörper mit Quaternionen, Schubkurve, Servodynamik, Sensorrauschen, Monte-Carlo, Gewinnsuche |
-| Status | am Tisch mit Breakouts getestet, noch kein Flug; Mainboard rev B am 21.10.2026 geroutet und reviewt, die Review-Punkte kommen vor der Platinenbestellung hinein |
+| Status | am Tisch mit Breakouts getestet, noch kein Flug; Mainboard rev B1 am 23.10.2026 fertig geroutet (DRC 0/0), Bestelldateien erzeugt, Review vor der Bestellung läuft (`hardware/mainboard/review_brief_2026-10-23.md`) |
 
 ## Projektstand
 
@@ -41,21 +41,21 @@ SD-Logger und 433-MHz-LoRa-Funk zur Bodenstation. Das Gesamtsystem wird vor dem 
 - 6DOF-Simulation: MATLAB/Simulink-Modell nach Python portiert, mit 1:1-Kopie des Flugreglers, 21 Tests.
 - Firmware-Module: Sensorik, Höhen-Kalman, SD-Logger mit CSV-Export, Pitch/Yaw- und Rollregler, Takt, Signalgeber.
 - Mainboard rev B spezifiziert: Versorgungsarchitektur, Pinbelegung, Stückliste, Platzierungsplan, Testplan; Design Guide mit Abbildungen und Bestellplan.
-- KiCad-Projekt für rev B aus Code erzeugt: Schaltplan mit sieben Blättern, ERC sauber; Platine auf vier Lagen platziert und geroutet, DRC ohne Fehler.
+- KiCad-Projekt für rev B1 aus Code erzeugt: Schaltplan mit sieben Blättern, ERC sauber; Platine auf vier Lagen platziert, geroutet und von Hand fertiggestellt, DRC 0 Fehler, 0 offene Verbindungen; alle Review-Punkte vom 21.10. eingearbeitet; Gerber, BOM und CPL für JLCPCB erzeugt.
 - Zweitmeinung-Review von Schaltung und Layout gegen Datenblätter und Spezifikation: acht Punkte vor der Bestellung, Fertiger-Entscheidung, Bestellliste.
 - Parametrisches CAD-Modell als Code (CadQuery) mit Massenmodell: Masse, Schwerpunkt und Trägheitsmomente für die Simulation; die 16 Blender-Dateien inventarisiert und abgelöst.
 - Baudokumentation und Projektdatei mit Befunden und Änderungsprotokoll.
 
 **In Arbeit**
 
-- Platine: Review-Punkte in die Schaltung (Ausgangskapazität des Buck-Boost, 1S-Unterspannungsschwelle, Hauptschalter über FETs, Sicherung je Akku, Kelvin-Shunt) und in den Generator (Strompfade als Kupferflächen auf den Außenlagen) einarbeiten, dann neu routen, DRC, Fertigungsdaten.
+- Platine: Review des fertigen Layouts rev B1 durch den Kollegen, Papierausdruck 1:1 in den Kuppler, LCSC-Zuordnung der Passiven am Bestelltag.
 - Kardan-Anpassung für die neuen Servos; Servo-Sprungantwort neu messen.
 - Massenbudget: Teile wiegen, Rumpf leichter machen oder stärkeren Motor wählen.
 
 **Als Nächstes**
 
-1. Review in rev B einarbeiten, Platine neu erzeugen, letzte Verbindungen schließen, Gerber, BOM und CPL exportieren, Bestellung bei JLCPCB mit SMD-Bestückung (Aisler als EU-Rückfall); die Tischteile jetzt bestellen.
-2. Firmware für rev B: Treiber ICM-42688-P, Quaternion-Lage, Flugzustandsautomat, Pyro-Logik, Watchdog, LoRa-Telemetrie.
+1. Review-Rückmeldungen zu rev B1 einarbeiten, dann Bestellung bei JLCPCB mit SMD-Bestückung (Aisler als EU-Rückfall); die Tischteile jetzt bestellen.
+2. Firmware für rev B: Treiber LSM6DSV16X, Quaternion-Lage, Flugzustandsautomat, Pyro-Logik, Watchdog, LoRa-Telemetrie.
 3. Rakete wiegen und das Massenbudget gegen den Schub des E12 prüfen.
 4. Bodentests: TVC-Prüfstand mit Propellermotor im Kardan (Teile gekauft, Gestell zu bauen), Pyro-Test, Funkreichweite.
 5. Erstflug: geregelter Aufstieg mit einem Motor, Fallschirmbergung.

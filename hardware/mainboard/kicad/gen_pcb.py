@@ -50,102 +50,152 @@ def P(u, v):
 
 
 # ---------------------------------------------------------------- placement data (u, v in mm; rot in degrees)
+# Rev B1 (README section 5.3): the 2S path on the right (XT30 at the TVC end, VBAT_PROT along the right
+# edge to the arming switch at the nose), the 1S path on the left (switch, battery, charger, buck-boost,
+# radio), flat parts only in the SD-card path (v 18..30) and under the USB plug, decoder and mux under
+# the Teensy next to their pins, J_STACK beside the right socket row where all its signals are.
 # Footprint origin positions. Rotation 180 turns a horizontal connector's mouth from -y to +y etc.
+EDGE_U_, RAIL_U_ = 25.75, 23.75          # runs along the right edge (see CORRIDORS)
 ANCHORS = {
     "A1": (0.0, 60.5, 0),           # Teensy: USB toward the nose (+v), SD toward the TVC
     "U4": (0.0, 60.5, 0),           # IMU on the roll axis under the Teensy; chip X = +u, Y = +v
-    # left strip, TVC end: power entry
-    "J3": (-21.5, 19.3, 0),         # J_SW, PH-4 top entry, right above the XT30
-    "J2": (-10.0, 19.3, 0),         # J_BAT1, PH-2 top entry
-    "R_SH1": (-23.5, 27.0, 90),     # shunt along the strip
-    "U6": (-16.5, 26.5, 0),         # INA219 next to the shunt (Kelvin taps short)
-    # left strip: buck-boost 5V_SYS, >= 25 mm from the IMU
-    "U2": (-15.5, 44.0, 0),         # L1/L2 pins (11, 9) face the nose
-    "L2": (-15.5, 48.7, 0),         # straight above U2: pad 1 at pin 11 (L1), pad 2 at pin 9 (L2), no crossing
-    "C19": (-21.4, 56.2, 0),        # 1000 uF polymer at 5V_SYS
-    # left strip: radio, GPS and signals toward the nose
-    "U10": (-17.9, 74.5, 180),      # LoRa module, ANT side toward the nose; castellated pads reach 0.9 mm
-                                    # past the body: 0.2 mm to the edge, 0.53 mm to the Teensy pads
-    "U3": (-13.0, 90.0, 0),         # LDO 3V3_RF above the module
-    "J11": (-17.0, 97.5, 0),        # GPS, GH-4 top entry
-    "J13": (-17.0, 104.5, 0),       # camera, GH-3 top entry
-    "J14": (-16.0, 111.5, 0),       # external LEDs, GH-3 top entry
-    # centre, TVC end
-    "C3": (0.0, 18.0, 0),           # 1000 uF at VSERVO, between the servo connectors
+    # left strip, TVC end: switch, 1S battery, charger cable
+    "J3": (-22.5, 16.3, 0),         # J_SW, PH-4 top entry
+    "J2": (-22.5, 22.8, 0),         # J_BAT1, PH-2 top entry
+    "J17": (-15.0, 22.8, 0),        # J_CHG1, PH-3 top entry
+    "Q2": (-22.0, 26.8, 0),         # 1S reverse protection right above the battery plug
+    "F2": (-19.5, 30.6, 0),         # 1S polyfuse
+    "C10": (-19.6, 34.6, 180),      # 1S input capacitor at the buck-boost: VSYS_IN pad toward U2
+    "Q7": (-13.5, 29.5, 0),         # 1S load switch between the fuse and the buck-boost
+    # centre, TVC end (SD-card path: only flat parts)
+    "C4": (-3.8, 16.8, 0),          # 330 uF polymer at VSERVO, next to the servo pins
+    "C5": (-3.8, 22.3, 0),
+    "R_SH1": (4.8, 25.6, 180),      # shunt: VBAT_PROT pad toward Q6 (+u), VSERVO pad up to the bus, sense taps down
+    "U6": (4.4, 21.8, 0),           # INA239 right below the sense taps
+    # right strip, TVC end: 2S entry, a straight chain up from the XT30 plus pin
+    "Q1": (10.8, 17.8, 180),        # reverse protection: drain toward the XT30 plus pin, source up to F1
+    "F1": (10.8, 22.6, 90),         # 2S polyfuse
+    "Q6": (15.8, 24.3, 0),          # load switch, drain (+u): VBAT_PROT left over F1 to the shunt, right to the edge;
+                                    # 0.8 mm right of F1 so the gate has room for its via (Q6_ESC) on the left
+    "R2": (14.86, 20.9, 90),        # Q6 gate pull-up right under the source pin: VBAT2_F pad up to Q6.2, gate pad down
+    "R4": (16.45, 20.9, 270),       # VBAT2 divider top beside it: VBAT2_F pad up (joined to R2.2), sense pad down
+    "J18": (20.0, 19.6, 0),         # J_CHG2, PH-2 top entry; plus pin straight down onto the run to the XT30
     # right strip: actuators
-    "J7": (11.0, 19.0, 0),          # chute servo, XH-3 top entry
-    "J8": (20.5, 25.5, 0),          # roll motor, PH-2 top entry
-    "U1": (16.5, 31.5, 180),        # 5V_SERVO buck, SW pin toward L1
-    "L1": (22.5, 33.0, 90),
-    "C11": (12.5, 41.5, 0),         # 470 uF at 5V_SERVO
-    "U7": (21.5, 49.0, 90),         # DRV8833
-    "R20": (16.9, 47.5, 0),         # nSLEEP pull-up right at pin 1 (the placer put it out of reach)
-    # right strip: logic and sensors
-    "U8": (13.5, 60.0, 0),
-    "U9": (13.5, 66.0, 0),
-    "LED1": (22.0, 60.0, 0),
-    "LED2": (22.0, 66.0, 0),
-    "J12": (21.0, 75.0, 0),         # Qwiic, top entry
-    "J15": (12.0, 90.0, 0),         # J_EXP 2x7, rows along v
-    "U5": (21.5, 85.0, 0),          # BMP390, far from coils and CPU
-    "BZ1": (13.0, 98.5, 0),         # buzzer, 12 mm, |u| < 25
+    "J7": (12.4, 34.0, 0),          # servo 3 (chute), XH-3 top entry
+    "J16": (12.4, 41.5, 0),         # servo 4 (legs), XH-3 top entry
+    "J8": (12.4, 48.7, 0),          # roll motor, XH-2 top entry
+    "U7": (16.5, 54.5, 0),          # DRV8833, 2.8 mm channel to the VSERVO rail for its right pin row
+    # under the Teensy (parts up to 3 mm): decoder and mux at their Teensy pins (24, 25, 30, 31, 38)
+    "U11": (-3.0, 32.0, 0),         # 1S charger (SOT-23-5), flat, between the 1S path and the mux
+    "U12": (-3.1, 40.5, 90),
+    "U13": (3.1, 40.5, 90),
+    # left strip: buck-boost 5V_SYS, >= 25 mm from the IMU
+    "U2": (-15.5, 36.0, 0),         # L1/L2 pins (11, 9) face the nose; U2 and L2 >= 25 mm from the IMU
+    "L2": (-15.5, 40.7, 0),         # straight above U2: pad 1 at pin 11 (L1), pad 2 at pin 9 (L2), no crossing
+    # under the Teensy, nose end: hold-up behind D1 right at the VIN pin (A1), flat polymer parts
+    "C16": (0.0, 75.6, 0),          # 470 uF hold-up at TEENSY_VIN
+    "C17": (0.0, 81.0, 0),
+    "D1": (0.0, 86.4, 0),           # 5V_SYS -> TEENSY_VIN
+    # left strip: radio, then GPS, camera, LEDs toward the nose
+    "U10": (-17.6, 61.5, 180),      # LoRa module, ANT side toward the nose; 0.5 mm from the edge (B17)
+    "J11": (-17.0, 79.6, 0),        # GPS, GH-4 top entry
+    "J13": (-17.0, 86.6, 0),        # camera, GH-3 top entry
+    "J14": (-17.0, 93.6, 0),        # external LEDs, GH-3 top entry
+    "U3": (-21.0, 100.0, 0),        # LDO 3V3_RF
+    # right strip: logic beside the right socket row
+    "J15": (11.2, 82.4, 0),         # J_STACK 2x10, pin 1 at the nose end, rows along v
+    "J4": (19.0, 77.5, 90),         # arming (key switch), XH-2 top entry: VBAT_PROT comes up the right edge,
+                                    # VBAT_ARMED goes on along it to the pyro plugs
+    "U14": (19.5, 66.0, 0),         # LDO 3V3_EXP for J_STACK
+    "TP1": (EDGE_U_, 44.0, 0),      # test points VBAT_PROT and VSERVO right on their runs along the edge
+    "TP4": (RAIL_U_, 66.0, 0),
+    # DRV8833 decoupling in the 2.8 mm channel between the right pin row and the VSERVO rail (hand routing
+    # 23.10.: placed by the placer they landed 8 to 14 mm away, the VINT trace ran 45 mm across the board)
+    "C38": (21.55, 56.1, 90),       # VINT 2.2 uF: pad 1 level with pin 14, GND_PWR pad above to the plane
+    "C36": (22.3, 51.0, 180),       # VM 100 nF: VSERVO pad on the rail, GND_PWR pad beside it
+    "C35": (21.9, 48.4, 180),       # VM 10 uF bulk, the same way below it
+    "C37": (21.86, 40.53, 90),      # VCP 10 nF: where the placer had put it, VSERVO pad up toward the rail stub
+    "BZ1": (12.1, 90.7, 0),         # buzzer, 12 mm, clear of the USB plug space
+    "J12": (20.3, 101.4, 90),       # Qwiic, SH-4 top entry
 }
 EDGE = {  # ref: (edge, u of the footprint origin, rot) - the courtyard is moved flush with that edge
-    "J1": ("bottom", -15.3, 180),   # XT30PW-M, mouth toward the TVC end, clear of hole H1
-    "J5": ("bottom", -2.3, 0),      # servo yaw, XH-3 side entry
-    "J6": ("bottom", 9.9, 0),       # servo pitch
-    "J4": ("top", -6.0, 180),       # arming switch, PH-2 side entry, toward the nose
-    "J10": ("top", 3.0, 180),       # pyro 2
-    "J9": ("top", 13.5, 180),       # pyro 1
+    "J5": ("bottom", -14.4, 0),     # servo yaw, XH-3 side entry
+    "J6": ("bottom", -2.8, 0),      # servo pitch
+    "J1": ("bottom", 10.2, 180),    # XT30PW-M, mouth toward the TVC end, clear of hole H2
+    "J9": ("top", -13.0, 180),      # pyro 1..4, XH-2 side entry toward the nose
+    "J10": ("top", -3.5, 180),
+    "J19": ("top", 6.0, 180),       # pyro 3 (DNP)
+    "J20": ("top", 15.5, 180),      # pyro 4 (DNP)
 }
+# Pyro channels: one column under each plug (centre u), TVS under pin 1, FET under pin 2 (drain up)
+PYRO_COLS = {1: ("J9", "D2", "Q3", -14.25), 2: ("J10", "D3", "Q4", -4.75), 3: ("J19", "D5", "Q8", 4.75),
+             4: ("J20", "D6", "Q9", 14.25)}
+for _ch, (_j, _d, _q, _c) in PYRO_COLS.items():
+    ANCHORS[_d] = (_c + 1.6, 103.6, 270)
+    ANCHORS[_q] = (_c - 2.4, 105.3, 0)
 HOLES = {f"H{i + 1}": xy for i, xy in enumerate(outline.HOLES)}
 
 STRIP_L, STRIP_R = (-26.4, -9.3), (9.3, 26.4)       # beside the Teensy socket courtyards
+RIGHT_IN = (9.3, 22.8)                              # right strip without the VBAT_PROT run along the edge
 BOARD = (-26.4, 26.4, 0.6, 119.4)
+NOSE_MID = (-12.0, 16.0, 88.0, 107.4)               # under the USB plug (flat parts only) and beside the arming plug
 # Regions for the passives of each schematic block (u0, u1, v0, v1)
 REGIONS = {
-    "2S: Akku, Verpolschutz, Hauptschalter": (-26.4, -2.0, 10.0, 26.0),
-    "2S: Spannungsmessung und Strommessung INA219": (*STRIP_L, 20.0, 38.0),
-    "2S: Servo-Schiene VSERVO": (-9.0, 9.3, 10.0, 31.0),
-    "2S: Buck U1 -> 5V_SERVO": (*STRIP_R, 22.0, 46.0),
-    "1S: Akku, Verpolschutz, Spannungsmessung": (*STRIP_L, 20.0, 40.0),
-    "1S: Buck-Boost U2 -> 5V_SYS, Teensy-VIN": (*STRIP_L, 36.0, 61.0),
-    "LDO U3 -> 3V3_RF, Sternpunkt, Testpunkte": (*STRIP_L, 86.0, 96.0),
+    "2S: Akku, Verpolschutz, Sicherung, Lastschalter": (5.5, 22.8, 13.0, 30.0),
+    "2S: Spannungsmessung, Shunt und INA239": (-9.3, 22.8, 13.0, 36.0),
+    "2S: Servo-Schiene VSERVO": (-9.3, 9.3, 13.0, 30.0),
+    "1S: Akku, Verpolschutz, Sicherung, Lastschalter": (-25.4, -6.1, 13.0, 34.0),
+    "1S: Lader MCP73831": (-25.4, 6.1, 13.0, 37.0),
+    "1S: Buck-Boost U2 -> 5V_SYS, Teensy-VIN": (-25.4, -6.1, 27.0, 48.0),
+    "LDOs 3V3_RF und 3V3_EXP, Sensorinsel, Sternpunkt": BOARD,
     "Teensy 4.1": BOARD,
-    "Erweiterung, Befestigung, Testpunkte": BOARD,
-    "IMU ICM-42688-P, SPI1": (-6.0, 6.0, 50.0, 71.0),
-    "Barometer BMP390 und I2C": (*STRIP_R, 70.0, 92.0),
-    "LoRa E22-400T22S, Serial8": (*STRIP_L, 58.0, 96.0),
-    "GPS, Serial1": (*STRIP_L, 92.0, 116.0),
-    "Servos": (-9.0, 26.4, 8.0, 31.0),
-    "Rollmotor DRV8833": (*STRIP_R, 38.0, 58.0),
-    "Arming": (-14.0, 26.4, 88.0, 119.4),
-    "Pyro-Kanal 1": (-14.0, 26.4, 88.0, 119.4),
-    "Pyro-Kanal 2": (-14.0, 26.4, 88.0, 119.4),
-    "Status-LEDs": (*STRIP_R, 54.0, 72.0),
-    "Summer": (0.0, 26.4, 86.0, 112.0),
-    "Kamera": (*STRIP_L, 92.0, 116.0),
+    "CS-Decoder und Analogmux": (-6.1, 6.1, 31.0, 54.0),
+    "Stapelstecker J_STACK, Befestigung, Testpunkte": BOARD,
+    "IMU ICM-42688-P, SPI1": (-6.1, 6.1, 50.0, 71.0),
+    "Barometer BMP390, SPI1": (15.8, 22.8, 57.0, 76.0),
+    "Qwiic, I2C": (-6.1, 22.8, 57.0, 84.0),
+    "LoRa E22-400T22S, Serial8": (-25.4, -9.3, 44.0, 80.0),
+    "GPS, Serial1": (-25.4, -9.3, 74.0, 108.0),
+    "Servos": (-13.0, 22.8, 8.0, 46.0),
+    "Rollmotor DRV8833": (*RIGHT_IN, 40.0, 58.0),
+    "Arming": (9.3, 22.8, 84.0, 107.2),
+    "Messteiler am Analogmux": (-9.3, 9.3, 34.0, 91.0),
+    "Pyro-Kanal 1": NOSE_MID, "Pyro-Kanal 2": NOSE_MID, "Pyro-Kanal 3": NOSE_MID, "Pyro-Kanal 4": NOSE_MID,
+    "Status-LEDs": (-25.4, -9.3, 74.0, 108.0),
+    "Summer": (-12.0, 22.8, 84.0, 107.4),
+    "Kamera": (-25.4, -9.3, 74.0, 108.0),
 }
-REF_REGIONS = {"NT1": (-14.0, -2.0, 8.0, 24.0)}        # star point right at the 2S minus of J1
-REF_REGIONS.update({f"TP{i}": BOARD for i in range(1, 10)})   # test points: next to their net, anywhere
+REF_REGIONS = {"NT1": (5.5, 22.8, 13.0, 30.0),      # star point right at the 2S minus of J1
+               "JP1": (-25.4, -6.1, 13.0, 34.0), "JP2": (-25.4, -6.1, 13.0, 34.0),
+               "C6": (-13.0, 22.8, 8.0, 60.0), "C9": (-25.4, 9.3, 13.0, 56.0),
+               "U15": (-6.1, 6.1, 66.0, 73.0), "C31": (-6.1, 6.1, 66.0, 73.0), "C32": (-6.1, 6.1, 66.0, 73.0),
+               "C21": (9.3, 22.8, 54.0, 84.0), "C22": (9.3, 22.8, 54.0, 84.0),
+               "FB1": (-9.3, 22.8, 40.0, 84.0), "C23": (-9.3, 22.8, 40.0, 84.0)}
+REF_REGIONS.update({f"TP{i}": BOARD for i in range(1, 12)})   # test points: next to their net, anywhere
 # SD card and USB plug sit at Teensy height (8.5 mm sockets): flat SMD parts may go underneath,
 # tall THT parts not. The placer only places SMD passives, so these are checked for anchors only.
 KEEPOUTS = [(u0, u1, v0, v1) for _, u0, u1, v0, v1 in outline.KEEPOUTS]
-UNDER_TEENSY = (-6.1, 6.1, 30.0, 91.0)          # only parts up to 3 mm high, i.e. the IMU block
+UNDER_TEENSY = (-6.1, 6.1, 30.0, 91.0)          # parts up to 3 mm high (every part the placer places)
+UNDER_OK = ("IMU ICM-42688-P, SPI1",)           # only the IMU block inside the 5 mm circle around the IMU
+FLAT = {"TP1", "TP4", "U4", "U11", "U12", "U13", "C4", "C5", "R_SH1", "U6", "C16", "C17", "D1", "Q3", "Q4", "Q8", "Q9", "D2", "D3", "D5", "D6"}   # anchored parts of at most 3.1 mm height
+IMU_VIA_R = 2.6                                 # board rule: no vias under the chip
+IMU_KEEP_R = 5.0                                # spec section 8: no vias and no inner tracks within 5 mm of the IMU
 # Silkscreen: front carries short names, the back the logo, title and pin-out (JLC: 1.0 mm text, 0.15 mm stroke)
 LABELS = {  # front, next to the connector instead of its J number
     "J1": "2S", "J2": "1S", "J3": "SW", "J4": "ARM", "J5": "YAW", "J6": "PITCH", "J7": "CHUTE", "J8": "MOT",
-    "J9": "PYRO1", "J10": "PYRO2", "J11": "GPS", "J12": "QWIIC", "J13": "CAM", "J14": "LED", "J15": "EXP",
+    "J9": "PYRO1", "J10": "PYRO2", "J11": "GPS", "J12": "QWIIC", "J13": "CAM", "J14": "LED", "J15": "STACK",
+    "J16": "LEGS", "J17": "CHG1S", "J18": "CHG2S", "J19": "PYRO3", "J20": "PYRO4",
 }
 PINOUT = {  # back, pin 1 first; one word per pin (checked against circuit.py), J15 only its supply pins
-    "J1": "+ -", "J2": "+ -", "J3": "1S 1S 2S 2S", "J4": "2S ARM", "J5": "S + -", "J6": "S + -", "J7": "S 5V -",
+    "J1": "+ -", "J2": "+ -", "J3": "1S GND 2S GNDP", "J4": "2S ARM", "J5": "S + -", "J6": "S + -", "J7": "S + -",
     "J8": "A B", "J9": "+ -", "J10": "+ -", "J11": "3V3 GND TX RX", "J12": "GND 3V3 SDA SCL",
-    "J13": "5V TRG GND", "J14": "5V DAT GND", "J15": "1:3V3 2:GND 14:5V",
+    "J13": "5V TRG GND", "J14": "5V DAT GND", "J15": "1:GND 2:GNDP 3:3V3 4:5V 5,6:VSRV",
+    "J16": "S + -", "J17": "VBUS GND LED", "J18": "+ -", "J19": "+ -", "J20": "+ -",
 }
-TP_LABELS = {"VBAT_PROT": "VBAT", "VSYS_IN": "VSYS", "5V_SYS": "5V", "VSERVO": "VSRV", "5V_SERVO": "5VS",
-             "3V3_RF": "3V3RF", "GND": "GND", "SDA": "SDA", "SCL": "SCL"}   # test points by net, not TPn
+TP_LABELS = {"VBAT_PROT": "VBAT", "VSYS_IN": "VSYS", "5V_SYS": "5V", "VSERVO": "VSRV", "3V3_EXP": "3V3X",
+             "3V3_RF": "3V3RF", "GND": "GND"}   # test points by net, not TPn
 SILK_H, SILK_T = 1.0, 0.15
-NAME, REV = "KARTONAUT", "MAINBOARD REV B"
+NAME, REV = "KARTONAUT", "MAINBOARD REV B1"
 MASK_COLOR = "Blue"
 
 
@@ -178,7 +228,7 @@ def load_fp(fpid):
 
 def passive(ref):
     p = next(q for q in circuit.PARTS if q.ref == ref)
-    return p.lib.startswith(("Device:R", "Device:C", "Device:L", "Device:D", "Connector:TestPoint")) and ref != "R_SH1"
+    return p.lib.startswith(("Device:R", "Device:C", "Device:L", "Device:D", "Device:Ferrite", "Connector:TestPoint")) and ref != "R_SH1"
 
 
 def crt_box(fp):
@@ -284,6 +334,8 @@ def add_footprints(board):
         attrs = fp.GetAttributes()
         if p.ref.startswith(("TP", "H", "NT", "JP")):
             attrs |= pcbnew.FP_EXCLUDE_FROM_BOM | pcbnew.FP_EXCLUDE_FROM_POS_FILES
+        if p.dnp:                          # pyro 3/4 and the second barometer (E5, C2): footprint only
+            attrs |= pcbnew.FP_DNP | pcbnew.FP_EXCLUDE_FROM_POS_FILES
         fp.SetAttributes(attrs)
         for pad in fp.Pads():
             net = p.pins.get(pad.GetNumber())
@@ -296,6 +348,8 @@ def add_footprints(board):
             if isinstance(item, pcbnew.PCB_TEXT) and item.GetLayer() == pcbnew.F_SilkS:
                 item.SetLayer(pcbnew.F_Fab)
         board.Add(fp)
+        if p.ref == "U7":                  # exposed pad with thermal vias: solid to the GND_PWR plane
+            fp.SetLocalZoneConnection(pcbnew.ZONE_CONNECTION_FULL)
         fps[p.ref] = fp
     return fps
 
@@ -323,12 +377,26 @@ def place_fixed(board, fps):
     refs = list(placed)
     clash = [(a, b) for i, a in enumerate(refs) for b in refs[i + 1:]
              if overlap(placed[a], placed[b])]
-    clash += [(a, "SD/USB-Freiraum") for a in placed if not a.startswith(("A1", "U4")) and any(overlap(placed[a], k) for k in KEEPOUTS)]
+    clash += [(a, "SD/USB-Freiraum") for a in placed if not a.startswith(("A1", "H")) and a not in FLAT
+              and any(overlap(placed[a], k) for k in KEEPOUTS)]
     return placed, clash
+
+
+# Decoupling and setup parts that belong to one IC although another part shares their net first
+OWNERS = {"C21": "U14", "C22": "U14", "C8": "U11", "C9": "U11", "R13": "U11", "C3": "U6", "C24": "U12",
+          "C25": "U13", "C18": "U3", "C19": "U3", "C20": "U3", "C29": "U5", "C30": "U5", "C31": "U15", "C32": "U15",
+          "C33": "U10", "C34": "U10",  "C44": "U8", "C45": "LED1", "C46": "LED2",
+          "C26": "U4", "C27": "U4", "C28": "U4", "C13": "U2", "C14": "U2", "C15": "U2"}
 
 
 def owner_target(p, fps, placed):
     """Where a passive wants to sit: at the pad of an already placed part sharing a signal net."""
+    own = OWNERS.get(p.ref)
+    if own and (own in placed):
+        for pad in fps[own].Pads():
+            if pad.GetNetname() in p.pins.values() and pad.GetNetname() not in ("GND", "GND_PWR"):
+                q = pad.GetPosition()
+                return UV(pcbnew.ToMM(q.x), pcbnew.ToMM(q.y))
     best = None
     for net in p.pins.values():
         if not net or net in ("GND", "GND_PWR"):
@@ -353,6 +421,11 @@ RINGS = sorted(((du * 0.5, dv * 0.5) for du in range(-60, 61) for dv in range(-6
                key=lambda d: d[0] ** 2 + d[1] ** 2)
 
 
+RINGS_WIDE = sorted(((du * 0.5, dv * 0.5) for du in range(-110, 111) for dv in range(-240, 241)),
+                    key=lambda d: d[0] ** 2 + d[1] ** 2)
+FALLBACK = []                       # parts placed outside their region (reported by build)
+
+
 def place_passives(fps, placed):
     region_board = (-W / 2 + 0.6, W / 2 - 0.6, 0.6, L - 0.6)
     failed = []
@@ -375,23 +448,29 @@ def place_passives(fps, placed):
             for rot in (0, 90):
                 set_pose(fp, 0.0, 0.0, rot)
                 shapes[rot] = crt_box(fp)
-            ok = None
-            for du, dv in RINGS:
-                u, v = target[0] + du, target[1] + dv
-                for rot in (0, 90):
-                    b0 = shapes[rot]
-                    box = (b0[0] + u, b0[1] + u, b0[2] + v, b0[3] + v)
-                    if not inside(box, region) or not inside(box, region_board):
-                        continue
-                    if p.group != "IMU ICM-42688-P, SPI1" and overlap(box, UNDER_TEENSY):
-                        continue
-                    gap = 0.2 if p.group.startswith("IMU") or p.ref == "NT1" else 0.35   # routing channels
-                    if any(overlap(box, b, gap) for b in placed.values()):
-                        continue
-                    ok = (u, v, rot, box)
-                    break
+            imu = (-IMU_KEEP_R - 1.0, IMU_KEEP_R + 1.0, ANCHORS["U4"][1] - IMU_KEEP_R - 1.0,
+                   ANCHORS["U4"][1] + IMU_KEEP_R + 1.0)
+
+            def search(reg, gap, rings):
+                for du, dv in rings:
+                    u, v = target[0] + du, target[1] + dv
+                    for rot in (0, 90):
+                        b0 = shapes[rot]
+                        box = (b0[0] + u, b0[1] + u, b0[2] + v, b0[3] + v)
+                        if not inside(box, reg) or not inside(box, region_board):
+                            continue
+                        if p.group not in UNDER_OK and overlap(box, imu):
+                            continue
+                        if any(overlap(box, b, gap) for b in placed.values()):
+                            continue
+                        return (u, v, rot, box)
+                return None
+            gap = 0.2 if p.group.startswith("IMU") or p.ref == "NT1" else 0.35   # routing channels
+            ok = search(region, gap, RINGS)
+            if not ok:                      # second chance: anywhere, as close to the owner as possible
+                ok = search(region_board, 0.25, RINGS_WIDE)
                 if ok:
-                    break
+                    FALLBACK.append(p.ref)
             if ok:
                 set_pose(fp, ok[0], ok[1], ok[2])
                 placed[p.ref] = ok[3]
@@ -441,13 +520,175 @@ def rect_zone(board, net, layers, box, priority=0, rule=None, name="", solid=Fal
 FULL = (-W / 2 + 0.3, W / 2 - 0.3, 0.3, L - 0.3)
 
 
-# B.Cu is the supply plane (layer type power): GND_PWR under the actuators, 5V_SYS everywhere else.
-# GND_PWR reaches the pyro FETs at the nose through a 3.3 mm strip along the right edge and a band
-# under the pyro area, so their return runs as plane to the star point (spec §8), not as a long track.
-SPLIT_GND_PWR = [(-26.7, 0.3), (26.7, 0.3), (26.7, 119.7), (-14.0, 119.7), (-14.0, 100.0), (23.4, 100.0),
-                 (23.4, 57.0), (-9.4, 57.0), (-9.4, 22.0), (-26.7, 22.0)]
-SPLIT_5V_SYS = [(-26.7, 22.0), (-9.4, 22.0), (-9.4, 57.0), (23.4, 57.0), (23.4, 100.0), (-14.0, 100.0),
-                (-14.0, 119.7), (-26.7, 119.7)]
+# B.Cu is the supply plane (layer type power): GND_PWR under everything fed from the 2S pack, 5V_SYS
+# under the 1S side. GND_PWR: the TVC band (servos, XT30), the centre under the VSERVO buffer, the right
+# strip with the actuators, the outer right strip beside J_STACK and the nose band under pyro, arming
+# and buzzer, so every 2S return runs as plane to the star point (spec section 8), not as a long track.
+SPLIT_GND_PWR = [(-26.7, 0.3), (26.7, 0.3), (26.7, 119.7), (-19.5, 119.7), (-19.5, 99.0), (-9.4, 99.0),
+                 (-9.4, 89.0), (16.0, 89.0), (16.0, 56.0), (9.4, 56.0), (9.4, 30.5), (-9.4, 30.5), (-9.4, 13.0),
+                 (-26.7, 13.0)]
+SPLIT_5V_SYS = [(-26.7, 13.0), (-9.4, 13.0), (-9.4, 30.5), (9.4, 30.5), (9.4, 56.0), (16.0, 56.0), (16.0, 89.0),
+                (-9.4, 89.0), (-9.4, 99.0), (-19.5, 99.0), (-19.5, 119.7), (-26.7, 119.7)]
+
+
+def imu_circle(r=IMU_KEEP_R, n=24):
+    u0, v0 = ANCHORS["U4"][:2]
+    return [(u0 + r * math.cos(2 * math.pi * k / n), v0 + r * math.sin(2 * math.pi * k / n)) for k in range(n)]
+
+
+# Current paths as F.Cu zones of their net (review B13): drawn before routing, so Freerouting sees them
+# as planes of that net and only adds the short stubs. Waypoints are (u, v) or "REF.PAD"; consecutive
+# points are joined by an axis-parallel L (along u first, "v" as fourth item: along v first).
+EDGE_U = EDGE_U_                                      # outer run along the right edge (u 24.9..26.6): VBAT_PROT, VBAT_ARMED
+RAIL_U = RAIL_U_                                      # inner run (u 22.9..24.6): VSERVO to the right strip
+BUS_V = 28.8                                        # VSERVO bus right below the Teensy sockets (v 28.1..29.5)
+CORRIDORS = [
+    # 2S entry chain: XT30 plus -> Q1 drain; Q1 source -> F1; F1 -> Q6 source
+    ("VBAT2_RAW", 1.2, ["J1.1", "Q1.3"]),
+    ("VBAT2_REV", 1.0, ["Q1.2", "F1.1"], "v"),
+    ("VBAT2_F", 1.0, ["F1.2", "Q6.2"], "v"),
+    ("VBAT2_F", 0.8, ["R2.2", "Q6.2"], "v"),                 # gate pull-up R2 straight under the source pin
+    ("VBAT2_F", 0.8, ["R4.1", "R2.2"]),                       # VBAT2 divider top beside it
+    # 2S charge plug J18 -> the XT30 plus pin, below Q1's gate pin and above J1's minus pin
+    ("VBAT2_RAW", 1.0, ["J18.1", ("J18.1", 15.85)], "v"),
+    ("VBAT2_RAW", 1.0, [("J18.1", 15.85), (10.8, 15.85)]),
+    ("VBAT2_RAW", 1.0, [(10.8, 15.85), (10.8, 14.6)], "v"),
+    # DRV8833 VM straight to the VSERVO rail
+    ("VSERVO", 0.6, ["U7.12", (RAIL_U, "U7.12")]),
+    # servo 3 and 4: from the inner rail above the pin row (clear of the minus pin) down to the plus pin
+    ("VSERVO", 0.9, [(RAIL_U, 35.7), ("J7.2", 35.7)]),
+    ("VSERVO", 0.9, ["J7.2", ("J7.2", 35.7)], "v"),
+    ("VSERVO", 0.9, [(RAIL_U, 43.2), ("J16.2", 43.2)]),
+    ("VSERVO", 0.9, ["J16.2", ("J16.2", 43.2)], "v"),
+    # pyro: FET drain straight up to pin 2 of its plug (5 A pulse)
+    ("PYRO1_NEG", 1.0, ["Q3.3", ("Q3.3", "J9.2")], "v"),
+    ("PYRO2_NEG", 1.0, ["Q4.3", ("Q4.3", "J10.2")], "v"),
+    ("PYRO3_NEG", 1.0, ["Q8.3", ("Q8.3", "J19.2")], "v"),
+    ("PYRO4_NEG", 1.0, ["Q9.3", ("Q9.3", "J20.2")], "v"),
+    # 2S: Q6 drain -> over F1 -> shunt; Q6 drain -> outer run -> arming plug J4 (VBAT_PROT, A6)
+    ("VBAT_PROT", 1.4, [("R_SH1.1", 26.7), ("Q6.3", 26.7)]),
+    ("VBAT_PROT", 1.1, ["Q6.3", ("Q6.3", 26.7)], "v"),
+    ("VBAT_PROT", 1.4, ["Q6.3", ("EDGE", "Q6.3")]),
+    ("VBAT_PROT", 1.7, [("EDGE", 23.6), ("EDGE", "J4.1")]),
+    ("VBAT_PROT", 1.8, [("EDGE", "J4.1"), "J4.1"]),
+    # arming plug J4 -> outer run -> band behind the pins of the four pyro plugs (VBAT_ARMED), down to each TVS
+    ("VBAT_ARMED", 1.8, ["J4.2", ("EDGE", "J4.2")]),
+    ("VBAT_ARMED", 1.7, [("EDGE", "J4.2"), (EDGE_U, 112.9)]),
+    ("VBAT_ARMED", 2.0, [(EDGE_U, 112.9), ("J9.1", 112.9)]),
+    ("VBAT_ARMED", 1.6, [("J9.1", "D2.1"), ("J9.1", 112.9)], "v"),
+    ("VBAT_ARMED", 1.6, [("J10.1", "D3.1"), ("J10.1", 112.9)], "v"),
+    ("VBAT_ARMED", 1.6, [("J19.1", "D5.1"), ("J19.1", 112.9)], "v"),
+    ("VBAT_ARMED", 1.6, [("J20.1", "D6.1"), ("J20.1", 112.9)], "v"),
+    # VSERVO: shunt -> bus across the board -> buffer column -> both TVC servo plugs; bus -> inner rail
+    ("VSERVO", 1.9, ["R_SH1.4", ("R_SH1.4", BUS_V)], "v"),
+    ("VSERVO", 1.4, [("C5.1", BUS_V), (RAIL_U, BUS_V)]),
+    ("VSERVO", 2.0, [("C5.1", BUS_V), ("C5.1", 10.1)], "v"),
+    ("VSERVO", 4.2, [("J5.2", 10.1), ("J6.2", 10.1)]),
+    ("VSERVO", 1.7, [(RAIL_U, 28.1), (RAIL_U, 74.0)], "v"),
+    # VSERVO for J_STACK pins 5 and 6: rail end -> below the arming plug J4 -> channel between J15 and J4
+    ("VSERVO", 1.0, [(RAIL_U, 74.0), (15.35, 74.0)]),
+    ("VSERVO", 1.0, [(15.35, 74.0), (15.35, "J15.6")], "v"),
+    ("VSERVO", 1.0, [(15.35, "J15.6"), "J15.6"]),
+    ("VSERVO", 1.0, ["J15.5", "J15.6"]),
+    # 1S input at the buck-boost (A7): wide up to the VQFN pins, the zone fill necks down there
+    ("VSYS_IN", 1.0, ["C10.1", ("U2.1", "C10.1")]),
+    ("VSYS_IN", 0.8, ["C10.1", ("C10.1", "U2.12")], "v"),
+    ("VSYS_IN", 0.6, [("C10.1", "U2.12"), "U2.12"]),
+]
+
+
+def pad_uv(fps, ref, num):
+    for pad in fps[ref].Pads():
+        if pad.GetNumber() == num:
+            q = pad.GetPosition()
+            return UV(pcbnew.ToMM(q.x), pcbnew.ToMM(q.y))
+    raise KeyError(f"{ref}.{num}")
+
+
+def add_corridors(board, fps, draw=True):
+    """Draw the CORRIDORS as zones; returns their boxes (u0, u1, v0, v1). With draw=False only the
+    boxes, which the placer keeps free of other parts."""
+    def pt(x):
+        if isinstance(x, str):
+            return pad_uv(fps, *x.split("."))
+        a, b = x
+        u = EDGE_U if a == "EDGE" else (pad_uv(fps, *a.split("."))[0] if isinstance(a, str) else a)
+        v = pad_uv(fps, *b.split("."))[1] if isinstance(b, str) else b
+        return u, v
+    boxes, per_net = [], {}
+    for net, w, way, *opt in CORRIDORS:
+        pts = [pt(x) for x in way]
+        for a, b in zip(pts, pts[1:]):
+            mid = (a[0], b[1]) if opt and opt[0] == "v" else (b[0], a[1])
+            for s0, s1 in ((a, mid), (mid, b)):
+                if abs(s0[0] - s1[0]) < 1e-6 and abs(s0[1] - s1[1]) < 1e-6:
+                    continue
+                box = (min(s0[0], s1[0]) - w / 2, max(s0[0], s1[0]) + w / 2,
+                       min(s0[1], s1[1]) - w / 2, max(s0[1], s1[1]) + w / 2)
+                box = (max(box[0], -W / 2 + 0.4), min(box[1], W / 2 - 0.4), box[2], box[3])
+                boxes.append(box)
+                per_net.setdefault(net, []).append(box)
+    if draw:                                         # one zone per net: the union of its rectangles
+        for net, rects in per_net.items():
+            z = rect_zone(board, net, [pcbnew.F_Cu], rects[0], priority=2, solid=True, name=f"{net} Strompfad")
+            o = z.Outline()
+            for u0, u1, v0, v1 in rects[1:]:
+                o.NewOutline()
+                for u, v in ((u0, v0), (u1, v0), (u1, v1), (u0, v1)):
+                    q = P(u, v)
+                    o.Append(q.x, q.y, o.OutlineCount() - 1)
+            o.Simplify()
+    return boxes
+
+
+WIDE_PATHS = {"VBAT_PROT", "VBAT_ARMED", "VSERVO"}     # runs other parts' stubs dock onto
+
+
+def carve_corridors(board):
+    """Freerouting reads a zone as its plain outline, without the clearance cut-outs around pads of
+    other nets that KiCad's fill makes; every such pad would be a short. So fill the current-path
+    zones once and take the filled shape as their new outline. Returns the number of zones kept."""
+    zones = [z for z in board.Zones() if z.GetZoneName().endswith("Strompfad")]
+    pcbnew.ZONE_FILLER(board).Fill(zones)
+    kept = 0
+    for z in zones:
+        poly = z.GetFilledPolysList(pcbnew.F_Cu)
+        if poly.OutlineCount() == 0:
+            board.Delete(z)
+            continue
+        o = z.Outline()                              # edited in place: SetOutline() would take
+        o.RemoveAllContours()                        # ownership of a Python object (crash)
+        for i in range(poly.OutlineCount()):
+            o.AddOutline(poly.COutline(i))           # holes (other pads inside) become notches
+            for h in range(poly.HoleCount(i)):
+                o.AddHole(poly.CHole(i, h), o.OutlineCount() - 1)
+        o.Fracture()
+        z.SetIsFilled(False)
+        kept += 1
+        # Freerouting does not treat a copper zone on a signal layer as an obstacle for other nets and
+        # would route straight through it. A rule area of the same shape keeps tracks and vias out while
+        # routing; import_ses() deletes these again.
+        k = pcbnew.ZONE(board)
+        ls = pcbnew.LSET()
+        ls.AddLayer(pcbnew.F_Cu)
+        k.SetLayerSet(ls)
+        core = pcbnew.SHAPE_POLY_SET(o)          # 0.6 mm smaller than the copper: 1 mm tracks of the
+        rim = 0.6 if z.GetNetname() in WIDE_PATHS else 0.3   # 1 mm / 0.5 mm stubs dock at the rim
+        core.Deflate(MM(rim), pcbnew.CORNER_STRATEGY_ROUND_ALL_CORNERS, MM(0.01))
+        if core.OutlineCount() == 0:
+            continue
+        ko = k.Outline()
+        for i in range(core.OutlineCount()):
+            ko.AddOutline(core.COutline(i))
+        k.SetIsRuleArea(True)
+        k.SetDoNotAllowTracks(True)
+        k.SetDoNotAllowVias(True)
+        k.SetDoNotAllowZoneFills(False)
+        k.SetDoNotAllowPads(False)
+        k.SetDoNotAllowFootprints(False)
+        k.SetZoneName(f"{z.GetNetname()} frei halten")
+        board.Add(k)
+    return kept
 
 
 def add_pours(board):
@@ -460,11 +701,11 @@ def add_zones(board, fps):
     rect_zone(board, "GND", [pcbnew.In1_Cu], FULL, name="GND In1.Cu")     # solid plane (layer type power)
     rect_zone(board, "GND_PWR", [pcbnew.B_Cu], SPLIT_GND_PWR, name="GND_PWR B.Cu")
     rect_zone(board, "5V_SYS", [pcbnew.B_Cu], SPLIT_5V_SYS, name="5V_SYS B.Cu")
-    # spec §8: no vias around the IMU on any layer, no tracks under it on the inner and back layers
-    rect_zone(board, None, [pcbnew.F_Cu, pcbnew.In1_Cu, pcbnew.In2_Cu, pcbnew.B_Cu], (-1.9, 1.9, 59.0, 62.0),
+    # spec §8, review B16: no vias within 5 mm of the IMU on any layer, no inner tracks there; only
+    # the SPI lines and INT come in, on F.Cu straight from the Teensy pads
+    rect_zone(board, None, [pcbnew.F_Cu, pcbnew.In1_Cu, pcbnew.In2_Cu, pcbnew.B_Cu], imu_circle(IMU_VIA_R, 16),
               rule={"vias"}, name="IMU ohne Vias")
-    rect_zone(board, None, [pcbnew.In2_Cu], (-2.4, 2.4, 58.5, 62.5), rule={"tracks"},
-              name="IMU ruhige Masse")
+    rect_zone(board, None, [pcbnew.In2_Cu], imu_circle(), rule={"tracks"}, name="IMU ruhige Masse")
     # spec §8: LoRa module on a ground plane, no signals underneath (pads sit at its long edges)
     b = crt_box(fps["U10"])
     inner = (b[0] + 2.6, b[1] - 2.6, b[2] + 1.5, b[3] - 1.5)
@@ -783,7 +1024,8 @@ def add_plane_vias(board, fps):
     via_r, clear = 0.3, 0.2
     pads = [(pad, pad.GetBoundingBox()) for fp in fps.values() for pad in fp.Pads()]
     vias = []
-    no_via = [(-1.9, 1.9, 59.0, 62.0)]
+    no_via = []
+    iu, iv = ANCHORS["U4"][:2]
     b = crt_box(fps["U10"])
     no_via.append((b[0] + 2.6, b[1] - 2.6, b[2] + 1.5, b[3] - 1.5))
 
@@ -794,11 +1036,20 @@ def add_plane_vias(board, fps):
         dy = max(y0 - y, 0, y - y1)
         return math.hypot(dx, dy)
 
+    corr = add_corridors(board, fps, draw=False)
+    imu_group = {p.ref for p in circuit.PARTS if p.group.startswith("IMU")}
+    own_imu = False
+
     def free(x, y, own, net):
         u, v = UV(x, y)
         if abs(u) > W / 2 - 1.0 or v < 1.0 or v > L - 1.0:
             return False
         if any(r[0] - 0.3 < u < r[1] + 0.3 and r[2] - 0.3 < v < r[3] + 0.3 for r in no_via):
+            return False
+        r = math.hypot(u - iu, v - iv)
+        if r < IMU_VIA_R + 0.4 or (r < IMU_KEEP_R + 0.4 and not own_imu):
+            return False
+        if any(b[0] - 0.4 < u < b[1] + 0.4 and b[2] - 0.4 < v < b[3] + 0.4 for b in corr):
             return False
         for pad, bb in pads:
             if pad is own:
@@ -818,6 +1069,7 @@ def add_plane_vias(board, fps):
 
     n = 0
     for fp in fps.values():
+        own_imu = fp.GetReference() in imu_group       # the IMU's own ground vias may sit within 5 mm
         for pad in fp.Pads():
             net = pad.GetNetname()
             if net not in planes or pad.GetAttribute() != pcbnew.PAD_ATTRIB_SMD:
@@ -859,22 +1111,83 @@ def add_plane_vias(board, fps):
     return n
 
 
+def add_corridor_spines(board, fps):
+    """Rule areas 0.2 mm wide along the centre line of every CORRIDORS segment, no tracks, no vias: the
+    deflated keepout of carve_corridors() vanishes on runs narrower than 1.4 mm, and Freerouting then cut
+    straight through them (LORA_M0 and the VBAT2_F gate pull-up through VBAT_PROT over F1, 3V3 through
+    the VM stub of the DRV8833, 23.10.). Named "... frei halten", so patch_unconnected() deletes them."""
+    def pt(x):
+        if isinstance(x, str):
+            return pad_uv(fps, *x.split("."))
+        a, b = x
+        u = EDGE_U if a == "EDGE" else (pad_uv(fps, *a.split("."))[0] if isinstance(a, str) else a)
+        v = pad_uv(fps, *b.split("."))[1] if isinstance(b, str) else b
+        return u, v
+    n = 0
+    for net, w, way, *opt in CORRIDORS:
+        pts = [pt(x) for x in way]
+        for a, b in zip(pts, pts[1:]):
+            mid = (a[0], b[1]) if opt and opt[0] == "v" else (b[0], a[1])
+            for s0, s1 in ((a, mid), (mid, b)):
+                if math.hypot(s0[0] - s1[0], s0[1] - s1[1]) < 0.3:
+                    continue
+                h = 0.1
+                box = (min(s0[0], s1[0]) - h, max(s0[0], s1[0]) + h, min(s0[1], s1[1]) - h, max(s0[1], s1[1]) + h)
+                rect_zone(board, None, [pcbnew.F_Cu], box, rule={"tracks", "vias"}, name=f"{net} Mitte frei halten")
+                n += 1
+    return n
+
+
+# Fixed escapes set before routing (the router keeps fixed items): pad, via (u, v). The gate of Q6 sits
+# between F1 (VBAT2_F), its own source and the VBAT_PROT run over F1; only a via on its left gets it out.
+ESCAPES = [("Q6", "1", (14.52 - 1.2, 25.25))]
+
+
+def add_escapes(board, fps):
+    for ref, num, (u, v) in ESCAPES:
+        pad = [p for p in fps[ref].Pads() if p.GetNumber() == num][0]
+        net = pad.GetNet()
+        x, y = XY(u, v)
+        via = pcbnew.PCB_VIA(board)
+        via.SetPosition(pcbnew.VECTOR2I(MM(x), MM(y)))
+        via.SetWidth(MM(0.6))
+        via.SetDrill(MM(0.3))
+        via.SetNet(net)
+        board.Add(via)
+        tr = pcbnew.PCB_TRACK(board)
+        tr.SetStart(pad.GetPosition())
+        tr.SetEnd(pcbnew.VECTOR2I(MM(x), MM(y)))
+        tr.SetWidth(MM(0.3))
+        tr.SetLayer(pcbnew.F_Cu)
+        tr.SetNet(net)
+        board.Add(tr)
+
+
 def build():
     board = new_board()
     draw_outline(board)
     fps = add_footprints(board)
     placed, clash = place_fixed(board, fps)
+    for i, box in enumerate(add_corridors(board, fps, draw=False)):   # keep the current paths free
+        placed[f"~path{i}"] = box
     failed = place_passives(fps, placed)
     add_zones(board, fps)
+    boxes = add_corridors(board, fps)
+    ncorr = len(boxes)
+    add_corridor_spines(board, fps)
+    add_escapes(board, fps)
     nvias = add_plane_vias(board, fps)
+    print(f"{ncorr} current-path zones on F.Cu, {carve_corridors(board)} kept after cutting out other pads")
     print(f"{nvias} plane vias next to SMD pads of GND, GND_PWR, 5V_SYS")
     lost = add_silk(board, fps)
     pcbnew.SaveBoard(str(PCB), board, True)
     set_stackup()
     fix_model_paths()
-    print(f"placed {len(placed) - 1} of {len(fps)} footprints")
+    print(f"placed {len([r for r in placed if not r.startswith('~')]) - 1} of {len(fps)} footprints")
     if clash:
         print("fixed parts colliding:", clash)
+    if FALLBACK:
+        print("placed outside their region:", FALLBACK)
     if failed:
         print("no place found for:", failed)
     if lost:
@@ -884,30 +1197,86 @@ def build():
 
 def export_dsn(tag=""):
     board = pcbnew.LoadBoard(str(PCB))
+    # In1 and B.Cu are power layers for the router: no wires there. Tried and rejected (22.10.): the two
+    # as signal layers under a full wire_keepout, so that Freerouting sees the planes as conduction
+    # areas (668 clearance violations, every via of another net against the GND plane); and the pads
+    # that already have a plane via taken out of the netlist (146 violations, fixed stubs against
+    # netless pads). The router therefore fans those pads out a second time and lists about 55 of
+    # them as open at the end; on the board they are connected, KiCad's DRC is the measure.
     board.SetLayerType(pcbnew.In1_Cu, pcbnew.LT_POWER)
     board.SetLayerType(pcbnew.B_Cu, pcbnew.LT_POWER)
     out = HERE / "out" / f"mainboard{tag}.dsn"
     out.parent.mkdir(exist_ok=True)
     ok = pcbnew.ExportSpecctraDSN(board, str(out))
-    print("dsn", ok, out)
+    s = out.read_text(encoding="utf-8")
+    for cls in () if os.environ.get("DSN_ALL_LAYERS") else ("Strom",):   # A6: 2S nets never on In2
+        i = s.index(f"(class {cls} ")
+        j = s.index("(circuit", i)
+        s = s[:j] + "(circuit\n        (use_layer F.Cu)" + s[j + len("(circuit"):]
+        # the current itself runs in the CORRIDORS zones; what the router adds to these nets are the
+        # stubs of dividers, gate resistors, capacitors and test points: 0.5 mm, not the class 1.0 mm
+        k = s.index("(width 1000)", j)
+        s = s[:k] + "(width 500)" + s[k + len("(width 1000)"):]
+    # Everything that is on the board already is fixed for the router: in the first run the plane vias
+    # with their stubs, in the finishing passes the whole wiring. Routable, the router may move or rip
+    # them, and the session file would then be the only record of them; fixed items stay on the board
+    # and merge_ses() adds only what the router made. (It does not stop the fanout stage from treating
+    # those pads as open, see above.)
+    s = s.replace("(type route)", "(type fix)")
+    # spec section 8 / B16: the router places no via within 5 mm of the IMU (the board rule is 2.6 mm,
+    # so the IMU's own ground vias set by add_plane_vias may stay in the ring). The keepout is the
+    # 5 mm disc with a hole around every via that is already there; a disc over fixed vias made
+    # Freerouting report 22 "unfixable violations" on every run.
+    x, y = XY(*ANCHORS["U4"][:2])
+    keep = "".join('    (via_keepout "IMU 5 mm" (polygon {} 0 {}))\n'.format(layer, pts)
+                   for pts in imu_keepout_polys(board, x, y) for layer in ("F.Cu", "In2.Cu"))
+    i = s.index("    (via_keepout")
+    s = s[:i] + keep + s[i:]
+    out.write_text(s, encoding="utf-8")
+    print("dsn", ok, out, f"({s.count('(type fix)')} fixed items, {keep.count('via_keepout')} IMU keepout polygons)")
+
+
+def imu_keepout_polys(board, x, y, n=48):
+    """Point lists (DSN units: um, y up) of the 5 mm via keepout around the IMU, minus the vias that are
+    already inside it (the IMU's own ground vias), as hole-free polygons."""
+    def circle(cx, cy, r):
+        c = pcbnew.SHAPE_POLY_SET()
+        c.NewOutline()
+        for k in range(n):
+            a = 2 * math.pi * k / n
+            c.Append(int(MM(cx + r * math.cos(a))), int(MM(cy + r * math.sin(a))))
+        return c
+    poly = circle(x, y, IMU_KEEP_R)
+    for t in board.GetTracks():
+        if t.GetClass() != "PCB_VIA":
+            continue
+        vx, vy = pcbnew.ToMM(t.GetPosition().x), pcbnew.ToMM(t.GetPosition().y)
+        if math.hypot(vx - x, vy - y) < IMU_KEEP_R + 0.5:
+            poly.BooleanSubtract(circle(vx, vy, pcbnew.ToMM(t.GetWidth(pcbnew.F_Cu)) / 2 + 0.25))
+    poly.Fracture()
+    out = []
+    for i in range(poly.OutlineCount()):
+        o = poly.COutline(i)
+        if o.PointCount() < 3:
+            continue
+        out.append(" ".join("{:.1f} {:.1f}".format(o.CPoint(k).x / 1000, -o.CPoint(k).y / 1000)
+                            for k in range(o.PointCount())))
+    return out
 
 
 def import_ses(tag=""):
-    board = pcbnew.LoadBoard(str(PCB))
-    has_pours = any(z.GetZoneName() == "GND F.Cu" for z in board.Zones())   # from an earlier pass
-    ok = pcbnew.ImportSpecctraSES(board, str(HERE / "out" / f"mainboard{tag}.ses"))  # tag: variant
-    if not has_pours:
-        add_pours(board)
-    filler = pcbnew.ZONE_FILLER(board)
-    filler.Fill(board.Zones())
-    pcbnew.SaveBoard(str(PCB), board, True)
-    print("ses imported", ok, "tracks", len(board.GetTracks()))
+    """First run: take the session into the board and add the GND pours. KiCad's SES import replaces
+    the whole wiring, and Freerouting leaves fixed items (the plane vias and their stubs) out of the
+    session file, so the session goes into a copy and only what is new is taken over (merge_ses)."""
+    merge_ses(tag, pours=True)
 
 
-def merge_ses(tag="_fix"):
+def merge_ses(tag="_fix", pours=False):
     """Add the tracks of a session that routed only the remaining connections (existing wiring was
     exported as fixed) to the board, keeping what is there."""
     board = pcbnew.LoadBoard(str(PCB))
+    if pours and not any(z.GetZoneName() == "GND F.Cu" for z in board.Zones()):
+        add_pours(board)
     other = pcbnew.LoadBoard(str(PCB))
     pcbnew.ImportSpecctraSES(other, str(HERE / "out" / f"mainboard{tag}.ses"))
     have = {(t.GetClass(), t.GetStart().x, t.GetStart().y, t.GetEnd().x, t.GetEnd().y, t.GetLayer())
@@ -931,7 +1300,10 @@ def merge_ses(tag="_fix"):
         n += 1
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
     pcbnew.SaveBoard(str(PCB), board, True)
-    print(f"{n} tracks and vias added from the finishing pass")
+    print(f"{n} tracks and vias added from the session, {len(board.GetTracks())} on the board")
+
+
+STROM_NETS = set(circuit.NETCLASSES["Strom"][4])
 
 
 def patch_unconnected():
@@ -945,14 +1317,31 @@ def patch_unconnected():
     board = pcbnew.LoadBoard(str(PCB))
     d = json.loads((HERE / "out" / "drc.json").read_text(encoding="utf-8"))
     copper = [pcbnew.F_Cu, pcbnew.In2_Cu, pcbnew.B_Cu]
-    width, clear = MM(0.15), MM(0.13)    # board minimum (JLC 4 layers): 0.127 mm
+    width, clear = MM(0.15), MM(0.2)     # the board rule (netclass clearance); 0.13 made DRC errors
     others = list(board.GetTracks()) + [p for fp in board.GetFootprints() for p in fp.Pads()]
+
+    paths = [z for z in board.Zones() if z.GetZoneName().endswith("Strompfad")]
+    pcbnew.ZONE_FILLER(board).Fill(paths)
+
+    def in_path(layer, pts, net):
+        """Does any point come within 0.4 mm of a current-path zone of another net?"""
+        return any(z.GetNetCode() != net and z.IsOnLayer(layer) and z.HitTestFilledArea(layer, q, MM(0.4))
+                   for z in paths for q in pts)
 
     def free(shape, layer, net):
         for it in others:
             if it.GetNetCode() == net or not it.IsOnLayer(layer):
                 continue
             if it.GetEffectiveShape(layer).Collide(shape, clear):
+                return False
+        if layer == pcbnew.F_Cu:
+            if isinstance(shape, pcbnew.SHAPE_SEGMENT):
+                a, b = shape.GetSeg().A, shape.GetSeg().B
+                pts = [pcbnew.VECTOR2I(int(a.x + (b.x - a.x) * k / 8), int(a.y + (b.y - a.y) * k / 8))
+                       for k in range(9)]
+            else:
+                pts = [shape.GetCenter()]
+            if in_path(layer, pts, net):
                 return False
         return True
 
@@ -964,12 +1353,72 @@ def patch_unconnected():
             return [(it.GetPosition(), copper)]
         return [(it.GetPosition(), copper if it.GetAttribute() == pcbnew.PAD_ATTRIB_PTH else [pcbnew.F_Cu])]
 
+    def via_spots(it):
+        """(via position, F.Cu stub start or None) candidates next to a pad, or at a track end."""
+        if it.GetClass() in ("PCB_TRACK", "PCB_ARC"):
+            if it.GetLayer() == pcbnew.F_Cu:
+                return [(it.GetStart(), None), (it.GetEnd(), None)]
+            return [(it.GetStart(), "here"), (it.GetEnd(), "here")]
+        if it.GetClass() == "PCB_VIA":
+            return [(it.GetPosition(), "here")]
+        c = it.GetPosition()
+        if it.GetAttribute() == pcbnew.PAD_ATTRIB_PTH:
+            return [(c, "here")]
+        bb = it.GetBoundingBox()
+        half = max(bb.GetWidth(), bb.GetHeight()) / 2
+        out = []
+        for dist in (half + MM(0.55), half + MM(0.9), half + MM(1.4)):
+            for ang in range(0, 360, 45):
+                out.append((pcbnew.VECTOR2I(int(c.x + dist * math.cos(math.radians(ang))),
+                                            int(c.y + dist * math.sin(math.radians(ang)))), c))
+        return out
+
+    iu, iv = ANCHORS["U4"][:2]
+
+    def via_free(pos, net):
+        u, v = UV(pcbnew.ToMM(pos.x), pcbnew.ToMM(pos.y))
+        if math.hypot(u - iu, v - iv) < IMU_KEEP_R + 0.4 or abs(u) > W / 2 - 1.0:
+            return False                       # spec 8 / B16: no foreign vias within 5 mm of the IMU
+        shape = pcbnew.SHAPE_CIRCLE(pos, MM(0.3))
+        return all(free(shape, l, net) for l in (pcbnew.F_Cu, pcbnew.In2_Cu, pcbnew.B_Cu))
+
+    def via_detour(items, net):
+        """Pad/track end -> (stub) -> via -> In2 -> via -> (stub) -> other end. True if set."""
+        for pa, sa in via_spots(items[0]):
+            for pb, sb in via_spots(items[1]):
+                segs = []
+                if isinstance(sa, pcbnew.VECTOR2I):
+                    segs.append((sa, pa, pcbnew.F_Cu))
+                if isinstance(sb, pcbnew.VECTOR2I):
+                    segs.append((sb, pb, pcbnew.F_Cu))
+                segs.append((pa, pb, pcbnew.In2_Cu))
+                need = [p_ for p_, s_ in ((pa, sa), (pb, sb)) if not isinstance(s_, str)]
+                if not all(via_free(v, net) for v in need):
+                    continue
+                if not all(free(pcbnew.SHAPE_SEGMENT(a, b, width), l, net) for a, b, l in segs):
+                    continue
+                for v in need:
+                    via = pcbnew.PCB_VIA(board)
+                    via.SetPosition(v), via.SetWidth(MM(0.6)), via.SetDrill(MM(0.3)), via.SetNetCode(net)
+                    board.Add(via)
+                    others.append(via)
+                for a, b, l in segs:
+                    tr = pcbnew.PCB_TRACK(board)
+                    tr.SetStart(a), tr.SetEnd(b), tr.SetLayer(l), tr.SetWidth(width), tr.SetNetCode(net)
+                    board.Add(tr)
+                    others.append(tr)
+                return True
+        return False
+
     done, failed = 0, []
     for u in d["unconnected_items"]:
         items = [board.ResolveItem(pcbnew.KIID(i["uuid"])) for i in u["items"]]
         if any(i is None for i in items):
             continue
         items = [i.Cast() for i in items]
+        if any(i.GetClass() == "ZONE" for i in items):
+            failed.append(items[0].GetNetname())
+            continue
         net = items[0].GetNetCode()
         pairs = sorted(((a, b) for a in reach(items[0]) for b in reach(items[1])),
                        key=lambda ab: (ab[0][0] - ab[1][0]).EuclideanNorm())
@@ -1041,10 +1490,14 @@ def patch_unconnected():
                             break
                     if placed:
                         break
+        if not placed and board.GetNetInfo().GetNetItem(net).GetNetname() not in STROM_NETS:
+            placed = via_detour(items, net)
         if placed:
             done += 1
         else:
             failed.append(board.GetNetInfo().GetNetItem(net).GetNetname())
+    for z in [z for z in board.Zones() if z.GetZoneName().endswith("frei halten")]:
+        board.Delete(z)                        # routing keepouts of the current paths (carve_corridors)
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
     pcbnew.SaveBoard(str(PCB), board, True)
     print(f"{done} open connections patched" + (f", not possible: {failed}" if failed else ""))

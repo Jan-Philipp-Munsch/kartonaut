@@ -6,11 +6,13 @@
 //
 //  Quelle: hardware/mainboard/kicad/circuit.py auf dem Branch claude/rev-b1
 //  (TEENSY, U12 74HC138, U13 74HC4051, Teiler, Shunt, I²C-Sensoren vom
-//  23.10.2026). Platine fertig geroutet, noch nicht gefertigt. Der
-//  Kommentar hinter jeder Pin-Konstante ist der Netzname in circuit.py;
-//  firmware/tools/check_board_pins.py vergleicht beides, bevor jemand
-//  flasht. Gegenüber rev B sind die Pins unverändert; neu sind die drei
-//  I²C-Bausteine (LIS3MDL, SHT40, ADXL375 als DNP) und die Schiene 3V3_EXP.
+//  23.10.2026). Stand rev B1, 24.10.2026: Platine fertig geroutet, noch nicht
+//  gefertigt. Der Kommentar hinter jeder Pin-Konstante ist der Netzname in
+//  circuit.py; firmware/tools/check_board_pins.py vergleicht beides, bevor
+//  jemand flasht. Gegenüber rev B: E11 (SPI0 auf J_STACK: 11/12/13 SPI0,
+//  16 LORA_M0, 33 PWM_EXT, 40 MOT_NSLEEP, 41 PYRO3_FIRE), E12 (IMU LSM6DSV16X
+//  statt ICM-42688-P, gleiche Pins), die drei I²C-Bausteine (LIS3MDL, SHT40,
+//  ADXL375 als DNP) und die Schiene 3V3_EXP.
 //
 //  Die Flug-Firmware in src/ läuft noch auf den Breakouts (Config.h).
 //  Diese Datei wird erst dort eingebunden, wenn die Platine da ist.
@@ -23,18 +25,19 @@ constexpr uint8_t PIN_GPS_RX      = 0;    // GPS_TX   (Serial1, Modul sendet)
 constexpr uint8_t PIN_GPS_TX      = 1;    // GPS_RX
 constexpr uint8_t PIN_MOT_IN1     = 2;    // MOT_IN1  DRV8833, Rollmotor
 constexpr uint8_t PIN_MOT_IN2     = 3;    // MOT_IN2
-constexpr uint8_t PIN_IMU_INT     = 4;    // IMU_INT  ICM-42688-P INT1, Daten bereit
+constexpr uint8_t PIN_IMU_INT     = 4;    // IMU_INT  LSM6DSV16X INT1, Daten bereit (bis 22.10. ICM-42688-P)
 constexpr uint8_t PIN_LED_DATA    = 5;    // LED_DATA WS2812B-Kette LED1 -> LED2 -> J_LED
 constexpr uint8_t PIN_LORA_NRST   = 6;    // LORA_NRST Open-Drain, 10 k nach 3V3_RF
 constexpr uint8_t PIN_CAM_TRIG    = 7;    // CAM_TRIG
 constexpr uint8_t PIN_MOT_FAULT   = 8;    // MOT_FAULT DRV8833 nFAULT, Open-Drain
 constexpr uint8_t PIN_SERVO_CHUTE = 9;    // SERVO_CHUTE J_SERVO3 an VSERVO
 constexpr uint8_t PIN_SERVO_LEGS  = 10;   // SERVO_LEGS  J_SERVO4 an VSERVO
-constexpr uint8_t PIN_MOT_NSLEEP  = 11;   // MOT_NSLEEP DRV8833, tief = Motor stromlos
-constexpr uint8_t PIN_PYRO3_FIRE  = 12;   // PYRO3_FIRE (Kanal DNP)
-constexpr uint8_t PIN_PWM_EXT     = 13;   // PWM_EXT  J_STACK
+constexpr uint8_t PIN_SPI0_MOSI   = 11;   // SPI0_MOSI J_STACK Pin 8 (E11: SPI0 zur Zusatzplatine, SPI1 bleibt der Flugbus)
+constexpr uint8_t PIN_SPI0_MISO   = 12;   // SPI0_MISO J_STACK Pin 9; 114 mm Leiterbahn, SPI0 hoechstens 8 MHz
+constexpr uint8_t PIN_SPI0_SCK    = 13;   // SPI0_SCK  J_STACK Pin 7
 constexpr uint8_t PIN_PYRO4_FIRE  = 14;   // PYRO4_FIRE (Kanal DNP)
 constexpr uint8_t PIN_NRST_EXT    = 15;   // NRST_EXT J_STACK
+constexpr uint8_t PIN_LORA_M0     = 16;   // LORA_M0  (bis 23.10. Pin 33)
 constexpr uint8_t PIN_IRQ_EXT     = 17;   // IRQ_EXT  J_STACK
 constexpr uint8_t PIN_SDA         = 18;   // SDA      Wire: LIS3MDL, SHT40, ADXL375 (DNP), J_QWIIC
 constexpr uint8_t PIN_SCL         = 19;   // SCL
@@ -51,14 +54,16 @@ constexpr uint8_t PIN_SERVO_PITCH = 29;   // SERVO_PITCH J_SERVO2
 constexpr uint8_t PIN_SEL2        = 30;   // SEL2
 constexpr uint8_t PIN_CS_EN       = 31;   // CS_EN    74HC138 /E1, 10 k nach 3V3 (Boot: alle CS hoch)
 constexpr uint8_t PIN_LORA_M1     = 32;   // LORA_M1
-constexpr uint8_t PIN_LORA_M0     = 33;   // LORA_M0
+constexpr uint8_t PIN_PWM_EXT     = 33;   // PWM_EXT  J_STACK Pin 18 (bis 23.10. Pin 13)
 constexpr uint8_t PIN_LORA_RX     = 34;   // LORA_TXD (Serial8, Modul sendet)
 constexpr uint8_t PIN_LORA_TX     = 35;   // LORA_RXD
 constexpr uint8_t PIN_LORA_AUX    = 36;   // LORA_AUX
 constexpr uint8_t PIN_BUZZER      = 37;   // BUZZER
 constexpr uint8_t PIN_SEL0        = 38;   // SEL0
 constexpr uint8_t PIN_SPI1_MISO   = 39;   // SPI1_MISO  Achtung: SPI1-MISO ist ab Werk Pin 1 (GPS)
-// Frei: 16, 40, 41
+constexpr uint8_t PIN_MOT_NSLEEP  = 40;   // MOT_NSLEEP DRV8833, tief = Motor stromlos (bis 23.10. Pin 11)
+constexpr uint8_t PIN_PYRO3_FIRE  = 41;   // PYRO3_FIRE (Kanal DNP; bis 23.10. Pin 12)
+// Keine freien Pins mehr (E11); SPI0 (11/12/13) gehoert der Zusatzplatine.
 
 constexpr uint8_t PYRO_FIRE_PINS[4] = {PIN_PYRO1_FIRE, PIN_PYRO2_FIRE, PIN_PYRO3_FIRE, PIN_PYRO4_FIRE};
 constexpr bool    PYRO_FITTED[4]    = {true, true, false, false};   // 3/4 sind DNP (E5)

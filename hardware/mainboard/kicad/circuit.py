@@ -17,7 +17,7 @@ from build_lib import teensy_pad
 SHEETS = [  # (file stem, sheet title, page title shown on the sheet)
     ("power", "Versorgung", "Versorgung: 1S-Pfad (Elektronik, Lader) und 2S-Pfad (Aktoren, Pyro), Lastschalter"),
     ("mcu", "Teensy", "Teensy 4.1, CS-Decoder und Analogmux, Stapelstecker J_STACK"),
-    ("sensors", "Sensorik", "IMU ICM-42688-P und zwei BMP390 an SPI1, Qwiic an I2C"),
+    ("sensors", "Sensorik", "IMU LSM6DSV16X und zwei BMP390 an SPI1, I2C-Sensoren und Qwiic"),
     ("radio", "Funk", "LoRa E22-400T22S an Serial8, GPS an Serial1"),
     ("actuators", "Aktoren", "Vier Servos und Rollmotor DRV8833 am 2S-Akku"),
     ("pyro", "Pyro", "Vier Pyro-Kanaele low-side (3 und 4 DNP), Arming, Durchgangspruefung"),

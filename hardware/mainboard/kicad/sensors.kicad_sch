@@ -9,7 +9,7 @@
 		(date "2026-10-21")
 		(rev "B")
 		(company "Kartonaut")
-		(comment 1 "IMU ICM-42688-P und zwei BMP390 an SPI1, Qwiic an I2C")
+		(comment 1 "IMU LSM6DSV16X und zwei BMP390 an SPI1, I2C-Sensoren und Qwiic")
 		(comment 2 "erzeugt aus circuit.py (gen_schematic.py)")
 	)
 	(lib_symbols
@@ -761,11 +761,11 @@
 			)
 		)
 	)
-	(text "IMU ICM-42688-P und zwei BMP390 an SPI1, Qwiic an I2C"
+	(text "IMU LSM6DSV16X und zwei BMP390 an SPI1, I2C-Sensoren und Qwiic"
 		(exclude_from_sim no)
 		(at 25.4 22 0)
 		(effects (font (size 2.54 2.54) (bold yes)) (justify left bottom))
-		(uuid "bbc09d41-f7ce-5096-b330-fcf67576068d")
+		(uuid "59693993-63b2-59a6-939c-d9f27e2065f5")
 	)
 	(rectangle
 		(start 20 30)

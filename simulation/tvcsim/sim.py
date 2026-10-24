@@ -71,7 +71,8 @@ def simulate(p: SimParams) -> SimResult:
     thrust = ThrustModel(p.motor)
     act = Actuator(p.servo, p.vehicle, dt)
     avionics = Avionics(p.noise, rng)
-    ctrl = make_controller(p.controller, p.control, p.firmware, p.vehicle.l_ctrl)
+    ctrl = make_controller(p.controller, p.control, p.firmware, p.vehicle.l_ctrl,
+                           lqr=p.lqr, vehicle=p.vehicle, servo=p.servo)
     eom_params = p.vehicle.as_eom_params()
     rad2deg = 57.2957  # Gain "rad to deg" im Modell
 

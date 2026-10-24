@@ -94,12 +94,26 @@ Drei Befunde, die das Projekt verändern:
 <img src="docs/img/sim/servo_fit.png" width="48%" alt="Servo-Sprungantwort und Fit">
 </p>
 
+**Reglervergleich (24.10.2026).** Ist PID die richtige Struktur? Die Schubvektor-Inversion macht
+die Rakete zum Doppelintegrator, und dafür ist ein PD schon die LQR-Lösung. Was der PID nicht
+kennt, ist das Servo (5,8 Hz, 30 ms Totzeit). Ein LQR, der den Servozustand in seinem eigenen
+Prädiktor mitführt (`lqr`/`lqi` in `tvcsim`, gleiche Kostenfunktion wie der PD), verträgt etwa
+doppelt so viel Verstärkungsfehler und Totzeit und läuft in den Parameter-Sweeps nie in den
+Sättigungs-Grenzzyklus. Die größere Schwäche ist aber die heutige Firmware-Parametrierung
+(Masse 0,70 kg, Hebelarm 0,30 m, ±1°-Fenster): In Monte-Carlo kippt sie in der Hälfte der Fälle,
+mit korrigierten Werten in keinem. Details in
+[`docs/Reglervergleich_2026-10-24.md`](docs/Reglervergleich_2026-10-24.md).
+
+![Robustheit im Parameterraum](docs/img/sim/robustness_sweeps.png)
+
 ```bash
 cd simulation
-python -m pytest tests                 # 21 Tests
+python -m pytest tests                 # 32 Tests
 python scripts/run_nominal.py          # Nominalflug -> out/
 python scripts/run_montecarlo.py       # 100 Läufe
 python scripts/compare_gains.py --vehicle preload
+python scripts/compare_controllers.py  # PID gegen modellbasierten PD gegen LQR/LQI
+python scripts/robustness.py           # lineare Reserven, Sweeps, Monte-Carlo (ca. 15 min)
 ```
 
 ## Hardware

@@ -56,7 +56,7 @@ class ThrustModel:
         T = self.thrust_single(t)
         if self.params.second_motor:
             T += self.thrust_single(t - self.t_second(dt))
-        return T
+        return T * self.params.thrust_scale
 
     def _burnt_fraction(self, t: float) -> float:
         return float(np.interp(t, self.t_curve, self.impulse_curve, left=0.0,

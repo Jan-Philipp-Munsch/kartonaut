@@ -92,12 +92,25 @@ Three findings that change the project:
 <img src="docs/img/sim/servo_fit.png" width="48%" alt="Servo step response and fit">
 </p>
 
+**Controller comparison (24 Oct 2026).** Is PID the right structure? The thrust-vector inversion
+turns the rocket into a double integrator, for which a PD is already the LQR solution. What the
+PID does not know is the servo (5.8 Hz, 30 ms dead time). An LQR that carries the servo state in
+its own predictor (`lqr`/`lqi` in `tvcsim`, same cost function as the PD) tolerates about twice the
+gain error and dead time and never hits the saturation limit cycle in the parameter sweeps. The
+bigger weakness, though, is the current firmware parametrisation (mass 0.70 kg, lever arm 0.30 m,
+±1° gimbal window): in Monte Carlo it tumbles in half the cases, with corrected values in none.
+Details in [`docs/Reglervergleich_2026-10-24.md`](docs/Reglervergleich_2026-10-24.md) (German).
+
+![Robustness in the parameter space](docs/img/sim/robustness_sweeps.png)
+
 ```bash
 cd simulation
-python -m pytest tests                 # 21 tests
+python -m pytest tests                 # 32 tests
 python scripts/run_nominal.py          # nominal flight -> out/
 python scripts/run_montecarlo.py       # 100 runs
 python scripts/compare_gains.py --vehicle preload
+python scripts/compare_controllers.py  # PID vs model-based PD vs LQR/LQI
+python scripts/robustness.py           # linear margins, sweeps, Monte Carlo (~15 min)
 ```
 
 ## Hardware

@@ -9,7 +9,13 @@ zurueckgesetzt, dann ``Moments2Commands``.
 ``rot_deg += omega * dt``, PID auf ``rot/-100``, ``delta = asin(M / (l m |a|))``,
 Servo-Grad = delta_deg * GAIN + OFFSET, mechanisches Fenster, Rundung auf ganze Grad.
 
-Beide liefern das Kommando ``(th_y_com, th_z_com)`` in Grad in der Simulink-Konvention.
+``LQRController`` ist ein Zustandsregler mit Servopraediktor (``tvcsim.linear``): Zustand je
+Querachse ``[rot, omega, M^, M^_dot, verzoegerte Kommandos, int(rot)]`` im Momentenbereich,
+``M_c = -K x``; den Servozustand kennt er nur aus seinem Modell (kein Kardansensor), die
+Saettigung (``sat_deg``) steckt im Praediktor. ``pd_model``/``pid_model`` sind der
+Simulink-Regler mit Gewinnen aus derselben Kostenfunktion ohne Aktuatormodell.
+
+Alle liefern das Kommando ``(th_y_com, th_z_com)`` in Grad in der Simulink-Konvention.
 Zuordnung der Achsen: Firmware x (Yaw) <-> Simulink-Koerperachse y,
 Firmware y (Pitch) <-> Simulink z, Firmware z (Roll) <-> Simulink x (Laengsachse).
 """
@@ -19,7 +25,8 @@ import math
 
 import numpy as np
 
-from .params import ControlParams, FirmwareParams
+from .linear import (RAD, AxisPlant, LQRWeights, design_lqr, design_pd, gains_to_control_params)
+from .params import ControlParams, FirmwareParams, LQRParams, ServoParams, VehicleParams
 
 
 def moments_to_commands(T_est: float, Mx: float, My: float, Mz: float, l: float) -> tuple[float, float]:
@@ -143,9 +150,99 @@ class FirmwareController:
         return th_y, th_z
 
 
-def make_controller(name: str, control: ControlParams, firmware: FirmwareParams, l_ctrl: float):
+def design_plant(lqr: LQRParams, vehicle: VehicleParams, servo: ServoParams, dt: float) -> AxisPlant:
+    """Entwurfsmodell des Reglers: ``None``-Felder von ``LQRParams`` kommen aus Fahrzeug und Servo."""
+    tau_true = servo.tau if vehicle.servo_delay is None else vehicle.servo_delay
+    return AxisPlant(I=lqr.I_ctrl if lqr.I_ctrl is not None else vehicle.Iy,
+                     kappa=1.0,
+                     wn=lqr.servo_wn if lqr.servo_wn is not None else servo.wn,
+                     zeta=lqr.servo_zeta if lqr.servo_zeta is not None else servo.zeta,
+                     tau=lqr.servo_tau if lqr.servo_tau is not None else tau_true,
+                     dt=dt)
+
+
+def design_weights(lqr: LQRParams, l_ctrl: float) -> LQRWeights:
+    return LQRWeights(theta_max_deg=lqr.theta_max_deg, omega_max_dps=lqr.omega_max_dps,
+                      M_max=l_ctrl * lqr.T_design * math.sin(math.radians(lqr.tvc_max_deg)),
+                      int_max_deg_s=lqr.int_max_deg_s)
+
+
+def model_pd_params(lqr: LQRParams, vehicle: VehicleParams, servo: ServoParams, dt: float,
+                    integral: bool = False) -> ControlParams:
+    """Gewinne des modellbasierten PD/PID als ``ControlParams`` (Simulink-Konvention)."""
+    plant = design_plant(lqr, vehicle, servo, dt)
+    K_theta, K_omega, K_int = design_pd(plant.I, design_weights(lqr, vehicle.l_ctrl), dt, integral)
+    cp = gains_to_control_params(K_theta, K_omega, K_int, dt)
+    return ControlParams(kp=cp.kp, ki=cp.ki, kd=cp.kd, dt=dt, secondburn=10 ** 9)   # kein Reset der I-Anteile
+
+
+class LQRController:
+    """Zustandsregler mit Servopraediktor, siehe Modulkopf und ``tvcsim.linear``."""
+
+    def __init__(self, lqr: LQRParams, vehicle: VehicleParams, servo: ServoParams, dt: float,
+                 integral: bool | None = None):
+        self.p = lqr
+        self.dt = dt
+        self.l = vehicle.l_ctrl
+        self.integral = lqr.integral if integral is None else integral
+        self.plant = design_plant(lqr, vehicle, servo, dt)
+        self.design = design_lqr(self.plant, design_weights(lqr, self.l), self.integral)
+        self.A_pred, self.B_pred, self.sel = self.design.predictor()
+        K = self.design.K[0]
+        idx = self.design.idx
+        self.k_theta = K[idx["theta"]]
+        self.k_omega = K[idx["omega"]]
+        self.k_pred = K[self.sel]
+        self.k_int = K[idx["integ"]] if self.integral else 0.0
+        # Zustand je Simulink-Querachse (Index 1 = y, 2 = z); Index 0 (Rollachse) nur mitgefuehrt
+        self.rot = np.zeros(3)                      # rad, int(omega), Takt wie SimulinkController
+        self.x_pred = np.zeros((3, len(self.sel)))  # Praediktorzustand [M^, M^_dot, Kette]
+        self.s_int = np.zeros(3)                    # rad s
+        self.last = {}
+
+    def moments(self, t: float, w_est_dps) -> np.ndarray:
+        """``[Mx, My, Mz]`` in N m (Mx = 0), vor Saettigung."""
+        w = np.asarray(w_est_dps, dtype=float) * RAD
+        u = np.zeros(3)
+        for ax in (1, 2):
+            u[ax] = -(self.k_theta * self.rot[ax] + self.k_omega * w[ax]
+                      + float(self.k_pred @ self.x_pred[ax]) + self.k_int * self.s_int[ax])
+        self._w = w
+        self.last = {"rot": self.rot / RAD, "u": u.copy(), "s_int": self.s_int / RAD,
+                     "M_pred": self.x_pred[:, 0].copy()}
+        return u
+
+    def step(self, t: float, w_est_dps, q_est, T_est: float, **_) -> tuple[float, float]:
+        u = self.moments(t, w_est_dps)
+        T_use = max(float(T_est), self.p.T_min)
+        th_y, th_z = moments_to_commands(T_use, u[0], u[1], u[2], self.l)
+        sat = self.p.sat_deg
+        th_sat = (max(-sat, min(sat, th_y)), max(-sat, min(sat, th_z)))
+        saturated = (abs(th_y) > sat + 1e-9, abs(th_z) > sat + 1e-9)
+        # Praediktor: das Servo bekommt das gesaettigte Kommando, als Moment M = -l T sin(th)
+        for ax, th, is_sat in zip((1, 2), th_sat, saturated):
+            M_sat = -self.l * T_use * math.sin(math.radians(th))
+            self.x_pred[ax] = self.A_pred @ self.x_pred[ax] + self.B_pred[:, 0] * M_sat
+            if self.integral and not is_sat:
+                lim = self.p.int_limit_deg_s * RAD
+                self.s_int[ax] = max(-lim, min(lim, self.s_int[ax] + self.dt * self.rot[ax]))
+        self.rot = self.rot + self._w * self.dt
+        self.last.update({"th_y_com": th_y, "th_z_com": th_z, "T_est": T_est})
+        return th_y, th_z
+
+
+def make_controller(name: str, control: ControlParams, firmware: FirmwareParams, l_ctrl: float,
+                    lqr: LQRParams | None = None, vehicle: VehicleParams | None = None,
+                    servo: ServoParams | None = None):
     if name == "simulink":
         return SimulinkController(control, l_ctrl)
     if name == "firmware":
         return FirmwareController(firmware, control.dt)
+    if name in ("pd_model", "pid_model", "lqr", "lqi"):
+        if lqr is None or vehicle is None or servo is None:
+            raise ValueError(f"Regler {name!r} braucht lqr, vehicle und servo")
+        if name in ("pd_model", "pid_model"):
+            cp = model_pd_params(lqr, vehicle, servo, control.dt, integral=(name == "pid_model"))
+            return SimulinkController(cp, l_ctrl)
+        return LQRController(lqr, vehicle, servo, control.dt, integral=(name == "lqi"))
     raise ValueError(f"unbekannter Regler {name!r}")

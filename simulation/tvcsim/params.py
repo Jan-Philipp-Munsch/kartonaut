@@ -94,6 +94,7 @@ class MotorParams:
     #                   fuer beide Motoren (Annahme aus Plan 21.10., Abschnitt 3.3)
     fuel_model: str = "signalbuilder"
     fuel_mass_g: float = 28.0   # g je Motor (TSP E12), nur fuer fuel_model="impulse"
+    thrust_scale: float = 1.0   # Faktor auf die Schubkurve (Motorstreuung, Robustheitsstudien)
 
 
 @dataclass
@@ -170,6 +171,30 @@ class FirmwareParams:
 
 
 @dataclass
+class LQRParams:
+    """Entwurf des Zustandsreglers (``tvcsim.linear``), gilt auch fuer ``pd_model``/``pid_model``.
+
+    Alles, was hier ``None`` ist, nimmt der Regler aus dem simulierten Fahrzeug bzw. Servo
+    ("Entwurf = Wahrheit"). Fuer Robustheitsstudien werden die Werte fest vorgegeben und die
+    wahren Parameter der Strecke variiert.
+    """
+
+    I_ctrl: float | None = None        # kg m^2, Traegheit quer im Entwurfsmodell (None = Iy des Fahrzeugs)
+    T_design: float = 11.0             # N, Schub, der M_max = l T_design sin(tvc_max) festlegt
+    servo_wn: float | None = None      # rad/s, Servomodell des Reglers (None = ServoParams)
+    servo_zeta: float | None = None
+    servo_tau: float | None = None     # s, Totzeit im Entwurfsmodell (None = ServoParams.tau)
+    theta_max_deg: float = 3.0         # Bryson-Gewichte
+    omega_max_dps: float = 30.0
+    tvc_max_deg: float = 5.0           # -> M_max
+    int_max_deg_s: float = 2.0
+    integral: bool = False             # LQI: Integralzustand int(theta)
+    T_min: float = 2.0                 # N, Untergrenze fuer T_est in der Modellinversion
+    sat_deg: float = 5.0               # Grad, Stellgrenze, die der Praediktor annimmt
+    int_limit_deg_s: float = 10.0      # Begrenzung des Integralzustands (Anti-Windup)
+
+
+@dataclass
 class NoiseParams:
     """Avionics-Block: Rauschen der Messwerte, alle mit Abtastzeit dt."""
 
@@ -208,8 +233,9 @@ class SimParams:
     servo: ServoParams = field(default_factory=ServoParams)
     control: ControlParams = field(default_factory=ControlParams)
     firmware: FirmwareParams = field(default_factory=FirmwareParams)
+    lqr: LQRParams = field(default_factory=LQRParams)
     noise: NoiseParams = field(default_factory=NoiseParams)
-    controller: str = "simulink"   # "simulink" oder "firmware"
+    controller: str = "simulink"   # "simulink", "firmware", "pd_model", "pid_model", "lqr", "lqi"
     t_end: float = 12.0            # s, StopTime des Modells (Monte-Carlo: 7 s)
     substeps: int = 10             # RK4-Teilschritte je Regelschritt (dt/substeps = 1 ms)
     ground: bool = True            # Boden: auf der Rampe keine Bewegung nach unten, der Lauf endet bei der

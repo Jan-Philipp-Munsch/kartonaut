@@ -20,6 +20,8 @@ python scripts/run_nominal.py --controller firmware --vehicle preload --static-e
 python scripts/run_montecarlo.py            # 100 Läufe à 7 s -> out/montecarlo_*.png, .csv
 python scripts/tune_pid.py --kp-values 2 3.1 5 --ki-values 0 5 --kd-values 0.01 0.1 0.385
 python scripts/compare_gains.py --vehicle preload   # Firmware- gegen Tuner-Gewinne
+python scripts/compare_controllers.py               # Firmware-PID, modellbasierter PD, LQR, LQI (CAD-Fahrzeug)
+python scripts/robustness.py                        # Reglervergleich im Parameterraum, etwa 15 min auf 4 Kernen
 ```
 
 Alle Ausgaben landen in `simulation/out/` (per `.gitignore` ausgeschlossen). Ein Lauf über
@@ -29,7 +31,7 @@ Wichtige Schalter von `run_nominal.py` (gelten auch für Monte-Carlo und Tuning)
 
 | Schalter | Bedeutung |
 |---|---|
-| `--controller simulink\|firmware` | Simulink-Regler oder Port von `Control.cpp` |
+| `--controller simulink\|firmware` | Simulink-Regler oder Port von `Control.cpp` (in `SimParams.controller` außerdem `pd_model`, `pid_model`, `lqr`, `lqi`, siehe unten) |
 | `--vehicle nominal\|preload\|cad` | Fahrzeugparameter aus `TVC6DOF.m`, aus dem PreLoadFcn der `.slx` oder aus `cad/mass_properties.json` (siehe unten) |
 | `--gains nominal\|tuner\|preload`, `--kp --ki --kd` | Gewinne des Simulink-Reglers |
 | `--fw-kp --fw-ki --fw-kd --fw-mass --fw-servo-gain` | Konstanten des Firmware-Reglers (`Config.h`) |
@@ -51,13 +53,16 @@ simulation/
              actuator.py   ZOH, Sättigung ±5°, PT2+Totzeit statt tf5, Gain 6, statische Fehler; Fit
              sensors.py    Avionics-Block (Rauschen auf q, w, rdd)
              estimator.py  Estimator-Block (T_est = |rdd_n| m)
-             controller.py SimulinkController (PID + Moments2Commands), FirmwareController (Control.cpp)
+             controller.py SimulinkController (PID + Moments2Commands), FirmwareController (Control.cpp),
+                           LQRController (Zustandsregler mit Servopraediktor), modellbasierter PD/PID
+             linear.py     Linearmodell je Querachse (Servo-PT2, Totzeit, ZOH), LQR-Entwurf, Stabilitaetsreserven
              sim.py        Lauf: Regelschleife alle 10 ms, dazwischen RK4 mit 1 ms, Quaternion normiert
              montecarlo.py Port von TVC6DOF.m
              tuning.py     Port von pid_tuner.m
              plots.py      Höhe/Lage/Servo, 3D-Trajektorien, Servo-Fit
   tests/     Quaternionnorm, Schwebe-Gleichgewicht, Momentenvorzeichen, Regler gegeneinander
-  scripts/   run_nominal.py, run_montecarlo.py, tune_pid.py, fit_servo.py, compare_gains.py
+  scripts/   run_nominal.py, run_montecarlo.py, tune_pid.py, fit_servo.py, compare_gains.py,
+             compare_controllers.py, robustness.py
 ```
 
 ## Modell (wie in Simulink)
@@ -336,3 +341,44 @@ entspricht in Gipfelhöhe (48 m gegen 45 m) und Streuung dem MATLAB-Bild `Images
   `Images/Monte-Carlo (1).png` möglich (45 m Gipfel, Streuung ±20 m seitlich bei 7 s);
   `run_montecarlo.py --vehicle preload --gains preload` liegt in dieser Größenordnung.
   Ein MATLAB-Export des Nominallaufs würde den Vergleich quantitativ machen.
+
+## Reglervergleich: PID, modellbasierter PD, LQR mit Servozustand (24.10.2026)
+
+Ergebnisse und Einordnung in `docs/Reglervergleich_2026-10-24.md`; hier nur, was im Code steckt.
+
+**Linearmodell** (`tvcsim/linear.py`): Alle Regler fordern ein Moment `M_c` und rechnen es über
+`th = asin(-M_c/(l T_est))` in einen TVC-Winkel um. Für kleine Winkel ist die Strecke je Querachse
+im Momentenbereich `theta'' = M/I` mit `M = kappa · G_servo(s) · M_c(t − tau)`; das PT2 `G_servo`
+und die Totzeit `tau` sind der Servofit, und `kappa = l T / (l_ctrl T_est)` fasst alle Fehler der
+Modellinversion zusammen (Hebelarm, Schubschätzung, bei der Firmware `MASS_KG` und
+`MOMENT_ARM_M`: mit Config.h liegt sie beim CAD-Fahrzeug nominal bei kappa 1,8). Das Modell wird
+exakt mit Zero-Order-Hold zum Regeltakt diskretisiert, die Totzeit als Kette verzögerter Eingänge
+(auch gebrochene Vielfache von 10 ms). Darauf: `design_lqr` (diskreter LQR, Bryson-Gewichte),
+`design_pd` (dieselbe Kostenfunktion ohne Aktuatormodell, also der modellbasierte PD als
+Spezialfall), `closed_loop`/`spectral_radius` (Eigenwerte des geschlossenen Kreises mit den
+Reglern als lineare zeitdiskrete Systeme, die `rot = ∫ω` selbst mitführen) und die Reserven
+`gain_margin`, `gain_margin_low`, `delay_margin`. Ohne Aerodynamik hängt die Dynamik nicht vom
+Winkel ab, deshalb kommt die Strecke in der Stabilitätsanalyse ohne `theta` aus.
+
+**Regler** (`tvcsim/controller.py`, Auswahl über `SimParams.controller`):
+
+| Name | Was |
+|---|---|
+| `simulink`, `firmware` | wie bisher |
+| `pd_model`, `pid_model` | Simulink-Regler mit Gewinnen aus `design_pd` (`LQRParams`), ohne bzw. mit I-Anteil |
+| `lqr` | Zustandsregler je Querachse auf `[rot, ω, M^, M^', verzögerte Kommandos]`, `M_c = −K x`; den Servozustand kennt er nur aus seinem Modell (Prädiktor, kein Kardansensor), die Sättigung ±5° steckt im Prädiktor |
+| `lqi` | dasselbe mit Integralzustand `∫rot` (bedingte Integration als Anti-Windup) |
+
+`LQRParams` hält das Entwurfsmodell (`I_ctrl`, Servo `wn`/`zeta`/`tau`, `T_design`) und die
+Gewichte (`theta_max_deg`, `omega_max_dps`, `tvc_max_deg`); Felder mit `None` nehmen die Werte
+des simulierten Fahrzeugs ("Entwurf = Wahrheit"). Umrechnung der Gewinne in die
+Simulink-/Firmware-Konvention: `gains_to_control_params` (`kp = K_theta·RAD·100`, `kd = K_omega·RAD`,
+Firmware `Kd = 100 kd`). Die Firmware-Gewinne Kp 5, Kd 1 entsprechen auf I = 0,11 kg m² einem PD mit
+wn 5,1 rad/s und zeta 0,5 (`tests/test_linear.py`).
+
+**Skripte**: `compare_controllers.py` (Nominalvergleich der fünf Regler auf dem CAD-Fahrzeug, mit
+Boden, Rauschen, statischer Fehler 1/0,6°) und `robustness.py` (lineare Stabilitätskarten über
+kappa, Totzeit und Servobandbreite; Sweeps im 6DOF-Modell über acht Parameter; Monte-Carlo mit
+breiter Streuung; Ausgaben `out/robustness_*.png`, `out/robustness_summary.md`, `.json`). Die
+Sweeps rechnen ohne Boden, damit ein Schub unter dem Gewicht die Lagedynamik nicht ausblendet.
+Neu in `MotorParams`: `thrust_scale`.

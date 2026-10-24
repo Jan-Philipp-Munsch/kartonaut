@@ -1524,7 +1524,7 @@
 		(stroke (width 0) (type default))
 		(uuid "276986e3-3ca2-5b14-8cbe-63b74be13749")
 	)
-	(global_label "MOT_NSLEEP"
+	(global_label "SPI0_MOSI"
 		(shape passive)
 		(at 40.64 76.2 180)
 		(fields_autoplaced yes)
@@ -1536,7 +1536,7 @@
 		(stroke (width 0) (type default))
 		(uuid "3bee511f-2648-5461-af90-799babf41b65")
 	)
-	(global_label "PYRO3_FIRE"
+	(global_label "SPI0_MISO"
 		(shape passive)
 		(at 40.64 78.74 180)
 		(fields_autoplaced yes)
@@ -1783,9 +1783,17 @@
 		(effects (font (size 1.27 1.27)) (justify left))
 		(uuid "dc214bbf-da88-5fbd-b4dc-1419db0df5cb")
 	)
-	(no_connect
-		(at 73.66 71.12)
-		(uuid "235bf040-081f-5639-9114-9cd3a6b7ae7b")
+	(wire
+		(pts (xy 73.66 71.12) (xy 76.2 71.12))
+		(stroke (width 0) (type default))
+		(uuid "616d05cc-e002-5aeb-98a6-8d6819eed7c4")
+	)
+	(global_label "LORA_M0"
+		(shape passive)
+		(at 76.2 71.12 0)
+		(fields_autoplaced yes)
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "3609ddd0-cb53-5013-8d19-97bb71348145")
 	)
 	(wire
 		(pts (xy 73.66 73.66) (xy 76.2 73.66))
@@ -1816,7 +1824,7 @@
 		(stroke (width 0) (type default))
 		(uuid "62d05131-d0ef-5125-888d-2aa769f9067e")
 	)
-	(global_label "PWM_EXT"
+	(global_label "SPI0_SCK"
 		(shape passive)
 		(at 76.2 78.74 0)
 		(fields_autoplaced yes)
@@ -1835,13 +1843,29 @@
 		(effects (font (size 1.27 1.27)) (justify left))
 		(uuid "8fcda125-2d3e-5350-bd08-59441abc35df")
 	)
-	(no_connect
-		(at 73.66 83.82)
-		(uuid "96387872-bc60-5248-896d-82c38b3aa26c")
+	(wire
+		(pts (xy 73.66 83.82) (xy 76.2 83.82))
+		(stroke (width 0) (type default))
+		(uuid "d45a9f82-f730-548c-af56-a4b74d0231e6")
 	)
-	(no_connect
-		(at 73.66 86.36)
-		(uuid "36c004a2-64e9-56bc-9b1d-ebb496d412a7")
+	(global_label "PYRO3_FIRE"
+		(shape passive)
+		(at 76.2 83.82 0)
+		(fields_autoplaced yes)
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "3c92dccc-75e8-5aab-8b11-158558217c78")
+	)
+	(wire
+		(pts (xy 73.66 86.36) (xy 76.2 86.36))
+		(stroke (width 0) (type default))
+		(uuid "0a925eba-3fa4-52e1-866d-ae02dc4f16a1")
+	)
+	(global_label "MOT_NSLEEP"
+		(shape passive)
+		(at 76.2 86.36 0)
+		(fields_autoplaced yes)
+		(effects (font (size 1.27 1.27)) (justify left))
+		(uuid "212af9aa-86c9-5d08-ae48-772711123bb9")
 	)
 	(wire
 		(pts (xy 73.66 88.9) (xy 76.2 88.9))
@@ -1920,7 +1944,7 @@
 		(stroke (width 0) (type default))
 		(uuid "ee91fc5e-2bd6-53af-baad-495bdf462899")
 	)
-	(global_label "LORA_M0"
+	(global_label "PWM_EXT"
 		(shape passive)
 		(at 76.2 104.14 0)
 		(fields_autoplaced yes)
@@ -2653,7 +2677,7 @@
 		)
 		(property "Datasheet" "" (at 283.21 68.58 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(property "Funktion" "J_STACK" (at 283.21 68.58 0) (effects (font (size 1.27 1.27)) (hide yes)))
-		(property "Description" "Stapelstecker fuer Zusatzplatinen (Flachband)"
+		(property "Description" "Stapelstecker fuer Zusatzplatinen (Flachband); SPI0 (23.10.), SPI1 bleibt der Flugbus"
 			(at 283.21 68.58 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -2800,7 +2824,7 @@
 		(stroke (width 0) (type default))
 		(uuid "671df223-83ac-5852-8931-c941292436a5")
 	)
-	(global_label "SPI1_SCK"
+	(global_label "SPI0_SCK"
 		(shape passive)
 		(at 275.59 52.07 180)
 		(fields_autoplaced yes)
@@ -2812,7 +2836,7 @@
 		(stroke (width 0) (type default))
 		(uuid "2825a8a0-3c0c-565f-9dfb-ea9f607fcc8b")
 	)
-	(global_label "SPI1_MOSI"
+	(global_label "SPI0_MOSI"
 		(shape passive)
 		(at 293.37 52.07 0)
 		(fields_autoplaced yes)
@@ -2824,7 +2848,7 @@
 		(stroke (width 0) (type default))
 		(uuid "1bd36fc9-48fd-5bb9-a2ed-babd569955a6")
 	)
-	(global_label "SPI1_MISO"
+	(global_label "SPI0_MISO"
 		(shape passive)
 		(at 275.59 54.61 180)
 		(fields_autoplaced yes)

@@ -118,9 +118,21 @@ def main():
             continue
         for pad in fp.Pads():
             want = p.pins.get(pad.GetNumber())
-            if want and not want.startswith("unconnected-") and pad.GetNetname() != want:
+            if want is None and pad.GetNumber() in p.pins:            # pin is open now
+                want = f"unconnected-({p.ref}-{sym_pins(lib_symbol(p.lib))[pad.GetNumber()][3]}-Pad{pad.GetNumber()})"
+                if want not in netinfo:
+                    n = pcbnew.NETINFO_ITEM(board, want)
+                    board.Add(n)
+                    netinfo[want] = n
+            if want and pad.GetNetname() != want:
+                old_net = pad.GetNetCode()
                 pad.SetNet(netinfo[want])
-                changed.append(f"{p.ref}.{pad.GetNumber()} -> {want}")
+                changed.append(f"{p.ref}.{pad.GetNumber()} -> {want[:40]}")
+                # copper of the old net that touches the pad is a short now: stubs go, the router joins
+                for t in list(board.GetTracks()):
+                    layer = t.GetLayer() if t.GetClass() != "PCB_VIA" else pcbnew.F_Cu
+                    if t.GetNetCode() == old_net and pad.IsOnLayer(layer) and                             t.GetEffectiveShape(layer).Collide(pad.GetEffectiveShape(layer), 0):
+                        board.Delete(t)
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
     pcbnew.SaveBoard(str(PCB), board, True)
     gen_pcb.fix_model_paths()

@@ -39,7 +39,7 @@ PLANE_NET = {"GND": "In1.Cu", "GND_PWR": "B.Cu", "5V_SYS": "B.Cu"}
 VIA_R, VIA_COST = 0.3, 25 * K
 EDGE_TRACK, EDGE_VIA = 0.6, 1.0
 MARGIN = 0.06            # raster: copper edges lie up to 0.05 mm (0.7 cells) outside the painted cell centres
-MAX_RIP_NETS, MAX_RIP_TRACKS, RIP_ROUNDS = 30, 160, 3
+MAX_RIP_NETS, MAX_RIP_TRACKS, RIP_ROUNDS = 40, 500, 3
 RIP_DEPTH = 1            # a ripped net may itself rip up others once
 VERBOSE = "-v" in sys.argv
 
@@ -338,9 +338,9 @@ def blockers(n, pocket, net, other=None):
     `other` (a second pocket) only those in the wall between the two."""
     tracks, vias = set(), set()
     for l in n.layers:
-        rim = ndimage.binary_dilation(pocket[l], RING3, iterations=int(6 * K)) & ~pocket[l]
+        rim = ndimage.binary_dilation(pocket[l], RING3, iterations=int(12 * K)) & ~pocket[l]
         if other is not None:
-            rim &= ndimage.binary_dilation(other[l], RING3, iterations=int(6 * K)) & ~other[l]
+            rim &= ndimage.binary_dilation(other[l], RING3, iterations=int(12 * K)) & ~other[l]
         for t in np.unique(tid[l][rim]):
             if t >= 0 and TRACKS[t]["net"] not in NO_RIP | {net} and not TRACKS[t]["removed"]:
                 tracks.add(int(t))
@@ -575,6 +575,8 @@ def reroute_ripped(removed_tracks, removed_vias, log, depth):
                 seg = (t["x1"], t["y1"], t["x2"], t["y2"], t["layer"], t["w"])
                 add_copper(t["net"], [seg], [])
                 r = {"net": t["net"], "segments": [list(seg)], "vias": []}
+            elif length <= 0.3:
+                continue              # a degenerate stub; if KiCad sees a gap there, the next pass routes it
             elif length <= 1.5:
                 log.append(f"{NETS[t['net']]['name']:12s} re-route failed: its old place is taken")
                 yield None

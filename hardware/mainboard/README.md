@@ -27,6 +27,7 @@ die Fertigerwahl in `Fertiger_2026-10-21.md`.
 | E4, E9 | Alle Servos und der Rollmotor an VSERVO (2S direkt); TPS563201 und 5V_SERVO entfallen |
 | E5 | Vier Pyro-Kanäle (3 und 4 DNP), vierter Servo-Stecker, DRV8833 nSLEEP an Pin 11, zweites BMP390 als DNP, E22 NRST an Pin 6 |
 | E10 | Stapelstecker J_STACK (2 × 10) statt J_EXP; 74HC138 für die SPI-Chip-Selects, 74HC4051 für die Analogeingänge, eigener LDO 3V3_EXP |
+| E11 | **SPI0 (Pins 11/12/13) auf J_STACK statt SPI1** (23.10.): ein Fehler auf der Zusatzplatine kann den Flugbus nicht stören; dafür nSLEEP → 40, PYRO3_FIRE → 41, PWM_EXT → 33, LORA_M0 → 16; keine Reservepins mehr; Wire2 bewusst nicht. Layout: SPI0_MISO läuft 114 mm mit 16 Vias, der SPI0-Takt zur Zusatzplatine bleibt bei höchstens 8 MHz |
 | B3 | Polymer-Elkos 7343 statt stehender THT-Elkos |
 | B4 | Ferrit + 10 µF: eigene Sensor-Versorgung 3V3_SENS für IMU und Barometer |
 | B7, B8 | Summer auf Pin 37; eine WS2812B-Kette hinter einem SN74LV1T34 (Pin 5) |
@@ -42,7 +43,7 @@ dass alle Bauteil-Hüllen im Kuppler bleiben und die M2-Stangen nicht berühren.
 | Thema | rev A | rev B | Grund |
 |---|---|---|---|
 | Versorgung | ein 2S-LiPo, zwei 5-V-Bucks | **zwei Akkus**: 1S für die Elektronik über Buck-Boost, 2S für Servos, Rollmotor, Pyro | Servo- und Pyro-Spitzen dürfen den Teensy nie in den Neustart ziehen (Plan §2.5) |
-| IMU | ICM-20948 an SPI1 | **ICM-42688-P** an SPI1 | ICM-20948 ist *Not For New Designs*; der 42688-P rauscht weniger, misst ±16 g, braucht keinen DMP |
+| IMU | ICM-20948 an SPI1 | **LSM6DSV16X** an SPI1 (21.–22.10. ICM-42688-P) | ICM-20948 ist *Not For New Designs*; der ICM-42688-P kostet bei JLC 21,5 USD bei 453 Stück Bestand, der LSM6DSV16X 3,4 USD bei über 7000, rauscht in derselben Klasse (3,8 statt 2,8 mdps/√Hz), ±16 g, ±4000 °/s, Sensorfusion im Chip; gleicher LGA-14-Footprint, Pins 1–8 und 12–14 funktionsgleich, 9–11 offen (E12) |
 | Barometer | BMP280 | **BMP390** | halbes Rauschen, gleiche Bibliotheksfamilie |
 | Funk | HC-12 gesteckt | **LoRa E22-400T22S** (SMD, SX1268, 433 MHz, 22 dBm) auf dem Board, IPEX-Pigtail zur Spitze | Reichweite; die SMD-Variante passt in den Funk-Streifen, die DIP-Variante (24 × 43 mm) nicht |
 | TVC-Servos | SG90 an 5V_SERVO | **FrSky Xact W5652H direkt am 2S-Akku** (bis 8,4 V) | bestellt; am Akku doppelt so schnell wie an 5 V |
@@ -94,7 +95,7 @@ zwei WS2812B und Summer, W25Q128 unter dem Teensy.
          ├─ U3 AP2112K-3.3 → 3V3_RF (100 µF): LoRa E22, GPS (J_GPS)
          └─ U14 AP2112K-3.3 → 3V3_EXP: Zusatzplatinen an J_STACK
    Teensy 3V3 (≤ 250 mA) → INA239, 74HC138, 74HC4051, I²C-Pull-ups
-         └─ Ferrit FB1 + 10 µF → 3V3_SENS: ICM-42688-P, BMP390 (und das zweite, DNP)
+         └─ Ferrit FB1 + 10 µF → 3V3_SENS: LSM6DSV16X, BMP390 (und das zweite, DNP)
 
 2S LiPo (6,0–8,4 V) ─ J_BAT2 (XT30) ─ Q1 Verpolschutz ─ F1 Polyfuse 3 A/6 A ─ VBAT2_F ─ Q6 Lastschalter ─ VBAT_PROT
    ├─ VBAT2_RAW: J_CHG2 (JST-PH 2) parallel zum Akku, Kabel zur XT30-Ladebuchse am Schalterbrett
@@ -144,18 +145,19 @@ Stand B1 (Komponenten §5 und §9). ★ = neu oder anders als rev B. Die Netzlis
 |---|---|---|---|
 | 0 / 1 | RX1 / TX1 | GPS (J_GPS, JST-GH 4: 3V3_RF, GND, TX, RX) | |
 | 2 / 3 | MOT_IN1 / MOT_IN2 | DRV8833 AIN1=BIN1 / AIN2=BIN2 (Brücken parallel) | |
-| 4 | IMU_INT | ICM-42688-P INT1 | |
+| 4 | IMU_INT | LSM6DSV16X INT1 | |
 | 5 | LED_DATA | SN74LV1T34 → LED1 → LED2 → J_LED (eine Kette) | ★ B8 |
 | 6 | LORA_NRST | E22 NRST, 10 kΩ nach 3V3_RF, Open-Drain betreiben | ★ B9 |
 | 7 | CAM_TRIG | 1 kΩ → J_CAM (JST-GH 3) | |
 | 8 | MOT_FAULT | DRV8833 nFAULT, 10 kΩ nach 3V3 | |
 | 9 | SERVO_CHUTE | J_SERVO3 (VSERVO) | ★ E4 |
 | 10 | SERVO_LEGS | J_SERVO4 (VSERVO), Landebeine | ★ E5 |
-| 11 | MOT_NSLEEP | DRV8833 nSLEEP (interner Pull-down: Motor aus beim Booten) | ★ C1 |
-| 12 / 14 | PYRO3_FIRE / PYRO4_FIRE | Gate Pyro 3 / 4 (DNP) | ★ E5 |
-| 13 | PWM_EXT | J_STACK Pin 18 | ★ E10 |
+| 11 | SPI0_MOSI | J_STACK Pin 8: SPI0 zur Zusatzplatine, SPI1 bleibt der Flugbus auf der Platine | ★ E11 |
+| 12 | SPI0_MISO | J_STACK Pin 9 | ★ E11 |
+| 14 | PYRO4_FIRE | Gate Pyro 4 (DNP) | ★ E5 |
+| 13 | SPI0_SCK | J_STACK Pin 7 | ★ E11 |
 | 15 | NRST_EXT | J_STACK Pin 20 (Open-Drain) | ★ E10 |
-| 16 | frei | – | Reserve |
+| 16 | LORA_M0 | E22 Betriebsart M0 (seit 23.10.; linke Reihe, zum Modul hin) | E11 |
 | 17 | IRQ_EXT | J_STACK Pin 13 | ★ E10 |
 | 18 / 19 | SDA0 / SCL0 | J_QWIIC und J_STACK, 4,7 kΩ Pull-ups; kein Flugsensor | ★ E3 |
 | 20 / 21 | TX5 / RX5 | J_STACK Pin 17 / 16 (Serial5) | ★ E10 |
@@ -163,13 +165,15 @@ Stand B1 (Komponenten §5 und §9). ★ = neu oder anders als rev B. Die Netzlis
 | 24 (A10) | MUX_OUT | 74HC4051 Ausgang (alle langsamen Analogsignale) | ★ |
 | 38 / 25 / 30 | SEL0 / SEL1 / SEL2 | Adresse für 74HC138 und 74HC4051 gemeinsam | ★ |
 | 31 | CS_EN | 74HC138 Freigabe (aktiv tief, 10 kΩ nach 3V3: beim Booten alle CS hoch) | ★ |
-| 26 / 27 / 39 | MOSI1 / SCK1 / MISO1 | IMU, BMP390, BMP390 (DNP), INA239, J_STACK; `SPI1.setMISO(39)` | ★ E3 |
+| 26 / 27 / 39 | MOSI1 / SCK1 / MISO1 | IMU, BMP390, BMP390 (DNP), INA239, nur auf der Platine; `SPI1.setMISO(39)` | ★ E3, E11 |
 | 28 / 29 | SERVO_YAW / SERVO_PITCH | J_SERVO1 / J_SERVO2 (VSERVO) | |
-| 32 / 33 | LORA_M1 / LORA_M0 | E22 Betriebsart (00 = Normal, 11 = Konfiguration) | |
+| 32 | LORA_M1 | E22 Betriebsart (00 = Normal, 11 = Konfiguration), M0 an Pin 16 | |
+| 40 | MOT_NSLEEP | DRV8833 nSLEEP (interner Pull-down: Motor aus beim Booten); seit 23.10., rechte Reihe neben dem DRV8833 | ★ C1, E11 |
+| 33 | PWM_EXT | J_STACK Pin 18 (PWM-fähig) | ★ E10, E11 |
 | 34 / 35 | RX8 / TX8 | E22 TXD / RXD | |
 | 36 | LORA_AUX | E22 AUX (Sendepuffer frei, Modul bereit) | |
 | 37 | BUZZER | AO3400A → aktiver 5-V-Summer | ★ B7 (war 13) |
-| 40, 41 | frei | – | Reserve |
+| 41 | PYRO3_FIRE | Gate Pyro 3 (DNP); beim Booten hochohmig, der Gate-Widerstand hält den FET aus | ★ E5, E11 |
 
 **Chip-Selects (74HC138, Y0 bis Y7):** Y0 IMU, Y1 BMP390, Y2 BMP390 Nr. 2 (DNP), Y3 INA239,
 Y4 bis Y6 CS_EXT0 bis 2 an J_STACK, Y7 frei. Die Firmware setzt die Adresse an SEL0 bis 2 und zieht
@@ -191,11 +195,13 @@ Durchgang vor dem Start per Summer gemeldet.
 
 ## 6. Sensorik und Funk
 
-**ICM-42688-P (LGA-14, 2,5 × 3 mm).** SPI1 mit 7 MHz (bis 24 MHz möglich), VDD und VDDIO an 3V3_SENS,
-100 nF + 10 nF an jedem Versorgungspin, INT1 an Pin 4. Betrieb: Gyro ±2000 °/s, Accel ±16 g, ODR
-1 kHz, interner Tiefpass (UI-Filter) auf ca. 50 Hz, Firmware mittelt auf die 100-Hz-Schleife.
-Bibliothek: `finani/ICM42688` (Arduino, SPI) oder eigener Registertreiber. Kein DMP, keine
-Quaternion vom Chip; die Lage entsteht in der Firmware aus dem Gyro (Plan, Befund 3).
+**LSM6DSV16X (LGA-14, 2,5 × 3 mm; bis 22.10. ICM-42688-P, E12).** SPI1 mit 7 MHz (bis 10 MHz möglich), Vdd und
+Vdd_IO an 3V3_SENS, 100 nF + 2,2 µF an Vdd, 10 nF an Vdd_IO, INT1 an Pin 4. SDx/SCx (2, 3) an GND (Hilfsbus aus),
+INT2, OCS_Aux und SDO_Aux (9–11) offen (AN5763 Tab. 1). Betrieb: Gyro ±2000 °/s, Accel ±16 g, ODR 960 Hz,
+Tiefpass auf ca. 50 Hz, Firmware mittelt auf die 100-Hz-Schleife. WHO_AM_I = 0x70. Bibliothek: `STMicroelectronics/LSM6DSV16X`
+(Arduino, SPI) oder eigener Registertreiber. Die Sensorfusion im Chip (SFLP-Quaternion) ist eine Option, der Plan
+bleibt die Gyro-Quaternion in der Firmware (Befund 3). Achsenlage des Chips zur Platine in der Firmware prüfen,
+sie unterscheidet sich vom ICM.
 
 **BMP390 (LGA-10, 2 × 2 mm).** SPI1 im 4-Draht-Modus (E3), CS aus dem Decoder (Y1), VDD/VDDIO an
 3V3_SENS, Oversampling Druck ×8, Temperatur ×1, IIR-Koeffizient 3, ODR 50 Hz. Bibliothek: Adafruit
@@ -220,7 +226,7 @@ Bestellen verifizieren; Verfügbarkeit bei JLC schwankt.
 | Ref | Bauteil | Gehäuse | Anz. | LCSC | Funktion |
 |---|---|---|---|---|---|
 | A1 (U_TEENSY) | Teensy 4.1 + 2× Buchsenleiste 1×24 | THT | 1 | – | MCU (vorhanden) |
-| U4 | TDK ICM-42688-P | LGA-14 | 1 | C1850418 | IMU |
+| U4 | ST LSM6DSV16X | LGA-14 | 1 | C5267406 | IMU (E12, war ICM-42688-P C1850418) |
 | U5, U15 | Bosch BMP390 | LGA-10 | 1 + 1 DNP | C5124834 | Barometer, zweites als Footprint |
 | U6 | TI INA239AIDGSR | VSSOP-10 | 1 | – (DigiKey) | Strom/Spannung VSERVO, SPI, Handlötung |
 | R_SH1 | 20 mΩ 1 % 1 W | 2512, Kelvin-Pads | 1 | prüfen | Shunt |
@@ -289,7 +295,7 @@ Die vollständige Prüfliste steht in `docs/Plan_2026-10-21.md` §2.6. Kurzfassu
    Verpolung testen. Lastschalter: ohne JP1/JP2 und ohne Schalterbrett muss alles aus sein.
    Beim ersten Einschalten des 1S-Pfads den Anlauf von 5V_SYS mit dem Oszilloskop ansehen: der
    TPS63070 lädt die 940 µF hinter D1 in der Strombegrenzung.
-2. Teensy stecken, nur USB: beide Akkuspannungen über den Analogmux; ICM-42688-P (WHO_AM_I = 0x47),
+2. Teensy stecken, nur USB: beide Akkuspannungen über den Analogmux; LSM6DSV16X (WHO_AM_I = 0x70),
    BMP390 (CHIP_ID = 0x60) und INA239 (Manufacturer-ID 0x5449) über SPI1 und den Decoder.
 3. 1S-Akku, Flug-Firmware: Loop-Timing, Teleplot IMU/Baro, beide Akkuspannungen, INA239.
    Lader: USB-C am Schalterbrett, Rakete aus, Ladestrom 500 mA, Lade-LED.
@@ -309,7 +315,7 @@ Hinweis (B11): Die VIN-VUSB-Brücke auf dem Teensy bleibt geschlossen. D1 trennt
   Akkugrenzen, `SERVO_PULSE_*` für die W5652H, `ROLL_PWM_MAX` (etwa 60 %, 5 V aus 8,4 V).
 - Neu: Chip-Select über den 74HC138 (Adresse setzen, dann CS_EN tief) und Analogeingänge über den 74HC4051
   (nur bei CS_EN hoch umschalten, 10 µs Einschwingzeit).
-- `Sensors.cpp`: Treiber ICM-42688-P über SPI1, ohne DMP; Gyro-Quaternion und Oben-Vektor für den
+- `Sensors.cpp`: Treiber LSM6DSV16X über SPI1 (der ICM-42688-P-Treiber in `lib/mainboard_revb` entfällt); Gyro-Quaternion und Oben-Vektor für den
   Regler (Plan, Befund 3); BMP390 über `BMP3XX` im SPI-Modus; INA239 über SPI, außerhalb der 100-Hz-Schleife.
 - Neu `Radio.cpp`: E22-Konfiguration über M0/M1, NRST bei hängendem Modul, Telemetrieprotokoll mit
   AUX-Flusskontrolle.
@@ -338,4 +344,4 @@ B1 eingearbeitet (§0).
   XT30- und XH-3-Ladebuchse): Platine oder gedruckt, Kabel zu J_SW, J_CHG1 und J_CHG2 (`cad/README.md`).
 - Kamera: 3,3 V oder 5 V am Auslöser.
 - TPS63070 bei JLC verfügbar? Sonst TPS63020.
-- INA239 bei DigiKey bestellen (Handlötung); ICM-42688-P am Bestelltag auf TDK prüfen (LCSC C1850418).
+- INA239 bei DigiKey bestellen (Handlötung); LSM6DSV16X (LCSC C5267406) am Bestelltag auf Bestand prüfen.

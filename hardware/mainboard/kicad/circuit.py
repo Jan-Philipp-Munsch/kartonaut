@@ -240,13 +240,18 @@ group("Teensy 4.1")
 TEENSY = {  # Teensy pin -> net
     "0": "GPS_TX", "1": "GPS_RX", "2": "MOT_IN1", "3": "MOT_IN2", "4": "IMU_INT", "5": "LED_DATA",
     "6": "LORA_NRST", "7": "CAM_TRIG", "8": "MOT_FAULT", "9": "SERVO_CHUTE", "10": "SERVO_LEGS",
-    "11": "MOT_NSLEEP", "12": "PYRO3_FIRE", "13": "PWM_EXT", "14": "PYRO4_FIRE", "15": "NRST_EXT",
+    "11": "SPI0_MOSI", "12": "SPI0_MISO", "13": "SPI0_SCK", "14": "PYRO4_FIRE", "15": "NRST_EXT", "16": "LORA_M0",
     "17": "IRQ_EXT", "18": "SDA", "19": "SCL", "20": "EXT_TX", "21": "EXT_RX", "22": "PYRO2_FIRE",
     "23": "PYRO1_FIRE", "24": "MUX_OUT", "25": "SEL1", "26": "SPI1_MOSI", "27": "SPI1_SCK",
-    "28": "SERVO_YAW", "29": "SERVO_PITCH", "30": "SEL2", "31": "CS_EN", "32": "LORA_M1", "33": "LORA_M0",
+    "28": "SERVO_YAW", "29": "SERVO_PITCH", "30": "SEL2", "31": "CS_EN", "32": "LORA_M1", "33": "PWM_EXT",
     "34": "LORA_TXD", "35": "LORA_RXD", "36": "LORA_AUX", "37": "BUZZER", "38": "SEL0", "39": "SPI1_MISO",
+    "40": "MOT_NSLEEP", "41": "PYRO3_FIRE",
+    # 23.10.: SPI0 (11/12/13) to J_STACK, so a fault on the add-on board cannot touch SPI1, the flight bus.
+    # MOT_NSLEEP (40, right row next to the DRV8833), PYRO3_FIRE (41; high-impedance at boot, the gate
+    # pull-down keeps the FET off), PWM_EXT (needs PWM: pin 33) and LORA_M0 (16, left row toward the module)
+    # moved to the pins that were spare.
 }
-SPARE_PINS = ["16", "40", "41"]          # free after the decoder and the mux (Komponenten 9)
+SPARE_PINS = []                           # 16, 40, 41 were spare until 23.10. (SPI0 on J_STACK)
 _tp = {teensy_pad(k): v for k, v in TEENSY.items()}
 for p in SPARE_PINS:
     _tp[teensy_pad(p)] = None
@@ -281,10 +286,10 @@ group("Stapelstecker J_STACK, Befestigung, Testpunkte")
 # Deviation: pin 2 is GND_PWR (return of VSERVO on pins 5/6) instead of a second GND, so servo
 # current of an extension board does not flow through the logic ground. Do not join them there.
 add("J15", "Connector_Generic:Conn_02x10_Odd_Even", "J_STACK", "Connector_PinHeader_2.54mm:PinHeader_2x10_P2.54mm_Vertical",
-    S, {1: "GND", 2: "GND_PWR", 3: "3V3_EXP", 4: "5V_SYS", 5: "VSERVO", 6: "VSERVO", 7: "SPI1_SCK",
-        8: "SPI1_MOSI", 9: "SPI1_MISO", 10: "CS_EXT0", 11: "CS_EXT1", 12: "CS_EXT2", 13: "IRQ_EXT",
+    S, {1: "GND", 2: "GND_PWR", 3: "3V3_EXP", 4: "5V_SYS", 5: "VSERVO", 6: "VSERVO", 7: "SPI0_SCK",
+        8: "SPI0_MOSI", 9: "SPI0_MISO", 10: "CS_EXT0", 11: "CS_EXT1", 12: "CS_EXT2", 13: "IRQ_EXT",
         14: "SDA", 15: "SCL", 16: "EXT_RX", 17: "EXT_TX", 18: "PWM_EXT", 19: "ARM_EXT", 20: "NRST_EXT"},
-    func="J_STACK", descr="Stapelstecker fuer Zusatzplatinen (Flachband)")
+    func="J_STACK", descr="Stapelstecker fuer Zusatzplatinen (Flachband); SPI0 (23.10.), SPI1 bleibt der Flugbus")
 R("10k", "ARM_SENSE", "ARM_EXT", S, descr="ARM-Pegel (0-2,1 V) zur Zusatzplatine, entkoppelt")
 for i in range(1, 5):
     add(f"H{i}", "Mechanical:MountingHole", "M3", "MountingHole:MountingHole_3.2mm_M3", S, {},
@@ -293,10 +298,14 @@ for i in range(1, 5):
 # ================================================================ Sensorik (spec 6, E3, B4, C2)
 S = "sensors"
 group("IMU ICM-42688-P, SPI1")
-add("U4", "lcsc:ICM-42688-P", "ICM-42688-P", "lcsc:LGA-14_L3.0-W2.5-P0.50-TL", S,
+# 23.10.: LSM6DSV16X instead of the ICM-42688-P. Same LGA-14 land pattern and the same pin functions on
+# 1, 4-8, 12-14 (SDO, INT1, Vdd_IO, GND, Vdd, CS, SCL, SDA); SDx/SCx (2, 3) to GND with the aux bus off;
+# INT2 (9) is an output and OCS_Aux/SDO_Aux (10, 11) want Vdd_IO or open: all three open (AN5763 Tab. 1).
+# JLC sells it for a sixth of the ICM price with 15 times the stock; gyro noise is in the same class.
+add("U4", "lcsc:LSM6DSV16XTR", "LSM6DSV16X", "lcsc:LGA-14_L3.0-W2.5-P0.50-TL", S,
     {1: "SPI1_MISO", 2: "GND", 3: "GND", 4: "IMU_INT", 5: "3V3_SENS", 6: "GND", 7: "GND", 8: "3V3_SENS",
-     9: "GND", 10: "GND", 11: "GND", 12: "CS_IMU", 13: "SPI1_SCK", 14: "SPI1_MOSI"}, lcsc="C1850418",
-    descr="IMU auf der Rollachse; RESV und FSYNC an GND (DS-000347 Tab. 9)")
+     9: None, 10: None, 11: None, 12: "CS_IMU", 13: "SPI1_SCK", 14: "SPI1_MOSI"}, lcsc="C5267406",
+    descr="IMU auf der Rollachse, SPI 4-Draht; SDx/SCx an GND, INT2/OCS_Aux/SDO_Aux offen (AN5763 Tab. 1); war ICM-42688-P C1850418")
 C("100n", "3V3_SENS", "GND", S, descr="VDD")
 C("2.2u", "3V3_SENS", "GND", S, descr="VDD")
 C("10n", "3V3_SENS", "GND", S, descr="VDDIO")

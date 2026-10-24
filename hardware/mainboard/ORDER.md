@@ -17,7 +17,7 @@ rev-B-Firmware und sparen später Wartezeit.
 
 | Nr. | Teil | Stück | Wofür | Quelle (Vorschlag) | ca. |
 |---|---|---|---|---|---|
-| 0.1 | ICM-42688-P-Breakout (SPI herausgeführt) | 1 | IMU-Treiber ohne DMP und Gyro-Quaternion am Tisch entwickeln, bevor die Platine da ist | Berrybase, Eckstein, AliExpress | 8–15 € |
+| 0.1 | LSM6DSV16X-Breakout (SPI herausgeführt; seit 23.10. statt ICM-42688-P, E12) | 1 | IMU-Treiber und Gyro-Quaternion am Tisch entwickeln, bevor die Platine da ist | Adafruit 4692 (über Berrybase/Eckstein), SparkFun, AliExpress | 10–20 € |
 | 0.2 | BMP390-Breakout (Adafruit 4816 oder Clone) | 1 | `BMP3XX`-Treiber und Kalman-Rauschwert vorab | Berrybase, Eckstein | 10–15 € |
 | 0.3 | LoRa **E22-400T22D** (DIP, SMA) | 2 | eins für die Bodenstation (bleibt dort), eins als Gegenstelle für den Tisch, bis das SMD-Modul auf der Platine ist | Ebyte über AliExpress/eBay/Tindie | 2 × 8–12 € |
 | 0.4 | 433-MHz-Antenne SMA (Stab, λ/4) | 2 | Bodenstation und Tischtest | dieselbe Bestellung wie 0.3 | 2 × 2–4 € |
@@ -55,7 +55,7 @@ easyeda2kicad, **ERC 0 Fehler / 0 Warnungen**. Die Netzliste ist gegen die Pin-T
 
 - Die Hinweise aus der Prüfung einarbeiten: TPS63070 FB2 (Pin 6) offen lassen statt GND; Kommentar zu den
   zusammengefassten Doppelpins 7/8 und 12/13 im Footprint; E22 NRST über 10 k an 3V3_RF oder an einen
-  Teensy-Pin; ICM-42688-P RESV-Pins gegen DS-000347 Tabelle 9 halten.
+  Teensy-Pin; IMU-Pins gegen das Datenblatt halten (seit 23.10. LSM6DSV16X, AN5763 Tabelle 1: 9–11 offen).
 - **Zweitmeinung-Review vom 21.10.2026** (`review_kicad_2026-10-21.md`): die Punkte A1 bis A5 in `circuit.py`
   einarbeiten (Hold-up-Elko hinter D1, EN-Teiler des TPS63070 auf 2,7 V, Hauptschalter über FETs, Sicherung je
   Akku, Kelvin-Shunt), dazu die B-Punkte nach Aufwand; Jan entscheidet A3 (FET-Schalter) und B6 (BMP390 an SPI).
@@ -122,7 +122,7 @@ Quelle seit Dezember 2025 1,50 USD).
 
 | Bauteil | LCSC | Klasse | Stand 21.10. | Falls nicht lieferbar |
 |---|---|---|---|---|
-| ICM-42688-P | C1850418 | Extended | ca. 5500 Stück, ab 2,1 USD bei 1000 (Einzelpreis höher). **Achtung:** das bei LCSC verlinkte Datenblatt trägt die Marke Tokmas, nicht TDK; Hersteller im JLC-Teileprogramm prüfen, nur TDK InvenSense nehmen | keine Alternative auf der Achse; dann warten, Breakout oder anderer Anbieter |
+| LSM6DSV16X (23.10., E12; davor ICM-42688-P C1850418: bei JLC 21,5 USD, 453 Stück) | C5267406 | Extended | über 7000 Stück, ca. 3,4 USD bei JLC; ST-Original | LSM6DSO (C5267404-Familie, gleicher Footprint, Pin 9–11 ebenso offen) oder ICM-42688-P zurück |
 | BMP390 | C5124834 | Extended | LCSC am 21.10. nachts: **„Not available now“**, kein Bestand, kein Preis | **BMP388 (C779278, gleiches LGA-10, gleiche Bibliothek): 7362 Stück auf Lager, 7,67 USD (ab 10: 7,06)**, bei Bosch abgekündigt, für einen Lauf von 5 Platinen egal; ob JLC ihn bestückt, am Bestelltag prüfen, sonst Breakout an J_QWIIC oder BMP390 bei Mouser/DigiKey (Lieferzeit 4 bis 13 Wochen) |
 | INA219AIDR | C138706 | prüfen | ca. 1200–4400 Stück, 0,76 USD | INA219BIDR |
 | TPS63070RNMR | C109322 | Extended | Bestand schwankte zwischen 0 und 18 000, 1,37 USD | TPS63020DSJR (1,8–5,5 V ein, 2 A; dann kein Schutz gegen versehentlich 2S) |
@@ -200,7 +200,7 @@ also **2 bis 3 Wochen** ab Upload. Die DHL-Option ist eine Woche schneller und 1
 | E22-400T22S falsch gedreht oder Pads unter dem Modul nicht benetzt | Funk tot | CPL-Vorschau prüfen; das Modul hat nur Randpads, Nachlöten ist möglich |
 | WS2812B erzwingt Standard-PCBA | +17 USD Setup | LEDs als DNP, selbst löten (2020-Gehäuse, Heißluft) oder 5050-Gehäuse nehmen |
 | Teensy-Sockelreihen 0,1 mm versetzt | Teensy klemmt | Footprint `Teensy41_Socket` aus `build_lib.py`, Papierausdruck mit echtem Teensy |
-| ICM-42688-P von einem Zweithersteller (Tokmas-Datenblatt bei LCSC) | anderes Rauschen, andere Register | Hersteller im JLC-Teileprogramm prüfen, sonst Chip selbst beschaffen |
+| LSM6DSV16X von einem Zweithersteller | anderes Rauschen, andere Register | Hersteller im JLC-Teileprogramm prüfen (nur ST), sonst Chip selbst beschaffen |
 | Drehung der VQFN-15 (TPS63070) in der CPL | Wandler kaputt beim ersten Einschalten | Pin-1-Punkt in der JLC-Vorschau, erster Start am Netzteil mit 100 mA |
 | Servo-Achsenlage zum Schlitten noch offen (`README.md` §11) | Achsentausch in der Firmware | kein Platinenrisiko, Stecker sind gleich |
 
@@ -225,7 +225,7 @@ ist: Teensy 4.1, Breakouts ICM-20948, BMP280, INA219, 2× HC-12, SG90, WS2812B, 
 
 | Nr. | Teil | Stück | Quelle | ca. | Hinweis |
 |---|---|---|---|---|---|
-| 0.1 | ICM-42688-P-Breakout (SPI herausgeführt) | 1 | AliExpress/Amazon („ICM-42688-P module“); kein deutscher Händler gefunden, Eval-Board DK-42688-P bei DigiKey 53 Wochen | 8–15 € | wichtigstes Teil: IMU-Treiber ohne DMP am Tisch |
+| 0.1 | LSM6DSV16X-Breakout (SPI herausgeführt) | 1 | Adafruit 4692 über Berrybase/Eckstein, SparkFun, AliExpress | 10–20 € | wichtigstes Teil: IMU-Treiber am Tisch; seit 23.10. statt ICM-42688-P (E12) |
 | 0.2 | BMP390-Breakout Adafruit 4816 | 1 | Kiwi Electronics (NL) 9,99 € netto, eBay paradisetronic 16,97 €; Berrybase/Eckstein prüfen | 12–17 € | auch als Rückfall an J_QWIIC, falls der Chip nicht bestückt wird |
 | 0.3 | LoRa E22-400T22D (DIP, SMA) | 2 | Ebyte über AliExpress, eBay (Ebyte-Shop) oder Tindie | 2 × 8–12 € | Bodenstation und Tisch-Gegenstelle |
 | 0.4 | 433-MHz-Stabantenne SMA | 2 | dieselbe Bestellung | 2 × 2–4 € | |
@@ -285,7 +285,7 @@ am INA219-Eingang. Die Stückliste in `README.md` §7 wird beim Einarbeiten nach
 
 ### 7.3 Reserve-Chips bei LCSC (eine Bestellung, ca. 10 € Versand)
 
-Für Nachlöten und eine dritte Platine: 2× ICM-42688-P (C1850418, ca. 3,4 USD), 2× E22-400T22S (C2903765, ca. 4,2 USD),
+Für Nachlöten und eine dritte Platine: 2× LSM6DSV16X (C5267406, ca. 3,4 USD), 2× E22-400T22S (C2903765, ca. 4,2 USD),
 2× TPS63070RNMR (C109322, ca. 1,4 USD), 2× BMP388 (C779278, 7,67 USD, 7362 auf Lager am 21.10.) oder BMP390, sobald
 wieder gelistet; dazu 2× DRV8833PWPR, 2× INA219AIDR. Zusammen etwa 40 USD plus Versand und Einfuhrabgaben. Lohnt nur,
 wenn die zweite bestückte Platine nicht als Reserve reicht; sonst weglassen.

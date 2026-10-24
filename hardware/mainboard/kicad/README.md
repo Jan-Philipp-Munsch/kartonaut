@@ -18,7 +18,7 @@ von der Spezifikation abgewichen wurde. Die Fertigerwahl steht in `../Fertiger_2
 | Netzliste gegen Spezifikation §4 (`check_design.py`) | **OK**: 39 Teensy-Pins, 7 Chip-Selects, 7 Mux-Kanäle, 11 Schienen, Kelvin-Abgriff |
 | Platzierung | **alle 174 Footprints**, keine Überschneidung; die drei Sensoren vom 23.10. mit `add_parts.py` nachgesetzt |
 | Strompfade | 2S-Pfad, Pyro-Ausgänge und VSYS_IN als F.Cu-Flächen (§5.4); kein 2S-Netz auf In2 |
-| Routing | 2982 Bahnsegmente, 418 Vias, vier Lagen; `./make.sh pcb` braucht etwa 25 Minuten, danach `close_gaps.py` (§5.5) |
+| Routing | 3145 Bahnsegmente, 469 Vias, vier Lagen (Stand 24.10.); `./make.sh pcb` braucht etwa 25 Minuten, danach `close_gaps.py` (§5.5) |
 | DRC (JLC-Regeln) | **0 Fehler**, Schaltplan-Parität **0 Abweichungen** |
 | Offene Verbindungen | **0** (23.10., nach Handrouting und Skript-Router) |
 | Abbildungen | Renders oben, unten und schräg, Lagenbilder (`img/`) |
@@ -39,7 +39,7 @@ Die Lagen einzeln: `img/layers.pdf` (F.Cu, In1 GND, In2, B.Cu Versorgung, Bestü
   ausgeführt: `/S /CurrentUser` nach `%LOCALAPPDATA%\Programs\KiCad\10.0`. Die globalen
   Bibliothekstabellen (`sym-lib-table`, `fp-lib-table`) wurden aus dem Template nach
   `%APPDATA%\kicad\10.0\` kopiert; das macht die GUI sonst beim ersten Start.
-- **easyeda2kicad** (pip) für die vier Teile, die nicht in der KiCad-Bibliothek sind: ICM-42688-P (C1850418),
+- **easyeda2kicad** (pip) für die Teile, die nicht in der KiCad-Bibliothek sind: LSM6DSV16X (C5267406, Symbol; der Footprint ist der des ICM-42688-P C1850418, gleiches Land-Pattern),
   BMP390 (C5124834), TPS63070RNMR (C109322) und E22-400T22S (C2903765). Symbol, Footprint und
   3D-Modell kommen direkt aus der LCSC/EasyEDA-Datenbank, also genau die Footprints, mit denen JLC bestückt.
 - **Freerouting 2.5.0** als JAR mit einer portablen **Temurin-25-JRE** (Zip, keine Installation), beides
@@ -48,7 +48,7 @@ Die Lagen einzeln: `img/layers.pdf` (F.Cu, In1 GND, In2, B.Cu Versorgung, Bestü
 - **CadQuery** für zwei 3D-Modelle, die fehlen: Teensy 4.1 (vereinfacht, auf 8,5-mm-Sockeln) und
   XT30PW-M (die KiCad-Bibliothek nennt das Modell, liefert es aber nicht).
 - Datenblätter für die eigenen Entscheidungen: TPS63070 (SLVSC58B: Pinbelegung, Teiler-Tabelle 4,
-  Kondensatoren) und ICM-42688-P (DS-000347: RESV-Pins, Abblockung).
+  Kondensatoren), ICM-42688-P (DS-000347) und LSM6DSV16X (AN5763 Tab. 1: Pins 9–11 offen, 2–3 an GND).
 
 ## 3. Aufbau und Ablauf
 
@@ -162,8 +162,9 @@ für andere Teile gesperrt.
 
 Gemessene Regeln:
 
-- IMU genau auf der Rollachse unter dem Teensy, Chip-X quer, Chip-Y zur Spitze (Footprint gegen DS-000347
-  geprüft). Im Radius 5 mm keine fremden Vias und keine In2-Bahnen, unter dem Chip gar keine Vias (B16).
+- IMU genau auf der Rollachse unter dem Teensy; Pin 1 des LGA-14 liegt zur TVC-Seite links (Footprint des
+  ICM-42688-P, gegen DS-000347 geprüft; der LSM6DSV16X sitzt seit 23.10. auf demselben Land-Pattern, seine Achsenlage
+  zur Platine ist in der Firmware zu setzen). Im Radius 5 mm keine fremden Vias und keine In2-Bahnen, unter dem Chip gar keine Vias (B16).
 - LoRa-Modul im linken Streifen, Antennenseite zur Spitze, 0,5 mm vom Rand (B17).
 - Buck-Boost und Spule mehr als 25 mm von der IMU; L1 und L2 gehen ohne Kreuzung an ihre Pins.
 - SD- und USB-Freiraum gilt nur für hohe THT-Teile. Karte und Stecker sitzen auf Teensy-Höhe, flache
@@ -266,6 +267,35 @@ B.Cu-Stücke von Signalen (Schlitze in den Versorgungsflächen; der DRC meldet k
 VBAT1_SENSE 10,9 mm, U7_VINT 12 mm (statt 45 mm über In2) im alten Stand; im jetzigen Stand CS_EXT2 16 mm in
 drei Stücken unter dem Teensy, LORA_RXD 6,3 mm entlang der LoRa-Pinreihe, MOT_A 7 mm und MOT_B 5,6 mm unter
 dem DRV8833, 5V_SYS 1,6 mm. LORA_RXD ist 73 mm lang (Luftlinie 38 mm), CS_EXT2 37 mm, PYRO2_SENSE 41 mm.
+Seit dem SPI0-Umbau (24.10.) zusätzlich SPI0_MOSI 6,0 mm, SPI0_MISO 13,3 mm (vier Stücke), LORA_M0 19,4 mm,
+PYRO3_FIRE 12,2 mm, PWM_EXT 17,6 mm, MOT_NSLEEP 2,7 mm (Tabelle unten).
+
+**SPI0-Umbau (E11, 23./24.10.):** Nach dem Umhängen von J_STACK Pin 7–9 auf SPI0 und dem Verlegen von nSLEEP,
+PYRO3_FIRE, PWM_EXT und LORA_M0 waren sieben Verbindungen offen. Vier automatische Anläufe schlossen keine davon
+(Gitter-Router mit Rip-up; Freerouting mit fester Verkabelung; Freerouting über die aufgerissene Region x 100–146 /
+y 88–141, danach 14 offene Signale und zerschnittene Versorgungsflächen, verworfen; Freerouting mit beweglichen statt
+festen Bahnen der Region, nichts bewegt). Geschlossen wurden sie in einer eigenen Sitzung (24.10.) mit einem Planer, der
+B.Cu nur dort nimmt, wo es nicht anders geht, danach begradigt; keine fremde Bahn und kein Bauteil wurde dafür bewegt,
+nur die Reststummel der entfernten SPI1-Äste gelöscht. Freigabe für B.Cu-Stücke der Signale: Jan, 24.10.
+
+| Verbindung | Länge | Vias | davon auf B.Cu |
+|---|---|---|---|
+| SPI0_SCK A1-38 → J15-7 | 25 mm | 3 | – |
+| SPI0_MOSI A1-13 → J15-8 | 55 mm | 5 | 6,0 mm |
+| MOT_NSLEEP A1-41 → U7-1 | 26 mm | 4 | 2,7 mm |
+| SPI0_MISO A1-14 → J15-9 | 114 mm | 16 | 13,3 mm in vier Stücken |
+| PYRO3_FIRE R38-1 → A1-40 | 86 mm | 10 | 12,2 mm |
+| PWM_EXT A1-48 → J15-18 | 48 mm | 9 | 17,6 mm |
+| LORA_M0 U10-20 → A1-35 | 62 mm | 12 | 19,4 mm |
+
+SPI0_MISO ist mit 114 mm und 16 Vias die längste Signalbahn der Platine; der SPI0-Takt zur Zusatzplatine bleibt
+deshalb bei höchstens 8 MHz (Firmware). Die Stücke auf B.Cu liegen als Schlitze von 2,5 bis 12 mm in der 5V_SYS-Fläche
+unter dem Teensy und in der GND_PWR-Fläche rechts daneben; beide Flächen bleiben zusammenhängend, der DRC meldet keine
+zerfallene Fläche. Dazu kamen beim IMU-Tausch (E12) die geöffneten Pads 9–11 des LSM6DSV16X: ihre GND-Stummel zu den
+Vias bei x 130 entfielen, die Massepads 2/3/6/7 hängen jetzt über Pad 7 an C26 (GND-Bahn 0,2 mm auf F.Cu), dafür läuft
+3V3_SENS von Pad 5 über C26 und C28 nach unten zu Pad 8 statt quer unter dem Chip. AN5763 Tab. 1 bestätigt die
+Beschaltung: Pins 2/3 an GND, Pin 9 (INT2) ist ein Ausgang, Pins 10/11 „Vdd_IO oder offen“.
+
 
 Die Platinendatei ist wieder die Quelle: ein neuer `./make.sh pcb` erzeugt eine andere Restliste und löscht
 die Nacharbeit. Werkzeuge der Nacharbeit (Planer mit B.Cu, Kupfer-Bilder, Abstandsprüfung, Bearbeitung
@@ -319,15 +349,16 @@ LoRa-Moduls, Umriss-Kreuzungen); JLC schneidet den Druck über Pads weg.
 | 2S-Pfad | Kupferflächen statt 2-mm-Bahnen (§5.4) | Review B13; 2 mm passen nicht an 2,0/2,5-mm-Steckerpins |
 | Lastschalter (E1) | AO3401A wie der Verpolschutz, Gate 100 k nach Source und 1 k zum Stecker | Basic-Teil; im 1S-Pfad bei −3 V Gate knapp (Review B5), am Bestelltag einen bei −2,5 V spezifizierten Typ prüfen |
 | Ladeanschlüsse (E2) | Lader-IC MCP73831 auf der Platine; USB-C, CC-Widerstände und Lade-LED am Schalterbrett (J_CHG1: VBUS, GND, LED-Kathode). 2S-Ladestecker J_CHG2 als JST-PH 2 (≤ 1 A) direkt am Akku-Plus | das CAD legt Buchsen und LED auf das Schalterbrett an Luke B (`cad/README.md`) |
-| Teensy-Pinbelegung (E10) | 74HC138 und 74HC4051 teilen die Adresse SEL0..2 (Pins 38, 25, 30); CS_EN an Pin 31; Mux-Ausgang an Pin 24; frei bleiben 16, 40, 41 | Komponenten §9; alle Flugsensoren direkt auf dem Decoder |
+| Teensy-Pinbelegung (E10) | 74HC138 und 74HC4051 teilen die Adresse SEL0..2 (Pins 38, 25, 30); CS_EN an Pin 31; Mux-Ausgang an Pin 24; 16, 40, 41 seit E11 belegt | Komponenten §9; alle Flugsensoren direkt auf dem Decoder |
 | Messteiler | 100 k sitzt am gemessenen Knoten, 33 k und 100 nF am Mux-Eingang unter dem Teensy | gleicher Teiler, Filter direkt am ADC-Pfad; an der Spitze war kein Platz |
 | J_STACK Pin 2 | GND_PWR statt zweitem GND | Rückleiter für VSERVO an Pin 5/6; auf der Zusatzplatine nicht mit GND verbinden |
 | J_STACK Pin 19 (ARM) | ARM_SENSE (0 bis 2,1 V) über 10 k | Logikpegel ohne Zusatzteil; die Zusatzplatine vergleicht |
 | INA239 VBUS | am Kelvin-Abgriff ISENS_N (8 µA) statt an VSERVO | VSERVO erbt 0,2 mm Netzklassenabstand, der zwischen die 0,5-mm-Pins nicht passt |
 | TVS | SMAJ12CA (SMA, 400 W) statt SMBJ12CA | vier Kanäle unter dem USB-Stecker; Review C3 nennt SMAJ als Alternative |
-| DRV8833 nSLEEP | direkt an Pin 11, ohne externen Widerstand | interner Pull-down hält den Motor beim Booten aus |
+| DRV8833 nSLEEP | direkt an Pin 40 (bis 22.10. Pin 11), ohne externen Widerstand | interner Pull-down hält den Motor beim Booten aus |
+| SPI0 auf J_STACK (E11, 23.10.) | J_STACK Pin 7/8/9 an SPI0 (Teensy 13/11/12) statt SPI1; dafür nSLEEP → 40, PYRO3_FIRE → 41, PWM_EXT → 33, LORA_M0 → 16; keine Reservepins mehr | ein Fehler auf der Zusatzplatine kann den Flugbus SPI1 nicht stören; nSLEEP und LORA_M0 gegenüber dem Vorschlag (16/40) getauscht, weil Pin 40 in der rechten Reihe neben dem DRV8833 und Pin 16 in der linken Reihe zum Funkmodul hin liegt. Geroutet von Hand mit kurzen Stücken auf B.Cu (§5.5), SPI0_MISO 114 mm: SPI0-Takt zur Zusatzplatine höchstens 8 MHz |
 | TPS63070 | FB 680 k / 130 k (4,98 V); EN-Teiler 330 k / 115 k: an ab 3,1 V, aus unter 2,7 V (A2); FB2 offen (B2); PS/SYNC hoch | |
-| ICM-42688-P | RESV und FSYNC an GND, VDD 100 n + 2,2 µ, VDDIO 10 n, an 3V3_SENS; CS aus dem Decoder | DS-000347 Tab. 9/10 |
+| LSM6DSV16X (E12, 23.10.; war ICM-42688-P) | SDx/SCx an GND, INT2/OCS_Aux/SDO_Aux offen, Vdd 100 n + 2,2 µ, Vdd_IO 10 n, an 3V3_SENS; CS aus dem Decoder; Footprint und Kondensatoren vom ICM übernommen | AN5763 Tab. 1; JLC-Preis 3,4 statt 21,5 USD, Bestand 7000 statt 453 |
 | Servo-Signale | 220 Ω in Reihe | Schutz der Teensy-Pins |
 | E22 | ANT-Pad offen, Antenne über die IPEX-Buchse; NRST mit 10 k nach 3V3_RF an Pin 6 | B9 |
 | LCSC-Nummern | nur bei den Teilen aus `../ORDER.md` §3.3 und dem Lader | Passive beim Bestellen mit dem JLC-Plugin zuordnen |

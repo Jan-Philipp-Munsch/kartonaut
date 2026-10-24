@@ -25,7 +25,7 @@ station. The whole system is simulated in a six-degree-of-freedom model before i
 | Airframe | Klima cardboard tube Ø 75 mm (ID 72.6 mm), 2 × 500 mm, couplers 150 mm; plastic nose cone, 125 cm parachute |
 | Motor | TSP E12-0, 24 mm, 39 Ns, 12 N average, 3.5 s burn, no ejection charge; first flight on one motor, landing burn on a second one later |
 | Lift-off mass | 981 g in the mass model (`cad/`), centre of gravity 448 mm above the nozzle; the simulation says one E12 lifts this to only 20 m, so the mass budget is under review |
-| Flight computer | Teensy 4.1 on the rev B1 mainboard (fully routed): ICM-42688-P IMU, BMP390 barometer, INA239 power monitor with Kelvin shunt, E22-400T22S LoRa, microSD, four pyro channels with arming (two populated), stacking header for add-on boards |
+| Flight computer | Teensy 4.1 on the rev B1 mainboard (fully routed): LSM6DSV16X IMU, BMP390 barometer, INA239 power monitor with Kelvin shunt, E22-400T22S LoRa, microSD, four pyro channels with arming (two populated), stacking header for add-on boards |
 | Power | two batteries: 1S LiPo for the electronics (buck-boost), 2S LiPo for servos, roll motor and pyro |
 | Actuators | 2 × FrSky Xact W5652H in the gimbal (direct on 2S), roll motor on a DRV8833, pyro piston ejection |
 | Control | attitude from the gyro only, PID on pitch/yaw → torque → gimbal angle via `M = l · T · sin δ`, PID on roll; 100 Hz |
@@ -54,7 +54,7 @@ station. The whole system is simulated in a six-degree-of-freedom model before i
 **Next**
 
 1. Work the review into rev B, regenerate the board, close the last connections, export Gerber, BOM and CPL, order at JLCPCB with SMD assembly (Aisler as the EU fallback); order the bench parts now.
-2. Firmware for rev B: ICM-42688-P driver, quaternion attitude, flight state machine, pyro logic, watchdog, LoRa telemetry.
+2. Firmware for rev B: LSM6DSV16X driver, quaternion attitude, flight state machine, pyro logic, watchdog, LoRa telemetry.
 3. Weigh the rocket and settle the mass budget against the thrust of the E12.
 4. Ground tests: TVC test rig with a propeller motor in the gimbal (parts bought, rig to be built), pyro test, radio range.
 5. First flight: controlled ascent on one motor, parachute recovery.

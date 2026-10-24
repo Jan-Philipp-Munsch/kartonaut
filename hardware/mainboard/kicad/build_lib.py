@@ -216,6 +216,9 @@ LCSC_TYPES = {
     "SDA": "bidirectional", "SCL": "input", "EP": "passive",
     "VDDI/O": "power_in", "RESERVED": "passive", "VS": "power_in", "~{CS}": "input", "INT1": "output",
     "INT2": "output", "SDO/ALTADDRESS": "input", "SDA/SDI/SDIO": "bidirectional", "SCL/SCLK": "input",
+    # LSM6DSV16X (23.10.)
+    "SDO/SA0": "tri_state", "SDx/AH1/Qvar1": "passive", "SCx/AH2/Qvar2": "passive", "OCS_Aux": "passive",
+    "SDO_Aux": "passive",
 }
 
 

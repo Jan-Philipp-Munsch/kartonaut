@@ -9,7 +9,7 @@ Kommentare im Pull Request, Zeile oder Datei genügt.
 **Kartonaut** ist eine Modellrakete mit Schubvektorsteuerung nach dem Vorbild der „Scout F“ von
 BPS.space: Rumpf aus Klima-Papprohr Ø 75 mm, Motor TSP E12 in einem Kardan mit zwei Servos, Rollmotor,
 Fallschirm mit pyrotechnischem Kolbenausstoß. An Bord ein Teensy 4.1 auf einem eigenen Mainboard mit
-IMU (ICM-42688-P), Barometer (BMP390), Strommonitor (INA239), microSD und LoRa-Funk zur Bodenstation.
+IMU (LSM6DSV16X), Barometer (BMP390), Strommonitor (INA239), microSD und LoRa-Funk zur Bodenstation.
 Firmware (PlatformIO), 6DOF-Simulation (Python) und CAD (CadQuery) liegen im selben Repo. Der Erstflug
 *Kartonaut 1* fliegt ohne Landesystem, Ziel unter 750 g. Übersicht: `README.de.md` im Repo-Wurzelverzeichnis.
 
@@ -19,10 +19,11 @@ Firmware (PlatformIO), 6DOF-Simulation (Python) und CAD (CadQuery) liegen im sel
 |---|---|
 | Format | 54 × 120 mm Längsschlitten im Kuppler, 4 Lagen (F.Cu Signale, In1 GND, In2 Signale, B.Cu GND_PWR / 5V_SYS), 1,6 mm, ENIG, JLC04161H-7628 |
 | Versorgung | zwei Akkus: 1S für die Elektronik über TPS63070 (Buck-Boost, 5 V), 2S für Servos, Rollmotor und Pyro; Lastschalter über FETs (E1), Polyfuse je Akku (A4), Laden in der Rakete (E2) |
-| Sensorik | ICM-42688-P auf der Rollachse unter dem Teensy, BMP390 (zweites DNP), INA239 mit Kelvin-Shunt 20 mΩ (A5), alles an SPI1 über einen 74HC138-CS-Decoder, Analogmux 74HC4051 für die Messteiler |
+| Sensorik | LSM6DSV16X auf der Rollachse unter dem Teensy (23.10. statt ICM-42688-P: ein Sechstel des JLC-Preises, 15-facher Bestand, gleiche Rauschklasse, gleicher Footprint), BMP390 (zweites DNP), INA239 mit Kelvin-Shunt 20 mΩ (A5), alles an SPI1 über einen 74HC138-CS-Decoder, Analogmux 74HC4051 für die Messteiler |
+| Zusatzplatine | J_STACK (2×10): SPI0 mit drei CS (E11), I²C, UART, PWM_EXT, IRQ_EXT, NRST_EXT, ARM_EXT, GND/GND_PWR, 3V3_EXP, 5V_SYS, VSERVO |
 | Aktoren | 4 Servoausgänge direkt am 2S, DRV8833 für den Rollmotor, 4 Pyro-Kanäle low-side (3 und 4 DNP), Arming über Schlüsselschalter |
 | Schnittstellen | E22-400T22S LoRa, GPS, Kamera, WS2812-LEDs, Qwiic, Stapelstecker J_STACK (20-polig) für eine Zusatzplatine |
-| Stand | 166 Bauteile, 113 Netze; ERC 0/0, DRC 0 Fehler, 0 offene Verbindungen, Schaltplan-Parität 0; Prüfskript: kein 2S-Netz auf In2, IMU-Umfeld sauber, Sense-Netze nur am Shunt |
+| Stand (24.10.) | 174 Bauteile (12 DNP), 117 Netze, 3145 Bahnsegmente, 469 Vias; ERC 0/0, DRC 0 Fehler, 0 offene Verbindungen, Schaltplan-Parität 0; Prüfskript: kein 2S-Netz auf In2, IMU-Umfeld sauber, Sense-Netze nur am Shunt |
 
 ## 3. Was sich seit dem Review vom 21.10. geändert hat
 
@@ -39,9 +40,16 @@ Abweichung von der Spezifikation mit Grund):
 - **Neu am 23.10.:** Magnetometer LIS3MDL und Feuchte/Temperatur SHT40 bestückt, ADXL375 (±200 g) als
   DNP-Footprint; alle drei an I²C und 3V3, nicht an SPI1/3V3_SENS (`kicad/README.md` §6). Außerdem die
   schmalen Versorgungsstücke nach dem Handrouting verbreitert (VSYS_IN 0,6 mm, A7).
+- **E11 (23.10.):** J_STACK Pin 7/8/9 an SPI0 (Teensy 13/11/12) statt an SPI1, damit ein Fehler auf der
+  Zusatzplatine den Flugbus nicht stören kann; dafür nSLEEP → 40, PYRO3_FIRE → 41, PWM_EXT → 33, LORA_M0 → 16,
+  keine Reservepins mehr. Die Region rechts unter dem Teensy wurde dafür neu geroutet.
+- **E12 (23.10.):** IMU LSM6DSV16X statt ICM-42688-P (JLC: 3,4 statt 21,5 USD, Bestand über 7000 statt 453,
+  gleiche Rauschklasse, gleicher Footprint, Pins 9–11 offen nach AN5763).
 
 Das Routing: Freerouting aus dem Generator, danach ein eigener Gitter-Router für die Reste und zum Schluss
 Handarbeit in KiCad (23.10.). Die Platinendatei ist seitdem die Quelle, der Generator erzeugt sie nicht mehr neu.
+Die sieben Verbindungen des SPI0-Umbaus (24.10.) schloss ein Planer mit kurzen Stücken auf B.Cu, nachdem vier
+automatische Anläufe gescheitert waren (`kicad/README.md` §5.5, Tabelle der sieben Wege).
 
 ## 4. Worauf das Review schauen sollte
 
@@ -58,9 +66,16 @@ Die Punkte, die ich selbst nicht entscheiden kann oder die beim Handrouting ents
 5. **Anlauf des TPS63070** mit 940 µF hinter D1 (Hold-up gegen Neustart im Flug): Inrush und Softstart.
 6. **Abstand LoRa-Modul ↔ IMU** und die Sperrflächen unter dem Modul.
 7. **Lastschalter im 1S-Pfad:** AO3401A bei −3 V Gate knapp (B5); am Bestelltag einen Typ mit −2,5 V-Spezifikation prüfen.
-8. **Zusatzsensoren:** Magnetometer in der linken Spitzenecke 12 mm von J_PYRO1 und den Pyro-FETs, SHT40 neben
+8. **SPI0 auf J_STACK (E11) und IMU-Wechsel (E12):** Pinbelegung in `README.md` §4 und die Abblockung
+   des LSM6DSV16X (vom ICM übernommen: 100 n + 2,2 µ an Vdd, 10 n an Vdd_IO; Pins 2/3 an GND, 9–11 offen nach
+   AN5763 Tab. 1). Die sieben neuen Wege haben zusammen 59 Vias und 71 mm auf B.Cu in 13 Stücken (Schlitze von
+   2,5 bis 12 mm in 5V_SYS unter dem Teensy und GND_PWR rechts daneben); SPI0_MISO ist 114 mm lang mit 16 Vias,
+   der SPI0-Takt zur Zusatzplatine bleibt bei höchstens 8 MHz. Sind die Schlitze in den Flächen vertretbar?
+   Die Masse der IMU (Pads 2/3/6/7) hängt über eine 0,2-mm-Bahn an C26, weil die GND-Stummel der früheren
+   Pins 9–11 entfielen.
+9. **Zusatzsensoren:** Magnetometer in der linken Spitzenecke 12 mm von J_PYRO1 und den Pyro-FETs, SHT40 neben
    J_QWIIC, ADXL375 hinter dem USB-Ende des Teensy; alle an 3V3 statt 3V3_SENS. Störung im Flug ist eingeplant.
-9. **Bestückung:** 108 Bauteile ohne LCSC-Nummer (Passive, Polyfuses, Polymer-Elkos, JST-Buchsen, INA239,
+10. **Bestückung:** 108 Bauteile ohne LCSC-Nummer (Passive, Polyfuses, Polymer-Elkos, JST-Buchsen, INA239,
    SN74LV1T34, 74HC138/4051) werden am Bestelltag im JLC-Teileprogramm zugeordnet (`kicad/fab/FAB.md`);
    BMP390 war bei LCSC zuletzt nicht lieferbar, Rückfall BMP388 pinkompatibel.
 

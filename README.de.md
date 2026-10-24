@@ -26,7 +26,7 @@ SD-Logger und 433-MHz-LoRa-Funk zur Bodenstation. Das Gesamtsystem wird vor dem 
 | Rumpf | Klima-Papprohr Ø 75 mm (innen 72,6 mm), 2 × 500 mm, Kuppler 150 mm; Kunststoffspitze, Fallschirm 125 cm |
 | Motor | TSP E12-0, 24 mm, 39 Ns, 12 N mittel, 3,5 s Brenndauer, ohne Ausstoßladung; erster Flug mit einem Motor, Landebrennen mit einem zweiten später |
 | Startmasse | 981 g im Massenmodell (`cad/`), Schwerpunkt 448 mm über der Düse; laut Simulation trägt ein E12 das nur 20 m hoch, das Massenbudget wird geprüft |
-| Flugcomputer | Teensy 4.1 auf dem Mainboard rev B1 (fertig geroutet): IMU ICM-42688-P, Barometer BMP390, Strommonitor INA239 mit Kelvin-Shunt, LoRa E22-400T22S, microSD, vier Pyro-Kanäle mit Arming (zwei bestückt), Stapelstecker für Zusatzplatinen |
+| Flugcomputer | Teensy 4.1 auf dem Mainboard rev B1 (fertig geroutet): IMU LSM6DSV16X, Barometer BMP390, Strommonitor INA239 mit Kelvin-Shunt, LoRa E22-400T22S, microSD, vier Pyro-Kanäle mit Arming (zwei bestückt), Stapelstecker für Zusatzplatinen |
 | Versorgung | zwei Akkus: 1S-LiPo für die Elektronik (Buck-Boost), 2S-LiPo für Servos, Rollmotor und Pyro |
 | Aktoren | 2 × FrSky Xact W5652H im Kardan (direkt am 2S), Rollmotor an einem DRV8833, Pyro-Kolbenausstoß |
 | Regelung | Lage nur aus dem Gyro, PID auf Pitch/Yaw → Moment → Kardanwinkel über `M = l · T · sin δ`, PID auf Roll; 100 Hz |
@@ -55,7 +55,7 @@ SD-Logger und 433-MHz-LoRa-Funk zur Bodenstation. Das Gesamtsystem wird vor dem 
 **Als Nächstes**
 
 1. Review-Rückmeldungen zu rev B1 einarbeiten, dann Bestellung bei JLCPCB mit SMD-Bestückung (Aisler als EU-Rückfall); die Tischteile jetzt bestellen.
-2. Firmware für rev B: Treiber ICM-42688-P, Quaternion-Lage, Flugzustandsautomat, Pyro-Logik, Watchdog, LoRa-Telemetrie.
+2. Firmware für rev B: Treiber LSM6DSV16X, Quaternion-Lage, Flugzustandsautomat, Pyro-Logik, Watchdog, LoRa-Telemetrie.
 3. Rakete wiegen und das Massenbudget gegen den Schub des E12 prüfen.
 4. Bodentests: TVC-Prüfstand mit Propellermotor im Kardan (Teile gekauft, Gestell zu bauen), Pyro-Test, Funkreichweite.
 5. Erstflug: geregelter Aufstieg mit einem Motor, Fallschirmbergung.

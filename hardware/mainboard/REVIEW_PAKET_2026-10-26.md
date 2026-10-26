@@ -25,7 +25,7 @@ wurden am 26.10. aus dem Haupt-Checkout entfernt; eine Kopie liegt im Scratchpad
 | DRC mit Schaltplan-Parität | `./make.sh drc` | **0 Fehler**, 0 nicht verbunden, Parität 0; 17 Warnungen nur Bestückungsdruck (14 × Druck über Kupfer, 2 × Überlappung, 1 × Randabstand; bekannt, Fertiger schneidet Druck auf Pads weg) |
 | Netzliste gegen Spezifikation | `python.exe check_design.py` (KiCad-Python) | `OK: Netzliste entspricht README.md §4 mit den B1-Aenderungen` (42 Teensy-Pins, 7 CS, 7 Mux-Kanäle, 11 Schienen) |
 | Layoutregeln (Review A5–A8) | `python.exe ../review_check_layout.py mainboard.kicad_pcb` | kein 2S-Netz auf In2; Sense-Netze ISENS_P/N nur an Shunt und R6/R7; im 5-mm-Umfeld der IMU keine In2-Bahnen |
-| Bestelldateien | `kicad/fab/` vom 24.10. 11:22, Platinendatei vom 24.10. 11:21 | **aktuell** (die einzige spätere Änderung ist ein Blattname im Schaltplan) |
+| Bestelldateien | `kicad/fab/` vom 26.10. 11:52, nach den Layoutpunkten B1–B3 (`Review_Bewertung_2026-10-26.md` §5) | **aktuell** |
 
 Der Firmware-Pinabgleich (`firmware/tools/check_board_pins.py`) läuft in der CI bei jedem Push.
 

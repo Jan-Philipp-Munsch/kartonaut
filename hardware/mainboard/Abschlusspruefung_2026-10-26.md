@@ -1,6 +1,7 @@
 # Abschlussprüfung Mainboard rev B1 vor der Bestellung (26.10.2026)
 
-Maschinelle Prüfung der Fertigungsdaten in `kicad/fab/` (Export 24.10. 11:22, Platinendatei 24.10. 11:21) gegen
+Maschinelle Prüfung der Fertigungsdaten in `kicad/fab/` (Export 24.10. 11:22, Platinendatei 24.10. 11:21; am 26.10.
+nachmittags nach den Punkten B1–B3 aus `Review_Bewertung_2026-10-26.md` §5 neu erzeugt, DRC-Ergebnis unverändert) gegen
 die Spezifikation `README.md` und die veröffentlichten Fertigungsgrenzen von JLCPCB (Seite „PCB Capabilities“,
 abgerufen 26.10.2026). Ergänzt das Review-Paket vom selben Tag. **Ergebnis: keine Verletzung einer JLCPCB-Grenze,
 keine Abweichung von der Spezifikation; alle 17 KiCad-Warnungen betreffen nur den Bestückungsdruck.**

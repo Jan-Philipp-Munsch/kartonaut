@@ -24,6 +24,7 @@ sch() {
   python gen_schematic.py
   "$CLI" sch erc --format report --exit-code-violations -o out/erc.rpt mainboard.kicad_sch
   "$CLI" sch export pdf -o out/mainboard_schematic.pdf mainboard.kicad_sch
+  "$CLI" sch export netlist --format kicadsexpr -o out/mainboard.net mainboard.kicad_sch
   python check_design.py
 }
 

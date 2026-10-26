@@ -157,7 +157,11 @@ Zünder, Breakouts (Einkaufsliste §3 und §5).
 
 ## 6. Empfehlung: drei Bestellungen
 
-1. **Reichelt** (Warenkorb ergänzen): §1.1, §1.2 ohne J7/J16 und A1, §1.3.
+1. **Reichelt** (Warenkorb ergänzen): §1.1, §1.2 ohne J7/J16 und A1, §1.3. Abgleich mit dem bestellfertigen Korb in
+   `EINKAUFSLISTE_revB1.md` §7.1 (26.10., andere Session): dieselben JST-Artikelnummern; dort fehlen nur die acht
+   SMD-Positionen aus §1.1 (C20, D2/D3, F2, FB1, R14, R15, R17, U11), die kommen dazu. Dort steht für A1 die trennbare
+   `FIS BL1 36 G` (auf 24 kürzen) statt der DigiKey-Leiste, für J7/J16 ersatzweise die liegende `JST XH3P ST90`;
+   die Footprints von J7/J16 sind stehend ausgelegt, liegend nur nehmen, wenn in Kabelrichtung Platz ist.
    Summe brutto: SMD ca. 9,40 €, THT ca. 7,90 €, Gegenstecker ca. 8,80 € → **ca. 26 €**; mit Delock-Pigtails und
    -Antennen ca. **52 €**. Versand laut Drittseite (Juni 2026) **ab 5,95 €**, ein Forum meldet im August 2026 knapp
    1 € mehr; kostenlosen Standardversand gibt es nicht. Die offizielle Versandkostenseite war per Abruf nicht erreichbar.

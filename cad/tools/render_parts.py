@@ -1,6 +1,6 @@
 """Blender-Renderer für cad/build.py: importiert die STLs aus einem Manifest, färbt sie und rendert eine Ansicht.
 
-    blender -b --python cad/tools/render_parts.py -- manifest.json out.png <overall|section|tvc|avionics>
+    blender -b --python cad/tools/render_parts.py -- manifest.json out.png <overall|section|tvc|avionics|...|pad|pad_detail|pad_section>
 """
 import bpy, sys, json, math
 from pathlib import Path
@@ -93,6 +93,14 @@ elif view == "testrig":
     aim((0.9, 1.3, 0.5), ctr, max(ext.z * 1.08, ext.x * 1.15), 1200, 1500)
 elif view == "testrig_drive":
     aim((1.0, -1.0, 0.55), ctr, max(ext) * 1.15, 1300, 1000)
+elif view == "pad":
+    # Startrampe (cad/landingpad.py) mit Rakete, schräg von oben
+    aim((-1.0, -1.3, 0.75), ctr, max(ext.z * 1.15, ext.x * 1.25), 1400, 1300)
+elif view == "pad_detail":
+    aim((-1.0, -1.1, 0.8), ctr, max(ext.x, ext.y) * 1.3, 1300, 1100)
+elif view == "pad_section":
+    # Schnitt y = 0 durch die Stütze bei 180°, Blick aus -y
+    aim((0.0, -1.0, 0.15), ctr, max(ext.x * 1.08, ext.z * 1.6), 1400, 1000)
 
 scene.render.filepath = out_png
 scene.render.image_settings.file_format = "PNG"

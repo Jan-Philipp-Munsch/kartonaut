@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111418">
+<title>Kartonaut Bodenstation</title>
+<style>
+  :root {
+    --bg: #111418; --panel: #1b2027; --line: #2c333d; --text: #e6e9ee; --dim: #8a94a3;
+    --ok: #2fbf71; --bad: #e5484d; --warn: #f2a33a; --info: #4c9aff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { padding: 12px 16px 120px; max-width: 720px; margin: 0 auto; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--dim);
+    margin: 0 0 8px; font-weight: 600; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px; margin-bottom: 12px; }
+  .row { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; }
+  .row span:first-child { color: var(--dim); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  @media (max-width: 440px) { .grid { grid-template-columns: 1fr; } }
+  .mono { font-variant-numeric: tabular-nums; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  header b { font-size: 17px; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--bad);
+    margin-right: 6px; vertical-align: middle; }
+  .dot.on { background: var(--ok); }
+  #state { font-size: 28px; font-weight: 700; text-align: center; padding: 6px 0 2px; }
+  #reason { text-align: center; color: var(--warn); min-height: 1.3em; }
+  #cd { font-size: 64px; font-weight: 800; text-align: center; display: none; }
+  .s-SAFE { color: var(--ok); } .s-ARMED { color: var(--warn); }
+  .s-COUNTDOWN, .s-FIRING { color: var(--bad); } .s-LOCKOUT, .s-ABORTED { color: var(--warn); }
+  .s-FIRED { color: var(--info); }
+  ul.chk { list-style: none; margin: 0; padding: 0; }
+  ul.chk li { padding: 5px 0 5px 28px; position: relative; }
+  ul.chk li::before { content: "✕"; position: absolute; left: 4px; color: var(--bad); font-weight: 700; }
+  ul.chk li.ok::before { content: "✓"; color: var(--ok); }
+  ul.chk li small { color: var(--dim); display: block; }
+  button { font: inherit; border: 0; border-radius: 10px; padding: 14px; color: #fff;
+    background: #2c333d; width: 100%; touch-action: manipulation; }
+  button:disabled { opacity: .35; }
+  .btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  #go { background: var(--warn); color: #111; font-weight: 700; font-size: 17px; position: relative;
+    overflow: hidden; margin-bottom: 8px; }
+  #go .fill { position: absolute; inset: 0; width: 0; background: rgba(0,0,0,.25); }
+  #go span { position: relative; }
+  #abort { position: fixed; left: 16px; right: 16px; bottom: max(16px, env(safe-area-inset-bottom));
+    max-width: 688px; margin: 0 auto; background: var(--bad); font-size: 22px; font-weight: 800;
+    padding: 20px; box-shadow: 0 4px 24px rgba(0,0,0,.6); }
+  canvas { width: 100%; height: 140px; display: block; }
+  #log { max-height: 180px; overflow-y: auto; font-size: 13px; }
+  #log div { padding: 2px 0; border-bottom: 1px solid var(--line); }
+  .warn { color: var(--warn); } .bad { color: var(--bad); } .good { color: var(--ok); }
+  #banner { display: none; background: var(--bad); color: #fff; padding: 10px; border-radius: 10px;
+    margin-bottom: 12px; text-align: center; font-weight: 600; }
+</style>
+</head>
+<body>
+<header>
+  <b>Kartonaut</b>
+  <span><span id="link" class="dot"></span><span id="linktxt">getrennt</span></span>
+</header>
+
+<div id="banner"></div>
+
+<div class="panel">
+  <div id="state">–</div>
+  <div id="cd" class="mono">10</div>
+  <div id="reason"></div>
+</div>
+
+<div class="panel">
+  <h2>Startsperre</h2>
+  <ul class="chk">
+    <li id="c1">1 Schlüssel, ARM, Relais<small>nur an der Station</small></li>
+    <li id="c2">2 Durchgang Anzünder<small id="c2s"></small></li>
+    <li id="c3">3 Rakete bereit<small id="c3s"></small></li>
+    <li id="cx">Zündkreis und Akku<small id="cxs"></small></li>
+    <li id="c4">4 Countdown bis null ohne Abbruch</li>
+  </ul>
+</div>
+
+<div class="panel">
+  <button id="go" disabled><div class="fill"></div><span>Countdown starten (halten)</span></button>
+  <div class="btns">
+    <button id="cal">Kalibrieren</button>
+    <button id="padq">PAD_READY?</button>
+    <button id="ping">Ping</button>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Rakete</h2>
+  <div class="grid mono">
+    <div class="row"><span>Zustand</span><b id="r_state">–</b></div>
+    <div class="row"><span>Alter</span><span id="r_age">–</span></div>
+    <div class="row"><span>Höhe</span><span id="r_alt">–</span></div>
+    <div class="row"><span>Max.</span><span id="r_max">–</span></div>
+    <div class="row"><span>v<sub>z</sub></span><span id="r_vz">–</span></div>
+    <div class="row"><span>Neigung</span><span id="r_tilt">–</span></div>
+    <div class="row"><span>Kardan P/Y</span><span id="r_gim">–</span></div>
+    <div class="row"><span>Zeit</span><span id="r_t">–</span></div>
+    <div class="row"><span>1S / 2S</span><span id="r_v">–</span></div>
+    <div class="row"><span>Scharf</span><span id="r_arm">–</span></div>
+    <div class="row"><span>Pyro 1/2</span><span id="r_pyro">–</span></div>
+    <div class="row"><span>Log / Kal.</span><span id="r_flags">–</span></div>
+  </div>
+  <canvas id="plot" width="640" height="140"></canvas>
+  <div class="row mono"><span>GPS</span><span id="r_gps">–</span></div>
+</div>
+
+<div class="panel">
+  <h2>Station</h2>
+  <div class="grid mono">
+    <div class="row"><span>Zündakku</span><span id="g_vbat">–</span></div>
+    <div class="row"><span>Leitung +/−</span><span id="g_line">–</span></div>
+    <div class="row"><span>Schlüssel</span><span id="g_key">–</span></div>
+    <div class="row"><span>ARM</span><span id="g_arm">–</span></div>
+    <div class="row"><span>Funk rx/tx</span><span id="g_rf">–</span></div>
+    <div class="row"><span>CRC-Fehler</span><span id="g_crc">–</span></div>
+    <div class="row"><span>Handys</span><span id="g_ph">–</span></div>
+    <div class="row"><span>E22</span><span id="g_cfg">–</span></div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Protokoll</h2>
+  <div id="log" class="mono"></div>
+</div>
+
+<button id="abort">ABBRUCH</button>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+let ws = null, connected = false, lastMsg = 0, last = null;
+let maxAlt = 0, hist = [];
+const HOLD_MS = 1500;
+
+function connect() {
+  ws = new WebSocket("ws://" + (location.host || "192.168.4.1") + "/ws");
+  ws.onopen = () => { connected = true; log("verbunden"); };
+  ws.onclose = () => { if (connected) log("Verbindung getrennt"); connected = false; setTimeout(connect, 1000); };
+  ws.onerror = () => ws.close();
+  ws.onmessage = e => {
+    lastMsg = Date.now();
+    let m; try { m = JSON.parse(e.data); } catch (_) { return; }
+    if (m.t === "st") render(m);
+    else if (m.t === "ev") log(m.msg);
+  };
+}
+function send(cmd) { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ cmd })); }
+
+// Herzschlag 4 Hz: bleibt er während eines am Handy gestarteten Countdowns aus,
+// bricht die Station ab.
+setInterval(() => send("hb"), 250);
+
+function log(msg) {
+  const d = document.createElement("div");
+  d.textContent = new Date().toLocaleTimeString("de-DE") + "  " + msg;
+  $("log").prepend(d);
+  while ($("log").childElementCount > 100) $("log").lastChild.remove();
+}
+
+const yn = (b, y = "ja", n = "nein") => b ? y : n;
+function cls(id, ok) { $(id).classList.toggle("ok", !!ok); }
+function txt(id, s) { $(id).textContent = s; }
+
+function render(m) {
+  last = m;
+  const g = m.gs, l = m.lk, r = m.rk, rf = m.rf;
+
+  const st = $("state");
+  st.textContent = ({ SAFE: "SICHER", ARMED: "SCHARF", COUNTDOWN: "COUNTDOWN", FIRING: "ZÜNDUNG",
+    FIRED: "GEZÜNDET", ABORTED: "ABGEBROCHEN", LOCKOUT: "GESPERRT" })[g.state] || g.state;
+  st.className = "s-" + g.state;
+  const cd = $("cd");
+  if (g.cd >= 0) { cd.style.display = "block"; cd.textContent = (g.cd / 1000).toFixed(1); }
+  else cd.style.display = "none";
+
+  let reason = g.reason || "";
+  if (g.state === "FIRED" && g.hang > 0) reason = "Kein Abheben gemeldet: noch " + Math.ceil(g.hang / 1000) + " s nicht an das Pad";
+  if (g.state === "LOCKOUT") reason = "ARM war beim Einschalten an: ARM aus, dann neu";
+  txt("reason", reason);
+
+  const ban = $("banner");
+  ban.style.display = g.fault ? "block" : "none";
+  ban.textContent = g.fault ? "Zündkreis: " + g.fault : "";
+
+  cls("c1", l.c1); cls("c2", l.c2); cls("c3", l.c3); cls("cx", l.ok && l.bat);
+  cls("c4", g.state === "FIRING" || g.state === "FIRED");
+  txt("c2s", g.cont ? "Leitung minus " + g.vneg + " V" : "offen – Anzünder, Leitung, Shunt prüfen");
+  txt("c3s", [l.fresh ? "Telemetrie frisch" : "Telemetrie fehlt/alt",
+              l.pad ? "PAD_READY" : "nicht PAD_READY",
+              l.rarm ? "Rakete scharf" : "Rakete nicht scharf"].join(" · "));
+  txt("cxs", (l.ok ? "kein Fehler" : "Fehler") + " · Akku " + g.vbat + " V" + (l.bat ? "" : " (zu niedrig)"));
+
+  // Start nur in ARMED mit erfüllter Startsperre; Schlüssel und ARM gibt es nur an der Station.
+  $("go").disabled = !(g.state === "ARMED" && l.all);
+  const busy = g.state === "COUNTDOWN" || g.state === "FIRING";
+  $("cal").disabled = busy;
+
+  txt("r_age", r.age < 0 ? "nie" : (r.age / 1000).toFixed(1) + " s");
+  $("r_age").className = r.age >= 0 && r.age < 1000 ? "good" : "bad";
+  if (r.state) {
+    txt("r_state", r.state);
+    const alt = +r.alt;
+    if (alt > maxAlt) maxAlt = alt;
+    txt("r_alt", alt.toFixed(1) + " m");
+    txt("r_max", maxAlt.toFixed(1) + " m");
+    txt("r_vz", (+r.vz).toFixed(1) + " m/s");
+    const [w, x, y, z] = r.q.map(Number);
+    const up = Math.max(-1, Math.min(1, 1 - 2 * (x * x + y * y)));   // Rumpfachse = z (Annahme)
+    txt("r_tilt", (Math.acos(up) * 180 / Math.PI).toFixed(1) + "°");
+    txt("r_gim", (+r.gim[0]).toFixed(1) + "° / " + (+r.gim[1]).toFixed(1) + "°");
+    txt("r_t", (r.t / 1000).toFixed(1) + " s");
+    txt("r_v", r.v1 + " / " + r.v2 + " V");
+    txt("r_arm", yn(r.arm)); $("r_arm").className = r.arm ? "warn" : "";
+    txt("r_pyro", yn(r.p1, "ok", "offen") + " / " + yn(r.p2, "ok", "offen"));
+    txt("r_flags", yn(r.log) + " / " + yn(r.cal));
+    if (r.age >= 0 && r.age < 200) { hist.push([Date.now(), alt]); }
+  }
+  if (r.gps) txt("r_gps", r.gps.fix ? (r.gps.lat + ", " + r.gps.lon + " · " + r.gps.sats + " Sat.")
+                                    : "kein Fix (" + r.gps.sats + " Sat.)");
+
+  txt("g_vbat", g.vbat + " V"); $("g_vbat").className = l.bat ? "" : "bad";
+  txt("g_line", g.vpos + " / " + g.vneg + " V");
+  txt("g_key", yn(g.key, "steckt", "fehlt"));
+  txt("g_arm", yn(g.arm, "EIN", "aus")); $("g_arm").className = g.arm ? "warn" : "";
+  txt("g_rf", rf.rx + " / " + rf.tx);
+  txt("g_crc", rf.crc);
+  txt("g_ph", g.phones);
+  txt("g_cfg", rf.cfg ? "ok" : "Fehler");
+}
+
+// Höhenverlauf der letzten 60 s
+function plot() {
+  const c = $("plot"), ctx = c.getContext("2d"), W = c.width, H = c.height, now = Date.now();
+  hist = hist.filter(p => now - p[0] < 60000);
+  ctx.clearRect(0, 0, W, H);
+  ctx.strokeStyle = "#2c333d"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, H - 0.5); ctx.lineTo(W, H - 0.5); ctx.stroke();
+  if (hist.length < 2) return;
+  const top = Math.max(10, ...hist.map(p => p[1])) * 1.1;
+  ctx.strokeStyle = "#4c9aff"; ctx.lineWidth = 2; ctx.beginPath();
+  hist.forEach((p, i) => {
+    const x = W - (now - p[0]) / 60000 * W, y = H - Math.max(0, p[1]) / top * H;
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  });
+  ctx.stroke();
+  ctx.fillStyle = "#8a94a3"; ctx.font = "12px sans-serif"; ctx.fillText(top.toFixed(0) + " m", 4, 14);
+}
+setInterval(plot, 200);
+
+// Verbindungsanzeige: ohne Zustandsmeldung seit 1 s gilt die Station als weg
+setInterval(() => {
+  const ok = connected && Date.now() - lastMsg < 1000;
+  $("link").classList.toggle("on", ok);
+  txt("linktxt", ok ? "verbunden" : "getrennt");
+}, 250);
+
+// Countdown-Knopf: 1,5 s halten, damit ein versehentlicher Tipp nichts startet
+(function () {
+  const b = $("go"), fill = b.querySelector(".fill");
+  let t0 = 0, raf = 0;
+  function step() {
+    const k = Math.min(1, (Date.now() - t0) / HOLD_MS);
+    fill.style.width = (k * 100) + "%";
+    if (k >= 1) { stop(); send("countdown"); if (navigator.vibrate) navigator.vibrate(200); return; }
+    raf = requestAnimationFrame(step);
+  }
+  function start(e) { e.preventDefault(); if (b.disabled) return; t0 = Date.now(); raf = requestAnimationFrame(step); }
+  function stop() { cancelAnimationFrame(raf); fill.style.width = "0"; }
+  b.addEventListener("pointerdown", start);
+  ["pointerup", "pointerleave", "pointercancel"].forEach(ev => b.addEventListener(ev, stop));
+})();
+
+// Abbruch sofort beim Berühren, nicht erst beim Loslassen
+$("abort").addEventListener("pointerdown", e => {
+  e.preventDefault(); send("abort"); log("Abbruch gesendet");
+  if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+});
+$("cal").onclick = () => send("calibrate");
+$("padq").onclick = () => send("pad_ready_query");
+$("ping").onclick = () => send("ping");
+
+connect();
+</script>
+</body>
+</html>

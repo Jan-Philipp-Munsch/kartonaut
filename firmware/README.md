@@ -5,6 +5,11 @@ Höhe, führt den Flugzustandsautomaten, regelt den Schubvektor, zündet die Ber
 Telemetrie und loggt jeden Durchlauf auf die SD-Karte. Die Regler sind in `Config.h`
 abgeschaltet, bis der Prüfstand (Experiment E02) sie freigibt. Nichts davon ist bisher am
 Gerät gelaufen; die Logik ist in den nativen Tests geprüft (`pio test -e native`, 42 Tests).
+Für *Kartonaut 1* (Modulbauweise Stand 2b/2c) entfällt der Rollmotor; der Rollregler bleibt aus, die Lage
+kommt als Quaternion aus dem Gyro (`Attitude.*`). Masse 0,705 kg und Hebelarm 0,190 m aus
+`cad/mass_stand2b.md` gehören nach dem Wiegen in `Config.h` (`MASS_KG`, `MOMENT_ARM_M`), und mit ihnen
+kleinere Gewinne (Kp 2, Ki 1, Kd 0,45 statt 5, 0 und 1, `docs/Gewicht_und_Landung_2026-10-23.md` §4b;
+I-Anteil erst ab der Starterkennung); der Fallschirm-Servo an `J_SERVO3` löst die CO₂-Kapsel aus.
 
 ```bash
 pio run                        # Flug-Firmware für den Breakout-Aufbau bauen

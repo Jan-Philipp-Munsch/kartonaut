@@ -37,7 +37,7 @@ def cases(veh: VehicleParams, seed: int, accel: str, ground: bool = True, second
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--vehicle", choices=["nominal", "preload", "cad"], default="nominal")
+    ap.add_argument("--vehicle", choices=["nominal", "preload", "cad", "stand2b"], default="nominal")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--static-error-y", type=float, default=1.0)
     ap.add_argument("--static-error-z", type=float, default=0.6)
@@ -47,7 +47,8 @@ def main():
     ap.add_argument("--no-ground", action="store_true", help="ohne Boden rechnen (wie Simulink)")
     ap.add_argument("--single-motor", action="store_true", help="nur ein Motor, keine zweite Zuendung bei 7,3 s (Erstflug)")
     args = ap.parse_args()
-    veh = {"nominal": VehicleParams.nominal, "preload": VehicleParams.preload, "cad": VehicleParams.cad}[args.vehicle]()
+    veh = {"nominal": VehicleParams.nominal, "preload": VehicleParams.preload, "cad": VehicleParams.cad,
+           "stand2b": VehicleParams.stand2b}[args.vehicle]()
     veh = replace(veh, static_error_y=args.static_error_y, static_error_z=args.static_error_z)
 
     fig, ax = plt.subplots(3, 1, figsize=(10.7, 11), sharex=True, layout="constrained")

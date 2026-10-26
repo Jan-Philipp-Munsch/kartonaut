@@ -3,4 +3,10 @@ export/*
 !export/rocket.step
 !export/testrig.step
 !export/rocket_erstflug.step
+# Druckteile der Modulbauweise (cad/modular.py): STL zum Drucken und die Massenrechnung bleiben im Repo
+!export/modular/
+export/modular/*.step
+!export/modular/Kartonaut1_Stand2b.step
+# gedruckter Kardan als Netz aus den Blender-Dateien vom 12.06.2025
+!export/asbuilt/
 __pycache__/

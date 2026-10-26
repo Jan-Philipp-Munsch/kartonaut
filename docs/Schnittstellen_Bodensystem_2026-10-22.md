@@ -3,6 +3,8 @@
 Stand 2026-10-22. Diese Datei legt fest, was die drei Teile voneinander erwarten, damit Pad und
 Bodenstation getrennt konstruiert werden können. Zahlen der Rakete kommen aus `cad/params.py` und
 `cad/mass_properties.md` (Konfiguration `erstflug`, Rohr 700 mm); bei Änderungen dort gilt das Modell.
+**Nachtrag 22.10. nachts:** Gebaut wird nach der Modulbauweise Stand 2b (`cad/modular_params.py`,
+`cad/mass_stand2b.md`); wo sie vom Erstflug-CAD abweicht, steht es in S1 in Klammern.
 
 ```
  Handy (Browser)  ──WLAN──  Bodenstation  ──Zündleitung 15 m──  Pad (Zündkasten, Anzünder im Motor)
@@ -16,8 +18,8 @@ Bodenstation getrennt konstruiert werden können. Zahlen der Rakete kommen aus `
 |---|---|---|
 | Rumpf | Ø 75,0 außen, Papprohr, Unterkante 20 mm über der Düse | gleich |
 | Motor | TSP E12-0, Ø 24, ragt 20 mm unter das Rohr | gleich |
-| Gesamtlänge | 950 mm | 1250 mm |
-| Masse / Schwerpunkt | ca. 760 g, 318 mm über der Düse | ca. 920 g ohne Treibstoff bei der Landung, 477 mm |
+| Gesamtlänge | 950 mm (Stand 2b: **731 mm**) | 1250 mm |
+| Masse / Schwerpunkt | ca. 760 g, 318 mm über der Düse (Stand 2c: **705 g, 259 mm**) | ca. 920 g ohne Treibstoff bei der Landung, 477 mm |
 | Beine | keine | 4, Fuß 35 × 35 auf r ≈ 320 mm, Fußsohle ca. 70 mm unter der Düse |
 
 Anforderungen an das Pad:
@@ -25,6 +27,11 @@ Anforderungen an das Pad:
 - **Start ohne Startschiene.** Die Rakete steht senkrecht auf drei Auflagen unter der Rohrunterkante
   (Ringfläche r = 36,3 … 37,5 mm). Seitlich halten sie drei Führungen mit 1 bis 2 mm Luft zum Rohr,
   mindestens 150 mm hoch, ohne Klemmung: die Rakete hebt frei ab.
+- **Lage der Führungen (Stand 2b):** Die Modulbauweise hat alle Radialschrauben bei 0°/90°/180°/270°, die Luken bei
+  90° und 270°, die Servofenster laut Druckdatei bei 207° und 336° und keinen Schlüsselschalter mehr. Die Führungen
+  gehören dazwischen, Vorschlag 45°/135°/250° (`cad/modular_params.py`, `RAMP_GUIDE_PHI`); `cad/landingpad.py` hat
+  noch 60°/180°/300° aus dem Erstflug-CAD (PROJECT.md Befund 17). Ragt ein Servoarm über die Rohroberfläche, muss die
+  Führung dort ganz fehlen.
 - **Kardan frei:** unterhalb der Rohrunterkante kein Teil innerhalb r = 30 mm. Die Düse wandert bei 7°
   um 9,3 mm seitlich (Kardanpunkt 76,5 mm über der Düse).
 - **Abgasstrahl:** Düse mindestens 80 mm über einer Strahlplatte (Stahl 2 mm auf nicht brennbarer Unterlage)

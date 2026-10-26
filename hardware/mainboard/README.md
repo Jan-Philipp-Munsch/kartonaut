@@ -33,6 +33,17 @@ die Fertigerwahl in `Fertiger_2026-10-21.md`.
 | B7, B8 | Summer auf Pin 37; eine WS2812B-Kette hinter einem SN74LV1T34 (Pin 5) |
 | B16, B17 | 5 mm ohne fremde Vias und ohne In2-Bahnen um die IMU; Funkmodul 0,5 mm vom Rand |
 
+> **Nachtrag 22.10.2026.** Das Zweitmeinung-Review (`review_kicad_2026-10-21.md`, Punkte A1–A8) und die Fragerunde
+> mit Jan (`Komponenten_2026-10-22.md`, Entscheidungen E1–E10: FET-Lastschalter hinter dem mechanischen Schalter, Laden
+> in der Rakete, BMP390 und INA239 an SPI1, alle Servos und der Rollmotor am 2S ohne 5-V-Buck, vier Pyro-Kanäle,
+> Stapelstecker `J_STACK`, 74HC138-CS-Decoder und 74HC4051-Analogmux) ändern diese Spezifikation an mehreren Stellen
+> (§1 Versorgung, §4 Pinbelegung, §5 Stückliste). Sie werden als **rev B1** in `kicad/circuit.py` eingearbeitet
+> (Branch `claude/rev-b1`); die Spezifikation wird danach nachgezogen. Die Pinbelegung, mit der die Firmware schon
+> rechnet, steht in `firmware/lib/mainboard_revb/BoardRevB.h` (Abgleich: `firmware/tools/check_board_pins.py`).
+> Einbau nach der Bauanleitung Stand 2b: nicht mehr im Ring-Stack zwischen M2-Stangen, sondern auf vier Säulen eines
+> gedruckten Schlittens in Rohr B (Platine z = 167 … 287 ab der Düse); GPS unter dem Spant, LoRa-Wendel axial am
+> unteren Ende, die Stecker der TVC-Stirnseite ragen 12 mm über und laufen durch ein Fenster der unteren Scheibe.
+
 ![Platzierungsplan](mainboard_placement.svg)
 
 `outline.py` erzeugt `mainboard_outline.dxf` (Edge.Cuts) und `mainboard_placement.svg` und prüft,

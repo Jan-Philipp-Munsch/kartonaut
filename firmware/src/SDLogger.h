@@ -29,8 +29,8 @@ struct SDFrame {
   // Aktorik / Regler
   float roll_angle_deg;
   float roll_rate_dps;
-  int   yaw_deg;           // 0..180
-  int   pitch_deg;         // 0..180
+  float yaw_deg;           // Servo-Grad 0..180
+  float pitch_deg;         // Servo-Grad 0..180
   int   roll_pwm;          // 0..4095
   int   roll_dir;          // -1/0/+1
 
@@ -41,10 +41,15 @@ struct SDFrame {
   float power_mW;
   int   ina_overflow;      // 0/1
 
-  // Reserviert für später
-  float rsv1, rsv2, rsv3, rsv4, rsv5;
+  // Flugzustand und Lage (seit 22.10.2026; vorher rsv1..5)
+  float state_id;          // FlightState als Zahl
+  float tilt_x_deg;        // Kippwinkel um x (Yaw-Servo)
+  float tilt_y_deg;        // um y (Pitch-Servo)
+  float vbat1_V;           // 1S (rev B)
+  float a_norm_ms2;        // |spezifische Kraft|
 
-  // Optional: 8 rohe i16-Kanäle (werden 1:1 geschrieben)
+  // 8 rohe i16-Kanäle (1:1): 0 Flugzeit in 0,1 s, 1 Flags (tlm::Flag), 2 Pyro-Zündungen,
+  // 3 axiale spezifische Kraft ×100, 4 Kardan Yaw ×100, 5 Kardan Pitch ×100, 6 Reset-Ursache, 7 frei
   int16_t raw_i16[8];
 
   SDFrame()
@@ -54,7 +59,7 @@ struct SDFrame {
     roll_angle_deg(0), roll_rate_dps(0),
     yaw_deg(90), pitch_deg(90), roll_pwm(0), roll_dir(0),
     bus_V(0), load_V(0), current_mA(0), power_mW(0), ina_overflow(0),
-    rsv1(0), rsv2(0), rsv3(0), rsv4(0), rsv5(0)
+    state_id(0), tilt_x_deg(0), tilt_y_deg(0), vbat1_V(0), a_norm_ms2(0)
   { memset(raw_i16, 0, sizeof(raw_i16)); }
 };
 

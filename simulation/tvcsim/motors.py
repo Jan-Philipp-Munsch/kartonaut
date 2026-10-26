@@ -44,8 +44,20 @@ class ThrustModel:
         self.total_impulse = float(self.impulse_curve[-1])
         self.t_fuel_sb, self.m_fuel_sb = load_fuel_signalbuilder()
 
-    def t_second(self, dt: float) -> float:
-        """Zuendzeitpunkt des zweiten Motors in s (``secondburn`` Schritte zu ``dt``)."""
+    t_ignite2: float | None = None    # Landemodus: Zeitpunkt, ab dem Motor 2 Schub liefert
+
+    def ignite_second(self, t_thrust: float) -> None:
+        """Landemodus: Motor 2 gezuendet, Schub ab ``t_thrust`` (Zuendverzug schon enthalten)."""
+        if self.t_ignite2 is None:
+            self.t_ignite2 = t_thrust
+
+    def t_second(self, dt: float) -> float | None:
+        """Zuendzeitpunkt des zweiten Motors in s: ``secondburn`` Schritte zu ``dt`` (Modus
+        "time") oder der Zeitpunkt aus dem Landemodus (None, solange nicht gezuendet)."""
+        if self.params.second_mode == "landing":
+            return self.t_ignite2
+        if self.params.second_mode == "none":
+            return None
         return self.params.secondburn * dt
 
     def thrust_single(self, t: float) -> float:
@@ -54,8 +66,9 @@ class ThrustModel:
     def thrust(self, t: float, dt: float) -> float:
         """Gesamtschub in N zur Zeit t (Summe beider Motoren)."""
         T = self.thrust_single(t)
-        if self.params.second_motor:
-            T += self.thrust_single(t - self.t_second(dt))
+        t2 = self.t_second(dt) if self.params.second_motor else None
+        if t2 is not None:
+            T += self.params.thrust_scale2 * self.thrust_single(t - t2)
         return T
 
     def _burnt_fraction(self, t: float) -> float:
@@ -69,6 +82,7 @@ class ThrustModel:
         if self.params.fuel_model == "impulse":
             m = self.params.fuel_mass_g * (1.0 - self._burnt_fraction(t))
             if self.params.second_motor:
-                m += self.params.fuel_mass_g * (1.0 - self._burnt_fraction(t - self.t_second(dt)))
+                t2 = self.t_second(dt)
+                m += self.params.fuel_mass_g * (1.0 - (self._burnt_fraction(t - t2) if t2 is not None else 0.0))
             return m
         raise ValueError(f"unbekanntes fuel_model {self.params.fuel_model!r}")

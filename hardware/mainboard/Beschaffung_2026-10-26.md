@@ -180,6 +180,18 @@ INA239AIDGST tatsächlich ab Lager hat.
 Gesamt ohne Akkus, Werkzeug und Module: Reichelt ca. 32–58 € inkl. Versand, DigiKey ca. 94 € brutto (79 € netto),
 LCSC ca. 25–35 € inkl. Versand und Steuer (Teile ca. 14 USD, Rest Versand und Einfuhrumsatzsteuer).
 
+## 6a. Stand der Warenkörbe (26.10.2026, nachmittags)
+
+| Händler | Inhalt | Summe | Status |
+|---|---|---|---|
+| JLCPCB | 5 Platinen + Standard-PCBA 2 Stück (`Bestellung_JLCPCB_2026-10-26.md`) | 175,93 USD + 26,84 USD Versand − 10 USD Gutschein = 192,77 USD | Checkout geöffnet, Lieferadresse und Zahlung offen; Versand voraussichtlich ab 1.11. |
+| Reichelt | die 18 Positionen aus `EINKAUFSLISTE_revB1.md` §7.1 plus §1.1 (C20, D2/D3, F2, FB1, R14, R15, R17, U11) = 26 Positionen | 35,17 € + 5,95 € DHL | Warenkorb im angemeldeten Konto, nicht bestellt |
+| DigiKey | §2 ohne Adafruit 4399: 15 Positionen, INA239 mit 10 Stück als Rückstand (02.11.), BM04B-GHS-TBT ebenfalls Rückstand | 78,56 € netto, Versand kostenlos (≥ 75 €) | Gast-Warenkorb im eingebauten Browser, nicht bestellt; beim Anmelden übernehmen |
+| LCSC / AliExpress | E22-400T22S ×3, XT30PW-M ×3, GH-Kabel, Pigtail, Antenne (`EINKAUFSLISTE_revB1.md` §7.2) | ca. 25–35 € | noch offen |
+
+Mouser (26.10. im Browser geprüft): INA239AIDGSR 0 Stück, 2303 erwartet am 25.03.2027; INA239AQDGSRQ1 0 Stück,
+erwartet 01.02.2027. Mouser entfällt damit.
+
 ## 7. Quellen (abgerufen 26.10.2026)
 
 Reichelt-Suchen (Muster `https://www.reichelt.de/index.html?ACTION=446&LA=0&nbc=1&q=…`), Suchbegriffe: `SMAJ12CA`,

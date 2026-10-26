@@ -284,6 +284,49 @@ AO3401A/AO3400A Original AOS, Kemet T520D477M006ATE030 für C16/C17.
 Bestellhistorie; Erstattung aufs JLCPCB-Guthaben), Platine neu bestellen (gleiche Einstellungen, dazu Schablone
 „Customized size“, rahmenlos, Oberseite) und den DigiKey-Korb bestellen. Entscheidung offen (26.10. abends).
 
+## 6c. AliExpress-Bestellung (Rest für Rakete und Bodenstation), Preise vom 26.10.2026 abends
+
+Entscheidung 26.10. abends: **Bestückung bei JLCPCB bleibt** (Auftrag W2026102623077325, noch unbezahlt, Status
+„Reviewing“ = Datei-/DFM-Prüfung, 10–60 min in chinesischer Geschäftszeit; danach bezahlen, dann kommt das
+Platzierungsbild zur Bestätigung). Der zweite DigiKey-Korb (Liste X5PJ7V9FJI) bleibt als Rückfall stehen, wird nicht
+bestellt.
+
+Bei AliExpress gesucht (de.aliexpress.com, Preise ohne Versand; Versand meist frei ab 10 €, „Versand aus EU“
+filtern, wenn es schnell gehen soll). Angebote wechseln täglich, deshalb Suchbegriff statt Link.
+
+### Rakete (Rest der Platine, `EINKAUFSLISTE_revB1.md` §7.2)
+
+| Teil | Für | Suchbegriff | Beobachteter Preis | Menge | Worauf achten |
+|---|---|---|---|---|---|
+| E22-400T22S (SMD, IPEX) | U10 | `E22-400T22S` | 11,69 € (CDSENET, 25 verkauft) bis 19,99 €; „5 Stück/1 Stück“-Listings ab 11,89 € je Stück | 3 | Ebyte/CDSENET, 22 dBm, **T22S** (UART, SMD), nicht M22S (SPI) und nicht T22D (DIP) |
+| XT30PW-M | J1 | `XT30PW-M` | 10 Stück 5,49 € (Original, horizontal); 5 Stück 2,79 € (AMASS XT30PW(2+2)-M, mit Signalpins, passt nicht) | 1 × 10er | **PW-M = Stecker, liegend, Platinenmontage**, ohne (2+2) |
+| Pigtail u.FL/IPEX-1 → SMA-Buchse, 10 cm | Antenne an U10 | `ipex sma female pigtail 10cm` | 0,46 € (1 Stück, 4000+ verkauft) | 3 | IPX1/u.FL, Kabel 1.13, **SMA female mit Gehäusegewinde**; nicht MHF4, nicht RP-SMA |
+| 433-MHz-Stabantenne 3 dBi, SMA-Stecker | Rakete (Test) und Bodenstation | `433mhz sma male antenna 3dbi` | 2 Stück 2,35 € oder 1,79 € | 1 × 2er | SMA **male**, nicht RP-SMA; die Wendel am Schlitten kommt später aus dem Bau, die Stabantenne ist für Tisch und Station |
+| JST-GH 1,25 mm 4-polig, 15 cm, offenes Ende | J11 GPS | `JST GH 1.25mm 4 pin cable` | 10 Stück 2,63 € (28 AWG, 150 mm, einseitig) | 1 × 10er (2P–6P wählbar: 4P) | Raster 1,25 mm mit Verriegelung |
+| JST-GH 3-polig | J13 Kamera, J14 LEDs | dasselbe Listing, Variante 3P | 10 Stück ca. 2,6 € | 1 × 10er | |
+| JST-SH 1,0 mm 4-polig (Qwiic) | J12 | `JST SH 1.0mm 4 pin qwiic cable` | 1,81 € (Qwiic-Kabel, 5000+ verkauft); 10 Stück SH 4P 10 cm 2,03 € | 1 + 1 | einmal Buchse–Buchse (Qwiic), einmal offenes Ende |
+
+Summe Rakete ca. **50 €** (E22 ×3 sind der Hauptposten).
+
+### Bodenstation Sparvariante (`groundstation/README.md` §7.1), günstigster Weg
+
+Vorhanden laut `docs/BUILD.md` §1.3: Arduino Nano mit HC-12, aktiver Summer, HTRC-Lader (2–4S). Die HC-12 können nicht
+mit LoRa (E22) sprechen; der Nano hat kein WLAN für die Handy-Oberfläche. Minimal neu nötig:
+
+| Teil | Suchbegriff | Beobachteter Preis | Menge |
+|---|---|---|---|
+| E22-400T22D (DIP, SMA, UART) | `E22-400T22D` | 8,59 € (CDSENET, 254 verkauft) oder CDEBYTE-Listing 7,59 € (Variante 400T22D wählen) | 1 |
+| ESP32-S3-DevKitC-1 N16R8 (Nachbau) | `ESP32-S3-DevKitC-1 N16R8` | 5,09 € (Dual Type-C) bis 8,69 € (CH340C) | 1 |
+| MOSFET-Modul D4184/AOD4184 | `D4184 mosfet module` | 0,80 € (486 verkauft) bis 1,75 € | 2 |
+| 433-MHz-Antenne SMA | aus der 2er-Packung oben | – | 1 |
+
+Dazu nach §7.1 der Bodenstations-Stückliste, nicht einzeln geprüft: Buck-Modul MP1584 (ca. 1 €), Schraubklemmen-Adapter
+(ca. 5 €), Schlüsselschalter, ARM-Kippschalter mit Klappe, Taster, LED-Fassungen (zusammen ca. 10 € bei AliExpress),
+Kfz-Relais 12 V 30 A mit Sockel (ca. 5 €, Kfz-Bedarf), Sicherungshalter, XT60/XT30, 15 m Zündleitung, Abzweigdose
+(Baumarkt). 3S-Akku 1000 mAh aus dem Modellbau (ca. 13 €). Elektronik aus China damit ca. **25 €**, Rest ca. 45 €
+regional, Summe wie geplant ca. 80 €. Billiger geht es nur, wenn der Nano mit E22-400T22D ohne Weboberfläche weiterverwendet
+wird (spart die 5 € für den ESP32-S3, kostet die Handy-Bedienung und die Startsperre S3); nicht empfohlen.
+
 ## 7. Quellen (abgerufen 26.10.2026)
 
 Reichelt-Suchen (Muster `https://www.reichelt.de/index.html?ACTION=446&LA=0&nbc=1&q=…`), Suchbegriffe: `SMAJ12CA`,

@@ -61,7 +61,8 @@ Maximum 33 N) ist ein anderer Motor und kommt nur zum Vergleich in die Python-Si
 | Akku 1S LiPo 3,7 V (Elektronik) | 1 | 600 mAh, JST-PH; Maße gegen das Fach 50 × 30 × 7 prüfen, Schutzschaltung `[?]` | Bauanleitung §3.5 |
 | Akku 2S LemonRC 450 mAh 35C, XT30 (55 × 30 × 10, 29 g) | 0 | zu bestellen (2 Stück, Reichelt `LRC 2S 450`); der vorhandene 2S 1200 mAh ist zu groß und zu schwer | Bauanleitung §3.1 |
 | Servo SG90 für die CO₂-Auslösung | 1 (aus Bestand) | an `J_SERVO3` | Bauanleitung §3.5 |
-| GPS-Modul | `[?]` | früherer TinyGPSPlus-Testsketch | Git-Historie |
+| GPS-Modul | 1 | Berrybase-Bestellung, Typ nicht im Repo; auf dem Modul nachsehen (UART 3,3 V, Patch) | Jan, 26.10.2026 |
+| 1S-Lader (JST-PH), microSD, Arming-Schalter, Zünder, 4 Motoren (Space Rocket Technologies), Fallschirm | je vorhanden | | Jan, 26.10.2026 |
 
 ### 1.4 Gedruckte Teile
 

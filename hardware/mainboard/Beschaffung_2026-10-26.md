@@ -306,10 +306,20 @@ filtern, wenn es schnell gehen soll). Angebote wechseln täglich, deshalb Suchbe
 | JST-GH 3-polig | J13 Kamera, J14 LEDs | dasselbe Listing, Variante 3P | 10 Stück ca. 2,6 € | 1 × 10er | |
 | JST-SH 1,0 mm 4-polig (Qwiic) | J12 | `JST SH 1.0mm 4 pin qwiic cable` | 1,81 € (Qwiic-Kabel, 5000+ verkauft); 10 Stück SH 4P 10 cm 2,03 € | 1 + 1 | einmal Buchse–Buchse (Qwiic), einmal offenes Ende |
 
-Summe Rakete ca. **40 €** (E22 ×2 sind der Hauptposten). Das E22-400T22S hat 26 Randpads (Stempelloch), kein
+| USB-C-Buchse „power only“ auf Breakout (5,1-k-CC-Widerstände) | Schalterbrett, 1S-Laden über J17 | `USB C female breakout board power` oder `USB-C power only breakout 5.1k` | ca. 1–2 € je 5 Stück | 1 Packung | nur VBUS/GND nötig; mit 5,1-k-Widerständen an CC1/CC2, sonst liefert ein USB-C-Netzteil keinen Strom |
+
+Summe Rakete ca. **42 €** (E22 ×2 sind der Hauptposten). Das E22-400T22S hat 26 Randpads (Stempelloch), kein
 verdecktes Pad; mit Lötkolben und Flussmittel gut von Hand zu löten (Pads vorverzinnen, zwei Ecken heften).
 
 **Entscheidung Jan 26.10.:** zunächst wird nur **eine Platine** aufgebaut, alle weiteren Teile sind Reserve.
+
+**Bestand laut Jan (26.10. abends), nicht mehr zu kaufen:** Teensy 4.1 (Stiftleisten/Raster morgen prüfen), 1S-Lader,
+1S-LiPo 600 mAh und 2S-LiPo 1200 mAh, microSD, Arming-Schalter, GPS-Modul (Berrybase-Bestellung, Typ nicht im Repo
+hinterlegt: bitte auf dem Modul nachsehen, UART 3,3 V an J11), Zünder und 4 Motoren (Space Rocket Technologies),
+Fallschirm. Rohr und Kuppler aus Klima-Pappe, dazu fehlt eventuell Epoxid. Die Akkus sind für den Tisch in Ordnung;
+für den Flug ist der 2S 1200 mAh mit ca. 70 g statt 29 g zu schwer und passt nicht ins Fach 55 × 30 × 10 des Schlittens
+(`Bauanleitung` §3.1: LemonRC 2S 450 später nachkaufen). Beim 1S 600 mAh Maße gegen das Fach 50 × 30 × 7 prüfen und
+sicherstellen, dass keine Schutzschaltung (PCM) drin ist.
 
 ### Bodenstation, absolutes Minimum (Entscheidung Jan 26.10.: Station ist nice-to-have)
 

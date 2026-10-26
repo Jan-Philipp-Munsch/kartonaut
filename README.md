@@ -276,6 +276,7 @@ repository; their content is ported here.
 | Document | What it holds |
 |---|---|
 | [PROJECT.md](PROJECT.md) | key data, work packages with status, findings, next steps, changelog |
+| [docs/Baustellen_2026-10-26.md](docs/Baustellen_2026-10-26.md) | open work by strand (board, repo, firmware, mechanics, simulation, ground systems) with a suggested order up to the first flight |
 | [docs/Bauanleitung_Kartonaut1.md](docs/Bauanleitung_Kartonaut1.md) | build manual: modules, parts list, build steps, maintenance, cable plan ([PDF](docs/bauanleitung/Bauanleitung_Kartonaut1.pdf), [drawings](docs/bauanleitung/Zeichnungen_Kartonaut1.pdf), [1:1 templates](docs/bauanleitung/Bohrschablonen_1zu1.pdf)) |
 | [cad/mass_stand2b.md](cad/mass_stand2b.md) | mass budget *Kartonaut 1*: mass, CG, lever arm, inertia, parts list |
 | [docs/Gewicht_und_Landung_2026-10-23.md](docs/Gewicht_und_Landung_2026-10-23.md) | weight levers to 593 g, gains, landing study with our masses |
@@ -286,7 +287,7 @@ repository; their content is ported here.
 | [docs/BUILD.md](docs/BUILD.md) | as-built: parts, mechanics, wiring, tests, build log |
 | [docs/Schnittstellen_Bodensystem_2026-10-22.md](docs/Schnittstellen_Bodensystem_2026-10-22.md) | interfaces rocket/pad, firing line, radio, phone |
 | [hardware/mainboard/README.md](hardware/mainboard/README.md) | mainboard specification |
-| [hardware/mainboard/review_brief_2026-10-23.md](hardware/mainboard/review_brief_2026-10-23.md) | rev B1 for the reviewer, with [review guide](hardware/mainboard/REVIEW_ANLEITUNG_revB1.md) and [shopping list](hardware/mainboard/EINKAUFSLISTE_revB1.md) |
+| [hardware/mainboard/review_brief_2026-10-23.md](hardware/mainboard/review_brief_2026-10-23.md) | rev B1 for the reviewer, with [review guide](hardware/mainboard/REVIEW_ANLEITUNG_revB1.md) and [shopping list](hardware/mainboard/EINKAUFSLISTE_revB1.md); [review package of 2026-10-26](hardware/mainboard/REVIEW_PAKET_2026-10-26.md) with checks run, reading order and decisions before ordering; [JLCPCB test quote](hardware/mainboard/Angebot_JLCPCB_2026-10-23.md) |
 | [hardware/mainboard/Komponenten_2026-10-22.md](hardware/mainboard/Komponenten_2026-10-22.md) | decisions, parts by rail and interface, pin budget |
 | [hardware/mainboard/ORDER.md](hardware/mainboard/ORDER.md) | order plan: gates, JLCPCB parameters, mating connectors, costs |
 | [docs/DesignGuide_Mainboard_revB.md](docs/DesignGuide_Mainboard_revB.md) | design with figures ([PDF](docs/DesignGuide_Mainboard_revB.pdf)) |

@@ -278,6 +278,7 @@ dieses Repositorys; ihr Inhalt ist hierher portiert.
 | Dokument | Inhalt |
 |---|---|
 | [PROJECT.md](PROJECT.md) | Eckdaten, Arbeitspakete mit Stand, Befunde, nächste Schritte, Änderungsverlauf |
+| [docs/Baustellen_2026-10-26.md](docs/Baustellen_2026-10-26.md) | offene Arbeiten nach Strängen (Platine, Repo, Firmware, Mechanik, Simulation, Bodensysteme) mit Reihenfolge bis zum Erstflug |
 | [docs/Bauanleitung_Kartonaut1.md](docs/Bauanleitung_Kartonaut1.md) | Bauanleitung: Module, Stückliste, Bauschritte, Wartung, Kabelplan ([PDF](docs/bauanleitung/Bauanleitung_Kartonaut1.pdf), [Zeichnungen](docs/bauanleitung/Zeichnungen_Kartonaut1.pdf), [Schablonen 1:1](docs/bauanleitung/Bohrschablonen_1zu1.pdf)) |
 | [cad/mass_stand2b.md](cad/mass_stand2b.md) | Massenbudget *Kartonaut 1*: Masse, Schwerpunkt, Hebelarm, Trägheit, Teileliste |
 | [docs/Gewicht_und_Landung_2026-10-23.md](docs/Gewicht_und_Landung_2026-10-23.md) | Gewichtshebel bis 593 g, Gewinne, Landestudie mit unseren Massen |
@@ -288,7 +289,7 @@ dieses Repositorys; ihr Inhalt ist hierher portiert.
 | [docs/BUILD.md](docs/BUILD.md) | Ist-Stand: Teile, Mechanik, Verkabelung, Tests, Baulog |
 | [docs/Schnittstellen_Bodensystem_2026-10-22.md](docs/Schnittstellen_Bodensystem_2026-10-22.md) | Schnittstellen Rakete/Rampe, Zündleitung, Funk, Handy |
 | [hardware/mainboard/README.md](hardware/mainboard/README.md) | Spezifikation des Mainboards |
-| [hardware/mainboard/review_brief_2026-10-23.md](hardware/mainboard/review_brief_2026-10-23.md) | rev B1 für den Prüfer, mit [Prüfanleitung](hardware/mainboard/REVIEW_ANLEITUNG_revB1.md) und [Einkaufsliste](hardware/mainboard/EINKAUFSLISTE_revB1.md) |
+| [hardware/mainboard/review_brief_2026-10-23.md](hardware/mainboard/review_brief_2026-10-23.md) | rev B1 für den Prüfer, mit [Prüfanleitung](hardware/mainboard/REVIEW_ANLEITUNG_revB1.md) und [Einkaufsliste](hardware/mainboard/EINKAUFSLISTE_revB1.md); [Review-Paket vom 26.10.](hardware/mainboard/REVIEW_PAKET_2026-10-26.md) mit gelaufenen Prüfungen, Lesereihenfolge und Entscheidungen vor der Bestellung; [JLCPCB-Testangebot](hardware/mainboard/Angebot_JLCPCB_2026-10-23.md) |
 | [hardware/mainboard/Komponenten_2026-10-22.md](hardware/mainboard/Komponenten_2026-10-22.md) | Entscheidungen, Bauteile nach Schiene und Schnittstelle, Pinbudget |
 | [hardware/mainboard/ORDER.md](hardware/mainboard/ORDER.md) | Bestellplan: Schranken, JLCPCB-Parameter, Gegenstecker, Kosten |
 | [docs/DesignGuide_Mainboard_revB.md](docs/DesignGuide_Mainboard_revB.md) | Entwurf mit Abbildungen ([PDF](docs/DesignGuide_Mainboard_revB.pdf)) |

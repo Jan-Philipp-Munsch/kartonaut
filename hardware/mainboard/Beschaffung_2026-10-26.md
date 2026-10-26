@@ -180,17 +180,76 @@ INA239AIDGST tatsächlich ab Lager hat.
 Gesamt ohne Akkus, Werkzeug und Module: Reichelt ca. 32–58 € inkl. Versand, DigiKey ca. 94 € brutto (79 € netto),
 LCSC ca. 25–35 € inkl. Versand und Steuer (Teile ca. 14 USD, Rest Versand und Einfuhrumsatzsteuer).
 
-## 6a. Stand der Warenkörbe (26.10.2026, nachmittags)
+## 6a. Stand der Warenkörbe (26.10.2026, abends)
+
+Entscheidung 26.10. abends: **eine Bestellung bei DigiKey statt Reichelt + DigiKey.** Die 26 Reichelt-Positionen
+wurden mit Herstellernummern in den DigiKey-Korb übernommen, INA239 von 10 auf 3 Stück gesetzt.
 
 | Händler | Inhalt | Summe | Status |
 |---|---|---|---|
 | JLCPCB | 5 Platinen + Standard-PCBA 2 Stück (`Bestellung_JLCPCB_2026-10-26.md`) | 175,93 USD + 26,84 USD Versand − 10 USD Gutschein = 192,77 USD | Checkout geöffnet, Lieferadresse und Zahlung offen; Versand voraussichtlich ab 1.11. |
-| Reichelt | die 18 Positionen aus `EINKAUFSLISTE_revB1.md` §7.1 plus §1.1 (C20, D2/D3, F2, FB1, R14, R15, R17, U11) = 26 Positionen | 35,17 € + 5,95 € DHL | Warenkorb im angemeldeten Konto, nicht bestellt |
-| DigiKey | §2 ohne Adafruit 4399: 15 Positionen, INA239 mit 10 Stück als Rückstand (02.11.), BM04B-GHS-TBT ebenfalls Rückstand | 78,56 € netto, Versand kostenlos (≥ 75 €) | Gast-Warenkorb im eingebauten Browser, nicht bestellt; beim Anmelden übernehmen |
+| DigiKey | **40 Positionen** (Tabelle unten): §2 mit INA239 ×3 plus die bisherigen Reichelt-Positionen | **92,60 € netto** (ca. 110 € brutto), Versand kostenlos (≥ 75 €) | Gast-Warenkorb im eingebauten Browser, nicht bestellt; beim Anmelden übernehmen |
+| Reichelt | 26 Positionen (alter Stand, 35,17 € + 5,95 €) | – | **hinfällig**, Korb kann geleert werden |
 | LCSC / AliExpress | E22-400T22S ×3, XT30PW-M ×3, GH-Kabel, Pigtail, Antenne (`EINKAUFSLISTE_revB1.md` §7.2) | ca. 25–35 € | noch offen |
 
 Mouser (26.10. im Browser geprüft): INA239AIDGSR 0 Stück, 2303 erwartet am 25.03.2027; INA239AQDGSRQ1 0 Stück,
 erwartet 01.02.2027. Mouser entfällt damit.
+
+### DigiKey-Korb (40 Positionen, Preise netto, 26.10.2026)
+
+| # | DigiKey-Nr. | Teil | Für | Menge | Stück | Summe | Lieferung |
+|---|---|---|---|---|---|---|---|
+| 1 | 296-INA239AIDGSRCT-ND | INA239AIDGSR | U6 | 3 | 3,770 | 11,31 | Rückstand, 02.11.2026 |
+| 2 | 478-13307-1-ND | TCJE337M016R0050E 330 µF/16 V | C4, C5 | 5 | 4,130 | 20,65 | sofort |
+| 3 | 18-1812L300/24SLERCT-ND | Polyfuse 3 A/24 V 1812 | F1 | 3 | 2,330 | 6,99 | sofort |
+| 4 | 455-BM04B-GHS-TBTCT-ND | JST GH 4 | J11 | 3 | 0,340 | 1,02 | Rückstand, 02.11.2026 |
+| 5 | 455-BM04B-SRSS-TBCT-ND | JST SH 4 | J12 | 3 | 0,470 | 1,41 | sofort |
+| 6 | 455-BM03B-GHS-TBTCT-ND | JST GH 3 | J13, J14 | 5 | 0,320 | 1,60 | sofort |
+| 7 | 587-NRS5040T1R5NMGJCT-ND | 1,5 µH 5040 | L2 | 3 | 0,210 | 0,63 | sofort |
+| 8 | AP2112K-3.3TRG1DICT-ND | AP2112K-3.3 | U3, U14 | 5 | 0,250 | 1,25 | sofort |
+| 9 | 296-37176-1-ND | SN74LV1T34DBVR | U8 | 3 | 0,360 | 1,08 | sofort |
+| 10 | 1727-4065-1-ND | 74HC138PW | U12 | 3 | 0,290 | 0,87 | sofort |
+| 11 | 296-13031-1-ND | CD74HC4051PWR | U13 | 3 | 0,520 | 1,56 | sofort |
+| 12 | 1528-4684-ND | Adafruit 4684 WS2812B-2020 (10er) | LED1, LED2 | 1 | 3,510 | 3,51 | sofort |
+| 13 | S7022-ND | Buchsenleiste 1×24 | A1 | 6 | 1,190 | 7,14 | sofort |
+| 14 | 455-2248-ND | B3B-XH-A | J7, J16 | 5 | 0,120 | 0,60 | sofort |
+| 15 | 1528-4210-ND | Adafruit 4210 SH-4-Kabel | J12 | 2 | 0,840 | 1,68 | sofort |
+| 16 | 455-1704-ND | B2B-PH-K-S | J2, J18 | 5 | 0,110 | 0,55 | sofort |
+| 17 | 455-1705-ND | B3B-PH-K-S | J17 | 3 | 0,140 | 0,42 | sofort |
+| 18 | 455-1706-ND | B4B-PH-K-S | J3 | 3 | 0,180 | 0,54 | sofort |
+| 19 | 455-1165-ND | PHR-2 Gehäuse | | 10 | 0,048 | 0,48 | sofort |
+| 20 | 455-1126-ND | PHR-3 Gehäuse | | 3 | 0,090 | 0,27 | sofort |
+| 21 | 455-1164-ND | PHR-4 Gehäuse | | 3 | 0,090 | 0,27 | sofort |
+| 22 | 455-B2B-XH-A-ND | B2B-XH-A | J4, J8 | 5 | 0,090 | 0,45 | sofort |
+| 23 | 455-S2B-XH-A-ND | S2B-XH-A | J9, J10 | 5 | 0,120 | 0,60 | sofort |
+| 24 | 455-S3B-XH-A-ND | S3B-XH-A | J5, J6 | 5 | 0,160 | 0,80 | **Rückstand, 14.12.2026** |
+| 25 | 455-2266-ND | XHP-2 Gehäuse | | 10 | 0,052 | 0,52 | sofort |
+| 26 | 455-2219-ND | XHP-3 Gehäuse | | 8 | 0,090 | 0,72 | sofort |
+| 27 | 35-PRPC010DAAN-RC-ND | Stiftleiste 2×10 | J15 | 3 | 0,310 | 0,93 | sofort |
+| 28 | S7078-ND | Buchsenleiste 2×10, 8,5 mm | Zusatzplatine | 2 | 1,170 | 2,34 | sofort |
+| 29 | 490-10530-1-ND | GRM32EC70J107ME15L 100 µF | C20 | 3 | 0,550 | 1,65 | sofort |
+| 30 | F11449CT-ND | Polyfuse 2 A/16 V 1812 | F2 | 3 | 1,100 | 3,30 | sofort |
+| 31 | 490-5258-1-ND | BLM18KG601SN1D | FB1 | 3 | 0,120 | 0,36 | sofort |
+| 32 | 311-680KHRCT-ND | 680 k 0603 | R14 | 10 | 0,022 | 0,22 | **Rückstand, 21.12.2026** |
+| 33 | 311-130KHRCT-ND | 130 k 0603 | R15 | 3 | 0,090 | 0,27 | Rückstand, 09.11.2026 |
+| 34 | 311-115KHRCT-ND | 115 k 0603 | R17 | 3 | 0,090 | 0,27 | sofort |
+| 35 | MCP73831T-2ACI/OTCT-ND | MCP73831T-2ACI/OT | U11 | 3 | 0,670 | 2,01 | sofort |
+| 36 | EG1942-ND | EG2208A Schiebeschalter DPDT | SW | 2 | 0,820 | 1,64 | sofort |
+| 37 | EG2350-ND | 100SP1T1B1M1QEH Kippschalter 5 A | Hauptschalter | 1 | 2,730 | 2,73 | sofort |
+| 38 | SMAJ12CALFCT-ND | SMAJ12CA | D2, D3 | 5 | 0,430 | 2,15 | sofort |
+| 39 | 455-1127-100-ND | SPH-002T-P0.5S PH-Crimpkontakte, 100er-Streifen | | 100 | 0,036 | 3,63 | sofort |
+| 40 | 455-1135-100-ND | SXH-001T-P0.6 XH-Crimpkontakte, 100er-Streifen | | 100 | 0,042 | 4,18 | sofort |
+
+Hinweise zum Korb:
+
+- Die Crimpkontakte gibt es bei DigiKey nur als 100er-Streifen (kleinste Einheit), nicht einzeln; 100 Stück reichen
+  für alle Stecker mit Reserve.
+- Vier Positionen sind Rückstand. INA239, GH-4 und 130 k kommen Anfang November; S3B-XH-A (J5/J6) erst Mitte Dezember
+  und 680 k (R14) erst 21.12. Beim Bestellen „Teillieferung“ wählen, oder vorher ersetzen: 680 k durch einen anderen
+  Hersteller (DigiKey „Ersatzartikel anzeigen“ in Zeile 32), S3B-XH-A durch die gerade Ausführung B3B-XH-A (Zeile 14,
+  dann Menge 10) oder den liegenden Reichelt-Typ `JST XH3P ST90`.
+- Damit ist alles aus §1 und `EINKAUFSLISTE_revB1.md` §7.1 abgedeckt (Reichelt-Artikel durch die JST-Originale
+  und Sullins-Leisten ersetzt). Summer, Litze und Crimpzange sind laut Einkaufsliste vorhanden.
 
 ## 7. Quellen (abgerufen 26.10.2026)
 

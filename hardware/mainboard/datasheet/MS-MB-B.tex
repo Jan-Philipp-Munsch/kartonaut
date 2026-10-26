@@ -440,10 +440,10 @@ Stackup JLC04161H-7628, DRC-Regeln 0,15 mm Abstand (0,2 mm zur Stromklasse), Via
 \textbf{Parameter} & \textbf{Wert}\\
 \midrule
 Fertiger & JLCPCB, Economic-PCBA (Aisler als Rückfall in der EU, \texttt{Fertiger\_2026-10-21.md})\\
-Platine & \qtyproduct{54 x 120}{mm}, 4 Lagen JLC04161H-7628, \SI{1.6}{mm} FR-4, ENIG, \SI{1}{oz} außen / \SI{0.5}{oz} innen, Lötstopp blau (oder grün)\\
+Platine & \qtyproduct{54 x 120}{mm}, 4 Lagen JLC04161H-7628, \SI{1.6}{mm} FR-4 TG135, LeadFree HASL, \SI{1}{oz} außen / \SI{0.5}{oz} innen, Lötstopp grün (bestellt 26.\,10.; ENIG und blau waren 22 USD teurer)\\
 Stückzahl & 5 Platinen, davon 2 bestückt (Oberseite SMD); THT (Stecker, Buchsenleisten, Stiftleiste, Summer) selbst; E22 und WS2812B selbst löten (Bestand bzw. Standard-PCBA-Zwang), ggf. BMP390\\
 Fertigungsdaten & \texttt{kicad/fab/}: \texttt{mainboard\_gerber.zip} (Gerber, Excellon PTH+NPTH), \texttt{mainboard\_bom.csv} (\bomLines{} Zeilen), \texttt{mainboard\_cpl.csv} (132 SMD-Teile, oben), \texttt{FAB.md}; Export 26.\,10.\,2026 mit \texttt{./make.sh fab}\\
-Bohrungen & 0,2 mm (12 Thermovias DRV8833, Via-Durchmesser 0,5), 0,3 (Vias), 0,75 / 0,95 / 1,0 (JST, Teensy), 1,9, 3,2 NPTH; im Formular die Via-Option mit \SI{0.2}{mm} wählen\\
+Bohrungen & 0,3 mm (Vias, auch die 12 Thermovias des DRV8833 mit 0,5 mm Pad), 0,75 / 0,95 / 1,0 (JST, Teensy), 1,9, 3,2 NPTH; Via-Option 0,3 mm (Standard, kein Aufpreis)\\
 Auftragsnummer & Platzhalter \texttt{JLCJLCJLCJLC} im Bestückungsdruck unter dem Teensy (\emph{Specify a location})\\
 Extended-Teile & LSM6DSV16X (C5267406), BMP390 (C5124834), TPS63070 (C109322), DRV8833 (C50506), MCP73831, LIS3MDL, SHT40, Polyfuses, Polymer-Elkos u.\,a.; 111 BOM-Positionen bekommen ihre LCSC-Nummer am Bestelltag (\texttt{Angebot\_JLCPCB\_2026-10-23.md})\\
 Lieferrisiken & BMP390 zeitweise ohne Bestand (Rückfall BMP388 C779278, pinkompatibel); E22 geringer Bestand (Handlötung); INA239 nicht bei LCSC (DigiKey, Handlötung VSSOP-10); WS2812B-2020 C965555 ausverkauft (Zweithersteller oder Handlötung)\\

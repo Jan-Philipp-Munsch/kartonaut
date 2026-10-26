@@ -12,7 +12,7 @@ keine Abweichung von der Spezifikation; alle 17 KiCad-Warnungen betreffen nur de
 |---|---|
 | Lagen im ZIP | F/In1/In2/B.Cu, F.Paste, F/B.Silkscreen, F/B.Mask, Edge.Cuts, Bohrplan, Job-Datei (Protel-Endungen) – vollständig für 4 Lagen, Bestückung nur oben |
 | Umriss | geschlossen: Rechteck 54 × 120 mm (x 100–154, y 50–170) mit vier Bögen r = 2 mm; Job-Datei meldet 54,1 × 120,1 (Linienbreite) |
-| Bohrdatei | eine Excellon-Datei, metrisch, PTH und NPTH mit Attributen: 0,2 mm (12 Thermovias DRV8833), 0,3 mm (Vias), 0,75 / 0,95 / 1,0 mm (JST, Teensy), 1,9 mm (2), 3,2 mm NPTH (5, davon 4 Befestigungslöcher) |
+| Bohrdatei | eine Excellon-Datei, metrisch, PTH und NPTH mit Attributen: 0,3 mm (Vias; die 12 Thermovias des DRV8833 seit 26.10. nachmittags ebenfalls 0,3 statt 0,2 mm, damit die Standard-Via-Option ohne 38-USD-Aufpreis gilt), 0,75 / 0,95 / 1,0 mm (JST, Teensy), 1,9 mm (2), 3,2 mm NPTH (5, davon 4 Befestigungslöcher) |
 | BOM ↔ CPL | 132 Referenzen in beiden, keine Dubletten, alle `Top`, Drehungen 0/90/180/−90, alle LCSC-Nummern im Format `C\d+` |
 | BOM | 53 Zeilen, 21 Teile mit LCSC-Nummer (14 Typen), 111 ohne (Passive, Stecker, Polyfuses, Elkos, INA239, SN74LV1T34, 74HC138/4051) |
 | ERC / DRC | ERC 0/0; DRC 0 Fehler, 0 offen, Schaltplan-Parität 0, 17 Warnungen (Bestückungsdruck) |

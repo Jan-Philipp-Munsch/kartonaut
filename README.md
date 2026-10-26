@@ -174,7 +174,7 @@ own grid router and by hand ([schematic PDF](hardware/mainboard/kicad/out/mainbo
 `./make.sh fab` writes Gerber, BOM and CPL for JLCPCB to `kicad/fab/`. The
 [review brief](hardware/mainboard/review_brief_2026-10-23.md) gives the board in numbers and the points
 to look at; the [design guide](docs/DesignGuide_Mainboard_revB.md) ([PDF](docs/DesignGuide_Mainboard_revB.pdf))
-and the [datasheet](hardware/mainboard/datasheet/) present the design.
+and the [datasheet](hardware/mainboard/datasheet/) (version 0.2 of 2026-10-26, rev B1 order release) present the design.
 
 A [second-opinion review](hardware/mainboard/review_kicad_2026-10-21.md) of rev B found eight points;
 together with the decisions in [Komponenten_2026-10-22.md](hardware/mainboard/Komponenten_2026-10-22.md)

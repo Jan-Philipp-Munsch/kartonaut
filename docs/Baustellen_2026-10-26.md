@@ -17,7 +17,7 @@ Quellen: `PROJECT.md` §6 (Stand 26.10.), `README.de.md` „Als Nächstes“, `h
 | 1.5 | Bestand am Bestelltag: BMP390 (Rückfall BMP388), E22-400T22S, TPS63070, LSM6DSV16X, AO3401A-Alternative mit −2,5 V | `ORDER.md` §3.3 |
 | 1.6 | Bestellung nach Freigabe (Meilenstein M1): 5 Platinen, 2 bestückt, Economic PCBA; E22, WS2812, ggf. BMP390 und 16 THT-Teile selbst löten | `ORDER.md` §3 |
 | 1.7 | Einkauf nach `EINKAUFSLISTE_revB1.md` und Bauanleitung §3.1 (THT-Teile, Gegenstecker, Crimpzange, Akkus, Breakouts, Schrauben; Reichelt, Berrybase, Ebyte); **1S-Ladegerät fehlt** (HTRC H4AC kann kein 1S) | EINKAUFSLISTE, Bauanleitung §3.1 |
-| 1.8 | Datenblatt `datasheet/MS-MB-B.tex` und Design Guide auf rev B1 umschreiben (beide beschreiben noch INA219/ICM) | `kicad/README.md` §8.6 |
+| 1.8 | ~~Datenblatt auf rev B1~~ (erledigt 26.10., Version 0.2); Design Guide `docs/DesignGuide_Mainboard_revB.md` im Text noch rev B (Abbildungen seit 26.10. rev B1) | `kicad/README.md` §8.7 |
 
 ## 2. Repo (klein, seit dem Merge vom 26.10.)
 

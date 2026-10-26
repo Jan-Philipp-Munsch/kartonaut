@@ -175,7 +175,7 @@ eigenem Gitter-Router und von Hand ([Schaltplan-PDF](hardware/mainboard/kicad/ou
 `./make.sh fab` schreibt Gerber, BOM und CPL für JLCPCB nach `kicad/fab/`. Der
 [Review-Brief](hardware/mainboard/review_brief_2026-10-23.md) nennt die Platine in Zahlen und die
 Prüfpunkte; [Design Guide](docs/DesignGuide_Mainboard_revB.md) ([PDF](docs/DesignGuide_Mainboard_revB.pdf))
-und [Datenblatt](hardware/mainboard/datasheet/) stellen den Entwurf vor.
+und [Datenblatt](hardware/mainboard/datasheet/) (Version 0.2 vom 26.10., Bestellfassung rev B1) stellen den Entwurf vor.
 
 Ein [Zweitmeinungs-Review](hardware/mainboard/review_kicad_2026-10-21.md) von rev B fand acht Punkte;
 zusammen mit den Entscheidungen in [Komponenten_2026-10-22.md](hardware/mainboard/Komponenten_2026-10-22.md)

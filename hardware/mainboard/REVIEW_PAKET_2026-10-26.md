@@ -48,7 +48,7 @@ Alle Pfade relativ zu `hardware\mainboard\` im Haupt-Checkout.
 | 11 | `Angebot_JLCPCB_2026-10-23.md` (uncommittet) | Preise und die am 23.10. gefundenen LCSC-Nummern für Passive, Polyfuse, TVS, Drosseln, JST-Buchsen: **für die BOM-Zuordnung wiederverwenden** | 10 min |
 | 12 | `EINKAUFSLISTE_revB1.md` | Alles, was JLCPCB nicht liefert (THT, Gegenstecker, Module, Akkus) | nach der Platinenbestellung |
 | 13 | `review_kicad_2026-10-21.md`, `review_netlist_2026-10-21.md` | Das letzte Review (A1–A8, B-Punkte) zum Nachsehen, ob alles eingearbeitet ist | bei Bedarf |
-| 14 | `../../docs/DesignGuide_Mainboard_revB.pdf`, `datasheet/MS-MB-B.pdf` | Blockbilder und Datenblatt; **beide beschreiben noch rev B** (INA219, ICM), nur für die Struktur | bei Bedarf |
+| 14 | `datasheet/MS-MB-B.pdf` (Version 0.2, rev B1, 26.10.), `../../docs/DesignGuide_Mainboard_revB.pdf` | Produktdatenblatt der Bestellfassung mit Pinbelegung, Kennwerten, Stückliste; der Design Guide beschreibt im Text noch rev B, seine Abbildungen sind seit 26.10. rev B1 | bei Bedarf |
 
 ## 3. Ablauf der Durchsicht (2 bis 3 Stunden)
 

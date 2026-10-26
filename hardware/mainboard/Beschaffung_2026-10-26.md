@@ -298,7 +298,7 @@ filtern, wenn es schnell gehen soll). Angebote wechseln täglich, deshalb Suchbe
 
 | Teil | Für | Suchbegriff | Beobachteter Preis | Menge | Worauf achten |
 |---|---|---|---|---|---|
-| E22-400T22S (SMD, IPEX) | U10 | `E22-400T22S` | 11,69 € (CDSENET, 25 verkauft) bis 19,99 €; „5 Stück/1 Stück“-Listings ab 11,89 € je Stück | 3 | Ebyte/CDSENET, 22 dBm, **T22S** (UART, SMD), nicht M22S (SPI) und nicht T22D (DIP) |
+| E22-400T22S (SMD, IPEX) | U10 | `E22-400T22S` | 11,69 € (CDSENET) bis 19,99 €; „5 Stück/1 Stück“-Listings ab 11,89 € je Stück | **2** (eine Platine wird gebaut, eins Reserve; Jan 26.10.) | **Händler „EBYTE Official Store“/„CDEBYTE“ oder CDSENET (Ebyte-Reseller)**, 22 dBm, **T22S** (UART, SMD), nicht M22S (SPI) und nicht T22D (DIP); nach Erhalt Aufdruck prüfen |
 | XT30PW-M | J1 | `XT30PW-M` | 10 Stück 5,49 € (Original, horizontal); 5 Stück 2,79 € (AMASS XT30PW(2+2)-M, mit Signalpins, passt nicht) | 1 × 10er | **PW-M = Stecker, liegend, Platinenmontage**, ohne (2+2) |
 | Pigtail u.FL/IPEX-1 → SMA-Buchse, 10 cm | Antenne an U10 | `ipex sma female pigtail 10cm` | 0,46 € (1 Stück, 4000+ verkauft) | 3 | IPX1/u.FL, Kabel 1.13, **SMA female mit Gehäusegewinde**; nicht MHF4, nicht RP-SMA |
 | 433-MHz-Stabantenne 3 dBi, SMA-Stecker | Rakete (Test) und Bodenstation | `433mhz sma male antenna 3dbi` | 2 Stück 2,35 € oder 1,79 € | 1 × 2er | SMA **male**, nicht RP-SMA; die Wendel am Schlitten kommt später aus dem Bau, die Stabantenne ist für Tisch und Station |
@@ -306,9 +306,23 @@ filtern, wenn es schnell gehen soll). Angebote wechseln täglich, deshalb Suchbe
 | JST-GH 3-polig | J13 Kamera, J14 LEDs | dasselbe Listing, Variante 3P | 10 Stück ca. 2,6 € | 1 × 10er | |
 | JST-SH 1,0 mm 4-polig (Qwiic) | J12 | `JST SH 1.0mm 4 pin qwiic cable` | 1,81 € (Qwiic-Kabel, 5000+ verkauft); 10 Stück SH 4P 10 cm 2,03 € | 1 + 1 | einmal Buchse–Buchse (Qwiic), einmal offenes Ende |
 
-Summe Rakete ca. **50 €** (E22 ×3 sind der Hauptposten).
+Summe Rakete ca. **40 €** (E22 ×2 sind der Hauptposten). Das E22-400T22S hat 26 Randpads (Stempelloch), kein
+verdecktes Pad; mit Lötkolben und Flussmittel gut von Hand zu löten (Pads vorverzinnen, zwei Ecken heften).
 
-### Bodenstation Sparvariante (`groundstation/README.md` §7.1), günstigster Weg
+**Entscheidung Jan 26.10.:** zunächst wird nur **eine Platine** aufgebaut, alle weiteren Teile sind Reserve.
+
+### Bodenstation, absolutes Minimum (Entscheidung Jan 26.10.: Station ist nice-to-have)
+
+Am Starttag sind nur zwei Dinge nötig: Telemetrie empfangen und den Motor zünden. Minimal:
+
+| Teil | Suchbegriff | Preis | Menge | Zweck |
+|---|---|---|---|---|
+| **E22-400T22U** (USB-Stick, Antenne liegt bei) | `E22-400T22U`, Ebyte-Shop | 9,69 € | 1 | am Laptop: Telemetrie (`firmware/src/Telemetry.h`) im Terminal oder Python-Skript mitschreiben, Kommandos PING/CALIBRATE/PAD_READY/ABORT/SAFE senden; mit in die AliExpress-Bestellung |
+| Verdrahtete Zündbox | Vorrat/Baumarkt | 10–15 € | 1 | Akku, Schlüsselschalter, Taster, 15 m Leitung; Schlüssel ersetzt die Startsperre vom Handy |
+
+Die ESP32-Station mit Weboberfläche, Relais und Startsperre S3 (unten) ist der spätere Ausbau.
+
+### Bodenstation Sparvariante (`groundstation/README.md` §7.1), späterer Ausbau
 
 Vorhanden laut `docs/BUILD.md` §1.3: Arduino Nano mit HC-12, aktiver Summer, HTRC-Lader (2–4S). Die HC-12 können nicht
 mit LoRa (E22) sprechen; der Nano hat kein WLAN für die Handy-Oberfläche. Minimal neu nötig:

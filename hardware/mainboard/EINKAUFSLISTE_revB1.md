@@ -120,7 +120,10 @@ Für zwei bestückte Platinen plus Reserve. Preise vom 24.10.2026, Summe 25,75 �
 
 Nicht bei Reichelt: XT30PW-M, Pigtail, GH-/SH-Kabel (7.2). Summer, Litze und Crimpzange sind vorhanden.
 
-### 7.2 AliExpress (eine Bestellung, 13–20 €, „Versand aus EU“ filtern)
+### 7.2 AliExpress (eine Bestellung, „Versand aus EU“ filtern)
+
+Stand 26.10. abends: Preise, Händler und Mengen in `Beschaffung_2026-10-26.md` §6c (E22-400T22S ×2 und E22-400T22U ×1
+beim Ebyte-Shop, dazu die Positionen unten; ca. 50 € mit dem USB-E22).
 
 | Teil | Suche | Worauf achten | Stück |
 |---|---|---|---|

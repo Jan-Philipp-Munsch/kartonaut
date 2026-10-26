@@ -93,3 +93,44 @@ Platine nicht als Reserve reicht. Der INA239 (MSOP-10) ist bei DigiKey/Mouser ei
 
 Summe ohne GPS, Kamera und Crimpzange etwa **150–220 €**, mit allem **230–320 €**. Reihenfolge: 4 und 2 sofort
 (Lieferzeit, Treiberarbeit am Breakout), 1 und 3 bis zur Lieferung der Platinen (JLC etwa 2 Wochen nach Bestellung).
+
+## 7. Bestellfertige Körbe (Stand 26.10.2026)
+
+### 7.1 Reichelt (Schnellerfassung im Warenkorb: Artikelnummer, Menge)
+
+Für zwei bestückte Platinen plus Reserve. Preise vom 24.10.2026, Summe 25,75 € zzgl. 5,95 € Versand.
+
+| Artikel-Nr. | Was | Für | Stück |
+|---|---|---|---|
+| JST PH2P ST | PH 2-polig stehend | J2 (1S-Akku), J18 (2S-Laden) | 5 |
+| JST PH3P ST | PH 3-polig stehend | J17 (USB-C-Lader) | 3 |
+| JST PH4P ST | PH 4-polig stehend | J3 (Schalterbrett) | 3 |
+| JST PH2P BU / PH3P BU / PH4P BU | PH-Crimpgehäuse (Kabelseite) | | 10 / 3 / 3 |
+| JST PH CKL | PH-Crimpkontakte 28–24 AWG | | 60 |
+| JST XH2P ST | XH 2-polig stehend | J4 (Arming), J8 (Motor) | 5 |
+| JST XH2P ST90 | XH 2-polig liegend | J9, J10 (Pyro) | 5 |
+| JST XH3P ST90 | XH 3-polig liegend | J5, J6 (TVC); ersatzweise auch J7, J16 (stehend „JST XH3P ST“ erst ab 28.11. lieferbar) | 10 |
+| JST XH2P BU / XH3P BU | XH-Crimpgehäuse (Kabelseite) | | 10 / 8 |
+| JST XH1 CKS | XH-Crimpkontakte 28–22 AWG | | 70 |
+| SL 2X10G 2,54 | Stiftleiste 2×10 | J15 (J_STACK) | 3 |
+| BL 2X10G8 2,54 | Buchsenleiste 2×10, 8,5 mm | Zusatzplatine | 2 |
+| FIS BL1 36 G | Buchsenleiste 1×36 trennbar, vergoldet (auf 24 kürzen) | A1 (Teensy) | 2 |
+| T 217 | Miniatur-Schiebeschalter 2×UM, Lötanschluss | Hauptschalter am Schalterbrett | 2 |
+| MS 500A | Kippschalter 6 A, M6×0,75 | Arming (statt Schlüsselschalter; CAD-Kragen in `cad/avionics.py` von Ø 12 auf Ø 6,2 ändern) | 1 |
+
+Nicht bei Reichelt: XT30PW-M, Pigtail, GH-/SH-Kabel (7.2). Summer, Litze und Crimpzange sind vorhanden.
+
+### 7.2 AliExpress (eine Bestellung, 13–20 €, „Versand aus EU“ filtern)
+
+| Teil | Suche | Worauf achten | Stück |
+|---|---|---|---|
+| XT30PW-M (J1) | XT30PW-M | AMASS, PW-M = liegend, Platinenmontage | 5 |
+| Pigtail IPEX → SMA-Buchse 10 cm | IPEX SMA female pigtail 10cm | u.FL/IPEX-1 (nicht MHF4), SMA female mit Gehäusegewinde | 2 |
+| 433-MHz-Stabantenne | 433MHz SMA antenna 3dBi | SMA male, nicht RP-SMA | 2 |
+| JST-GH 4-polig, 15 cm, ein Ende offen (GPS, J11) | JST GH 1.25mm 4 pin cable | Raster 1,25 mm mit Verriegelung | 3 |
+| JST-GH 3-polig (Kamera J13, LEDs J14) | JST GH 1.25mm 3 pin cable | wie oben | 3 |
+| Qwiic / JST-SH 4-polig, 5 und 10 cm (J12) | JST SH 1.0mm 4 pin Qwiic cable | Raster 1,0 mm, einmal offenes Ende | 4 |
+
+Berrybase lohnt nicht (Qwiic-Kabel ausverkauft, Pigtail/GH/XT30PW nicht im Programm); Eckstein als schnellere
+Alternative für Pigtail und Qwiic-Kabel. GPS: vorhandenes u-blox-Modul an J_GPS, Befestigung mit Schaumklebepad
+oben auf dem Träger, Antenne zur Spitze, andere Rohrseite als die LoRa-Antenne.

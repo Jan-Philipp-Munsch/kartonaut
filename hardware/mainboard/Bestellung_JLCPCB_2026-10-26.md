@@ -32,7 +32,22 @@ Alle Preise USD ohne Versand und Einfuhrumsatzsteuer.
 | Randstreifen abtrennen | nicht gewählt (Standard: Platinen kommen mit Streifen, selbst abbrechen) |
 | Preis | **145,73 USD**: Setup 25,75, Schablone 8,27, Bauteile (30 Positionen) 55,76, Feeder-Gebühr 46,50, Bestückung 1,89, Bestätigung 0,45, Röntgen 6,60, Verpackung 0,50 |
 
-**Summe 175,93 USD** plus Versand (DHL ca. 23 USD) und 19 % Einfuhrumsatzsteuer.
+**Summe 175,93 USD** plus Versand und Einfuhrumsatzsteuer, siehe §2.3.
+
+### 2.3 Versand und Zoll (Checkout 26.10. abends, Lieferadresse Einhausen)
+
+| Option | Laufzeit | Versand | Abgaben | Gesamt |
+|---|---|---|---|---|
+| DHL Express (CPT) | 2–4 Werktage | 26,84 USD | 19 % EUSt auf Ware + Versand (ca. 38 USD) plus DHL-Vorlageprovision (ca. 12–15 €) **bei Zustellung** | ca. 255 USD |
+| FedEx Express (CPT) | 5–7 Werktage | 28,49 USD | wie oben, beim Boten | ca. 257 USD |
+| UPS Express Saver (CPT) | 3–5 Werktage | 31,64 USD | wie oben | ca. 260 USD |
+| Global Standard Direct Line | 9–13 Werktage | ca. 28 USD | wie oben | ca. 257 USD |
+| **DHL Express (DDP)** | 2–4 Werktage | 28,39 USD | 38,83 USD Abgaben + 8,27 USD Gebühr, **im Voraus bei JLCPCB** | **251,42 USD** |
+
+Entscheidung: **DHL Express (DDP)**, Abgaben jetzt mitbezahlen. Das kostet nichts mehr als die Zahlung an der Haustür,
+erspart die DHL-Vorlageprovision und die Zollverzögerung; seit 1.7.2026 gibt es in der EU keine 150-€-Zollfreigrenze
+mehr, so dass bei CPT zusätzlich zur EUSt Zoll anfallen kann. Zweitwahl bei knapper Kasse: DHL Express CPT, dann
+EUSt und Gebühr an den DHL-Boten (Vorkasse-Link per SMS/E-Mail).
 
 ### 2.1 Von JLCPCB bestückt (30 Positionen)
 

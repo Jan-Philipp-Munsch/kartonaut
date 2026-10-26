@@ -8,7 +8,9 @@ Werte wiedererkennt. Es gibt zwei Nominalsaetze (siehe README, Abschnitt Paramet
   Die gelten, wenn das Modell geoeffnet wird, ohne vorher ``TVC6DOF.m`` auszufuehren,
   also vermutlich bei ``pid_tuner.m``.
 * ``VehicleParams.cad()`` - Masse, Hebelarm und Traegheitsmomente aus dem CAD-Massenmodell
-  ``cad/mass_properties.json`` (Startzustand mit vollem Motor).
+  ``cad/mass_properties.json`` (Startzustand mit vollem Motor, Konfiguration ``voll``, 981 g).
+* ``VehicleParams.stand2b()`` - dasselbe aus ``cad/mass_stand2b.json``, der Modulbauweise
+  Kartonaut 1 Stand 2b (22.10.2026): kuerzeres Rohr, CO2-Ausstoss, kein Rollmotor.
 """
 from __future__ import annotations
 
@@ -20,6 +22,7 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 OUT_DIR = Path(__file__).resolve().parent.parent / "out"
 REPO_DIR = Path(__file__).resolve().parent.parent.parent
 CAD_MASS_FILE = REPO_DIR / "cad" / "mass_properties.json"
+STAND2B_MASS_FILE = REPO_DIR / "cad" / "mass_stand2b.json"
 FUEL_PER_MOTOR_KG = 0.028   # TSP E12: 28 g Treibstoff
 
 
@@ -39,6 +42,11 @@ class VehicleParams:
     static_error_z: float = 0.0   # Grad, statischer Fehler (konstant)
     servo_delay: float | None = None  # s, Totzeit des Servomodells; None = Wert aus dem Fit
     l_meas: float | None = None   # m, Hebelarm, mit dem der Regler rechnet (None = l)
+    # Luftwiderstand (nicht im Simulink-Modell, seit 23.10.2026 als Option): D = -1/2 rho cd_a |v| v
+    # entlang der Fluggeschwindigkeit, angriffsfrei (kein Moment). cd_a = Cd * A in m^2;
+    # Rumpf Ø 75 mm: A = 0,0044 m^2, Cd ~ 0,6..0,8 -> cd_a ~ 0,003. 0 = aus (wie Simulink).
+    cd_a: float = 0.0
+    rho: float = 1.2
 
     @classmethod
     def nominal(cls) -> "VehicleParams":
@@ -71,13 +79,30 @@ class VehicleParams:
                    m_dry=cfg["mass_kg"] - FUEL_PER_MOTOR_KG,
                    mis_y=float(lat[0]), mis_z=float(lat[1]))
 
+    @classmethod
+    def stand2b(cls, config: str = "liftoff", path: Path | None = None) -> "VehicleParams":
+        """Massenbudget der Modulbauweise Stand 2b (``cad/mass_stand2b.py``), gleiches Format wie ``cad()``."""
+        return cls.cad(config=config, path=path or STAND2B_MASS_FILE)
+
     @property
     def l_ctrl(self) -> float:
         return self.l if self.l_meas is None else self.l_meas
 
     def as_eom_params(self) -> tuple[float, ...]:
-        """``[Ix Iy Iz g l mis_y mis_z m_dry]`` wie der Constant-Block im Dynamics Model."""
-        return (self.Ix, self.Iy, self.Iz, self.g, self.l, self.mis_y, self.mis_z, self.m_dry)
+        """``[Ix Iy Iz g l mis_y mis_z m_dry]`` wie der Constant-Block im Dynamics Model,
+        dazu ``cd_a, rho`` fuer den Luftwiderstand (0 = aus)."""
+        return (self.Ix, self.Iy, self.Iz, self.g, self.l, self.mis_y, self.mis_z, self.m_dry, self.cd_a, self.rho)
+
+    @classmethod
+    def light(cls, m_landing_kg: float, fuel_per_motor_kg: float = FUEL_PER_MOTOR_KG, cd_a: float = 0.003) -> "VehicleParams":
+        """Leichte Landekonfiguration (Jan, 23.10.2026: deutlich unter 700 g). Geometrie wie
+        ``erstflug`` (Hebelarm 0,242 m), Traegheit aus dem Erstflug-Modell (0,046 kg m^2 bei
+        0,761 kg) mit der Masse skaliert. ``m_landing_kg`` ist die Masse bei der Landung mit
+        vollem zweitem Motor; ``m_dry`` = ohne jeden Treibstoff."""
+        m_dry = m_landing_kg - fuel_per_motor_kg
+        scale = m_landing_kg / 0.761
+        return cls(Ix=0.0006 * scale, Iy=0.046 * scale, Iz=0.046 * scale, l=0.242, m_dry=m_dry,
+                   static_error_y=0.5, static_error_z=0.5, cd_a=cd_a)
 
 
 @dataclass
@@ -87,6 +112,15 @@ class MotorParams:
     curve: str = "E12"          # "E12" oder "F35" (data/<curve>_thrustcurve.csv)
     secondburn: int = 730       # Verzoegerung des zweiten Motors in Regelschritten (dt)
     second_motor: bool = True
+    # Zuendung des zweiten Motors: "time" nach secondburn Schritten (Simulink), "landing" aus
+    # dem Zustand (Landebrennen, tvcsim.landing: Zuendhoehe als Funktion der Sinkgeschwindigkeit)
+    second_mode: str = "time"
+    igniter_delay: float = 0.10     # s, Zuendverzug Anzuender -> Schub (Landemodus)
+    thrust_scale2: float = 1.0      # Schubtoleranz des zweiten Motors (Landemodus)
+    landing_alt_sigma: float = 0.3  # m, Rauschen der Hoehenschaetzung fuer die Zuendentscheidung
+    landing_vz_sigma: float = 0.3   # m/s, Rauschen der Sinkgeschwindigkeit
+    landing_margin_m: float = 0.0   # m, Zuendung so viel hoeher als die Tabelle (Sicherheitsaufschlag)
+    landing_v_tol: float = 0.5      # m/s, Zielwert |v| beim Aufsetzen der Planung
     # Treibstoffmodell fuer die Masse m = m_dry + m_fuel/1000:
     #  "signalbuilder": die Kurve aus dem Signal Builder der .slx (60 g -> 0 g bis 3,45 s,
     #                   nur der erste Motor), 1:1 wie das Simulink-Modell
@@ -113,6 +147,32 @@ class ServoParams:
     # 6 aus der Identifikation (35 Servo-Grad -> 5,5 Kardan-Grad), Config.h sagt 23.
     servo_deg_per_tvc_deg: float = 6.0
     sat_deg: float = 5.0       # Saettigung des Kommandos (Block "Saturation", +-5 Grad)
+
+
+@dataclass
+class ThrottleParams:
+    """Schubdrossel nach BPS Scout F (Jan, 23.10.2026): zwei Pads schwenken symmetrisch unter der
+    Duese in den Abgasstrahl und lenken ihn seitlich ab. Modell: Axialschub = Motorschub * f(u),
+    Kommando u in [0, 1] (0 = Pads draussen), f(u) = 1 - (1 - f_min) * u, dahinter dieselbe
+    Servodynamik wie am Kardan (PT2 mit Totzeit, ServoParams). Wirkt auf den Gesamtschub, also
+    auf jeden Motor im Rohr. f_min ist unbekannt und wird in der Studie variiert (0,3 / 0,5 / 0,7);
+    Experiment E05 misst die Kennlinie am Pruefstand. Zusatzmasse ca. 60 g (zwei Servos, Pads, Gehaeuse)."""
+
+    enabled: bool = False
+    f_min: float = 0.5
+    mass_kg: float = 0.06
+    # Landeregler mit Drossel (tvcsim.throttle.ThrottleLandingController)
+    h_reserve_m: float = 3.0      # zuenden, sobald ein Vollschub-Brennen hoechstens so hoch ueber dem Boden stoppen wuerde
+    throttle_after_s: float = 0.8 # erst nach der Schubspitze drosseln (E12: 28 N bei 0,54 s, ab 0,8 s unter 14 N)
+    act_tau_s: float = 0.12       # Ersatzzeitkonstante der Pads (PT1) fuer die eigene Schaetzung des Schubfaktors
+    t_go_margin_s: float = 0.15   # die Fuehrung plant das Aufsetzen so viel vor dem geschaetzten Brennschluss
+    t_go_min_s: float = 0.3       # kleinste Restzeit, mit der die Fuehrung rechnet
+    kv: float = 3.0               # 1/s, Rueckfuehrung der Sinkrate in der Endphase
+    v_final_ms: float = 0.5       # Sollsinkrate unter h_final
+    h_final_m: float = 0.8
+    h_cut_m: float = 0.25         # darunter Pads ganz rein (Schubabbruch beim Aufsetzen, gegen den Huepfer)
+    thrust_scale_assumed: float = 0.9   # Kurve, mit der der Regler plant: der schwaechste erwartete Motor (-10 %);
+                                        # einen staerkeren drosselt er weg (die wahre Kurve: MotorParams.thrust_scale2)
 
 
 @dataclass
@@ -165,7 +225,9 @@ class FirmwareParams:
     # SERVO_*_GAIN und ist am Tisch zu pruefen; hier ist es ein Parameter.
     axis_sign_yaw: float = -1.0
     axis_sign_pitch: float = -1.0
-    quantize_servo: bool = True   # Servo-Grad auf ganze Zahlen runden wie lroundf()
+    coast_center: bool = True     # ohne Schub (T < 0,5 N) Servos auf Mitte, wie main.cpp ausserhalb von BOOST/LANDING_BURN
+    quantize_servo: bool = False  # True = auf ganze Grad runden wie die Firmware bis 22.10.2026 (PWMServo);
+                                  # seitdem 16-Bit-PWM ohne Rundung
     apply_window: bool = True     # mechanische Fenster anwenden
 
 
@@ -206,6 +268,7 @@ class SimParams:
     vehicle: VehicleParams = field(default_factory=VehicleParams)
     motor: MotorParams = field(default_factory=MotorParams)
     servo: ServoParams = field(default_factory=ServoParams)
+    throttle: ThrottleParams = field(default_factory=ThrottleParams)
     control: ControlParams = field(default_factory=ControlParams)
     firmware: FirmwareParams = field(default_factory=FirmwareParams)
     noise: NoiseParams = field(default_factory=NoiseParams)

@@ -1,0 +1,264 @@
+{
+ "source": "cad/mass_stand2b.py aus cad/modular_params.py und export/modular/masses.json, Stabmodell wie mass_model.py",
+ "date": "2026-10-22",
+ "config": "Modulbauweise Kartonaut 1, Stand 2b (Rohr A 125 + B 176 + C 195, CO₂-Ausstoß, kein Rollmotor)",
+ "axes": "z Längsachse (+z zur Spitze), Ursprung Rohrunterkante = Düsenebene; x zum Servo des Innenrahmens",
+ "pivot_from_nozzle_m": 0.0695,
+ "length_mm": 731.0,
+ "configurations": {
+  "liftoff": {
+   "label": "Start, voller Motor",
+   "mass_kg": 0.705,
+   "cg_from_nozzle_m": 0.2591,
+   "cg_lateral_m": [
+    -6e-05,
+    -0.00151
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.021103,
+    "Iyy": 0.021121,
+    "Izz": 0.00047,
+    "Ixy": -1e-06,
+    "Ixz": -8e-06,
+    "Iyz": -0.000131
+   },
+   "lever_arm_m": 0.1896
+  },
+  "burnout": {
+   "label": "Brennschluss, Treibstoff verbraucht",
+   "mass_kg": 0.677,
+   "cg_from_nozzle_m": 0.2684,
+   "cg_lateral_m": [
+    -6e-05,
+    -0.00158
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.019632,
+    "Iyy": 0.019649,
+    "Izz": 0.000469,
+    "Ixy": -1e-06,
+    "Ixz": -8e-06,
+    "Iyz": -0.000141
+   },
+   "lever_arm_m": 0.1989
+  },
+  "no_motor": {
+   "label": "Ohne Motor (Adapter bleibt)",
+   "mass_kg": 0.641,
+   "cg_from_nozzle_m": 0.2809,
+   "cg_lateral_m": [
+    -6e-05,
+    -0.00167
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.017731,
+    "Iyy": 0.017749,
+    "Izz": 0.000464,
+    "Ixy": -1e-06,
+    "Ixz": -9e-06,
+    "Iyz": -0.000155
+   },
+   "lever_arm_m": 0.2114
+  }
+ },
+ "levers": {
+  "base": {
+   "label": "Stand 2c (Druckteile Leichtbau), Ausgangslage",
+   "mass_kg": 0.705,
+   "cg_from_nozzle_m": 0.2591,
+   "cg_lateral_m": [
+    -6e-05,
+    -0.00151
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.021103,
+    "Iyy": 0.021121,
+    "Izz": 0.00047,
+    "Ixy": -1e-06,
+    "Ixz": -8e-06,
+    "Iyz": -0.000131
+   },
+   "lever_arm_m": 0.1896
+  },
+  "akku300": {
+   "label": "2S-Akku 300 statt 450 mAh (ca. 20 statt 29 g) [Annahme]",
+   "mass_kg": 0.696,
+   "cg_from_nozzle_m": 0.2599,
+   "cg_lateral_m": [
+    -6e-05,
+    -0.00141
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.021069,
+    "Iyy": 0.021086,
+    "Izz": 0.000469,
+    "Ixy": -1e-06,
+    "Ixz": -8e-06,
+    "Iyz": -0.000127
+   },
+   "lever_arm_m": 0.1904
+  },
+  "adapter": {
+   "label": "Motoradapter 29→24 als drei Ringe statt Vollrohr (7 statt 15 g) [Annahme]",
+   "mass_kg": 0.697,
+   "cg_from_nozzle_m": 0.2615,
+   "cg_lateral_m": [
+    -6e-05,
+    -0.00153
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.020746,
+    "Iyy": 0.020763,
+    "Izz": 0.000469,
+    "Ixy": -1e-06,
+    "Ixz": -8e-06,
+    "Iyz": -0.000134
+   },
+   "lever_arm_m": 0.192
+  },
+  "mikroservo": {
+   "label": "Mikroservo 4,5 g statt SG90 (9 g) für die CO₂-Auslösung [Annahme]",
+   "mass_kg": 0.7005,
+   "cg_from_nozzle_m": 0.2587,
+   "cg_lateral_m": [
+    -6e-05,
+    -0.00164
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.021076,
+    "Iyy": 0.021095,
+    "Izz": 0.000469,
+    "Ixy": -1e-06,
+    "Ixz": -8e-06,
+    "Iyz": -0.000125
+   },
+   "lever_arm_m": 0.1892
+  },
+  "kuppler50": {
+   "label": "Spitzen-Kuppler 50 statt 75 mm (25 in der Spitze, 25 in Rohr C), Rohr C 170 statt 195 mm",
+   "mass_kg": 0.6934,
+   "cg_from_nozzle_m": 0.2519,
+   "cg_lateral_m": [
+    -6e-05,
+    -0.00154
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.019049,
+    "Iyy": 0.019067,
+    "Izz": 0.000455,
+    "Ixy": -1e-06,
+    "Ixz": -8e-06,
+    "Iyz": -0.000124
+   },
+   "lever_arm_m": 0.1824
+  },
+  "schirm100": {
+   "label": "Fallschirm 100 statt 125 cm (ca. 35 statt 50 g, gepackt 80 statt 100 mm) [Annahme]",
+   "mass_kg": 0.6852,
+   "cg_from_nozzle_m": 0.2515,
+   "cg_lateral_m": [
+    -6e-05,
+    -0.00156
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.019318,
+    "Iyy": 0.019335,
+    "Izz": 0.000455,
+    "Ixy": -1e-06,
+    "Ixz": -8e-06,
+    "Iyz": -0.000123
+   },
+   "lever_arm_m": 0.182
+  },
+  "feder": {
+   "label": "Federausstoß mit Servoriegel statt CO₂ (Feder 5 g + Riegel 3 g + Mikroservo 4,5 g statt 44 g) [Konzept]",
+   "mass_kg": 0.6735,
+   "cg_from_nozzle_m": 0.2556,
+   "cg_lateral_m": [
+    -6e-05,
+    -0.00171
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.020917,
+    "Iyy": 0.020926,
+    "Izz": 0.000459,
+    "Ixy": -1e-06,
+    "Ixz": -8e-06,
+    "Iyz": -0.000121
+   },
+   "lever_arm_m": 0.1861
+  },
+  "spitze_druck": {
+   "label": "Spitze gedruckt, dünnwandig (45 statt 83 g) [Annahme]",
+   "mass_kg": 0.667,
+   "cg_from_nozzle_m": 0.241,
+   "cg_lateral_m": [
+    -6e-05,
+    -0.0016
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.016903,
+    "Iyy": 0.01692,
+    "Izz": 0.000443,
+    "Ixy": -1e-06,
+    "Ixz": -7e-06,
+    "Iyz": -0.000112
+   },
+   "lever_arm_m": 0.1715
+  },
+  "P1": {
+   "label": "ohne Konzeptänderung: Akku, Adapter, Mikroservo, kurzer Spitzen-Kuppler",
+   "mass_kg": 0.6719,
+   "cg_from_nozzle_m": 0.2544,
+   "cg_lateral_m": [
+    -6e-05,
+    -0.00158
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.018656,
+    "Iyy": 0.018675,
+    "Izz": 0.00045,
+    "Ixy": -1e-06,
+    "Ixz": -8e-06,
+    "Iyz": -0.000115
+   },
+   "lever_arm_m": 0.1849
+  },
+  "P2": {
+   "label": "P1 + Federausstoß + 100-cm-Schirm",
+   "mass_kg": 0.6311,
+   "cg_from_nozzle_m": 0.245,
+   "cg_lateral_m": [
+    -7e-05,
+    -0.00168
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.017112,
+    "Iyy": 0.017122,
+    "Izz": 0.000433,
+    "Ixy": -1e-06,
+    "Ixz": -7e-06,
+    "Iyz": -0.000105
+   },
+   "lever_arm_m": 0.1755
+  },
+  "P3": {
+   "label": "P2 + gedruckte Spitze",
+   "mass_kg": 0.5931,
+   "cg_from_nozzle_m": 0.2266,
+   "cg_lateral_m": [
+    -7e-05,
+    -0.00179
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.013641,
+    "Iyy": 0.013651,
+    "Izz": 0.000406,
+    "Ixy": -1e-06,
+    "Ixz": -6e-06,
+    "Iyz": -8.6e-05
+   },
+   "lever_arm_m": 0.1571
+  }
+ }
+}

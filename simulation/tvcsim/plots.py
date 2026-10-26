@@ -115,3 +115,35 @@ def plot_servo_fit(t, u, y, y_fit, fit: dict, path: Path) -> Path:
     for a in ax:
         a.grid(alpha=0.3)
     return _save(fig, path)
+
+
+def plot_landing(res: SimResult, path: Path) -> Path:
+    """Landebrennen: Hoehe, Sinkrate, Schub und Drossel, Kippwinkel/Kardan ueber der Zeit."""
+    e = res.extra
+    t_ign = e.get("t_ignite2")
+    fig, ax = plt.subplots(4, 1, figsize=(WIDTH_IN, 10), sharex=True, layout="constrained")
+    sub = f"Zuendung {e.get('h_ignite2', 0):.1f} m / {e.get('v_ignite2', 0):.1f} m/s" if t_ign else "ohne Zuendung"
+    if e.get("contacts"):
+        sub += "; Aufsetzen " + ", ".join(f"{v:.1f} m/s" for _, v in e["contacts"])
+    _titles(fig, ax[0], f"Landebrennen mit dem zweiten Motor, m = {res.params.vehicle.m_dry + 0.028:.2f} kg", sub)
+    ax[0].plot(res.t, res.r[:, 0], "k"); ax[0].set_ylabel("Hoehe (m)")
+    ax[1].plot(res.t, res.rd[:, 0], "k", label="vz")
+    if res.v_ref is not None and np.any(res.v_ref != 0):
+        ax[1].plot(res.t, res.v_ref, "r:", lw=1, label="Soll (Endphase)")
+    ax[1].set_ylabel("Sinkrate (m/s)"); ax[1].legend(fontsize=8)
+    ax[2].plot(res.t, res.T, "k", label="Schub wirksam (N)")
+    if res.throttle_f is not None and res.params.throttle.enabled:
+        ax2 = ax[2].twinx()
+        ax2.plot(res.t, res.throttle_u, color="tab:orange", lw=0.8, label="Drossel u")
+        ax2.plot(res.t, res.throttle_f, color="tab:blue", lw=0.8, label="Schubfaktor f")
+        ax2.set_ylim(-0.05, 1.05); ax2.legend(fontsize=8, loc="upper right")
+    ax[2].set_ylabel("Schub (N)"); ax[2].legend(fontsize=8, loc="upper left")
+    ax[3].plot(res.t, res.tilt_deg, "k", label="Kippwinkel")
+    ax[3].plot(res.t, res.th_y, color="tab:green", lw=0.8, label="Kardan y")
+    ax[3].plot(res.t, res.th_z, color="tab:purple", lw=0.8, label="Kardan z")
+    ax[3].set_ylabel("Grad"); ax[3].set_xlabel("Zeit (s)"); ax[3].legend(fontsize=8)
+    for a in ax:
+        a.grid(alpha=0.3)
+        if t_ign:
+            a.axvline(t_ign, color="0.6", lw=0.8, ls="--")
+    return _save(fig, path)

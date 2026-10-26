@@ -293,8 +293,8 @@ static void mapFrameToI16(const SDFrame& f, int16_t out[40]){
 
   out[9]  = q_s(f.roll_angle_deg, 100.0f);
   out[10] = q_s(f.roll_rate_dps,  100.0f);
-  out[11] = q_u((float)f.yaw_deg,   100.0f);
-  out[12] = q_u((float)f.pitch_deg, 100.0f);
+  out[11] = q_u(f.yaw_deg,   100.0f);
+  out[12] = q_u(f.pitch_deg, 100.0f);
   out[13] = q_u((float)f.roll_pwm,    1.0f);
   out[14] = q_s((float)f.roll_dir, 1000.0f);
 
@@ -304,11 +304,11 @@ static void mapFrameToI16(const SDFrame& f, int16_t out[40]){
   out[18] = q_s(f.power_mW,        1.0f);
   out[19] = q_s((float)f.ina_overflow, 1.0f);
 
-  out[20] = q_s(f.rsv1, 100.0f);
-  out[21] = q_s(f.rsv2, 100.0f);
-  out[22] = q_s(f.rsv3, 100.0f);
-  out[23] = q_s(f.rsv4, 100.0f);
-  out[24] = q_s(f.rsv5, 100.0f);
+  out[20] = q_s(f.state_id, 100.0f);
+  out[21] = q_s(f.tilt_x_deg, 100.0f);
+  out[22] = q_s(f.tilt_y_deg, 100.0f);
+  out[23] = q_s(f.vbat1_V, 100.0f);
+  out[24] = q_s(f.a_norm_ms2, 100.0f);
 
   for (int i=0;i<8;i++) out[25+i] = f.raw_i16[i];
 
@@ -430,8 +430,8 @@ SDExportResult SDLogger_exportBINtoCSVx(const char* name, bool scaled){
     "omega_x_dps,omega_y_dps,omega_z_dps,"
     "roll_angle_deg,roll_rate_dps,yaw_deg,pitch_deg,roll_pwm,roll_dir,"
     "bus_V,load_V,current_mA,power_mW,ina_overflow,"
-    "rsv1,rsv2,rsv3,rsv4,rsv5,"
-    "raw_i16_0,raw_i16_1,raw_i16_2,raw_i16_3,raw_i16_4,raw_i16_5,raw_i16_6,raw_i16_7,"
+    "state,tilt_x_deg,tilt_y_deg,vbat1_V,a_norm_ms2,"
+    "t_flight_ds,flags,pyro_fires,a_axial_cms2,tvc_yaw_cdeg,tvc_pitch_cdeg,reset_cause,raw_7,"
     "ch33,ch34,ch35,ch36,ch37,ch38,ch39\n";
   wf.write(hdr, strlen(hdr));
 

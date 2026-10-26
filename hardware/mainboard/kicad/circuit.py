@@ -297,7 +297,7 @@ for i in range(1, 5):
 
 # ================================================================ Sensorik (spec 6, E3, B4, C2)
 S = "sensors"
-group("IMU ICM-42688-P, SPI1")
+group("IMU LSM6DSV16X, SPI1")
 # 23.10.: LSM6DSV16X instead of the ICM-42688-P. Same LGA-14 land pattern and the same pin functions on
 # 1, 4-8, 12-14 (SDO, INT1, Vdd_IO, GND, Vdd, CS, SCL, SDA); SDx/SCx (2, 3) to GND with the aux bus off;
 # INT2 (9) is an output and OCS_Aux/SDO_Aux (10, 11) want Vdd_IO or open: all three open (AN5763 Tab. 1).

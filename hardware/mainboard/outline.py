@@ -30,15 +30,15 @@ IMU = (0.0, 60.5)                                          # under the Teensy, o
 
 # Placement zones (label, u0, u1, v0, v1, colour, items)
 ZONES = [
-    ("AKKUS / SCHALTER", -27, 0, 0, 22, "#f4d6a0", ["XT30 (2S), JST-PH (1S)", "J_SW 2-polig, JP1/JP2", "2x Verpolschutz"]),
-    ("SERVOS / MOTOR", 0, 27, 0, 22, "#f6c4c4", ["3x Servo (90°-Leiste)", "J_MOT Rollmotor"]),
+    ("AKKUS / SCHALTER", -27, 0, 0, 22, "#f4d6a0", ["XT30 (2S), JST-PH (1S)", "J_SW, J_CHG1/2, JP1/JP2", "Verpolschutz, Polyfuse,", "Lastschalter, Lader"]),
+    ("SERVOS / MOTOR", 0, 27, 0, 22, "#f6c4c4", ["2x TVC-Servo (90°-Leiste)", "Shunt, INA239"]),
     ("WANDLER", -27, -10, 22, 92, "#f4d6a0",
-     ["INA219", "+ 20 mOhm", "", "Buck", "5V_SERVO", "", "Buck-Boost", "5V_SYS (1S)", "", "DRV8833", "", "Elkos"]),
+     ["Buck-Boost", "5V_SYS (1S)", "", "Elkos", "", "LoRa E22", "(links)", "", "Teensy", "mittig,", "IMU auf", "der Achse"]),
     ("SENSOR /", 10, 27, 22, 92, "#c9e4c5",
-     ["LOGIK", "", "BMP390", "(oben, weg", "von Spulen)", "", "AP2112 3V3", "2x 74AHCT", "Teiler", "Summer-FET", "", "J_EXP 2x7"]),
+     ["LOGIK", "", "BMP390", "DRV8833", "Servo 3/4", "J_MOT", "", "74HC138", "74HC4051", "2x AP2112", "", "J_STACK 2x10"]),
     ("FUNK", -27, -9, 92, 120, "#c9e4c5", ["E22-400T22S", "(SMD, IPEX)", "Pigtail zur", "Spitze, J_GPS"]),
-    ("SIGNAL", -8, 8, 103, 120, "#cfd8f0", ["2x LED", "Qwiic, CAM"]),
-    ("PYRO", 9, 27, 92, 120, "#cfd8f0", ["2x Klemme", "J_ARM", "Summer"]),
+    ("SIGNAL", -8, 8, 103, 120, "#cfd8f0", ["2x LED, LIS3MDL", "Qwiic, CAM"]),
+    ("PYRO", 9, 27, 92, 120, "#cfd8f0", ["4x J_PYRO", "(3/4 DNP)", "J_ARM, Summer", "SHT40"]),
 ]
 KEEPOUTS = [("SD", -8, 8, 24, 30), ("USB-Stecker", -8, 8, 91, 103)]
 

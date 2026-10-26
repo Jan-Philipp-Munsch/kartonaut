@@ -1,12 +1,15 @@
 ** Drc report for mainboard.kicad_pcb **
-** Created on 2026-10-24T11:22:03 **
+** Created on 2026-10-26T12:38:46 **
 ** Report includes: Errors, Warnings, Exclusions **
 
-** Found 17 DRC violations **
+** Found 18 DRC violations **
 [silk_edge_clearance]: Silkscreen clipped by board edge
     Rule: Einschränkungen aus Platinenkonfiguration zum Bestückungsdruck; warning
     @(100.0000 mm, 52.0000 mm): Segment on Edge.Cuts
     @(114.5000 mm, 128.9000 mm): PCB text '1:GND 2:GNDP 3:3V3 4:5V 5,6:VSRV' on B.Silkscreen
+[lib_footprint_mismatch]: Footprint "HTSSOP-16-1EP_4.4x5mm_P0.65mm_EP3.4x5mm_Mask2.46x2.31mm_ThermalVias" stimmt nicht mit Kopie in Bibliothek "Package_SO" überein.
+    Local override; warning
+    @(143.5000 mm, 115.5000 mm): Footprint U7
 [silk_overlap]: Silkscreen clearance
     Rule: Einschränkungen aus Platinenkonfiguration zum Bestückungsdruck; warning
     @(127.0000 mm, 107.3000 mm): Segment on F.Silkscreen

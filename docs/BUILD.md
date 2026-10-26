@@ -21,6 +21,13 @@ Fotos liegen unter `docs/img/build/` und heißen `JJJJ-MM-TT_<thema>.jpg`.
 | Fallschirm 125 cm (Klima 8594) | 1 | | Klima 09.06.2025 | `[?]` |
 | Kevlarschnur geflochten 2,0 mm | 1 m | Schockschnur | Klima 23.10.2025 | `[?]` |
 | Elastische Schnur 1,5 mm / 1,8 m | 1 | | Klima 23.10.2025 | `[?]` |
+| CO₂-Kapseln 8 g | 5 | für den Fallschirmausstoß (Entscheidung 22.10.2026, statt Schwarzpulver) | `[?]` | nein |
+
+**Zuschnitt (Jan, 22.10.2026, Modulbauweise):** Rohr A 125 mm mit dem Kardan (Kardanschrauben bei 44 mm, zwei
+Servofenster ca. 20 × 20 ab 60 mm), Rohr B 176 mm (vier alte Löcher bei 44 mm vom Ring-Stack, werden Druckausgleich),
+ein Kuppler in zwei Hälften à 75 mm (eine als Kuppler J1 in Rohr B, eine als Spitzen-Kuppler), Reststück für Rohr C
+(195 mm ablängen). Die Klima-Spitze hat 25 mm über der Unterkante eine Holzplatte mit Haken; der Schirm (gepackt
+100 × Ø 70) passt nicht hinein und liegt in Rohr C.
 
 ### 1.2 Antrieb (gekauft)
 
@@ -46,21 +53,25 @@ Maximum 33 N) ist ein anderer Motor und kommt nur zum Vergleich in die Python-Si
 | microSD-Karte | 1 | Größe `[?]` | `SDLogger.cpp` |
 | 2× WS2812B, aktiver Summer | | Pins 5, 6, 13 | `Indicators.cpp` |
 | Servo SG90 | 3 `[?]` | 2× TVC, 1× Fallschirm; Pulsbreite 760–2300 µs gemessen | `Config.h` |
-| **Servo FrSky Xact W5652H** | `[?]` Stück | 10 g, 19 × 8 × 23 mm, 3,7–8,4 V, 2,4 kg·cm / 0,10 s bei 4,2 V, 4,8 kg·cm / 0,05 s bei 8,4 V, Hall-Sensor, 15-Zahn-Abtrieb 4 mm | bestellt (Jan, 21.10.2026), Lieferung `[?]` |
-| Rollmotor + H-Brücke | 1 | Motor-Typ `[?]`, Brücke `[?]` (Code: zwei PWM-Pins 2/3, 20 kHz) | `Control.cpp` |
+| **Servo FrSky Xact W5652H** | 2, im Kardan verbaut | 10 g, 19 × 8 × 23 mm, 3,7–8,4 V, 2,4 kg·cm / 0,10 s bei 4,2 V, 4,8 kg·cm / 0,05 s bei 8,4 V, Hall-Sensor, 15-Zahn-Abtrieb 4 mm | geliefert, im Schubstangen-Kardan verbaut (Jan, 22.10.2026) |
+| Rollmotor + H-Brücke | 1 | Motor-Typ `[?]`, Brücke `[?]` (Code: zwei PWM-Pins 2/3, 20 kHz). **Entfällt für *Kartonaut 1*** (22.10.2026) | `Control.cpp` |
 | Schwungrad | `[?]` | `flywheelV2.blend` | CAD |
 | MOSFET-Modul für Pyro-Test | 1 `[?]` | Pin 23 | `examples/pyro_mosfet_test` |
 | Akku 2S LiPo 7,4 V (Servos, Rollmotor, Pyro) | `[?]` | Kapazität, Stecker `[?]`; CAD rechnet mit 56 × 25,5 × 8 mm | `flight_computer.blend` |
-| Akku 1S LiPo 3,7 V (Elektronik, Entscheidung 21.10.2026) | 0 | 450–600 mAh, JST-PH; noch zu kaufen | `docs/Plan_2026-10-21.md` §2.5 |
+| Akku 1S LiPo 3,7 V (Elektronik) | 1 | 600 mAh, JST-PH; Maße gegen das Fach 50 × 30 × 7 prüfen, Schutzschaltung `[?]` | Bauanleitung §3.5 |
+| Akku 2S LemonRC 450 mAh 35C, XT30 (55 × 30 × 10, 29 g) | 0 | zu bestellen (2 Stück, Reichelt `LRC 2S 450`); der vorhandene 2S 1200 mAh ist zu groß und zu schwer | Bauanleitung §3.1 |
+| Servo SG90 für die CO₂-Auslösung | 1 (aus Bestand) | an `J_SERVO3` | Bauanleitung §3.5 |
 | GPS-Modul | `[?]` | früherer TinyGPSPlus-Testsketch | Git-Historie |
 
 ### 1.4 Gedruckte Teile
 
 | Teil | CAD | Gedruckt? | Material / Parameter |
 |---|---|---|---|
-| TVC-Kardan (aktuelle Generation `dual_tvc`, innerer/äußerer Rahmen) | `dual_tvc.blend`, `inner/outer_gimbal_dual_TVC.blend` | `[?]` | `[?]` |
-| Flugcomputer-Ring-Stack (Ø 69 mm, 8× M2-Stangen) | `flight_computer.blend` | `[?]` | `[?]` |
-| Spitze (federgelagert, M2,5-Gewindestange) | `rocket nose.blend` | `[?]` | `[?]` |
+| TVC-Kardan: Schubstangen-Kardan, Außen-/Innenrahmen, Motorrohr | `inner/outer_gimbal_dual_TVC.blend` (12.06.2025), STL in `cad/export/asbuilt/` | **ja, gebaut und in Rohr A eingepasst** (Jan, 22.10.2026): 2 × W5652H flach über dem Außenrahmen, Hebel 15 mm, Stangen 2 mm | `[?]` |
+| Flugcomputer-Ring-Stack (Ø 69 mm, 8× M2-Stangen) | `flight_computer.blend` | verworfen (22.10.2026: Schlitten mit Spant) | – |
+| Schlitten mit Spant, untere Scheibe, Schalterbrett, Schraubring J1 (Stand 2b) | `cad/modular.py` → `cad/export/modular/*.stl` | nein | PETG, 3 Wände, 25 % Gyroid; nach dem Druck wiegen (Modell 74 / 8 / 2 / 14 g) |
+| CO₂-Modul (Anstecher, Kapselhalter) | eigene Konstruktion (Bauanleitung O6) | nein | PETG (PLA wird am kalten CO₂ spröde) |
+| Spitze (federgelagert, M2,5-Gewindestange) | `rocket nose.blend` | verworfen (Klima-Spitze 8539) | – |
 | Landebeine und Beinanbindung | `LegConnectors.blend`, `model_rocket.blend` | `[?]` | `[?]` |
 | Piston-Ejection-Bulkheads (Joe Barnard, 74 mm) | `Space Mission/files/*.stl` | `[?]` | `[?]` |
 | Akkuhalter | `battery7.stl` | `[?]` | `[?]` |
@@ -86,6 +97,13 @@ der Propellermotor sitzt an Stelle des Raketenmotors im Kardan und liefert den S
 sich die Lageregelung mit TVC am Boden testen, ohne Treibsatz. Siehe `PROJECT.md` §4, Paket 15.
 
 ## 2. Mechanik
+
+**Stand 22.10.2026, Modulbauweise (`docs/Bauanleitung_Kartonaut1.md`):** vier Module, Rohr A 125 (Kardan, gebaut),
+Rohr B 176 (Avionik: Kuppler J1 mit Schraubring, Schlitten mit Spant, Platine, Akkus, GPS, LoRa-Wendel, Schalterbrett),
+Rohr C 195 (CO₂-Modul, Schirm, Schnur), Klima-Spitze über dem zweiten halben Kuppler; Gesamtlänge 731 mm; Trennstellen
+T1–T3 mit je vier M3 in Muttern-Taschen bei 0°/90°/180°/270° (Rohr C 45° versetzt). Massenbudget 705 g (Druckteile Stand 2c), Schwerpunkt
+259 mm, Hebelarm Kardan–Schwerpunkt 190 mm (`cad/mass_stand2b.md`), alles ungewogen. Die folgenden Absätze beschreiben
+den Stand vom 21.10. (Ring-Stack im Kuppler, Pyro-Kolben), der damit überholt ist.
 
 - **Rohr:** Klima 75 mm, innen 72,6 mm. **Der Flugcomputer sitzt im Kuppler** (innen 70,2 mm,
   150 mm lang), daher der Ring-Stack mit Ø 69 mm und 0,6 mm Luft je Seite. Der Platinenschlitten
@@ -158,6 +176,7 @@ Ein Eintrag je Arbeitssitzung am Gerät. Rekonstruiert, soweit möglich; ab jetz
 | 2026-10-15 | Mainboard rev A spezifiziert (am Rechner) | – | |
 | 2026-10-20 | Firmware-Aufräumrunde, Veröffentlichung (am Rechner, nicht geflasht) | – | flashen und am Gerät prüfen |
 | 2026-10-21 | Planungsrunde, diese Datei angelegt; Servos FrSky W5652H bestellt. Rev B spezifiziert, Design Guide und Bestellplan, Simulation nach Python, Blender-Inventur und parametrisches CAD mit Massenmodell (alles am Rechner) | `docs/img/cad/` (Renders) | Inventar am Gerät prüfen, Fotos; Teile wiegen (Spitze, Kuppler, Rohr, Motor, Kardan-Drucke); Rohr-Innen- und Kuppler-Außenmaß messen |
+| 2026-10-22 | **Kardan gebaut:** Schubstangen-Kardan mit 2 × W5652H in Rohr A 125 mm, Kardanschrauben 4 × M3 bei 44 mm, Servofenster ca. 20 × 20 ab 60 mm, Hebel 15 mm, Stangen Ø 2 mm; Rohr B 176 mm mit vier Löchern bei 44 mm; Kuppler halbiert (75 mm), gesteckt. Entscheidungen: kein Rollmotor, CO₂-Ausstoß, Schraubschalter, Schirm in Rohr C. Am Rechner: Bauanleitung Stand 2b, Bodenstation, Startrampe, Firmware rev B, Massenbudget 723 g | Fotos vom Kardan (Jan, 22.10.) `[?]` | Druckteile drucken und wiegen, Bestellliste §3.1 der Bauanleitung, Servofenster-Winkel am Rohr nachsehen (O1), Servo-Umrechnung messen (Befund 13), CO₂-Modul konstruieren |
 
 ## 7. Regeln
 

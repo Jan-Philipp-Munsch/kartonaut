@@ -89,8 +89,8 @@ def esc(s):
 # ----------------------------------------------------------------------------------------------
 def system_blocks():
     g = SVG(940, 560)
-    g.text(20, 26, "Mainboard rev B: Blockschaltbild", 15, bold=True)
-    g.text(20, 44, "Alles auf einer Platine 54 × 120 mm; extern nur Akkus, Schalter, Servos, Motor, E-Matches, GPS und Antenne.", 10, fill="#555")
+    g.text(20, 26, "Mainboard rev B1: Blockschaltbild", 15, bold=True)
+    g.text(20, 44, "Alles auf einer Platine 54 × 120 mm; extern nur Akkus, Schalterbrett, Servos, Motor, E-Matches, GPS und Antenne.", 10, fill="#555")
 
     # Teensy in the centre
     tx, ty, tw, th = 360, 190, 220, 180
@@ -98,39 +98,38 @@ def system_blocks():
                                           "100-Hz-Flugschleife", "Watchdog, Zustandsspeicher"], fill=C_MCU, title_size=14)
 
     # left column: power
-    g.box(30, 80, 150, 70, "1S LiPo", ["3,0–4,2 V, 450–600 mAh", "JST-PH"], fill=C_PWR1)
-    g.box(30, 170, 150, 70, "2S LiPo", ["6,0–8,4 V, 450–850 mAh", "XT30"], fill=C_PWR2)
-    g.box(30, 270, 150, 60, "Hauptschalter", ["zweipolig, J_SW", "JP1/JP2 am Tisch"], fill="#eee")
-    g.box(30, 350, 150, 60, "Arming", ["Schalter J_ARM", "ARM_SENSE → Pin 24"], fill=C_PWR2)
+    g.box(30, 80, 150, 70, "1S LiPo", ["3,0–4,2 V, 450–600 mAh", "JST-PH; Lader MCP73831"], fill=C_PWR1)
+    g.box(30, 170, 150, 70, "2S LiPo", ["6,0–8,4 V, 450–850 mAh", "XT30; Ladebuchse J_CHG2"], fill=C_PWR2)
+    g.box(30, 270, 150, 60, "Hauptschalter", ["schaltet FET-Gates, J_SW", "JP1/JP2 am Tisch"], fill="#eee")
+    g.box(30, 350, 150, 60, "Arming", ["Schlüsselschalter J_ARM", "ARM_SENSE → Mux"], fill=C_PWR2)
 
     g.box(210, 80, 120, 70, "TPS63070", ["Buck-Boost 5 V / 2 A", "5V_SYS"], fill=C_PWR1)
-    g.box(210, 170, 120, 70, "INA219 + 20 mΩ", ["Strom, Spannung 2S", "I²C 0x40"], fill=C_PWR2)
-    g.box(210, 260, 120, 60, "TPS563201", ["Buck 5 V / 3 A", "5V_SERVO"], fill=C_PWR2)
-    g.box(210, 340, 120, 60, "AP2112K", ["LDO 3,3 V / 0,6 A", "3V3_RF"], fill=C_PWR1)
+    g.box(210, 170, 120, 70, "INA239 + 20 mΩ", ["Strom, Spannung 2S", "SPI1, CS Y3"], fill=C_PWR2)
+    g.box(210, 260, 120, 60, "74HC138 / 4051", ["CS-Decoder, Analogmux", "SEL0..2, CS_EN"], fill="#eee")
+    g.box(210, 340, 120, 60, "2× AP2112K", ["LDO 3,3 V / 0,6 A", "3V3_RF, 3V3_EXP"], fill=C_PWR1)
 
     # power arrows
     g.line([(180, 115), (210, 115)], arrow=True)
     g.line([(180, 205), (210, 205)], arrow=True)
-    g.line([(270, 150), (270, 160)], arrow=False, grey=True, stroke=C_GREY)
     g.line([(330, 115), (360, 115), (360, 190)], arrow=True)          # 5V_SYS -> VIN
-    g.label(345, 108, "5V_SYS → VIN", anchor="start")
-    g.line([(270, 240), (270, 260)], arrow=True)
-    g.line([(330, 290), (348, 290), (348, 470), (380, 470)], arrow=True)   # 5V_SERVO -> actuators
-    g.line([(330, 205), (348, 205), (348, 290)], arrow=False)             # VSERVO
+    g.label(345, 108, "5V_SYS → D1 → VIN", anchor="start")
+    g.line([(330, 205), (348, 205), (348, 470), (380, 470)], arrow=True)   # VSERVO -> actuators
     g.label(300, 332, "VSERVO (Akku direkt)", anchor="start", size=8)
     g.line([(270, 150), (195, 150), (195, 370), (210, 370)], arrow=True, grey=True, stroke=C_GREY)
+    g.line([(330, 290), (360, 290)], arrow=True, grey=True, stroke=C_GREY)
 
     # right column: sensors and radio
-    g.box(640, 80, 150, 70, "ICM-42688-P", ["IMU auf der Rollachse", "SPI1 7 MHz, INT Pin 4"], fill=C_SENS)
-    g.box(640, 170, 150, 60, "BMP390", ["Barometer, I²C 0x77", "unter Schaum"], fill=C_SENS)
-    g.box(640, 250, 150, 60, "Qwiic / J_EXP", ["I²C-Erweiterung", "11 freie Pins"], fill=C_SENS)
+    g.box(640, 80, 150, 70, "LSM6DSV16X", ["IMU auf der Rollachse", "SPI1, CS Y0, INT Pin 4"], fill=C_SENS)
+    g.box(640, 170, 150, 60, "BMP390 (+1 DNP)", ["Barometer, SPI1, CS Y1/Y2", "unter Schaum, 3V3_SENS"], fill=C_SENS)
+    g.box(640, 250, 150, 60, "I²C: LIS3MDL, SHT40", ["ADXL375 (DNP), J_QWIIC", "J_STACK 2×10 (SPI0, I²C, UART)"], fill=C_SENS)
     g.line([(580, 115), (640, 115)], arrow=True)
     g.label(610, 108, "SPI1", size=8)
     g.line([(580, 200), (640, 200)], arrow=True)
-    g.label(610, 193, "I²C0", size=8)
+    g.label(610, 193, "SPI1", size=8)
     g.line([(610, 200), (610, 280), (640, 280)], arrow=True)
+    g.label(626, 262, "I²C0", size=8, anchor="end")
 
-    g.box(640, 395, 150, 70, "LoRa E22-400T22S", ["SX1268, 433 MHz, 22 dBm", "Serial8, M0/M1/AUX, 3V3_RF", "IPEX → Antenne in der Spitze"], fill=C_RF)
+    g.box(640, 395, 150, 70, "LoRa E22-400T22S", ["SX1268, 433 MHz, 22 dBm", "Serial8, M0/M1/AUX/NRST, 3V3_RF", "IPEX → Antenne in der Spitze"], fill=C_RF)
     g.box(820, 395, 100, 70, "GPS-Modul", ["u-blox M9/M10, 3V3_RF", "in der Spitze", "Serial1, J_GPS"], fill=C_RF)
     g.line([(560, 370), (560, 430), (640, 430)], arrow=True)
     g.label(600, 423, "UART8", size=8)
@@ -138,24 +137,24 @@ def system_blocks():
     g.label(715, 494, "UART1 über J_GPS", size=8)
 
     # bottom: actuators and pyro
-    g.box(380, 440, 110, 60, "2× W5652H", ["TVC-Servos", "an VSERVO (8,4 V)"], fill=C_PWR2)
-    g.box(500, 440, 110, 60, "DRV8833", ["Rollmotor", "an 5V_SERVO"], fill=C_PWR2)
+    g.box(380, 440, 110, 60, "4× Servo", ["TVC Yaw/Pitch, Fallschirm,", "Beine; an VSERVO (8,4 V)"], fill=C_PWR2)
+    g.box(500, 440, 110, 60, "DRV8833", ["Rollmotor, Brücken parallel", "an VSERVO, PWM begrenzt"], fill=C_PWR2)
     g.line([(420, 370), (420, 440)], arrow=True)
-    g.label(432, 410, "PWM 28/29", size=8, anchor="start")
+    g.label(432, 410, "PWM 28/29/9/10", size=8, anchor="start")
     g.line([(540, 370), (540, 440)], arrow=True)
-    g.label(548, 410, "PWM 2/3", size=8, anchor="start")
+    g.label(548, 410, "PWM 2/3, nSLEEP 40", size=8, anchor="start")
 
-    g.box(640, 320, 150, 60, "2× Pyro-Kanal", ["AO3400A low-side, SMBJ12CA", "Durchgang → ADC 20/21"], fill=C_PWR2)
+    g.box(640, 320, 150, 60, "4× Pyro-Kanal (3/4 DNP)", ["AO3400A low-side, SMAJ12CA", "Durchgang → Mux-Kanal 0..3"], fill=C_PWR2)
     g.line([(580, 340), (640, 340)], arrow=True)
-    g.label(610, 333, "22 / 23", size=8)
+    g.label(610, 333, "23 / 22 / 41 / 14", size=8)
     g.line([(180, 380), (195, 380), (195, 520), (715, 520), (715, 380)], arrow=True, stroke="#b03a2e")
     g.label(455, 514, "VBAT_ARMED nur mit Arming-Schalter", size=8, fill="#b03a2e")
 
     # indicators
-    g.box(820, 80, 100, 70, "Signale", ["2× WS2812B", "Summer", "(Program-Taster", "am Teensy)"], fill=C_SIG)
+    g.box(820, 80, 100, 70, "Signale", ["2× WS2812B (Kette)", "Summer Pin 37", "(Program-Taster", "am Teensy)"], fill=C_SIG)
     g.line([(470, 190), (470, 60), (870, 60), (870, 80)], arrow=True, grey=True, stroke=C_GREY)
-    g.label(680, 54, "Pins 5, 6, 13", size=8, fill=C_GREY)
-    g.box(820, 250, 100, 60, "J_CAM, J_LED", ["Kamera-Auslöser", "externe LEDs"], fill=C_SIG)
+    g.label(680, 54, "Pins 5, 37", size=8, fill=C_GREY)
+    g.box(820, 250, 100, 60, "J_CAM, J_LED", ["Kamera-Auslöser Pin 7", "externe LED-Kette"], fill=C_SIG)
 
     # legend
     lx, ly = 30, 440
@@ -170,82 +169,74 @@ def system_blocks():
 # ----------------------------------------------------------------------------------------------
 def power_tree():
     g = SVG(1160, 600)
-    g.text(20, 26, "Stromversorgung: zwei Akkus, vier Schienen", 15, bold=True)
-    g.text(20, 44, "Der 1S-Pfad sieht keine Servo- und Pyro-Spitzen. Beide Massen treffen sich an einem Sternpunkt am 2S-Minus neben dem Shunt.", 10, fill="#555")
+    g.text(20, 26, "Stromversorgung rev B1: zwei Akkus, Lastschalter, fünf Schienen", 15, bold=True)
+    g.text(20, 44, "Der 1S-Pfad sieht keine Servo- und Pyro-Spitzen. Beide Massen treffen sich an einem Sternpunkt (NT1) am 2S-Minus. Laden in der Rakete vor den Lastschaltern.", 10, fill="#555")
 
     # --- 1S path (top)
     y1 = 90
     g.rect(20, y1 - 25, 1120, 190, fill=C_PWR1, stroke="none", opacity=0.35, rx=8)
     g.text(30, y1 - 8, "1S-Pfad: Elektronik", 12, bold=True)
-    chain1 = [("1S LiPo", ["3,0–4,2 V", "JST-PH"]), ("Q2 AO3401A", ["Verpolschutz"]), ("SW1a", ["Hauptschalter", "oder JP1"]),
-              ("TPS63070", ["Buck-Boost", "2–16 V → 5 V / 2 A", "1,5 µH"]), ("5V_SYS", ["1000 µF Polymer", "Testpunkt"])]
+    chain1 = [("1S LiPo", ["3,0–4,2 V", "JST-PH"]), ("Q2 AO3401A", ["Verpolschutz"]), ("F2 Polyfuse", ["2 A", "+ Lader MCP73831"]),
+              ("Q7 AO3401A", ["Lastschalter", "Gate: J_SW / JP1"]),
+              ("TPS63070", ["Buck-Boost", "2–16 V → 5 V / 2 A", "1,5 µH, EN ab 3,1 V"]), ("5V_SYS", ["3× 22 µF", "Testpunkt TP3"])]
     x = 30
     for i, (t, ls) in enumerate(chain1):
-        w = 120 if i == 3 else 100
+        w = 110 if i == 4 else 92
         g.box(x, y1, w, 60, t, ls, fill="white" if i else C_PWR1)
         if i < len(chain1) - 1:
-            g.line([(x + w, y1 + 30), (x + w + 18, y1 + 30)], arrow=True)
-        x += w + 18
-    xr = x - 18  # right end of the 5V_SYS box
-    loads1 = [("Teensy VIN", "über D1 SS14; USB darf stecken"), ("2× WS2812B, Summer", "74AHCT1G125, AO3400A"),
-              ("AP2112K-3.3 → 3V3_RF", "100 µF: LoRa E22, GPS")]
+            g.line([(x + w, y1 + 30), (x + w + 14, y1 + 30)], arrow=True)
+        x += w + 14
+    xr = x - 14  # right end of the 5V_SYS box
+    loads1 = [("Teensy VIN", "über D1 SS14, 2× 470 µF Hold-up; USB darf stecken"), ("WS2812B-Kette, Summer, J_CAM, J_LED", "SN74LV1T34, AO3400A"),
+              ("AP2112K-3.3 → 3V3_RF / 3V3_EXP", "100 µF: LoRa E22, GPS / J_STACK")]
     for i, (t, s) in enumerate(loads1):
         yy = y1 + 5 + i * 50 - 10
         g.line([(xr, y1 + 30), (xr + 20, y1 + 30), (xr + 20, yy + 15), (xr + 40, yy + 15)], arrow=True)
-        g.box(xr + 40, yy, 230, 32, t, [s], fill="white", title_size=11, size=9)
-    g.text(30, y1 + 85, "Teensy 3V3 (≤ 250 mA) → ICM-42688-P, BMP390, INA219, I²C-Pull-ups", 9, fill="#444")
-    g.text(30, y1 + 100, "Teiler 100 k / 33 k von VSYS_IN → Pin 41 (VBAT1_SENSE)", 9, fill="#444")
+        g.box(xr + 40, yy, 300, 32, t, [s], fill="white", title_size=11, size=9)
+    g.text(30, y1 + 85, "Teensy 3V3 (≤ 250 mA) → INA239, 74HC138, 74HC4051, LIS3MDL, SHT40, I²C-Pull-ups; Ferrit + 10 µF → 3V3_SENS: LSM6DSV16X, BMP390", 9, fill="#444")
+    g.text(30, y1 + 100, "Teiler 100 k / 33 k von VBAT1_F → Mux-Kanal 4 (VBAT1_SENSE), auch bei ausgeschalteter Rakete", 9, fill="#444")
     g.text(30, y1 + 125, "Dauer 0,4 A an 5 V (0,6 A aus dem Akku), Spitze 0,8 A beim LoRa-Sendepuls", 9, fill="#444", italic=True)
 
     # --- 2S path (bottom)
     y2 = 310
     g.rect(20, y2 - 25, 1120, 290, fill=C_PWR2, stroke="none", opacity=0.35, rx=8)
     g.text(30, y2 - 8, "2S-Pfad: Servos, Rollmotor, Pyro", 12, bold=True)
-    chain2 = [("2S LiPo", ["6,0–8,4 V", "XT30"]), ("Q1 AO3401A", ["Verpolschutz"]), ("SW1b", ["Hauptschalter", "oder JP2"]),
-              ("VBAT_PROT", ["Teiler → Pin 40"])]
+    chain2 = [("2S LiPo", ["6,0–8,4 V", "XT30; J_CHG2"]), ("Q1 AO3401A", ["Verpolschutz"]), ("F1 Polyfuse", ["3 A hold / 6 A"]),
+              ("Q6 AO3401A", ["Lastschalter", "Gate: J_SW / JP2"]), ("VBAT_PROT", ["Teiler → Mux 5", "Testpunkt TP1"])]
     x = 30
     for i, (t, ls) in enumerate(chain2):
-        w = 100
+        w = 92
         g.box(x, y2, w, 60, t, ls, fill="white" if i else C_PWR2)
         if i < len(chain2) - 1:
-            g.line([(x + w, y2 + 30), (x + w + 18, y2 + 30)], arrow=True)
-        x += w + 18
-    xp = x - 18
+            g.line([(x + w, y2 + 30), (x + w + 14, y2 + 30)], arrow=True)
+        x += w + 14
+    xp = x - 14
     # arming branch (up)
     g.line([(xp, y2 + 30), (xp + 20, y2 + 30), (xp + 20, y2 - 5), (xp + 40, y2 - 5)], arrow=True, stroke="#b03a2e")
-    g.box(xp + 40, y2 - 20, 100, 32, "J_ARM", ["Arming-Schalter"], fill="white", title_size=11, size=9, stroke="#b03a2e")
+    g.box(xp + 40, y2 - 20, 100, 32, "J_ARM", ["Schlüsselschalter"], fill="white", title_size=11, size=9, stroke="#b03a2e")
     g.line([(xp + 140, y2 - 4), (xp + 160, y2 - 4)], arrow=True, stroke="#b03a2e")
-    g.box(xp + 160, y2 - 20, 150, 32, "VBAT_ARMED", ["Pyro 1 / 2 (+), SMBJ12A"], fill="white", title_size=11, size=9, stroke="#b03a2e")
-    g.text(xp + 320, y2 - 2, "Teiler → Pin 24 (ARM_SENSE); Zündstrom läuft nicht durch den Shunt", 9, fill="#b03a2e")
+    g.box(xp + 160, y2 - 20, 170, 32, "VBAT_ARMED", ["Pyro 1–4 (+), SMAJ12CA; 3/4 DNP"], fill="white", title_size=11, size=9, stroke="#b03a2e")
+    g.text(xp + 340, y2 - 2, "Teiler → Mux-Kanal 6 (ARM_SENSE); Zündstrom läuft nicht durch den Shunt", 9, fill="#b03a2e")
     # shunt branch (down)
     g.line([(xp + 20, y2 + 30), (xp + 20, y2 + 80), (xp + 40, y2 + 80)], arrow=True)
-    g.box(xp + 40, y2 + 60, 110, 40, "R_SHUNT 20 mΩ", ["2512, Kelvin, INA219"], fill="white", title_size=11, size=9)
-    g.line([(xp + 150, y2 + 80), (xp + 170, y2 + 80)], arrow=True)
-    g.box(xp + 170, y2 + 60, 90, 40, "VBAT_MEAS", [], fill="white", title_size=11)
-    xm = xp + 260
-    g.line([(xm, y2 + 80), (xm + 20, y2 + 80), (xm + 20, y2 + 60), (xm + 40, y2 + 60)], arrow=True)
-    g.box(xm + 40, y2 + 40, 110, 40, "F1 Polyfuse 3 A", ["→ VSERVO"], fill="white", title_size=11, size=9)
-    g.line([(xm + 150, y2 + 60), (xm + 170, y2 + 60)], arrow=True)
-    g.box(xm + 170, y2 + 40, 200, 40, "VSERVO = Akku direkt", ["1000 µF Low-ESR: 2× W5652H (TVC)"], fill="white", title_size=11, size=9)
-    g.line([(xm + 20, y2 + 80), (xm + 20, y2 + 130), (xm + 40, y2 + 130)], arrow=True)
-    g.box(xm + 40, y2 + 110, 110, 40, "TPS563201", ["Buck 5 V / 3 A, 2,2 µH"], fill="white", title_size=11, size=9)
-    g.line([(xm + 150, y2 + 130), (xm + 170, y2 + 130)], arrow=True)
-    g.box(xm + 170, y2 + 110, 200, 40, "5V_SERVO", ["470 µF: J_SERVO3 (Reserve), DRV8833"], fill="white", title_size=11, size=9)
+    g.box(xp + 40, y2 + 60, 120, 40, "R_SH1 20 mΩ", ["2512, Kelvin, INA239 (SPI1)"], fill="white", title_size=11, size=9)
+    g.line([(xp + 160, y2 + 80), (xp + 180, y2 + 80)], arrow=True)
+    g.box(xp + 180, y2 + 60, 330, 40, "VSERVO = Akku direkt, 2× 330 µF Polymer", ["J_SERVO1–4 (TVC, Fallschirm, Beine), DRV8833 (PWM begrenzt), J_STACK"], fill="white", title_size=11, size=9)
     # budget table
     g.text(30, y2 + 130, "Strombudget 2S", 10, bold=True)
-    rows = [("VSERVO", "2× W5652H, Blockierstrom je ~1 A", "0,2 A", "2 A"),
-            ("5V_SERVO", "Fallschirm-Servo 0,65 A, Rollmotor ~1 A", "0,3 A", "1,7 A"),
-            ("Pyro", "E-Match 3–5 A für 20 ms", "–", "5 A")]
+    rows = [("VSERVO", "2× W5652H (TVC), Blockierstrom je ~1 A", "0,2 A", "2 A"),
+            ("VSERVO", "Fallschirm-/Beine-Servo, Rollmotor ~1 A (PWM begrenzt)", "0,3 A", "2 A"),
+            ("Pyro", "E-Match 3–5 A für 20 ms, Puls 50–100 ms", "–", "5 A")]
     g.text(30, y2 + 148, "Schiene", 9, bold=True); g.text(100, y2 + 148, "Verbraucher", 9, bold=True)
-    g.text(330, y2 + 148, "Dauer", 9, bold=True); g.text(380, y2 + 148, "Spitze", 9, bold=True)
+    g.text(380, y2 + 148, "Dauer", 9, bold=True); g.text(430, y2 + 148, "Spitze", 9, bold=True)
     for i, r in enumerate(rows):
         yy = y2 + 164 + i * 15
-        g.text(30, yy, r[0], 9); g.text(100, yy, r[1], 9); g.text(330, yy, r[2], 9); g.text(380, yy, r[3], 9)
-    g.text(30, y2 + 235, "Firmware: beide Akkuspannungen per ADC, 2S-Strom per INA219 (bis 16 A, 2 mA Auflösung).", 9, fill="#444")
+        g.text(30, yy, r[0], 9); g.text(100, yy, r[1], 9); g.text(380, yy, r[2], 9); g.text(430, yy, r[3], 9)
+    g.text(30, y2 + 235, "Firmware: beide Akkuspannungen und ARM über den Analogmux, 2S-Strom per INA239 (±8 A, 0,25 mA Auflösung).", 9, fill="#444")
     g.text(30, y2 + 250, "Warnton bei 1S < 3,5 V oder 2S < 6,6 V; keine Startfreigabe ohne beide Akkus.", 9, fill="#444")
     # star point
     g.circle(xp + 20, y2 + 80, 4, fill="black")
-    g.text(xp + 12, y2 + 98, "Sternpunkt GND", 8, fill="#444", anchor="end")
+    g.text(xp + 12, y2 + 98, "Sternpunkt NT1", 8, fill="#444", anchor="end")
     g.save("power_tree.svg")
 
 
@@ -253,7 +244,7 @@ def power_tree():
 def pyro_channel():
     g = SVG(760, 420)
     g.text(20, 26, "Ein Pyro-Kanal: vier Hürden vor der Zündung", 15, bold=True)
-    g.text(20, 44, "Arming-Schalter (Hardware), Flugzustand und Puls ≤ 1 s (Firmware), Pull-down am Gate (Boot), bidirektionale TVS am Ausgang.", 10, fill="#555")
+    g.text(20, 44, "Arming-Schalter (Hardware), Flugzustand und Puls 50–100 ms (Firmware), Pull-down am Gate (Boot), bidirektionale TVS am Ausgang. Vier Kanäle, 3 und 4 DNP.", 10, fill="#555")
 
     # rails
     g.line([(60, 100), (640, 100)], stroke=C_LINE, width=1.6)
@@ -272,7 +263,7 @@ def pyro_channel():
     g.rect(552, 175, 16, 30, fill="white"); g.text(575, 195, "33 k", 9)
     g.line([(560, 205), (560, 225)], width=1.2)
     g.text(560, 240, "GND", 9, anchor="middle")
-    g.line([(560, 168), (610, 168)], arrow=True); g.text(615, 172, "Pin 24 ARM_SENSE", 9)
+    g.line([(560, 168), (610, 168)], arrow=True); g.text(615, 172, "Mux-Kanal 6 → Pin 24 (ARM_SENSE)", 9)
 
     # e-match
     g.line([(400, 100), (400, 140)], width=1.6)
@@ -285,14 +276,14 @@ def pyro_channel():
     g.raw('<path d="M332,186 L348,186 L340,170 z" fill="white" stroke="#333" stroke-width="1.2"/>')
     g.line([(332, 170), (348, 170)], width=1.4)
     g.line([(340, 186), (340, 220), (400, 220)], width=1.2)
-    g.text(300, 182, "SMBJ12CA", 9, anchor="end")
+    g.text(300, 182, "SMAJ12CA", 9, anchor="end")
     # continuity divider from drain
     g.line([(400, 220), (470, 220), (470, 235)], width=1.2)
     g.rect(462, 235, 16, 28, fill="white"); g.text(485, 253, "100 k", 9)
     g.line([(470, 263), (470, 278)], width=1.2)
     g.rect(462, 278, 16, 28, fill="white"); g.text(485, 296, "33 k", 9)
     g.line([(470, 306), (470, 330)], width=1.2)
-    g.line([(470, 270), (520, 270)], arrow=True); g.text(525, 274, "Pin 20/21 PYRO_SENSE", 9)
+    g.line([(470, 270), (520, 270)], arrow=True); g.text(525, 274, "Mux-Kanal 0–3 PYRO_SENSE", 9)
     # MOSFET
     g.line([(400, 220), (400, 250)], width=1.6)
     g.line([(400, 250), (400, 300)], width=2.2)        # channel
@@ -301,7 +292,7 @@ def pyro_channel():
     g.line([(386, 275), (340, 275)], width=1.4)        # gate lead
     g.rect(300, 267, 40, 16, fill="white"); g.text(320, 279, "100 Ω", 9, anchor="middle")
     g.line([(300, 275), (250, 275)], width=1.4)
-    g.text(245, 279, "Pin 22/23 PYRO_FIRE", 9, anchor="end")
+    g.text(245, 279, "Pin 23/22/41/14 PYRO_FIRE", 9, anchor="end")
     g.rect(270, 290, 16, 28, fill="white"); g.text(292, 308, "100 k", 9)
     g.line([(278, 275), (278, 290)], width=1.2); g.line([(278, 318), (278, 330)], width=1.2)
     g.text(380, 258, "AO3400A (30 V, 5,7 A)", 9, anchor="end")
@@ -314,35 +305,35 @@ def pyro_channel():
 
     # rules box
     g.rect(40, 360, 680, 48, fill="#f7f7f7", stroke="#bbb", rx=4)
-    g.text(50, 377, "Firmware: Zünden nur in den Zuständen Apogäum oder Landung, Puls ≤ 1 s, jeder Kanal höchstens einmal,", 9.5)
+    g.text(50, 377, "Firmware: Zünden nur in den Zuständen Apogäum oder Landung, Puls 50–100 ms mit Abbruch bei Durchgangsverlust, jeder Kanal höchstens einmal,", 9.5)
     g.text(50, 391, "ohne ARM_SENSE keine Freigabe. Durchgang (PYRO_SENSE auf VBAT) wird vor dem Start per Summer gemeldet.", 9.5)
     g.text(50, 404, "Tischtest nur mit Glühlämpchen oder 2-Ω-Widerstand, nie mit Ladung.", 9.5, bold=True)
     g.save("pyro_channel.svg")
 
 
 # ----------------------------------------------------------------------------------------------
-PINS = {  # pin: (signal, target, domain colour, new?)
-    0: ("RX1", "GPS TX (J_GPS)", C_RF, True), 1: ("TX1", "GPS RX (J_GPS)", C_RF, True),
+PINS = {  # pin: (signal, target, domain colour, new since rev B?)  -- Stand B1, README.md §4
+    0: ("RX1", "GPS TX (J_GPS)", C_RF, False), 1: ("TX1", "GPS RX (J_GPS)", C_RF, False),
     2: ("MOT_IN1", "DRV8833 AIN1 = BIN1", C_PWR2, False), 3: ("MOT_IN2", "DRV8833 AIN2 = BIN2", C_PWR2, False),
-    4: ("IMU_INT", "ICM-42688-P INT1", C_SENS, True),
-    5: ("LED1", "74AHCT1G125 → WS2812B", C_SIG, False), 6: ("LED2", "74AHCT1G125 → WS2812B, J_LED", C_SIG, False),
-    7: ("CAM_TRIG", "1 kΩ → J_CAM", C_SIG, True), 8: ("MOT_FAULT", "DRV8833 nFAULT, 10 k → 3V3", C_PWR2, True),
-    9: ("SERVO_CHUTE", "J_SERVO3 (5V_SERVO)", C_PWR2, False),
-    10: ("frei", "J_EXP", "#eee", False), 11: ("frei", "J_EXP", "#eee", False), 12: ("frei", "J_EXP", "#eee", False),
-    13: ("BUZZER", "AO3400A → Summer", C_SIG, False),
-    14: ("frei", "J_EXP", "#eee", False), 15: ("frei", "J_EXP", "#eee", False), 16: ("frei", "J_EXP", "#eee", False), 17: ("frei", "J_EXP", "#eee", False),
-    18: ("SDA0", "BMP390, INA219, J_QWIIC", C_SENS, False), 19: ("SCL0", "BMP390, INA219, J_QWIIC", C_SENS, False),
-    20: ("PYRO1_SENSE", "Teiler Drain Pyro 1 (A6)", C_PWR2, True), 21: ("PYRO2_SENSE", "Teiler Drain Pyro 2 (A7)", C_PWR2, True),
-    22: ("PYRO2_FIRE", "Gate Q_P2", C_PWR2, True), 23: ("PYRO1_FIRE", "Gate Q_P1", C_PWR2, False),
-    24: ("ARM_SENSE", "Teiler VBAT_ARMED (A10)", C_PWR2, True), 25: ("frei", "J_EXP", "#eee", False),
-    26: ("MOSI1", "ICM-42688-P SDI", C_SENS, True), 27: ("SCK1", "ICM-42688-P SCLK", C_SENS, True),
+    4: ("IMU_INT", "LSM6DSV16X INT1", C_SENS, True),
+    5: ("LED_DATA", "SN74LV1T34 → WS2812B-Kette → J_LED", C_SIG, True), 6: ("LORA_NRST", "E22 RESET, 10 k → 3V3_RF", C_RF, True),
+    7: ("CAM_TRIG", "1 kΩ → J_CAM", C_SIG, False), 8: ("MOT_FAULT", "DRV8833 nFAULT, 10 k → 3V3", C_PWR2, False),
+    9: ("SERVO_CHUTE", "J_SERVO3 (VSERVO)", C_PWR2, True), 10: ("SERVO_LEGS", "J_SERVO4 (VSERVO)", C_PWR2, True),
+    11: ("SPI0_MOSI", "J_STACK 8", C_SIG, True), 12: ("SPI0_MISO", "J_STACK 9", C_SIG, True), 13: ("SPI0_SCK", "J_STACK 7", C_SIG, True),
+    14: ("PYRO4_FIRE", "Gate Pyro 4 (DNP)", C_PWR2, True), 15: ("NRST_EXT", "J_STACK 20 (Open-Drain)", C_SIG, True),
+    16: ("LORA_M0", "E22 M0", C_RF, True), 17: ("IRQ_EXT", "J_STACK 13", C_SIG, True),
+    18: ("SDA0", "LIS3MDL, SHT40, J_QWIIC, J_STACK 14", C_SENS, True), 19: ("SCL0", "LIS3MDL, SHT40, J_QWIIC, J_STACK 15", C_SENS, True),
+    20: ("TX5", "J_STACK 17", C_SIG, True), 21: ("RX5", "J_STACK 16", C_SIG, True),
+    22: ("PYRO2_FIRE", "Gate Pyro 2, 100 Ω", C_PWR2, False), 23: ("PYRO1_FIRE", "Gate Pyro 1, 100 Ω", C_PWR2, False),
+    24: ("MUX_OUT", "74HC4051 (A10): Pyro 1–4, VBAT1/2, ARM", C_PWR2, True), 25: ("SEL1", "74HC138 A1, 74HC4051 S1", C_SIG, True),
+    26: ("MOSI1", "IMU, BMP390, INA239 SDI", C_SENS, True), 27: ("SCK1", "IMU, BMP390, INA239 SCLK", C_SENS, True),
     28: ("SERVO_YAW", "J_SERVO1 (VSERVO)", C_PWR2, False), 29: ("SERVO_PITCH", "J_SERVO2 (VSERVO)", C_PWR2, False),
-    30: ("frei", "J_EXP", "#eee", False), 31: ("frei", "J_EXP", "#eee", False),
-    32: ("LORA_M1", "E22 M1", C_RF, True), 33: ("LORA_M0", "E22 M0", C_RF, True),
+    30: ("SEL2", "74HC138 A2, 74HC4051 S2", C_SIG, True), 31: ("CS_EN", "74HC138 E0, 10 k → 3V3", C_SIG, True),
+    32: ("LORA_M1", "E22 M1", C_RF, False), 33: ("PWM_EXT", "J_STACK 18", C_SIG, True),
     34: ("RX8", "E22 TXD", C_RF, False), 35: ("TX8", "E22 RXD", C_RF, False),
-    36: ("LORA_AUX", "E22 AUX", C_RF, True), 37: ("frei", "J_EXP", "#eee", False),
-    38: ("CS1", "ICM-42688-P CS", C_SENS, True), 39: ("MISO1", "ICM-42688-P SDO", C_SENS, True),
-    40: ("VBAT2_SENSE", "Teiler VBAT_PROT 2S (A16)", C_PWR2, True), 41: ("VBAT1_SENSE", "Teiler VSYS_IN 1S (A17)", C_PWR1, True),
+    36: ("LORA_AUX", "E22 AUX", C_RF, False), 37: ("BUZZER", "AO3400A → Summer", C_SIG, True),
+    38: ("SEL0", "74HC138 A0, 74HC4051 S0", C_SIG, True), 39: ("MISO1", "IMU, BMP390, INA239 SDO", C_SENS, True),
+    40: ("MOT_NSLEEP", "DRV8833 nSLEEP", C_PWR2, True), 41: ("PYRO3_FIRE", "Gate Pyro 3 (DNP)", C_PWR2, True),
 }
 # Teensy 4.1 header order (top view, USB up): left row GND,0..12,3V3,24..33 ; right row VIN,GND,3V3,23..14,A12?,...
 LEFT = ["GND", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, "3V3", 24, 25, 26, 27, 28, 29, 30, 31, 32]
@@ -351,8 +342,8 @@ RIGHT = ["VIN", "GND", "3V3", 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, "GND",
 
 def teensy_pinmap():
     g = SVG(940, 700)
-    g.text(20, 26, "Teensy 4.1: Pinbelegung rev B (Draufsicht, USB oben)", 15, bold=True)
-    g.text(20, 44, "★ neu gegenüber Config.h. Alle bisher genutzten Pins bleiben, wo sie sind. Zehn freie Pins liegen auf J_EXP (2×7). Stand: Spezifikation §4 nach der Tor-1-Prüfung vom 21.10.2026.", 10, fill="#555")
+    g.text(20, 26, "Teensy 4.1: Pinbelegung rev B1 (Draufsicht, USB oben)", 15, bold=True)
+    g.text(20, 44, "★ neu oder anders als rev B. Alle 42 Pins belegt; Chip-Selects über 74HC138 (SEL0..2, CS_EN), langsame Analogsignale über 74HC4051 auf Pin 24. Stand: Spezifikation §4, geprüft mit check_design.py.", 10, fill="#555")
     bx, by, bw, bh = 400, 70, 140, 600
     g.rect(bx, by, bw, bh, fill="#2e7d4f", stroke="#1b4d30", rx=6)
     g.rect(bx + 45, by - 8, 50, 22, fill="#bbb", stroke="#777", rx=2)
@@ -387,7 +378,7 @@ def teensy_pinmap():
                     g.text(bx - 8, y + 4, p, 9, anchor="end", fill="#555")
                 else:
                     g.text(bx + bw + 8, y + 4, p, 9, fill="#555")
-    g.text(60, by + bh + 14, "SPI1: MISO liegt auf Pin 39 (SPI1.setMISO(39)), weil Pin 1 das GPS braucht. Rückseite des Teensy: W25Q128 (SOIC-8) für LittleFS.", 9, fill="#444")
+    g.text(60, by + bh + 14, "SPI1 (Flugbus, nur auf der Platine): MISO auf Pin 39 (SPI1.setMISO(39)). SPI0 (11/12/13) geht an J_STACK. Rückseite des Teensy: W25Q128 (SOIC-8) für LittleFS.", 9, fill="#444")
     g.save("teensy_pinmap.svg")
 
 

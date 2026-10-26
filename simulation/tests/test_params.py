@@ -3,7 +3,7 @@ import math
 
 import pytest
 
-from tvcsim.params import CAD_MASS_FILE, FUEL_PER_MOTOR_KG, VehicleParams
+from tvcsim.params import CAD_MASS_FILE, FUEL_PER_MOTOR_KG, STAND2B_MASS_FILE, VehicleParams
 
 
 def test_cad_vehicle_from_file(tmp_path):
@@ -26,3 +26,14 @@ def test_cad_vehicle_repo_file_plausible():
     assert 0.8 < v.m_dry < 1.1
     assert v.Iy > 10 * v.Ix            # schlanker Koerper: quer viel groesser als laengs
     assert 0.3 < v.l < 0.45
+
+
+@pytest.mark.skipif(not STAND2B_MASS_FILE.exists(), reason="cad/mass_stand2b.json nicht im Checkout")
+def test_stand2b_vehicle_repo_file_plausible():
+    """Modulbauweise Kartonaut 1 Stand 2b: leichter und kuerzer als die Konfiguration voll."""
+    v = VehicleParams.stand2b()
+    full = VehicleParams.cad()
+    assert 0.6 < v.m_dry < 0.8
+    assert v.m_dry < full.m_dry and v.l < full.l and v.Iy < full.Iy
+    assert v.Iy > 10 * v.Ix
+    assert 0.12 < v.l < 0.3

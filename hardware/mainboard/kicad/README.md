@@ -398,5 +398,8 @@ LoRa-Moduls, Umriss-Kreuzungen); JLC schneidet den Druck über Pads weg.
    `fab/` (Übersicht in `fab/FAB.md`); DNP-Teile (Pyro 3/4, zweites BMP390) sind ausgeschlossen. Vor dem Upload
    nach jeder Änderung an der Platine neu erzeugen. LCSC-Nummern der Passiven, des SN74LV1T34, des 74HC138/4051, der Polymer-
    Elkos und der Polyfuses ergänzen. INA239 bei DigiKey bestellen. Fertiger nach `../Fertiger_2026-10-21.md`.
-6. Datenblatt `../datasheet/MS-MB-B.tex` auf B1 umschreiben (es beschreibt noch rev B; die Stückliste dort
-   entsteht aus `circuit.py` und zeigt beim nächsten Bau schon B1).
+6. **26.10.:** Reviewpunkte B1–B3 eingearbeitet (`../Review_Bewertung_2026-10-26.md` §5): VSYS_IN 0,6 mm auf F.Cu und
+   1,2 mm auf In2 (0,78 mm auf den 0,9 mm am Via), Stich zu D1 0,6 mm, Zone „VSERVO Stich DRV8833 VM“; `make.sh sch`
+   exportiert jetzt auch `out/mainboard.net`. DRC 0 Fehler, `fab/` und `img/` neu.
+7. ~~Datenblatt `../datasheet/MS-MB-B.tex` auf B1 umschreiben~~: erledigt 26.10. (Version 0.2, Bestellfassung; Abbildungen aus
+   `../figures.py` und `../outline.py` ebenfalls auf B1). Offen: der Design Guide `docs/DesignGuide_Mainboard_revB.md` im Text.

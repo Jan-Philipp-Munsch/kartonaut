@@ -250,6 +250,40 @@ Hinweise zum Korb:
 - Damit ist alles aus §1 und `EINKAUFSLISTE_revB1.md` §7.1 abgedeckt (Reichelt-Artikel durch die JST-Originale
   und Sullins-Leisten ersetzt). Summer, Litze und Crimpzange sind laut Einkaufsliste vorhanden.
 
+## 6b. Stand am Abend des 26.10.: beide Bestellungen aufgegeben, Option Selbstbestückung
+
+**Aufgegeben:** DigiKey Auftrag 102484398 (40 Positionen, 98,73 € netto / 117,49 € brutto, zwei Lieferungen,
+DHL Express CPT) und JLCPCB Auftrag W2026102623077325 (5 Platinen Y2-13908548A 30,20 USD + Standard-PCBA
+SMT026102663131 145,72 USD, DHL Express DDP 28,39 USD, Abgaben 38,82 + 8,27 USD, **Summe 251,40 USD**; Status
+„File Review“, Platine freigegeben, Bestückung in Prüfung).
+
+**Befund in der JLCPCB-Vorschau:** viele Bauteile erscheinen gedreht. Das ist der bekannte Versatz zwischen der
+KiCad-Drehkonvention in der CPL und der JLCPCB-Bibliothek; JLCPCB richtet die Teile nach Pin 1 / Polmarkierung aus und
+schickt wegen der gebuchten Platzierungsbestätigung ein Bild zum Freigeben. Es ist kein Fehler in unseren Daten, der
+vor der Fertigung behoben werden müsste; beim Bild Pin 1 von U2, U4, U5, U7 und die Polarität von D1/D4 prüfen.
+
+**Option Selbstbestückung** (Platine + Schablone bei JLCPCB, alle Teile selbst löten), am 26.10. abends vorbereitet:
+
+| Posten | Betrag |
+|---|---|
+| DigiKey-Liste „Mainboard B1 SMD“ (ID X5PJ7V9FJI), 25 Positionen, als eigener Warenkorb angelegt | 81,89 € netto, 97,45 € brutto, Versand frei |
+| LCSC: LSM6DSV16X (C5267406), LIS3MDL (C478483), je 3 Stück, mit der ohnehin nötigen E22-Bestellung | ca. 20 € |
+| JLCPCB: 5 Platinen + Schablone (rahmenlos) + DHL DDP | ca. 75 USD |
+| **Summe** | **ca. 205 USD** gegenüber 251,40 USD mit Bestückung, also **ca. 45 USD Ersparnis** |
+
+Die DigiKey-Mengen enthalten Reserve (ICs für 3 Platinen, Passive in 10er- bis 100er-Streifen); die Bestückung bei
+JLCPCB war für 2 Platinen. Nicht bei DigiKey lieferbar: LSM6DSV16X (0, kein Termin), LIS3MDL (dort obsolet), BMP390 (0),
+BMP388 (obsolet). Ersatz: **BMP384** (pinkompatibel, LGA 2×2, CHIP_ID 0x50 wie BMP388; 3,38 €), IMU und Magnetometer
+von LCSC. Weitere Tauschteile wegen DigiKey-Bestand: 100 n Kemet C0603C104K5RACTU, 1 µ Kemet C0603C105K3RACTU (25 V X7R),
+10 µ/16 V Kemet C0805C106K4PACTU (Rückstand bis 30.10.; 25-V-Typen in 0805 nirgends lagernd, 16 V reicht für 8,4 V
+mit X5R-Abschlag), 22 µ Murata GRM21BR61A226ME51L, 10 k/100 Ω/330 Ω Panasonic ERJ-3EKF, 100 k Vishay CRCW0603,
+1N4148W-E3-08 Vishay, Shunt Vishay WSL2512R0200FEA (2-Pol, 1 W; die Kelvin-Pads der Platine sind geteilte Lands),
+AO3401A/AO3400A Original AOS, Kemet T520D477M006ATE030 für C16/C17.
+
+**Umstellen auf Selbstbestückung heißt:** JLCPCB-Auftrag W2026102623077325 stornieren (Link „Cancel Order“ in der
+Bestellhistorie; Erstattung aufs JLCPCB-Guthaben), Platine neu bestellen (gleiche Einstellungen, dazu Schablone
+„Customized size“, rahmenlos, Oberseite) und den DigiKey-Korb bestellen. Entscheidung offen (26.10. abends).
+
 ## 7. Quellen (abgerufen 26.10.2026)
 
 Reichelt-Suchen (Muster `https://www.reichelt.de/index.html?ACTION=446&LA=0&nbc=1&q=…`), Suchbegriffe: `SMAJ12CA`,

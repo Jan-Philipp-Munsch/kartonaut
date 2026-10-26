@@ -1,6 +1,6 @@
 # Bestellung JLCPCB, Mainboard rev B1 (26.10.2026)
 
-Stand: Angebot im JLCPCB-Warenkorb (Konto Jan), noch nicht bezahlt. Fertigungsdaten aus `kicad/fab/` vom 26.10.
+Stand: **bestellt am 26.10.2026 um 16:08 als Auftrag W2026102623077325** (251,40 USD mit DHL Express DDP), Status „File Review“; Option Selbstbestückung siehe `Beschaffung_2026-10-26.md` §6b. Fertigungsdaten aus `kicad/fab/` vom 26.10.
 (Commit `b8260a4`, Thermovias 0,3 mm). Upload-Kopien von BOM und CPL: `kicad/fab/mainboard_bom_jlc.csv`,
 `kicad/fab/mainboard_cpl_jlc.csv` (ohne LED1, LED2, U10; LCSC-Nummern aus dem Angebot vom 23.10. eingetragen).
 Alle Preise USD ohne Versand und Einfuhrumsatzsteuer.

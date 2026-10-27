@@ -6,7 +6,18 @@ Bodenstation getrennt konstruiert werden können. Zahlen der Rakete kommen aus `
 **Nachtrag 22.10. nachts:** Gebaut wird nach der Modulbauweise Stand 2b (`cad/modular_params.py`,
 `cad/mass_stand2b.md`); wo sie vom Erstflug-CAD abweicht, steht es in S1 in Klammern.
 
+**Nachtrag 27.10.2026 (Entscheidung Jan, `docs/Plan_Bordzuendung_2026-10-27.md`):** Die Rakete zündet ihren
+Motor selbst über Pyro-Kanal 1, gestartet per gesichertem Funkbefehl vom Laptop. Das Bodensystem für
+*Kartonaut 1* ist nur noch **Laptop mit USB-Funkmodul E22-400T22U** (`tools/ground/launch.py`) und die
+Startrampe. **S2 (Zündleitung) entfällt**, S3 hat die Kommandos ARM, LAUNCH, HEARTBEAT und den Rahmen IGN
+bekommen, S4 (Handy) und die ESP32-Station (`groundstation/`) sind ein möglicher späterer Ausbau.
+
 ```
+ Kartonaut 1 (ab 27.10.2026):
+ Laptop + E22-400T22U (USB) ──LoRa 433 MHz── Rakete (E22-400T22S an Serial8, Anzünder an Pyro 1 / J9)
+                                               steht auf der Startrampe (S1), keine Leitung zur Rampe
+
+ Bisheriger Entwurf (späterer Ausbau):
  Handy (Browser)  ──WLAN──  Bodenstation  ──Zündleitung 15 m──  Pad (Zündkasten, Anzünder im Motor)
                               │
                               └──LoRa 433 MHz──────────────────  Rakete (E22-400T22S an Serial8)
@@ -42,8 +53,13 @@ Anforderungen an das Pad:
   Auflagen sind abnehmbar und stehen nicht über die Fläche.
 - **Zündkasten am Pad:** Klemmen für den Anzünder (30 cm Kabel mit Krokoklemmen) und eine Buchse für die
   Zündleitung von der Bodenstation (S2). Kurzschlussbrücke (Shunt-Stecker) für den Aufbau.
+  *Entfällt für Kartonaut 1 (27.10.):* der Anzünder hängt an Pyro 1 der Rakete, seine Leitung kommt von innen
+  durch die Düse; zwischen Rakete und Rampe gibt es keine Leitung.
 
-## S2 Bodenstation ↔ Pad (Zündleitung)
+## S2 Bodenstation ↔ Pad (Zündleitung) – entfällt für Kartonaut 1
+
+Seit dem 27.10.2026 zündet die Rakete selbst (Pyro 1, J9, Startpuls höchstens 300 ms aus dem 2S). Die
+Festlegung bleibt für einen späteren Ausbau mit Bodenstation stehen.
 
 | Größe | Festlegung |
 |---|---|
@@ -57,8 +73,8 @@ Anforderungen an das Pad:
 
 | Größe | Festlegung |
 |---|---|
-| Funkmodul | Ebyte E22-400T22S auf beiden Seiten, 433 MHz, transparenter UART-Modus, 9600 Bd am UART |
-| Luftrate / Kanal | 2,4 kbit/s, Kanal 0x17 (433,125 MHz), Adresse 0x0000; feste Werte in beiden Firmwares |
+| Funkmodul | Ebyte E22-400T22S in der Rakete, **E22-400T22U (USB) am Laptop** (27.10.), 433 MHz, transparenter UART-Modus, 9600 Bd am UART |
+| Luftrate / Kanal | **9,6 kbit/s** (Entscheidung 22.10., PROJECT.md Befund 18), Kanal 0x17 (433,125 MHz), Adresse 0x0000; Werte in `firmware/src/Config.h` (`E22_*`). Die Rakete prüft ihre Register beim Start und schreibt sie bei Abweichung, das USB-Modul stellt `tools/ground/e22_config.py` ein (dort zusätzlich RSSI-Byte an) |
 | Rakete → Boden | Telemetrie 10 Hz: Flugzustand, Zeit, Höhe, Steiggeschwindigkeit, Lage (Quaternion), Kardanwinkel, Spannung 1S und 2S, ARM, Pyro-Durchgang, GPS 1 Hz |
 | Boden → Rakete | Kommandos mit Quittung: PING, CALIBRATE, PAD_READY_QUERY, ABORT |
 | Rahmen | Vorschlag: `0xA5 0x5A`, Typ (1 Byte), Länge (1 Byte), Nutzlast, CRC-16/CCITT |
@@ -73,13 +89,37 @@ Rahmen `GPS 0x03` mit 1 Hz, sobald ein Modul da ist. Kommandos: `PING 0x20`, `CA
 1 Byte Folgenummer; die Rakete antwortet mit `ACK 0x10` (Kommando, Folgenummer, Ergebnis, Zustand). Jeder
 Zustandsübergang kommt als `EVT 0x02`. Details und Skalierungen: `firmware/README.md`, Abschnitt Telemetrie.
 
-**Startsperre:** die Bodenstation zündet nur, wenn alle Bedingungen gleichzeitig erfüllt sind:
+**Motorstart an Bord (27.10.2026, Plan Bordzündung §3):**
+
+| Typ | Richtung | Nutzlast | Wirkung |
+|---|---|---|---|
+| `ARM 0x25` | Boden → Rakete | seq, MAC (8) | nur aus PAD_READY; bei erfüllten Vorbedingungen ARMED |
+| `LAUNCH 0x26` | Boden → Rakete | seq, MAC (8) | nur aus ARMED; Countdown 5 s, dann Startpuls auf Pyro 1 |
+| `HEARTBEAT 0x27` | Boden → Rakete | seq | in ARMED und COUNTDOWN mindestens 2 Hz (Laptop: 4 Hz), fehlt er > 1 s: SAFE; kein ACK |
+| `ACK 0x10` auf PING, ARM, LAUNCH | Rakete → Boden | Kommando, seq, Ergebnis, Zustand, nonce (4), Vorbedingungen (Bitmaske), Countdown (ms) | Ergebnis 3 = MAC falsch |
+| `IGN 0x04` | Rakete → Boden | Zeitmarken Puls an, Durchgang weg, Schub, Puls aus (ms nach Countdown-Ende), VBAT_ARMED vorher/min, 1S min, Zahl der Messungen, Grund des Pulsendes | einmal nach IGNITION |
+
+MAC = erste 8 Byte von HMAC-SHA256(Schlüssel, Typ ‖ seq ‖ nonce ‖ Raketen-ID); Schlüssel 16 Byte in
+`firmware/src/Secrets.h` und `tools/ground/secrets.json` (beide nicht im Repo). Die nonce ist eine Zufallszahl
+der Rakete (TRNG), kommt im ACK auf PING (in PAD_READY) bzw. im ACK auf ARM und gilt genau einmal. `ABORT`
+bleibt ohne MAC; in ARMED und COUNTDOWN führt er nach SAFE, in IGNITION nach MISFIRE. Neue Zustände in der
+Telemetrie: ARMED 9, COUNTDOWN 10, IGNITION 11, MISFIRE 12 (0 bis 8 unverändert). Feste Bytefolgen für beide
+Seiten: `firmware/test/data/radio_vectors.csv`.
+
+**Startsperre (Kartonaut 1, ab 27.10.):** liegt jetzt in der Rakete (Vorbedingungen für ARM, laufend geprüft
+in ARMED und COUNTDOWN): Arming-Schalter ein (VBAT_ARMED), Durchgang an Pyro 1, 1S und 2S über der Schwelle,
+Rakete 2 s ruhig und höchstens 25° gekippt, Sensoren/Kalibrierung/Logging, Servo-Selbsttest, Schlüssel in der
+Firmware. Fehlt etwas, nennt der Laptop es im Klartext.
+
+**Startsperre der Bodenstation (bisheriger Entwurf):** die Bodenstation zündet nur, wenn alle Bedingungen gleichzeitig erfüllt sind:
 1. Der Schlüssel steckt in der Bodenstation und ARM ist eingeschaltet.
 2. Der Anzünder hat Durchgang.
 3. Die Telemetrie der Rakete ist jünger als 1 s, meldet den Zustand `PAD_READY` (1) und im Flag-Byte `ARMED` (Bit 0) und `CONT1` (Bit 1).
 4. Der Countdown läuft bis null ohne Abbruch.
 
-## S4 Handy ↔ Bodenstation
+## S4 Handy ↔ Bodenstation – späterer Ausbau
+
+Für *Kartonaut 1* nicht gebraucht (27.10.2026): bedient wird am Laptop.
 
 | Größe | Festlegung |
 |---|---|
@@ -95,4 +135,5 @@ Zustandsübergang kommt als `EVT 0x02`. Details und Skalierungen: `firmware/READ
 | Teil | Ordner | Darf nicht anfassen |
 |---|---|---|
 | Start-/Landepad | `cad/landingpad.py`, `docs/img/cad/landingpad*.png`, eigener Abschnitt in `cad/README.md` | `cad/params.py`, `build.py` und die übrigen Module (nur importieren) |
-| Bodenstation | `groundstation/` (Konzept, Schaltung, Stückliste, Firmware ESP32-S3, Weboberfläche) | `firmware/`, `hardware/`, `simulation/`, `cad/` |
+| Bodenstation (späterer Ausbau) | `groundstation/` (Konzept, Schaltung, Stückliste, Firmware ESP32-S3, Weboberfläche) | `firmware/`, `hardware/`, `simulation/`, `cad/` |
+| Laptop-Werkzeug (Kartonaut 1) | `tools/ground/` (`launch.py`, `e22_config.py`, Protokoll in Python) | Protokoll nur zusammen mit `firmware/src/Telemetry.h` und den Testvektoren ändern |

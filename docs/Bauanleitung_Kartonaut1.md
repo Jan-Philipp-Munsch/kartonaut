@@ -36,7 +36,8 @@ python docs/bauanleitung/build_pdf.py             # diese Anleitung als PDF
 | Roll | **kein Rollmotor, kein Schwungrad** | Masse, Vibration auf der IMU; ohne Flossen kaum Rollmoment. Bedingung: Lage in der Firmware als Quaternion aus dem Gyro (Befund 3 in `PROJECT.md`) |
 | Ausstoß | **CO₂-Kapsel** (Aufbau ca. 10 g, ca. 2 l Gas), ausgelöst über ein Servo | keine Pyrotechnik, kein Sprengstoffrecht, kaltes Gas, am Tisch beliebig testbar |
 | Schirm | im Rohr C unter der Spitze, gepackt 100 × Ø 70 | passt nicht in die Klima-Spitze (Holzplatte 25 mm über der Unterkante der Spitze) |
-| Arming | **Schraubschalter** statt Schlüsselschalter; für den Erstflug ohne Pyro nur eine Brücke | leicht, kein großes Loch, nichts steht über |
+| Arming | **Schraubschalter** statt Schlüsselschalter, mindestens 5 A. *Seit 27.10.:* die Brücke reicht nicht mehr, weil die Rakete den Motor selbst über Pyro 1 zündet; der Schalter wird am Pad nach dem Anzünder eingeschaltet | leicht, kein großes Loch, nichts steht über; trennt den Zündstrom in Hardware |
+| Motorstart (27.10.2026) | **an Bord** über Pyro 1 (J9), ausgelöst per gesichertem Funkbefehl vom Laptop (`tools/ground/launch.py`); keine Zündbox, keine Leitung zur Rampe | Erprobung der eigenen Zündung vor dem Landebrennen, Zündung im Log auswertbar (`docs/Plan_Bordzuendung_2026-10-27.md`) |
 | Funk und GPS | GPS flach unter dem Spant, Patch nach oben; LoRa als 433-MHz-Wendel axial am unteren Ende | ca. 12 cm Abstand; GPS sieht zum Himmel (auch am Schirm, der Rumpf hängt mit dem Spant nach oben); Wendel strahlt rundum zur Seite |
 | Spitze | gekaufte Klima 8539 mit ihrer Holzplatte und dem Haken | die eigene Spitze mit Gewindestange, Servo und Federn ist verworfen |
 
@@ -143,6 +144,23 @@ U-Profil statt des vollen Klotzes zwischen Träger und Zapfen, Fenster im Träge
 mit 2 statt 6 mm Wand. Das Volumen sinkt von 103 auf 65 cm³, die Druckmasse aber nur von 96 auf 80 g: Die Massen rechnen
 jetzt mit einem Slicer-Modell (Oberfläche × 1 mm voll, Rest 25 % Gyroid), und dünne Wände druckt der Slicer mit drei
 Perimetern ohnehin voll. Die Slicer-Vorschau und die Waage entscheiden. Danach Hebelarm neu bestimmen (§5.6).
+
+### 2.6 Anzünderleitung (Motorstart an Bord, 27.10.2026)
+
+Der Anzünder steckt unten in der Düse, sein Pyro-Kanal J9 (Pyro 1) sitzt auf der Platine im Rohr B. Dazwischen liegt
+der Kardan.
+
+| Was | Festlegung |
+|---|---|
+| Leitung | zwei Adern 26 AWG Silikon, ca. 40 cm, Stecker XHP-2 an J9; Polung egal (Anzünder) |
+| Weg | von J9 durch den Schlitten nach unten, durch den Schraubring wie die Servokabel, am Kardan vorbei zur Düse; mit genug Schlaufe für den vollen Kardanausschlag |
+| Prüfung | Kardan von Hand in alle vier Endlagen drücken: die Leitung darf nirgends klemmen, nicht in einen Servohebel laufen und nicht am Motor scheuern |
+| Beim Start | der Anzünder wird aus der Düse geblasen, die Leitung hängt danach lose aus dem Rohr A. Die Firmware sperrt Pyro 1 nach dem Start (abgebrannte Drähte können kurzgeschlossen sein) |
+| Rampe | keine Leitung zwischen Rakete und Rampe; prüfen, dass die Rakete beim Abheben sauber aus den Führungen läuft (§8, O10) |
+
+Der Zündstrom kommt aus dem 2S über den Arming-Schalter und die Polyfuse F1, über die auch die Servos laufen. Die
+Firmware begrenzt den Startpuls deshalb auf 300 ms und beendet ihn früher, sobald Schub erkannt ist oder der
+Anzünder durchgebrannt ist (`firmware/README.md`, Motorstart).
 
 <hr class="pb">
 
@@ -326,15 +344,38 @@ Jedes Teil nach dem Druck wiegen.
 
 ### 6.1 Flugvorbereitung am Startplatz
 
+Motorstart an Bord (27.10.2026): Reihenfolge **Hauptschalter → Anzünder → Arming-Schalter → Weggehen → PAD_READY →
+ARM → LAUNCH**. Bedient wird am Laptop mit `tools/ground/launch.py`; das USB-Funkmodul ist einmal mit
+`tools/ground/e22_config.py` eingestellt.
+
 | ✓ | Schritt |
 |---|---|
-| ☐ | Akkus voll (1S ≥ 4,1 V, 2S ≥ 8,2 V), Hauptschalter AUS |
+| ☐ | Akkus voll (1S ≥ 4,1 V, 2S ≥ 8,2 V), Hauptschalter AUS, **Arming-Schalter AUS** |
 | ☐ | CO₂-Kapsel eingesetzt, Auslöser gesichert, Schirm gepackt, Rohr C und Spitze drauf |
 | ☐ | Motor einsetzen, Anzünder noch nicht |
 | ☐ | Rakete auf die Rampe, Schrauben zwischen den Führungen |
-| ☐ | Hauptschalter EIN: Bootton, Telemetrie, GPS-Fix, Kardan-Selbsttest |
+| ☐ | Laptop: `python tools/ground/launch.py --port …`, Funk steht |
+| ☐ | Hauptschalter EIN: Bootton, Telemetrie `SAFE`, GPS-Fix; Rakete ruhig lassen, sie kalibriert sich |
 | ☐ | Lukendeckel mit Klebeband schließen |
-| ☐ | Anzünder einsetzen, alle auf Abstand |
+| ☐ | Anzünder in die Düse, Leitung über den Kabelweg (§2.6) an J9; Kardan noch einmal frei bewegen |
+| ☐ | **Arming-Schalter EIN.** Ab jetzt ist die Rakete scharf. Telemetrie: `ARM` und `Durchgang1` |
+| ☐ | Alle weg von der Rampe, mindestens 10 m |
+| ☐ | Taste `r` (PAD_READY): die Kardanservos zucken 1,5 s (Selbsttest) |
+| ☐ | Taste `a` (ARM): Summer im Sekundentakt, LED rot blinkend. Wird ARM verweigert, nennt der Laptop, was fehlt |
+| ☐ | Taste `l`, `START` tippen, Enter (LAUNCH): Countdown 5 s, Summer schnell, letzte Sekunde Dauerton |
+| ☐ | Abbruch jederzeit mit der **Leertaste** (ABORT): vor der Zündung zurück nach SAFE |
+
+Die Rakete geht von selbst nach SAFE, wenn der Laptop länger als 1 s schweigt (Heartbeat), eine Vorbedingung wegfällt
+(z. B. Rakete bewegt, Durchgang weg) oder nach ARM 30 s kein LAUNCH kommt.
+
+**Abbruch vor der Zündung (SAFE):** erst den Arming-Schalter aus, dann den Anzünder abziehen.
+
+**Fehlzündung (MISFIRE, Summer im Dreiertakt):** Der Startpuls lief, aber nach 2 s war kein Schub da.
+
+1. **60 s warten**, nicht hingehen. Die Rakete erkennt einen späten Start weiter und fliegt dann mit Bergung.
+2. Dann Taste `s` (SAFE).
+3. Erst dann hingehen, **Arming-Schalter aus**, Anzünder abziehen und prüfen.
+4. Neuer Versuch mit neuem Anzünder ab „Anzünder in die Düse“.
 
 ## 7. Kabelplan
 
@@ -344,7 +385,8 @@ Jedes Teil nach dem Druck wiegen.
 | J_SERVO3 | Servo des CO₂-Moduls (durch das Band) | Rohr C ab (Stecker unter dem Band) |
 | J1 XT30, J_BAT1 PH | Akkus im Träger | Akkutausch |
 | J_SW, J_CHG1, J_CHG2, Balancer | Schalterbrett | bleibt am Schlitten |
-| J_ARM (XH-2) | Brücke (Erstflug) bzw. Schraubschalter | bleibt am Schlitten |
+| J_ARM (XH-2) | Arming-Schraubschalter (≥ 5 A; seit 27.10. statt der Brücke) | bleibt am Schlitten |
+| J9 Pyro 1 (XH-2) | Anzünderleitung zur Düse (§2.6) | nach jedem Start (Anzünder verbraucht) |
 | IPEX | LoRa-Wendel | bleibt am Schlitten |
 | J_GPS | GPS unter dem Band | bleibt am Schlitten |
 
@@ -358,8 +400,11 @@ Jedes Teil nach dem Druck wiegen.
 | O4 | Gedruckt ist der Kardan aus `outer_gimbal_dual_TVC.blend` und `inner_gimbal_dual_TVC.blend` (12.06.2025, `E:\Archiv_Projekte\Blender\Dateien\`); als Netz in `cad/export/asbuilt/` und im GLB-Gesamtmodell an seiner Lage (Grundfläche 38 mm, Bohrungen auf 44 mm). `cad/tvc.py` (Bild auf GitHub) ist ein späterer Entwurf vom 21.10.2026, nicht gedruckt. Servo-Umrechnung am gebauten Kardan messen. |
 | O5 | **TODO Firmware:** Lage als Quaternion aus dem Gyro, Regelfehler aus dem Oben-Vektor im Körpersystem (Befund 3 in `PROJECT.md`). Voraussetzung für den Verzicht auf den Rollmotor; vor dem Erstflug. |
 | O6 | CO₂-Modul: Kapselgröße und Anstechmechanismus festlegen, Bodentests. |
-| O7 | Platine rev B1: Antennenlage (GPS, LoRa-Wendel) in die Spezifikation übernehmen; Pyro-Kanäle bleiben für später. |
+| O7 | Platine rev B1: Antennenlage (GPS, LoRa-Wendel) in die Spezifikation übernehmen. Pyro 1 zündet seit 27.10. den Motor, Pyro 2 bleibt für das Landebrennen. |
 | O8 | Startrampe (Branch `landepad`): Führungen auf 45/135/225/315°. |
+| O9 | Arming-Schraubschalter ≥ 5 A beschaffen und am Loch bei 282° einbauen (statt der Brücke). |
+| O10 | Anzünderleitung am Kardan im CAD und am Kardan von Hand prüfen (§2.6); prüfen, ob die Rampe die Rakete sauber führt, wenn die Leitung von innen kommt. |
+| O11 | Am Tisch messen: Widerstand der TSP-Anzünder, Startpuls mit Ersatzlast (1 Ω / 5 W oder 12-V-Lampe) über 300 ms, VSERVO dabei; löst F1 aus? (`docs/Plan_Bordzuendung_2026-10-27.md` §9) |
 
 <hr class="pb">
 

@@ -5,6 +5,15 @@ Stand 2026-10-22. Die Bodenstation zündet den Motor (TSP E12, elektrischer Anz�
 über einen eigenen WLAN-Zugangspunkt im Browser des Handys dar. Verbindlich sind die Schnittstellen
 S2 bis S4 in `docs/Schnittstellen_Bodensystem_2026-10-22.md`; Abweichungen stehen in §6.
 
+> **Stand 27.10.2026: für *Kartonaut 1* nicht mehr gebraucht.** Jan hat entschieden, dass die Rakete ihren
+> Motor selbst über Pyro 1 zündet (`docs/Plan_Bordzuendung_2026-10-27.md`). Das Minimum am Startplatz ist
+> **Laptop + USB-Funkmodul E22-400T22U** mit `tools/ground/launch.py` (Telemetrie, ARM, LAUNCH mit MAC,
+> Heartbeat, ABORT mit der Leertaste) und `tools/ground/e22_config.py`. Zündbox, 15-m-Zündleitung und diese
+> ESP32-Station entfallen; sie bleiben als möglicher späterer Ausbau (z. B. Handy-Anzeige, Landeversuche mit
+> Bodenzündung). Die Station-Firmware kennt die neuen Kommandos ARM/LAUNCH/HEARTBEAT, den längeren ACK auf
+> PING und den IGN-Rahmen noch nicht und müsste vor einem Einsatz an `firmware/src/Telemetry.h` angepasst
+> werden.
+
 | Datei | Inhalt |
 |---|---|
 | `README.md` | Konzept, Sicherheit, Ablauf, Stückliste, Gehäuse (diese Datei) |

@@ -174,3 +174,39 @@ Zündbefehl, damit der Countdown vollständig im Log steht.
 - Kabelweg am Kardan im CAD.
 - Ob die Rampe die Rakete beim Abheben sauber führt, wenn die Anzünderleitung von innen kommt (keine Leitung zwischen
   Rakete und Rampe).
+
+## 10. Umsetzung (27.10.2026, Cloud-Session, Branch `claude/bold-gauss-ar9lia`)
+
+**Vorab mit Jan entschieden (Fragen beim Lesen von Schaltung und Firmware):**
+
+1. **Durchgang während des Pulses über eine Messlücke.** Die Durchgangsprüfung sitzt am Drain des Low-Side-FET;
+   leitet er, liegt der Drain auf 0 V und die Messung sähe immer „kein Durchgang“. Die Firmware schaltet den FET
+   alle 10 ms kurz ab und liest den Drain. Wegen der 100 nF am Teiler (τ ≈ 2,5 ms) dauert die Lücke 250 µs, und
+   ausgewertet wird der Anstieg gegen den erwarteten Wert (≈ 10 % von VBAT_ARMED); der FET ist 97 % der Zeit an.
+2. **Spätzünder:** MISFIRE (und ein Neustart in IGNITION) erkennt einen späten Start weiter wie PAD_READY und geht
+   nach BOOST mit normaler Bergung. ABORT in IGNITION beendet den Puls und führt nach MISFIRE.
+3. **Pyro 1 nach dem Bordstart** bleibt für die Bergung gesperrt (abgebrannter Anzünder, ggf. Kurzschluss).
+4. **Servo-Selbsttest:** ±8° je Achse in 1,5 s beim Eintritt in PAD_READY; bestanden, wenn der Ablauf durch ist,
+   Stromschwelle `SERVO_TEST_MIN_A` vorerst 0 (am Tisch messen).
+
+**Weitere Festlegungen in der Umsetzung:** HEARTBEAT ohne ACK (Funklast), jedes Kommando zählt als Lebenszeichen,
+Laptop sendet 4 Hz. ACK auf PING, ARM und LAUNCH einheitlich 11 Byte (nonce, Vorbedingungen, Countdown);
+Ergebnis `ACK_AUTH = 3` bei falschem MAC. PING liefert die nonce auch in ARMED (nonce B, falls das ACK auf ARM
+verloren ging). Raketen-ID `ROCKET_ID = 1` in `Config.h`. Schwellen 1S ≥ 3,5 V, 2S ≥ 7,0 V, ruhig < 5 °/s. Ein
+Neustart in ARMED/COUNTDOWN beginnt frisch in SAFE. Log in SAFE/PAD_READY mit 10 Hz, ein Ringpuffer trägt die
+2 s vor ARMED mit 100 Hz nach. Die Flug-Firmware (rev B) prüft beim Start die E22-Register und schreibt sie bei
+Abweichung, weil das Modul ab Werk auf 2,4 statt 9,6 kbit/s steht. Gefundener Fehler: die Reservezeit von
+Pyro 2 hing an der Freigabe von Pyro 1 und wäre mit gesperrtem Pyro 1 nie abgelaufen (behoben).
+
+**Abnahme (§8):**
+
+| Punkt | Stand |
+|---|---|
+| Native Tests, Python-Tests, CI grün | ✅ 66 native (24 neu), 21 Python, CI mit allen PlatformIO-Umgebungen grün |
+| Probelauf mit Ersatzlast zeichnet Log und IGN-Rahmen auf | ⬜ nach Lieferung der Platine (§6 am Tisch); der Ablauf Laptop ↔ Rakete ist gegen eine nachgebildete Rakete geprüft |
+| Ohne `Secrets.h` baut die Firmware und verweigert ARM | ✅ CI baut ohne Schlüssel; Bit `PRE_KEY` fehlt, Test `zero_key_never_authenticates` |
+| Kein bestehender Test bricht, Zustände 0–8 unverändert | ✅ Test `launch_sequence_states_and_numbers` |
+
+**Offen über §9 hinaus:** Messlücke auch für die Pulse der Bergung und des Landebrennens (dieselbe Drain-Messung
+beendet sie heute nach ≤ 50 ms, PROJECT.md Befund 24); Arming-Schraubschalter ≥ 5 A statt der Brücke; die
+ESP32-Station kennt die neuen Kommandos nicht; PDF der Bauanleitung neu bauen (`docs/bauanleitung/build_pdf.py`).

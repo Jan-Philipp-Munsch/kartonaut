@@ -14,11 +14,11 @@
 Eine Modellrakete mit Schubvektorsteuerung (TVC) und selbst entwickeltem Flugcomputer, aufgebaut
 nach dem Vorbild der „Scout F“ von [BPS.space](https://bps.space). Der Motor hängt in einem Kardan
 mit zwei Servos; ein Teensy 4.1 mit IMU, Barometer, Strommonitor, SD-Logger und 433-MHz-LoRa-Funk
-hält die Lage und spricht mit einer Bodenstation, die vom Handy aus bedient wird. Das Gesamtsystem wird
-vor dem Flug in einem 6DOF-Modell simuliert. *Kartonaut 1* fliegt auf einer TSP E12, hält während des
-Brennens die Lage und kommt am Fallschirm zurück, den eine CO₂-Kartusche ausstößt. Landebeine,
-Landebrennen mit zweitem Motor, Rollmotor und Pyro-Kanäle bleiben späteren Flügen vorbehalten und sind
-auf der Platine schon vorgesehen.
+hält die Lage und spricht per Funk mit einem Laptop; auf dessen gesicherten Startbefehl zündet sie ihren
+Motor selbst. Das Gesamtsystem wird vor dem Flug in einem 6DOF-Modell simuliert. *Kartonaut 1* fliegt auf
+einer TSP E12, hält während des Brennens die Lage und kommt am Fallschirm zurück, den eine CO₂-Kartusche
+ausstößt. Landebeine, Landebrennen mit zweitem Motor und Rollmotor bleiben späteren Flügen vorbehalten und
+sind auf der Platine schon vorgesehen.
 
 *Stand: 27.10.2026.*
 
@@ -35,10 +35,10 @@ auf der Platine schon vorgesehen.
 | Versorgung | zwei Akkus: 1S-LiPo für die Elektronik (Buck-Boost), 2S LemonRC 450 mAh für die Servos; FET-Lastschalter hinter einem mechanischen Schalter, beide in der Rakete ladbar |
 | Aktorik | Schubstangen-Kardan mit 2 × FrSky Xact W5652H direkt an 2S (gebaut und in Rohr A eingepasst); ein Servo löst die CO₂-Kartusche aus. Kein Rollmotor beim Erstflug |
 | Bergung | 8-g-CO₂-Kartusche drückt die Spitze ab; Fallschirm 125 cm in Rohr C |
-| Regelung | Lage als Quaternion aus dem Gyro, PID auf Nick/Gier → Moment → Kardanwinkel über `M = l · T · sin δ`; 100 Hz; Rollen ungeregelt. Flugzustandsautomat `SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED` mit Watchdog und Zustandsspeicher |
+| Regelung | Lage als Quaternion aus dem Gyro, PID auf Nick/Gier → Moment → Kardanwinkel über `M = l · T · sin δ`; 100 Hz; Rollen ungeregelt. Flugzustandsautomat `SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED` mit Watchdog und Zustandsspeicher, davor der Startablauf `ARMED → COUNTDOWN → IGNITION` |
 | Simulation | Python-6DOF: mit 705 g trägt eine E12 die Rakete auf etwa 74 m (ohne Luftwiderstand); Kp 2 / Ki 1 / Kd 0,45 aus einer Bayes-Optimierung halten die Neigung unter 2,5°, ohne dass der Kardan anschlägt |
-| Bodensystem | **Seit 27.10.: Motorzündung an Bord** über Pyro-Kanal 1, ausgelöst per gesichertem Funkbefehl (ARM/LAUNCH mit HMAC, Countdown, Heartbeat) vom Laptop mit USB-Funkmodul E22-400T22U ([Plan](docs/Plan_Bordzuendung_2026-10-27.md)); Startrampe 600 × 600 mm auf drei verstellbaren Beinen. Die ESP32-Station mit Zündleitung bleibt als späterer Ausbau dokumentiert |
-| Stand | Kardan, Rohr A und Rohr B gebaut; Platine bestellt und in Fertigung, Selbstlöt-Teile von DigiKey unterwegs; Flug- und Tischtest-Firmware geschrieben und ohne Hardware getestet; **noch kein Flug** |
+| Bodensystem | **Seit 27.10.: Motorzündung an Bord** über Pyro-Kanal 1, ausgelöst per gesichertem Funkbefehl (ARM/LAUNCH mit HMAC über eine Einmal-Zufallszahl, Countdown 5 s, Heartbeat) vom Laptop mit USB-Funkmodul E22-400T22U und [`tools/ground/launch.py`](tools/ground/README.md) ([Plan](docs/Plan_Bordzuendung_2026-10-27.md)); Startrampe 600 × 600 mm auf drei verstellbaren Beinen. Die ESP32-Station mit Zündleitung bleibt als späterer Ausbau dokumentiert |
+| Stand | Kardan, Rohr A und Rohr B gebaut; Platine bestellt und in Fertigung, Selbstlöt-Teile von DigiKey unterwegs; Flug- und Tischtest-Firmware samt Bordzündung geschrieben und ohne Hardware getestet; **noch kein Flug** |
 
 ## Projektstand
 
@@ -54,13 +54,17 @@ auf der Platine schon vorgesehen.
 - **Bodenstation** (Konzept, Sicherheitskonzept, Schaltung, Stückliste, ESP32-S3-Firmware mit Weboberfläche) und **Startrampe** (CAD gegen die Rakete geprüft); Schnittstellen Rakete/Rampe/Station/Handy festgelegt; Budgetplan bis zum Erstflug.
 - CI auf GitHub Actions: alle PlatformIO-Umgebungen, Simulationstests, native und Host-Tests, Pin-Abgleich gegen die Platine.
 
+**Wartet auf Review und Merge**
+
+- **Motorstart an Bord** (Branch `claude/bold-gauss-ar9lia`, umgesetzt nach [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md)): Zustände ARMED, COUNTDOWN, IGNITION, MISFIRE; ARM und LAUNCH mit HMAC-SHA256 über eine TRNG-Zufallszahl, die nur einmal gilt; Heartbeat, Vorbedingungen mit Klartext am Laptop, Servo-Selbsttest; Startpuls auf Pyro 1 (endet bei Schub, wenn der Anzünder durchbrennt, oder nach 300 ms), Durchgangsmessung in einer Messlücke, IGN-Rahmen mit Zeitmarken und Spannungseinbruch; Laptop-Werkzeug [`tools/ground/`](tools/ground/README.md); 66 native Tests (24 neu) und 21 Python-Tests mit gemeinsamen Testvektoren. Nicht am Gerät gelaufen.
+
 **Als Nächstes**
 
 1. AliExpress-Korb bestellen (E22-400T22S ×2, E22-400T22U, Antennen, XT30PW, Kabel, USB-C-Breakout; 60,02 €, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); Flugakku 2S 450 mAh (Reichelt) und Epoxid besorgen; Teensy-Stiftleisten und GPS-Typ prüfen. Platine kommt um den 4.–6.11., dann Selbstlöt-Teile einlöten.
-2. Firmware: **Bordzündung mit gesichertem Startprotokoll und Laptop-Skript** nach [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md) (Cloud-Session), Treiber LSM6DSV16X hinter `Imu.h`, CO₂-Auslösung aus dem Zustandsautomaten, Kalibrierwerte in den rev-B-Sensorpfad.
+2. Firmware: Treiber LSM6DSV16X hinter `Imu.h`, CO₂-Auslösung aus dem Zustandsautomaten, Kalibrierwerte in den rev-B-Sensorpfad; Messlücke auch für die Pulse der Bergung (PROJECT.md Befund 24).
 3. Rakete nach der Anleitung bauen: Teile drucken und wiegen, Rakete wiegen, Schwerpunkt auspendeln, Masse, Hebelarm und die neuen Gewinne in `Config.h`.
 4. Tischtest rev B1 mit `revb_test`, dann Bodentests: Servo-Kardan-Verhältnis (E01/E02), CO₂-Ausstoß dreimal (auch kalt), TVC-Prüfstand mit Propellermotor, Funkreichweite, Startablauf mit Ersatzlast statt Anzünder, dann Anzünder ohne Motor (Durchbrennzeit, Polyfuse F1).
-5. Startrampe bauen (etwa 86 €); Anzünderleitung am Kardan vorbei verlegen.
+5. Startrampe bauen (etwa 86 €); Anzünderleitung am Kardan vorbei verlegen ([Bauanleitung §2.6](docs/Bauanleitung_Kartonaut1.md)), Arming-Schraubschalter ≥ 5 A einbauen, USB-Funkmodul mit `e22_config.py` einstellen, Schlüssel mit `launch.py --new-key` erzeugen.
 6. *Kartonaut 1*: geregelter Aufstieg auf einem Motor, Bergung am Fallschirm.
 
 Arbeitspakete, Befunde und Änderungsverlauf stehen in [PROJECT.md](PROJECT.md), das Baulog in
@@ -195,16 +199,25 @@ Die Firmware passt dazu: [`firmware/lib/mainboard_revb/`](firmware/README.md) en
 und Treiber; `check_board_pins.py` vergleicht die Pins mit `circuit.py`, auch in der CI. Rev A und die
 Begründung für das Schlittenlayout stehen in [`rev_a_2026-10-15.md`](hardware/mainboard/rev_a_2026-10-15.md).
 
-## Bodenstation und Startrampe
+## Motorstart, Bodenstation und Startrampe
 
 <img src="docs/img/cad/landingpad.png" width="300" align="right" alt="Startrampe mit Kartonaut 1">
 
-Die **Bodenstation** ([groundstation/](groundstation/README.md)) zündet den Motor über eine 15-m-Leitung,
-empfängt die LoRa-Telemetrie und zeigt beides über ein eigenes WLAN im Browser des Handys. Die Station
-entscheidet, das Handy zeigt an: Scharfschalten geht nur mit Schlüssel und ARM-Schalter am Kasten, der
-Zündpfad läuft über Relais und MOSFET, die Startsperre prüft Anzünder-Durchgang, frische Telemetrie und
-den Flugzustand `PAD_READY`; ein Herzschlag vom Handy bricht den Countdown bei Verbindungsverlust ab.
-Sparvariante aus Modulen etwa 80 € ([Schaltung](groundstation/Schaltung.md)).
+**Motorstart an Bord (seit 27.10.2026):** Die Rakete zündet ihren Motor selbst über Pyro-Kanal 1. Am Pad
+werden Hauptschalter, Anzünder und dann der Arming-Schalter von Hand eingeschaltet; danach gehen alle weg,
+und der Laptop mit dem USB-Funkmodul E22-400T22U übernimmt ([`tools/ground/launch.py`](tools/ground/README.md)):
+`PAD_READY` (die Kardanservos testen sich), `ARM` und `LAUNCH` (erst nach Eingabe von `START`). ARM und
+LAUNCH tragen einen HMAC über eine Zufallszahl der Rakete, die nur einmal gilt; ein anderes Funkgerät oder
+ein aufgezeichneter Befehl kann nicht zünden. Die Rakete prüft ihre Vorbedingungen (Arming-Spannung,
+Anzünder-Durchgang, Akkus, Ruhe und Lage, Sensoren und Logging, Servotest, Schlüssel) vor ARM und bis zur
+Zündung laufend; fehlt der Heartbeat des Laptops länger als 1 s, geht sie nach SAFE, `ABORT` (Leertaste)
+geht immer. Der Startpuls endet bei Schub, wenn der Anzünder durchbrennt, oder spätestens nach 300 ms; danach meldet
+ein `IGN`-Rahmen die Zeitmarken und den Spannungseinbruch. Checkliste:
+[Bauanleitung §6.1](docs/Bauanleitung_Kartonaut1.md), Firmware: [firmware/README.md](firmware/README.md).
+
+Die **ESP32-Bodenstation** ([groundstation/](groundstation/README.md)) mit 15-m-Zündleitung, Schlüssel,
+Relais und Handy-Oberfläche ist entworfen, wird für *Kartonaut 1* aber nicht mehr gebraucht und bleibt als
+späterer Ausbau.
 
 Die **Startrampe** ([`cad/landingpad.py`](cad/README.md)) ist eine Siebdruckplatte 600 × 600 mm mit
 Loch für den Strahl, drei einzeln verstellbaren M10-Beinen (bis 23° Bodenneigung) und drei abnehmbaren
@@ -218,8 +231,8 @@ Bevor etwas fliegt, wird die Lageregelung am Boden mit echtem Schub und ohne Rak
 Rakete hängt in einem Gestell, das Nicken und Gieren um den Schwerpunkt erlaubt, und ein Brushless-Motor
 (Racerstar BR2814, 1000 KV, 11-Zoll-Propeller, 4S-LiPo) sitzt anstelle des Raketenmotors im Kardan. Der
 Antrieb ist gekauft, das Gestell in [`cad/testrig.py`](cad/README.md) konstruiert. Dazu kommen der Test
-des CO₂-Ausstoßes, die Funkreichweite mit zwei E22-Modulen und der Freigabetest vom Handy bis zu einem
-Lämpchen an der Zündleitung. Versuche liegen als fertige Anleitungen in
+des CO₂-Ausstoßes, die Funkreichweite mit zwei E22-Modulen und der Startablauf vom Laptop bis zu einer
+Ersatzlast an Pyro 1, danach ein Anzünder ohne Motor. Versuche liegen als fertige Anleitungen in
 [`docs/experiments/`](docs/experiments/README.md), die Tischversuche für die Platine in
 [`firmware/Versuche_revB1.md`](firmware/Versuche_revB1.md).
 
@@ -240,7 +253,7 @@ Zustandsspeicher setzt den Flug nach einem Neustart fort.
 cd firmware
 pio run                            # Flug-Firmware, Breakout-Aufbau
 pio run -e teensy41_revb           # Flug-Firmware für Mainboard rev B1
-pio test -e native                 # 42 Tests ohne Hardware
+pio test -e native                 # 66 Tests ohne Hardware
 pio run -e revb_test -t upload     # Tischtest-Konsole für rev B1
 python tools/bench_test.py         # Konsole vom PC aus steuern, Bericht als Markdown + JSON
 python tools/check_board_pins.py   # Firmware-Pins gegen circuit.py
@@ -249,7 +262,8 @@ python tools/check_board_pins.py   # Firmware-Pins gegen circuit.py
 Der Tischtest Schritt für Schritt steht in [`firmware/Tischtest_revB1.md`](firmware/Tischtest_revB1.md).
 Pins, Gewinne, Schwellen und Schalter liegen in [`firmware/src/Config.h`](firmware/src/Config.h); die
 Regler bleiben dort aus, bis der Prüfstand sie freigibt, und das Landebrennen ist abgeschaltet
-(`RECOVERY_MODE = CHUTE`).
+(`RECOVERY_MODE = CHUTE`). Der Startschlüssel liegt in `firmware/src/Secrets.h` (nicht im Repository,
+Vorlage `Secrets.example.h`); ohne ihn verweigert die Firmware ARM.
 
 ## Aufbau des Repositorys
 
@@ -260,12 +274,13 @@ firmware/               Flug-Firmware (PlatformIO, Teensy 4.1)                ->
   lib/calstore/         Kalibrierdaten mit CRC, Ellipsoid-Fit, Achszuordnung
   examples/             revb_test, revb_bringup, servo_ident und kleine Testprogramme
   test/                 native Tests (pio test -e native) und Host-Tests
-groundstation/          Bodenstation: Konzept, Schaltung, ESP32-S3-Firmware   -> groundstation/README.md
+tools/ground/           Laptop-Werkzeug: Start, Telemetrie, E22-Einstellung   -> tools/ground/README.md
+groundstation/          Bodenstation (späterer Ausbau): Konzept, Schaltung, ESP32-S3-Firmware -> groundstation/README.md
 simulation/             6DOF-Simulation in Python, Paket tvcsim               -> simulation/README.md
 hardware/mainboard/     Mainboard: Spezifikation, Entscheidungen, KiCad aus Code, Fertigungsdaten, Datenblatt, Reviews, Bestellung
 cad/                    parametrisches CAD, Modulbauweise, Startrampe, Prüfstand, Massenmodelle -> cad/README.md
 docs/                   Bauanleitung, Versuche, Design Guide, Baulog, Pläne, Budget, Reviews, Bilder
-.github/workflows/      CI: PlatformIO-Umgebungen, Simulation, native und Host-Tests, Pin-Abgleich
+.github/workflows/      CI: PlatformIO-Umgebungen, Simulation, native und Host-Tests, Pin-Abgleich, Laptop-Werkzeug
 PROJECT.md              Projektdatei: Eckdaten, Arbeitspakete, Befunde, Änderungsverlauf
 ```
 
@@ -288,13 +303,15 @@ dieses Repositorys; ihr Inhalt ist hierher portiert.
 | [docs/Plan_2026-10-22.md](docs/Plan_2026-10-22.md) | Plan bis zum Erstflug mit Meilensteinen |
 | [docs/Budget_2026-10-22.md](docs/Budget_2026-10-22.md) | Budget bis zum Erstflug |
 | [docs/BUILD.md](docs/BUILD.md) | Ist-Stand: Teile, Mechanik, Verkabelung, Tests, Baulog |
-| [docs/Schnittstellen_Bodensystem_2026-10-22.md](docs/Schnittstellen_Bodensystem_2026-10-22.md) | Schnittstellen Rakete/Rampe, Zündleitung, Funk, Handy |
+| [docs/Plan_Bordzuendung_2026-10-27.md](docs/Plan_Bordzuendung_2026-10-27.md) | Motorstart an Bord: Risiken, Funkprotokoll, Zustandsautomat, Tests, Umsetzung |
+| [docs/Schnittstellen_Bodensystem_2026-10-22.md](docs/Schnittstellen_Bodensystem_2026-10-22.md) | Schnittstellen Rakete/Rampe, Funk (seit 27.10. mit ARM/LAUNCH), Zündleitung und Handy (späterer Ausbau) |
+| [tools/ground/README.md](tools/ground/README.md) | Laptop-Werkzeug: Start, Telemetrie, Schlüssel, E22-Einstellung |
 | [hardware/mainboard/README.md](hardware/mainboard/README.md) | Spezifikation des Mainboards |
 | [hardware/mainboard/review_brief_2026-10-23.md](hardware/mainboard/review_brief_2026-10-23.md) | rev B1 für den Prüfer, mit [Prüfanleitung](hardware/mainboard/REVIEW_ANLEITUNG_revB1.md) und [Einkaufsliste](hardware/mainboard/EINKAUFSLISTE_revB1.md); [Review-Paket vom 26.10.](hardware/mainboard/REVIEW_PAKET_2026-10-26.md) mit gelaufenen Prüfungen, Lesereihenfolge und Entscheidungen vor der Bestellung; [JLCPCB-Testangebot](hardware/mainboard/Angebot_JLCPCB_2026-10-23.md); [Bestellung JLCPCB 26.10.](hardware/mainboard/Bestellung_JLCPCB_2026-10-26.md) (Konfiguration, was JLCPCB bestückt, was selbst gelötet wird); [Beschaffung 26.10.](hardware/mainboard/Beschaffung_2026-10-26.md) (Selbstlöt-Teile mit Artikelnummern und Bestand; DigiKey-Auftrag 102484398 und JLCPCB-Auftrag W2026102623077325 am 26.10. aufgegeben; §6b bereitet die Option Selbstbestückung mit einer zweiten DigiKey-Liste vor); [Abschlussprüfung vom 26.10.](hardware/mainboard/Abschlusspruefung_2026-10-26.md) der Fertigungsdaten gegen Spezifikation und JLCPCB-Grenzen; [Review-Bewertung](hardware/mainboard/Review_Bewertung_2026-10-26.md): die zehn Reviewfragen mit gemessenen Kupferbreiten, Verschaltung Pin für Pin; B1–B3 am 26.10. ins Layout eingearbeitet, Bestelldateien neu |
 | [hardware/mainboard/Komponenten_2026-10-22.md](hardware/mainboard/Komponenten_2026-10-22.md) | Entscheidungen, Bauteile nach Schiene und Schnittstelle, Pinbudget |
 | [hardware/mainboard/ORDER.md](hardware/mainboard/ORDER.md) | Bestellplan: Schranken, JLCPCB-Parameter, Gegenstecker, Kosten |
 | [docs/DesignGuide_Mainboard_revB.md](docs/DesignGuide_Mainboard_revB.md) | Entwurf mit Abbildungen ([PDF](docs/DesignGuide_Mainboard_revB.pdf)) |
-| [groundstation/README.md](groundstation/README.md) | Bodenstation: Konzept, Sicherheit, Ablauf am Startplatz, Firmware, Stückliste |
+| [groundstation/README.md](groundstation/README.md) | Bodenstation (späterer Ausbau): Konzept, Sicherheit, Ablauf am Startplatz, Firmware, Stückliste |
 | [firmware/README.md](firmware/README.md) | Firmware-Module, Ablauf im Flug, Telemetrie, Tests, rev-B-Bibliothek |
 | [firmware/Tischtest_revB1.md](firmware/Tischtest_revB1.md) | Tischtest rev B1 |
 | [simulation/README.md](simulation/README.md) | Modell, Koordinaten, Annahmen, Fahrzeugsätze, Ergebnisse |

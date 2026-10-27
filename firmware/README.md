@@ -4,7 +4,10 @@ PlatformIO-Projekt für den Teensy 4.1. Die Firmware liest die Sensoren, schätz
 Höhe, führt den Flugzustandsautomaten, regelt den Schubvektor, zündet die Bergung, funkt
 Telemetrie und loggt jeden Durchlauf auf die SD-Karte. Die Regler sind in `Config.h`
 abgeschaltet, bis der Prüfstand (Experiment E02) sie freigibt. Nichts davon ist bisher am
-Gerät gelaufen; die Logik ist in den nativen Tests geprüft (`pio test -e native`, 42 Tests).
+Gerät gelaufen; die Logik ist in den nativen Tests geprüft (`pio test -e native`, 66 Tests).
+**Seit 27.10.2026 zündet die Rakete ihren Motor selbst** über Pyro 1, gestartet per gesichertem Funkbefehl
+vom Laptop (`tools/ground/launch.py`, Abschnitt *Motorstart an Bord* unten,
+`docs/Plan_Bordzuendung_2026-10-27.md`).
 Für *Kartonaut 1* (Modulbauweise Stand 2b/2c) entfällt der Rollmotor; der Rollregler bleibt aus, die Lage
 kommt als Quaternion aus dem Gyro (`Attitude.*`). Masse 0,705 kg und Hebelarm 0,190 m aus
 `cad/mass_stand2b.md` gehören nach dem Wiegen in `Config.h` (`MASS_KG`, `MOMENT_ARM_M`), und mit ihnen
@@ -16,7 +19,7 @@ pio run                        # Flug-Firmware für den Breakout-Aufbau bauen
 pio run -e teensy41_revb       # dieselbe Firmware für das Mainboard rev B
 pio run -t upload              # flashen (teensy-cli)
 pio device monitor             # 115200 Bd, Teleplot-kompatibel; ? c r a s als Befehle
-pio test -e native             # 42 Tests ohne Hardware (oder: python tools/run_native_tests.py)
+pio test -e native             # 66 Tests ohne Hardware (oder: python tools/run_native_tests.py)
 pio run -e i2c_scanner -t upload   # einen Test-Sketch flashen
 ```
 
@@ -31,13 +34,17 @@ pio run -e i2c_scanner -t upload   # einen Test-Sketch flashen
 | `src/Sensors_revb.cpp` | Rückende Mainboard rev B: ICM-42688-P, BMP390, INA239 an SPI1, Akkus/ARM/Durchgang über die Mux (`lib/mainboard_revb/`) | – |
 | `src/Attitude.*` | Lage als Gyro-Quaternion, Init aus der Beschleunigung auf dem Pad, Oben-Vektor, Kippwinkel in Servoachsen, Rollwinkel | ✅ |
 | `src/KalmanZ.*` | 2-Zustands-Kalman (Höhe, Vertikalgeschwindigkeit) mit Beschleunigung als Eingang und Barometer als Messung | – |
-| `src/FlightState.*` | Flugzustandsautomat SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED, ABORT; Ereignisse mit Zeitstempel | ✅ |
+| `src/FlightState.*` | Flugzustandsautomat SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED, ABORT; Motorstart ARMED → COUNTDOWN → IGNITION, MISFIRE; Ereignisse mit Zeitstempel | ✅ |
 | `src/ControlLaw.*` | Reglergleichungen Pitch/Yaw (PID, Moment → TVC-Winkel → Servo-Grad, Fenster) und Roll; identisch zu `tvcsim` | ✅ (SIL) |
 | `src/Control.*` | Servos als 16-Bit-PWM mit `SERVO_FRAME_HZ`, H-Brücke, Fallschirm-Servo | – |
-| `src/Pyro.*` | Zündlogik je Kanal: Zustand, Flugzeit, ARM, Durchgang; Puls, Abbruch bei Durchgangsverlust, Reservekanal (Fallschirm) oder Anzünder des Landemotors | ✅ |
+| `src/Pyro.*` | Zündlogik je Kanal: Zustand, Flugzeit, ARM, Durchgang; Puls, Abbruch bei Durchgangsverlust, Reservekanal (Fallschirm) oder Anzünder des Landemotors; Startpuls für den Motorstart | ✅ |
+| `src/LaunchAuth.*`, `src/Sha256.*` | MAC für ARM und LAUNCH (HMAC-SHA256 über Typ, seq, nonce, Raketen-ID), nonce genau einmal | ✅ |
+| `src/LaunchControl.*` | Startvorbedingungen, Servo-Selbsttest, Summer-/LED-Takt, IGN-Aufzeichnung, Freigaben der Pyro-Kanäle, Messlücke, Log-Ringpuffer | ✅ |
+| `src/E22Config.h` | E22-Registerwerte aus `Config.h` (Rakete und Laptop gleich) | ✅ |
+| `src/Secrets.example.h` | Vorlage für den Startschlüssel `src/Secrets.h` (nicht im Repo) | – |
 | `src/LandingBurn.*`, `src/ThrustCurveE12.h` | Zündentscheidung für das Landebrennen: Aufsetzkosten aus einer 1D-Simulation der E12-Kurve mit Bodenkontakt, Zündung im Minimum (Port von `tvcsim.landing`) | ✅ |
 | `src/ThrottleLaw.*` | Schubdrossel (Scout-F-Pads): Zündung mit Reserve, Schubschätzung in der Spitze, zeitbasierte Führung auf Höhe 0 zum Brennschluss, Schubabbruch beim Aufsetzen (Port von `tvcsim.throttle`) | ✅ |
-| `src/Telemetry.*`, `src/Crc16.h` | Funkprotokoll (Rahmen, TLM/EVT/ACK, Kommandos, Parser, CRC-16/CCITT) | ✅ |
+| `src/Telemetry.*`, `src/Crc16.h` | Funkprotokoll (Rahmen, TLM/EVT/ACK/IGN, Kommandos, Parser, CRC-16/CCITT) | ✅ |
 | `src/StateMemory.*`, `src/StateStore.*` | Zustandsspeicher (Magic + CRC) und seine Ablage in DMAMEM für den Neustart im Flug | ✅ / – |
 | `src/Watchdog.*` | RTWDOG mit `WDT_TIMEOUT_MS`, Reset-Ursache | – |
 | `src/SDLogger.*` | Binär-Logger mit Vorallokation, Seitenpuffer, slack-bewusstem Flush/Sync, TMP-Recovery und CSV-Export | – |
@@ -84,7 +91,49 @@ Pads beim Aufsetzen ganz ein. Kennlinie und Mindestschub `THROTTLE_F_MIN` misst 
 bis dahin bleibt die Drossel aus. Studie: `docs/Physik_Review_2026-10-23.md` §4.
 
 Jeder Übergang geht als EVT-Rahmen über Funk, auf USB-Serial und ins Log. Alle Schwellen
-stehen in `Config.h` (`FS_*`, `PYRO_*`).
+stehen in `Config.h` (`FS_*`, `PYRO_*`, `LAUNCH_*`).
+
+### Motorstart an Bord (27.10.2026)
+
+Die Rakete zündet den Motor über **Pyro 1 (J9, `LAUNCH_CH = 0`)**. Pyro 2 bleibt dem Anzünder des
+Landebrennens. Gestartet wird per Funk vom Laptop (`tools/ground/launch.py`), nachdem die Rakete am Pad
+eingeschaltet, der Anzünder gesteckt und der Arming-Schalter von Hand eingeschaltet ist.
+
+```
+SAFE --PAD_READY--> PAD_READY --ARM (MAC ok, Vorbedingungen ok)--> ARMED (9)
+ARMED --LAUNCH (MAC ok)--> COUNTDOWN (10) --5 s--> IGNITION (11) --Schub--> BOOST
+IGNITION --kein Schub nach 2 s oder ABORT--> MISFIRE (12), bleibt bis SAFE; Spätzünder -> BOOST
+ARMED/COUNTDOWN --ABORT | SAFE | Heartbeat > 1 s | Vorbedingung weg | 30 s ohne LAUNCH--> SAFE
+```
+
+- **Authentisierung:** ARM und LAUNCH tragen einen MAC (erste 8 Byte von HMAC-SHA256 über Typ, seq,
+  nonce, Raketen-ID) mit dem 16-Byte-Schlüssel aus `src/Secrets.h` (Vorlage `Secrets.example.h`, erzeugen
+  mit `python tools/ground/launch.py --new-key`). Die nonce kommt aus dem TRNG des Teensy, steht im ACK auf
+  PING (in PAD_READY) bzw. auf ARM und gilt genau einmal. Ohne `Secrets.h` baut die Firmware mit
+  `LAUNCH_ENABLED = false` und verweigert ARM. Über USB-Serial gibt es kein ARM und kein LAUNCH.
+- **Vorbedingungen** (Bitmaske im ACK, `tlm::Precond`): VBAT_ARMED, Durchgang Pyro 1, 1S ≥ 3,5 V und
+  2S ≥ 7,0 V, 2 s ruhig (< 5 °/s) und Kippung ≤ 25°, Sensoren/kalibriert/**Logging läuft** (`LOG_DATA`
+  und SD-Karte), Servo-Selbsttest, Schlüssel. Sie gelten auch laufend in ARMED und COUNTDOWN.
+- **Servo-Selbsttest:** beim Eintritt in PAD_READY fahren beide TVC-Servos ±8° und zurück (1,5 s).
+  Bestanden, wenn der Ablauf durch ist; `SERVO_TEST_MIN_A` > 0 verlangt zusätzlich einen Mindest-Spitzenstrom
+  am INA239 (vorerst 0, Wert am Tisch messen).
+- **Startpuls:** endet beim ersten von Schub erkannt (|a| > 2 g), Durchgang weg, 300 ms
+  (`LAUNCH_PULSE_MAX_MS`, schont F1 und VSERVO), Zustand verlassen, Arming-Spannung weg. Einmal je Ablauf.
+- **Durchgang im Puls (Messlücke):** Bei leitendem Low-Side-FET liegt der Drain auf 0 V, die normale
+  Messung sähe immer „kein Durchgang“. Deshalb schaltet die Firmware den FET alle 10 ms für 250 µs ab und
+  liest den Drain. Der Teiler hat 100 nF (τ ≈ 2,5 ms): mit heilem Anzünder steigt der Messwert in 250 µs
+  auf etwa 10 % von VBAT_ARMED, offen bleibt er bei 0 (`gapContinuity`, `PYRO_GAP_RATIO`).
+- **Messung:** VBAT_ARMED wird während des Pulses mit 1 kHz gelesen (auch zwischen den Takten), wegen der
+  100 nF ist der Einbruch mit etwa 64 Hz geglättet. Danach geht einmal der `IGN`-Rahmen raus.
+- **Nach dem Start** bleibt Pyro 1 für die Bergung gesperrt (abgebrannter Anzünder, evtl. Kurzschluss).
+- **Anzeige:** ARMED Summer im Sekundentakt, LED rot blinkend; COUNTDOWN Summer schnell, letzte Sekunde
+  Dauerton; MISFIRE Summer im Dreiertakt bis SAFE.
+- **Log:** in SAFE und PAD_READY mit 10 Hz (`LOG_PAD_EVERY_N_LOOPS`), ab ARMED und im Flug mit 100 Hz;
+  ein Ringpuffer hält die letzten 2 s vor ARMED mit voller Rate und schreibt sie beim Scharfschalten nach.
+- **Neustart:** ein Watchdog-Neustart in IGNITION führt nach MISFIRE (Spätzünder bleibt erkannt), in
+  ARMED/COUNTDOWN frisch nach SAFE.
+- **Funkmodul:** die Firmware (rev B) prüft beim Start die E22-Register und schreibt sie bei Abweichung
+  (`E22_*` in `Config.h`: Kanal 0x17, 9,6 kbit/s, 10 dBm).
 
 **Neustart im Flug:** der Watchdog (250 ms) startet einen hängenden Teensy neu. Der
 Flugzustand liegt jeden Takt im Zustandsspeicher (DMAMEM, Magic + CRC). Meldet `SRC_SRSR`
@@ -102,10 +151,15 @@ Prüfwert `"123456789"` → `0x29B1`), alle Werte little-endian.
 |---|---|---|---|
 | `TLM 0x01` | Rakete → Boden | 10 Hz | 16 Byte: Zustand, Flags (ARM, Durchgang 1/2, Log, kalibriert, Sensoren ok, Pyro gezündet, wiederaufgenommen), Zeit seit Start in 0,1 s, Höhe in 0,1 m, vz in cm/s, Kippwinkel x/y in 0,5°, Roll in 2°, Kardan Yaw/Pitch in 0,1°, 1S in 0,02 V, 2S in 0,05 V, Folgenummer |
 | `EVT 0x02` | Rakete → Boden | bei Übergang | Zeit (ms), von, nach, Grund |
-| `ACK 0x10` | Rakete → Boden | auf Kommando | Kommandotyp, Folgenummer, Ergebnis (0 ok, 1 abgelehnt, 2 unbekannt), Zustand |
+| `ACK 0x10` | Rakete → Boden | auf Kommando | Kommandotyp, Folgenummer, Ergebnis (0 ok, 1 abgelehnt, 2 unbekannt, 3 MAC falsch), Zustand; auf PING, ARM und LAUNCH zusätzlich nonce (4), Vorbedingungen (1), Countdown in ms (2) |
+| `IGN 0x04` | Rakete → Boden | einmal nach IGNITION | 17 Byte: Puls an, Durchgang weg, Schub, Puls aus (ms nach Countdown-Ende, 0xFFFF = nicht eingetreten), VBAT_ARMED vorher und min, 1S min (mV), Zahl der schnellen Messungen, Grund des Pulsendes |
 | `CMD_PING 0x20`, `CMD_CALIBRATE 0x21`, `CMD_PAD_READY 0x22`, `CMD_ABORT 0x23`, `CMD_SAFE 0x24` | Boden → Rakete | | 1 Byte Folgenummer |
+| `CMD_ARM 0x25`, `CMD_LAUNCH 0x26` | Boden → Rakete | | Folgenummer, MAC (8 Byte) |
+| `CMD_HEARTBEAT 0x27` | Boden → Rakete | ≥ 2 Hz in ARMED/COUNTDOWN | Folgenummer; kein ACK |
 
-22 Byte je TLM-Rahmen ergeben 2200 bit/s, das passt in die 2,4 kbit/s Luftrate des E22.
+Feste Bytefolgen für Firmware und Laptop: `test/data/radio_vectors.csv`.
+
+22 Byte je TLM-Rahmen ergeben 2200 bit/s; die Luftrate ist seit dem 22.10. 9,6 kbit/s (PROJECT.md Befund 18).
 Abweichung vom Vorschlag in `docs/Schnittstellen_Bodensystem_2026-10-22.md`: statt der
 Quaternion gehen die Kippwinkel und der Rollwinkel über Funk (3 statt 8 Byte); GPS kommt als
 eigener Rahmen, sobald es ein Modul gibt.
@@ -132,7 +186,9 @@ eigener Rahmen, sobald es ein Modul gibt.
 | `RECOVERY_MODE` | `CHUTE` (Ausstoßladung in APOGEE, Kanal 2 Reserve) oder `LANDING_BURN` (Kanal 2 = Anzünder des zweiten Motors, `LANDING_*`-Parameter) |
 | `THROTTLE_ENABLED`, `THROTTLE_F_MIN`, `THROTTLE_*` | Schubdrossel im Landebrennen (dritter Servokanal, Kennlinie aus E05) |
 | `PY_CONTROL_ACTIVE`, `ROLL_CONTROL_ACTIVE` | Regler freigeben. Ohne Freigabe bleiben die Servos auf Mitte und der Motor aus. |
-| `LOG_DATA`, `LOG_EVERY_N_LOOPS`, `LOG_STOP_AFTER_FRAMES` | SD-Log an; jeden N-ten Takt; nach N Frames stoppen und einmal als CSV exportieren (Tischtest, 0 = nie). |
+| `LOG_DATA`, `LOG_EVERY_N_LOOPS`, `LOG_PAD_EVERY_N_LOOPS`, `LOG_STOP_AFTER_FRAMES` | SD-Log an (Vorbedingung für ARM); jeden N-ten Takt im Flug und ab ARMED bzw. in SAFE/PAD_READY; nach N Frames stoppen und einmal als CSV exportieren (Tischtest, 0 = nie; nie in PAD_READY oder im Startablauf). |
+| `LAUNCH_*`, `ARM_TIMEOUT_S`, `HEARTBEAT_TIMEOUT_MS`, `SERVO_TEST_*`, `ROCKET_ID` | Motorstart an Bord (Kanal, Zeiten, Schwellen der Vorbedingungen, Messlücke, Servo-Selbsttest) |
+| `E22_*` | Register des Funkmoduls; gleich am Laptop (`tools/ground/e22_config.py`) |
 | `WDT_ENABLED`, `WDT_TIMEOUT_MS` | Watchdog |
 | `PLOT_KALMAN`, `PLOT_ROLL`, `PLOT_PY`, `PLOT_ELECTRICS`, `PLOT_STATE` | Teleplot-Zeilen (`>Name:Wert`) auf USB-Serial |
 | `LOOP_WARNING`, `VERBOSE` | Overrun-Meldungen, Kalibrierausgaben |
@@ -233,7 +289,8 @@ Befehle in `Tischtest_revB1.md`, Versuchsanleitungen je Messung in `Versuche_rev
 ## Tests ohne Hardware (`test/test_native/`)
 
 `pio test -e native` baut die reinen Module (`Attitude`, `FlightState`, `Pyro`, `Telemetry`,
-`ControlLaw`, `StateMemory`, `LandingBurn`) mit dem System-Compiler und lässt 42 Tests laufen; ohne
+`ControlLaw`, `StateMemory`, `LandingBurn`, `ThrottleLaw`, `Sha256`, `LaunchAuth`, `LaunchControl`) mit dem
+System-Compiler und lässt 66 Tests laufen; ohne
 PlatformIO tut `python tools/run_native_tests.py` dasselbe mit g++. Das Testgerüst ist
 `minitest.h` (Ausgabe im Unity-Format, Runner `test/test_custom_runner.py`), damit keine
 Bibliothek aus der Registry nötig ist.
@@ -247,6 +304,8 @@ Bibliothek aus der Registry nötig ist.
 | `test_statememory.cpp` | Magic und CRC, Zufallsinhalt wird abgelehnt |
 | `test_throttle.cpp` | Drosselkennlinie, Stopphöhen und Kommandofolge gegen Python-Vektoren, Zündung mit Reserve, Phasen des Reglers |
 | `test_landing.cpp` | Aufsetzkosten gegen 60 Python-Werte, Minimum entlang des freien Falls, Zündbedingungen, Zustandsautomat auf dem simulierten Landeflug (`test/data/landing_profile_tvcsim.csv`), Rückfall auf den Fallschirm |
+| `test_launch.cpp` | SHA-256 (FIPS) und HMAC (RFC 4231); MAC mit richtiger nonce angenommen, falsche nonce, Wiederholung, falscher Schlüssel/Typ/seq/Raketen-ID abgelehnt; jeder Übergang des Startablaufs, ARM-Zeit, Heartbeat-Verlust, Vorbedingung weg im Countdown, ABORT in ARMED/COUNTDOWN/IGNITION, kein Schub → MISFIRE bis SAFE, Spätzünder; Startpuls endet bei Schub, Durchgangsverlust und nach 300 ms; Messlücke; **Negativtest: Pyro 1 zündet in keinem Zustand außer IGNITION**; Vorbedingungen, Servo-Selbsttest, Signalmuster, IGN-Rahmen, Ringpuffer |
+| `test_radio_vectors.cpp` | Rahmen gegen `test/data/radio_vectors.csv` (dieselben Bytes prüft `tools/ground/test_kartonaut_radio.py`), E22-Register |
 | `test_controllaw.cpp` | Mitte, Vorzeichen, Fenster, Integrator-Grenze, Roll-Totband; **Software-in-the-Loop**: dieselben Eingänge wie `tvcsim.controller.FirmwareController` liefern dieselben Momente und Servo-Grad (`test/data/sil_controller_ki*.csv` aus `simulation/scripts/export_firmware_vectors.py`) |
 
 ## Bibliotheken

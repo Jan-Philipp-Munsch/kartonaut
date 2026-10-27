@@ -19,7 +19,7 @@ before it flies. *Kartonaut 1* flies on one TSP E12, holds its attitude during t
 on a parachute pushed out by a CO₂ cartridge. Landing legs, a landing burn on a second motor, a roll
 motor and pyro channels are kept for later flights and already provided for on the board.
 
-*Last updated: 26 Oct 2026.*
+*Last updated: 27 Oct 2026.*
 
 <img src="docs/img/bauanleitung/Z1_uebersicht.png" width="260" align="right" alt="Kartonaut 1 in modular construction: overview drawing">
 
@@ -30,14 +30,14 @@ motor and pyro channels are kept for later flights and already provided for on t
 | Airframe | Klima cardboard tube Ø 75 mm (ID 72.6 mm) in three modules: tube A 125 mm (gimbal), tube B 176 mm (avionics), tube C 195 mm (recovery); two half couplers, Klima plastic nose cone; 731 mm overall. All radial screws M3 |
 | Motor | TSP E12-0, 24 mm, 39 Ns, 12 N average, 28 N peak, 3.5 s burn, no ejection charge; four on hand |
 | Lift-off mass | **705 g** in the mass budget ([`cad/mass_stand2b.md`](cad/mass_stand2b.md), printed parts state 2c), centre of gravity 259 mm above the nozzle, lever arm gimbal–CG 190 mm, thrust-to-weight 1.7; target below 750 g met. Nothing weighed yet |
-| Flight computer | Teensy 4.1 on mainboard **rev B1** (KiCad from code, fully routed, DRC 0 errors, order files ready, in review): LSM6DSV16X IMU, BMP390 barometer, INA239 power monitor, all on SPI1 behind a chip-select decoder; LIS3MDL magnetometer and SHT40 on I²C; LoRa E22-400T22S, microSD, four pyro channels (two populated), stacking connector |
+| Flight computer | Teensy 4.1 on mainboard **rev B1** (KiCad from code, fully routed, DRC 0 errors; in production at JLCPCB, delivery around 4–6 Nov): LSM6DSV16X IMU, BMP388 barometer (BMP390 not available at JLCPCB, pin-compatible), INA239 power monitor, all on SPI1 behind a chip-select decoder; LIS3MDL magnetometer and SHT40 on I²C; LoRa E22-400T22S, microSD, four pyro channels (two populated), stacking connector |
 | Power | two batteries: 1S LiPo for the electronics (buck-boost), 2S LemonRC 450 mAh for the servos; FET load switches behind a mechanical switch, both charged inside the rocket |
 | Actuators | push-rod gimbal with 2 × FrSky Xact W5652H directly on 2S (built and fitted into tube A); one servo releases the CO₂ cartridge. No roll motor on the first flight |
 | Recovery | 8 g CO₂ cartridge pushes the nose cone off; 125 cm parachute in tube C |
 | Control | attitude as a quaternion from the gyro, PID on pitch/yaw → torque → gimbal angle via `M = l · T · sin δ`; 100 Hz; roll uncontrolled. Flight state machine `SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED` with watchdog and state memory |
 | Simulation | Python 6DOF: at 705 g one E12 carries the rocket to about 74 m (no drag); Kp 2 / Ki 1 / Kd 0.45 from a Bayesian optimisation keep the tilt below 2.5° without hitting the gimbal stop |
 | Ground system | ESP32-S3 ground station with a web UI for the phone, ignition over a 15 m line with key, ARM switch and relay; launch stand 600 × 600 mm on three adjustable legs |
-| Status | gimbal, tube A and tube B built; board ready to order after review; flight and bench-test firmware written and tested without hardware; **no flight yet** |
+| Status | gimbal, tube A and tube B built; board ordered and in production, hand-solder parts from DigiKey on the way; flight and bench-test firmware written and tested without hardware; **no flight yet** |
 
 ## Project status
 
@@ -49,12 +49,13 @@ motor and pyro channels are kept for later flights and already provided for on t
 - **Flight firmware**: gyro quaternion, flight state machine, pyro logic, telemetry protocol with CRC, watchdog with state memory, sensor backends for breakouts and rev B, landing burn and throttle law (disabled for the first flight); 42 native tests including software-in-the-loop against the simulation.
 - **Bench-test firmware for rev B1**: drivers for LIS3MDL, SHT40, ADXL375, IMU self-test, test console `revb_test`, guided calibration stored with CRC, `bench_test.py` on the PC, experiment procedures E01, E02, E05 and twelve bench procedures.
 - **Mainboard rev B1**: review points and decisions E1–E12 worked in, fully routed (DRC 0 errors, 0 open), Gerber/BOM/CPL for JLCPCB, review guide and shopping list.
+- **Mainboard rev B1 ordered** (26/27 Oct): JLCPCB order W2026102623077325 with 5 boards, 2 of them assembled (106 parts); placement preview checked part by part and released, in production since 27 Oct, expected to finish on 2 Nov, then DHL Express (duties prepaid). DigiKey order 102484398 (40 lines for hand soldering, buzzer included): first shipment sent on 26 Oct, INA239, JST-GH-4 and 130 k on backorder. See [`Bestellung_JLCPCB_2026-10-26.md`](hardware/mainboard/Bestellung_JLCPCB_2026-10-26.md) and [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md).
 - **Ground station** (concept, safety concept, circuit, BOM, ESP32-S3 firmware with web UI) and **launch stand** (CAD checked against the rocket); interfaces rocket/pad/station/phone defined; budget plan to the first flight.
 - CI on GitHub Actions: every PlatformIO environment, simulation tests, native and host tests, pin check against the board.
 
 **Next**
 
-1. Review rev B1 after [`REVIEW_ANLEITUNG_revB1.md`](hardware/mainboard/REVIEW_ANLEITUNG_revB1.md), paper test fit in tube B, repeat the JLCPCB quote with the files in `hardware/mainboard/kicad/fab/` and order after sign-off (a test quote with the older rev B files came to about $165 for two assembled boards); buy the rest after [`EINKAUFSLISTE_revB1.md`](hardware/mainboard/EINKAUFSLISTE_revB1.md).
+1. Order the AliExpress cart (E22-400T22S ×2, E22-400T22U, antennas, XT30PW, cables, USB-C breakout; €60.02, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); get flight batteries 2S 450 mAh and 1S, epoxy and the igniter-box parts; check the Teensy pin headers and the GPS type. The board arrives around 4–6 Nov, then solder in the hand-solder parts.
 2. Firmware: LSM6DSV16X driver behind `Imu.h`, CO₂ release from the state machine, calibration data into the rev B sensor path, shared telemetry header with the ground station.
 3. Build the rocket after the manual: print and weigh the parts, weigh the rocket, balance the centre of gravity, put mass, lever arm and the new gains into `Config.h`.
 4. Bench test of rev B1 with `revb_test`, then ground tests: servo-to-gimbal ratio (E01/E02), CO₂ ejection three times (also cold), TVC test rig with the propeller motor, radio range, launch interlock from the phone.

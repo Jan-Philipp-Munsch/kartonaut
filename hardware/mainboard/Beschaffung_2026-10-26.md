@@ -284,6 +284,18 @@ AO3401A/AO3400A Original AOS, Kemet T520D477M006ATE030 für C16/C17.
 Bestellhistorie; Erstattung aufs JLCPCB-Guthaben), Platine neu bestellen (gleiche Einstellungen, dazu Schablone
 „Customized size“, rahmenlos, Oberseite) und den DigiKey-Korb bestellen. Entscheidung offen (26.10. abends).
 
+### Stand 27.10.2026 abends
+
+| Bestellung | Status | Lieferung |
+|---|---|---|
+| JLCPCB W2026102623077325 | Platzierung freigegeben, in Fertigung (Bestückung 13 %, Platinen in Datenvorbereitung) | fertig voraussichtlich 2.11. 13:00 Pekinger Zeit, DHL Express DDP, Ankunft etwa 4.–6.11. |
+| DigiKey 102484398 | erste Sendung am 26.10. verschickt (DHL Express International) | Rückstand: INA239 ×3 (U6), BM04B-GHS ×3 (J11), 130 k ×3 (R15); am 26.10. angekündigt für 2.11. bzw. 9.11. |
+| AliExpress | Korb mit 10 Positionen, 60,02 €, **noch nicht bestellt** (§6c) | Choice-Teile etwa 7–12 Tage |
+
+Im DigiKey-Auftrag stecken auch der Summer AI-1223-TWT-5V-R ×2 (BZ1, Position 40), 680 k als Panasonic
+ERJ-3EKF6803V ×10 (ohne Rückstand) und B3B-XH-A ×10 statt S3B-XH-A für J5/J6 (stehend statt liegend, kein Rückstand).
+Noch nirgends bestellt: Flugakkus (2S 450 mAh XT30, 1S für das Fach 50 × 30 × 7), Epoxid, Teile der Zündbox.
+
 ## 6c. AliExpress-Bestellung (Rest für Rakete und Bodenstation), Preise vom 26.10.2026 abends
 
 Entscheidung 26.10. abends: **Bestückung bei JLCPCB bleibt** (Auftrag W2026102623077325, noch unbezahlt, Status

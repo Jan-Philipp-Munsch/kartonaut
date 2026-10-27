@@ -56,7 +56,7 @@ sind auf der Platine schon vorgesehen.
 
 **Wartet auf Review und Merge**
 
-- **Motorstart an Bord** (Branch `claude/bold-gauss-ar9lia`, umgesetzt nach [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md)): Zustände ARMED, COUNTDOWN, IGNITION, MISFIRE; ARM und LAUNCH mit HMAC-SHA256 über eine TRNG-Zufallszahl, die nur einmal gilt; Heartbeat, Vorbedingungen mit Klartext am Laptop, Servo-Selbsttest; Startpuls auf Pyro 1 (endet bei Schub, wenn der Anzünder durchbrennt, oder nach 300 ms), Durchgangsmessung in einer Messlücke, IGN-Rahmen mit Zeitmarken und Spannungseinbruch; Laptop-Werkzeug [`tools/ground/`](tools/ground/README.md); 66 native Tests (24 neu) und 21 Python-Tests mit gemeinsamen Testvektoren. Nicht am Gerät gelaufen.
+- **Motorstart an Bord** ([PR #8](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/8), Branch `claude/bold-gauss-ar9lia`, umgesetzt nach [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md)): Zustände ARMED, COUNTDOWN, IGNITION, MISFIRE; ARM und LAUNCH mit HMAC-SHA256 über eine TRNG-Zufallszahl, die nur einmal gilt; Heartbeat, Vorbedingungen mit Klartext am Laptop, Servo-Selbsttest; Startpuls auf Pyro 1 (endet bei Schub, wenn der Anzünder durchbrennt, oder nach 300 ms), Durchgangsmessung in einer Messlücke, IGN-Rahmen mit Zeitmarken und Spannungseinbruch; Laptop-Werkzeug [`tools/ground/`](tools/ground/README.md); 66 native Tests (24 neu) und 21 Python-Tests mit gemeinsamen Testvektoren. Nicht am Gerät gelaufen.
 
 **Als Nächstes**
 

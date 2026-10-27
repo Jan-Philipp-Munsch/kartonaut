@@ -56,7 +56,7 @@ the board.
 
 **Waiting for review and merge**
 
-- **On-board motor start** (branch `claude/bold-gauss-ar9lia`, implemented per [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md)): states ARMED, COUNTDOWN, IGNITION, MISFIRE; ARM and LAUNCH with HMAC-SHA256 over a TRNG random number that is valid only once; heartbeat, preconditions shown in plain words on the laptop, servo self-test; launch pulse on pyro 1 (ends on thrust, when the igniter burns through, or after 300 ms), continuity measured in a short gap, IGN frame with timestamps and voltage sag; laptop tool [`tools/ground/`](tools/ground/README.md); 66 native tests (24 new) and 21 Python tests with shared test vectors. Not run on hardware.
+- **On-board motor start** ([PR #8](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/8), branch `claude/bold-gauss-ar9lia`, implemented per [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md)): states ARMED, COUNTDOWN, IGNITION, MISFIRE; ARM and LAUNCH with HMAC-SHA256 over a TRNG random number that is valid only once; heartbeat, preconditions shown in plain words on the laptop, servo self-test; launch pulse on pyro 1 (ends on thrust, when the igniter burns through, or after 300 ms), continuity measured in a short gap, IGN frame with timestamps and voltage sag; laptop tool [`tools/ground/`](tools/ground/README.md); 66 native tests (24 new) and 21 Python tests with shared test vectors. Not run on hardware.
 
 **Next**
 

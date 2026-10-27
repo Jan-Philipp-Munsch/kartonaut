@@ -50,7 +50,7 @@ motor and pyro channels are kept for later flights and already provided for on t
 - **Bench-test firmware for rev B1**: drivers for LIS3MDL, SHT40, ADXL375, IMU self-test, test console `revb_test`, guided calibration stored with CRC, `bench_test.py` on the PC, experiment procedures E01, E02, E05 and twelve bench procedures.
 - **Mainboard rev B1**: review points and decisions E1–E12 worked in, fully routed (DRC 0 errors, 0 open), Gerber/BOM/CPL for JLCPCB, review guide and shopping list.
 - **Mainboard rev B1 ordered** (26/27 Oct): JLCPCB order W2026102623077325 with 5 boards, 2 of them assembled (106 parts); placement preview checked part by part and released, in production since 27 Oct, expected to finish on 2 Nov, then DHL Express (duties prepaid). DigiKey order 102484398 (40 lines for hand soldering, buzzer included): first shipment sent on 26 Oct, INA239, JST-GH-4 and 130 k on backorder. See [`Bestellung_JLCPCB_2026-10-26.md`](hardware/mainboard/Bestellung_JLCPCB_2026-10-26.md) and [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md).
-- **Ground station** (concept, safety concept, circuit, BOM, ESP32-S3 firmware with web UI) and **launch stand** (CAD checked against the rocket); interfaces rocket/pad/station/phone defined; budget plan to the first flight.
+- **Ground station** (concept, safety concept, circuit, BOM, ESP32-S3 firmware with web UI) and **launch stand**; launch stand and **TVC test rig** moved onto the built rocket on 27 Oct and checked in CAD (guides at 45°/135°/250°, no igniter box any more; test-rig printed parts as STL); interfaces rocket/pad/station/phone defined; budget plan to the first flight.
 - CI on GitHub Actions: every PlatformIO environment, simulation tests, native and host tests, pin check against the board.
 
 **Next**
@@ -59,7 +59,7 @@ motor and pyro channels are kept for later flights and already provided for on t
 2. Firmware: **on-board ignition with the authenticated launch protocol and a laptop script** per [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md) (cloud session), LSM6DSV16X driver behind `Imu.h`, CO₂ release from the state machine, calibration data into the rev B sensor path.
 3. Build the rocket after the manual: print and weigh the parts, weigh the rocket, balance the centre of gravity, put mass, lever arm and the new gains into `Config.h`.
 4. Bench test of rev B1 with `revb_test`, then ground tests: servo-to-gimbal ratio (E01/E02), CO₂ ejection three times (also cold), TVC test rig with the propeller motor, radio range, launch sequence with a dummy load instead of the igniter, then an igniter without motor (burn-through time, polyfuse F1).
-5. Build the launch stand (about €86); route the igniter lead past the gimbal.
+5. Build the launch stand (about €68); route the igniter lead past the gimbal. Build the test rig: measure the motor-tube bore and the BR2814, print the parts from `cad/export/testrig/`, balance the rocket with the drive.
 6. *Kartonaut 1*: controlled ascent on one motor, parachute recovery.
 
 Work packages, findings and changelog are in [PROJECT.md](PROJECT.md), the build log in
@@ -207,8 +207,9 @@ fresh telemetry and the flight state `PAD_READY`; a heartbeat from the phone abo
 connection loss. Budget version from modules about €80 ([circuit](groundstation/Schaltung.md)).
 
 The **launch stand** ([`cad/landingpad.py`](cad/README.md)) is a 600 × 600 mm plywood plate with a hole
-for the jet, three individually adjustable M10 legs (up to 23° ground slope) and three removable guides;
-the script checks it against the rocket. 6.5 kg, about €86 of hardware-store parts. Interfaces between
+for the jet, three individually adjustable M10 legs (up to 23° ground slope) and three removable guides
+at 45°/135°/250°; the script checks it against the built rocket including the screw heads. 6.1 kg, about
+€68 of hardware-store parts; since the on-board ignition it needs no igniter box. Interfaces between
 rocket, stand, station and phone are in
 [docs/Schnittstellen_Bodensystem_2026-10-22.md](docs/Schnittstellen_Bodensystem_2026-10-22.md).
 
@@ -217,7 +218,9 @@ rocket, stand, station and phone are in
 Before anything flies, the attitude control gets tested on the ground with real thrust and without a
 rocket motor: the rocket hangs in a rig that lets it pitch and yaw about its centre of gravity, and a
 brushless motor (Racerstar BR2814, 1000 KV, 11-inch propeller, 4S LiPo) sits in the gimbal in place of
-the rocket motor. The drive is bought, the rig is designed in [`cad/testrig.py`](cad/README.md). Added
+the rocket motor. The drive is bought, the rig is designed around the built rocket in
+[`cad/testrig.py`](cad/README.md) (pivot 200 mm above the nozzle, clamp collar with windows for the hatches, drive in the
+built motor tube); the five printed parts are STL files in `cad/export/testrig/`. Added
 to that: the CO₂ ejection test, radio range with two E22 modules and the interlock test from the phone
 down to a lamp on the firing line. Experiments are prepared as ready-to-run procedures in
 [`docs/experiments/`](docs/experiments/README.md), bench procedures for the board in

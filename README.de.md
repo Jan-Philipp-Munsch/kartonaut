@@ -51,7 +51,7 @@ auf der Platine schon vorgesehen.
 - **Tischtest-Firmware rev B1**: Treiber für LIS3MDL, SHT40, ADXL375, IMU-Selbsttest, Testkonsole `revb_test`, geführte Kalibrierung mit CRC, `bench_test.py` am PC, Versuche E01, E02, E05 und zwölf Tischversuche.
 - **Mainboard rev B1**: Review-Punkte und Entscheidungen E1–E12 eingearbeitet, fertig geroutet (DRC 0 Fehler, 0 offen), Gerber/BOM/CPL für JLCPCB, Prüfanleitung und Einkaufsliste.
 - **Mainboard rev B1 bestellt** (26./27.10.): JLCPCB-Auftrag W2026102623077325 mit 5 Platinen und 2 bestückten (106 Teile); Platzierungsbild Teil für Teil geprüft und freigegeben, seit 27.10. in Fertigung, voraussichtlich fertig am 2.11., dann DHL Express (Zoll bezahlt). DigiKey-Auftrag 102484398 (40 Positionen zum Selberlöten, mit Summer): erste Lieferung am 26.10. verschickt, INA239, JST-GH-4 und 130 k im Rückstand. Siehe [`Bestellung_JLCPCB_2026-10-26.md`](hardware/mainboard/Bestellung_JLCPCB_2026-10-26.md) und [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md).
-- **Bodenstation** (Konzept, Sicherheitskonzept, Schaltung, Stückliste, ESP32-S3-Firmware mit Weboberfläche) und **Startrampe** (CAD gegen die Rakete geprüft); Schnittstellen Rakete/Rampe/Station/Handy festgelegt; Budgetplan bis zum Erstflug.
+- **Bodenstation** (Konzept, Sicherheitskonzept, Schaltung, Stückliste, ESP32-S3-Firmware mit Weboberfläche) und **Startrampe**; Startrampe und **TVC-Prüfstand** am 27.10. auf die gebaute Rakete umgestellt und im CAD geprüft (Stützen 45°/135°/250°, kein Zündkasten mehr; Prüfstand-Druckteile als STL); Schnittstellen Rakete/Rampe/Station/Handy festgelegt; Budgetplan bis zum Erstflug.
 - CI auf GitHub Actions: alle PlatformIO-Umgebungen, Simulationstests, native und Host-Tests, Pin-Abgleich gegen die Platine.
 
 **Als Nächstes**
@@ -60,7 +60,7 @@ auf der Platine schon vorgesehen.
 2. Firmware: **Bordzündung mit gesichertem Startprotokoll und Laptop-Skript** nach [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md) (Cloud-Session), Treiber LSM6DSV16X hinter `Imu.h`, CO₂-Auslösung aus dem Zustandsautomaten, Kalibrierwerte in den rev-B-Sensorpfad.
 3. Rakete nach der Anleitung bauen: Teile drucken und wiegen, Rakete wiegen, Schwerpunkt auspendeln, Masse, Hebelarm und die neuen Gewinne in `Config.h`.
 4. Tischtest rev B1 mit `revb_test`, dann Bodentests: Servo-Kardan-Verhältnis (E01/E02), CO₂-Ausstoß dreimal (auch kalt), TVC-Prüfstand mit Propellermotor, Funkreichweite, Startablauf mit Ersatzlast statt Anzünder, dann Anzünder ohne Motor (Durchbrennzeit, Polyfuse F1).
-5. Startrampe bauen (etwa 86 €); Anzünderleitung am Kardan vorbei verlegen.
+5. Startrampe bauen (etwa 68 €); Anzünderleitung am Kardan vorbei verlegen. Prüfstand bauen: Motorrohr-Bohrung und BR2814 nachmessen, Druckteile aus `cad/export/testrig/` drucken, Rakete mit Antrieb auswiegen.
 6. *Kartonaut 1*: geregelter Aufstieg auf einem Motor, Bergung am Fallschirm.
 
 Arbeitspakete, Befunde und Änderungsverlauf stehen in [PROJECT.md](PROJECT.md), das Baulog in
@@ -209,7 +209,8 @@ Sparvariante aus Modulen etwa 80 € ([Schaltung](groundstation/Schaltung.md)).
 
 Die **Startrampe** ([`cad/landingpad.py`](cad/README.md)) ist eine Siebdruckplatte 600 × 600 mm mit
 Loch für den Strahl, drei einzeln verstellbaren M10-Beinen (bis 23° Bodenneigung) und drei abnehmbaren
-Führungen; das Skript prüft sie gegen die Rakete. 6,5 kg, etwa 86 € aus dem Baumarkt. Die Schnittstellen
+Führungen bei 45°/135°/250°; das Skript prüft sie gegen die gebaute Rakete samt Schraubenköpfen. 6,1 kg,
+etwa 68 € aus dem Baumarkt; einen Zündkasten braucht sie seit der Bordzündung nicht mehr. Die Schnittstellen
 zwischen Rakete, Rampe, Station und Handy stehen in
 [docs/Schnittstellen_Bodensystem_2026-10-22.md](docs/Schnittstellen_Bodensystem_2026-10-22.md).
 
@@ -218,7 +219,9 @@ zwischen Rakete, Rampe, Station und Handy stehen in
 Bevor etwas fliegt, wird die Lageregelung am Boden mit echtem Schub und ohne Raketenmotor getestet: Die
 Rakete hängt in einem Gestell, das Nicken und Gieren um den Schwerpunkt erlaubt, und ein Brushless-Motor
 (Racerstar BR2814, 1000 KV, 11-Zoll-Propeller, 4S-LiPo) sitzt anstelle des Raketenmotors im Kardan. Der
-Antrieb ist gekauft, das Gestell in [`cad/testrig.py`](cad/README.md) konstruiert. Dazu kommen der Test
+Antrieb ist gekauft, das Gestell in [`cad/testrig.py`](cad/README.md) um die gebaute Rakete konstruiert
+(Drehpunkt 200 mm über der Düse, Klemmkragen mit Fenstern für die Luken, Antrieb im gebauten Motorrohr); die
+fünf Druckteile liegen als STL in `cad/export/testrig/`. Dazu kommen der Test
 des CO₂-Ausstoßes, die Funkreichweite mit zwei E22-Modulen und der Freigabetest vom Handy bis zu einem
 Lämpchen an der Zündleitung. Versuche liegen als fertige Anleitungen in
 [`docs/experiments/`](docs/experiments/README.md), die Tischversuche für die Platine in

@@ -73,6 +73,8 @@ Maximum 33 N) ist ein anderer Motor und kommt nur zum Vergleich in die Python-Si
 | TVC-Kardan: Schubstangen-Kardan, Außen-/Innenrahmen, Motorrohr | `inner/outer_gimbal_dual_TVC.blend` (12.06.2025), STL in `cad/export/asbuilt/` | **ja, gebaut und in Rohr A eingepasst** (Jan, 22.10.2026): 2 × W5652H flach über dem Außenrahmen, Hebel 15 mm, Stangen 2 mm | `[?]` |
 | Flugcomputer-Ring-Stack (Ø 69 mm, 8× M2-Stangen) | `flight_computer.blend` | verworfen (22.10.2026: Schlitten mit Spant) | – |
 | Schlitten mit Spant, untere Scheibe, Schalterbrett, Schraubring J1 (Stand 2b) | `cad/modular.py` → `cad/export/modular/*.stl` | nein | PETG, 3 Wände, 25 % Gyroid; nach dem Druck wiegen (Slicer-Modell Stand 2d: 58 / 7 / 3 / 6 g) |
+| Prüfstand: Klemmkragen (2 Hälften), Lagerbock 608 (2), Prop-Adapter, Käfig-Klemmring (2 Hälften) | `cad/testrig.py` → `cad/export/testrig/*.stl` (27.10.2026, gebaute Rakete) | nein | PETG, 3 Wände, 25 %; Adapter erst nach dem Nachmessen der Motorrohr-Bohrung (Modell 28,6) |
+| Einstelllehre Ø 79 für die Startstützen | `cad/landingpad.py` (Ring, nicht exportiert) | nein | PETG |
 | CO₂-Modul (Anstecher, Kapselhalter) | eigene Konstruktion (Bauanleitung O6) | nein | PETG (PLA wird am kalten CO₂ spröde) |
 | Spitze (federgelagert, M2,5-Gewindestange) | `rocket nose.blend` | verworfen (Klima-Spitze 8539) | – |
 | Landebeine und Beinanbindung | `LegConnectors.blend`, `model_rocket.blend` | `[?]` | `[?]` |

@@ -7,6 +7,9 @@ export/*
 !export/modular/
 export/modular/*.step
 !export/modular/Kartonaut1_Stand2b.step
+# Druckteile des Prüfstands (cad/testrig.py) und die Rampe mit Rakete (cad/landingpad.py)
+!export/testrig/
+!export/landingpad.step
 # gedruckter Kardan als Netz aus den Blender-Dateien vom 12.06.2025
 !export/asbuilt/
 __pycache__/

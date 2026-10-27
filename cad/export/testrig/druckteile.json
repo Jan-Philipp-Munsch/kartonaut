@@ -1,0 +1,62 @@
+{
+ "quelle": "cad/testrig.py",
+ "material": "PETG, 3 Wände, 25 % Gyroid (wie die Modulbauweise)",
+ "masse_regel": "75% des CAD-Volumens × 1,27 g/cm³",
+ "teile": [
+  {
+   "datei": "cad/export/testrig/Klemmkragen_Haelfte_LukeB.stl",
+   "stueck": 1,
+   "cm3": 79.8,
+   "g": 76.0,
+   "mm": [
+    65,
+    123,
+    47
+   ]
+  },
+  {
+   "datei": "cad/export/testrig/Klemmkragen_Haelfte_LukeA.stl",
+   "stueck": 1,
+   "cm3": 91.5,
+   "g": 87.1,
+   "mm": [
+    65,
+    123,
+    47
+   ]
+  },
+  {
+   "datei": "cad/export/testrig/Lagerbock_608.stl",
+   "stueck": 2,
+   "cm3": 7.8,
+   "g": 7.5,
+   "mm": [
+    30,
+    24,
+    30
+   ]
+  },
+  {
+   "datei": "cad/export/testrig/Prop_Adapter.stl",
+   "stueck": 1,
+   "cm3": 28.8,
+   "g": 27.5,
+   "mm": [
+    34,
+    34,
+    55
+   ]
+  },
+  {
+   "datei": "cad/export/testrig/Kaefig_Klemmring_Haelfte.stl",
+   "stueck": 2,
+   "cm3": 39.4,
+   "g": 37.5,
+   "mm": [
+    126,
+    20,
+    50
+   ]
+  }
+ ]
+}

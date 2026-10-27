@@ -321,6 +321,29 @@ für den Flug ist der 2S 1200 mAh mit ca. 70 g statt 29 g zu schwer und passt ni
 (`Bauanleitung` §3.1: LemonRC 2S 450 später nachkaufen). Beim 1S 600 mAh Maße gegen das Fach 50 × 30 × 7 prüfen und
 sicherstellen, dass keine Schutzschaltung (PCM) drin ist.
 
+### AliExpress-Warenkorb, angelegt 27.10.2026 (Konto Jan, im eingebauten Browser; nicht bestellt)
+
+9 Positionen, **50,92 € + 3,56 € Versand = 54,48 €**. Die Kleinteile sind „Choice“-Artikel (Sammelversand durch
+AliExpress, versandfrei ab 10 €), die Funkteile kommen direkt von Ebyte (CDEBYTE Official Store und CDSENET Official
+Store = Ebytes eigene Marke; Antenne aus dem CDSENET IOT Module Store).
+
+| Artikel (Händler) | Variante | Menge | Preis |
+|---|---|---|---|
+| E22-400T22S-V2 (CDEBYTE Official Store) | 433 MHz, SMD, IPEX | 2 | 2 × 7,59 € |
+| E22-400T22U (CDSENET Official Store) | 433M, USB mit Antenne | 1 | 10,39 € |
+| TX433-JZ-10 3 dBi SMA-Stecker (CDSENET IOT Module Store) | 1 Stück | 1 | 4,69 € + 3,56 € Versand |
+| XT30PW M-F, 5 Paare (JCD MC Store, Choice, 10 000+ verkauft) | 5 Paare | 1 | 5,19 € |
+| Pigtail IPX → SMA-K 10 cm, 5 Stück (STX Store, Choice) | 10CM / IPX to SMA-K | 1 | 2,75 € |
+| JST-GH 1,25 mm 4-polig 15 cm, 10 Stück (ZANHDZBF, Choice) | 10PCS / 4P / Single Head | 1 | 3,99 € |
+| JST-GH 1,25 mm 3-polig 15 cm, 10 Stück (ZANHDZBF, Choice) | 10PCS / 3P / Single Head | 1 | 3,69 € |
+| JST-SH 1,0 mm 4-polig 10 cm beidseitig, 10 Stück (excellence electronic, Choice) | 10cm / 4P / Gleiche Seite | 1 | 3,19 € |
+| USB-C-Breakout 2,54 mm mit CC-5,1 k (Global IC Distributor, Choice) | – | 1 | 1,85 € |
+
+Die V2-Version des E22-400T22S ist Ebytes aktuelle Fertigung, gleiches Gehäuse (16 × 26 mm, Stempelloch) und gleiches
+UART-Protokoll wie LCSC C2903765. Die 5 Paare XT30PW enthalten je einen PW-M (Platine) und eine Buchse (Kabelseite).
+Nicht im Korb (bewusst): Einzelteile, die 4–5 € Versand je Händler gekostet hätten (erste Fassung des Korbs lag bei
+65 € mit 26 € Versand).
+
 ### Bodenstation, absolutes Minimum (Entscheidung Jan 26.10.: Station ist nice-to-have)
 
 Am Starttag sind nur zwei Dinge nötig: Telemetrie empfangen und den Motor zünden. Minimal:

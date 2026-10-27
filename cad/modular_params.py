@@ -78,6 +78,13 @@ SPIGOT_B_SCREW_Z = TUBE_B[1] - 8.0    # 293
 SPIGOT_C_SCREW_Z = BAND_Z[1] + 7.5    # 313,5
 SPIGOT_C_PHI = (45.0, 135.0, 225.0, 315.0)   # Rohr C liegt über den Rampenführungen; so bleibt 0°–180° frei für die quer liegende CO₂-Kapsel
 BOSS_D = 10.0
+# Stand 2d: Fenster im Zapfen B zwischen den Schraubenaugen (der Zapfen zentriert nur; die Augen hängen direkt am Band).
+# Ausgespart: Augen bei 0/90/180/270° (±12°), Anschluss des Trägers bei 182…208° und 332…358°.
+SPIGOT_B_WINDOWS = dict(phi=((12.0, 58.0), (122.0, 168.0), (215.0, 255.0), (285.0, 325.0)), z=(TUBE_B[1] - 15.0, TUBE_B[1] - 3.0))
+SPIGOT_C_WINDOWS = dict(phi=((57.0, 123.0), (147.0, 213.0), (237.0, 303.0), (327.0, 393.0)), z=(BAND_Z[1] + 3.0, BAND_Z[1] + 12.0))
+#   dasselbe im Zapfen C (Augen bei 45/135/225/315°); der Druck sitzt über der Spantplatte, die Fuge Rohr C/Band ist ohnehin
+#   nicht dicht, ein voller Zapfenring ändert daran nichts
+SERVO_GLAND = (-20.0, -7.0)      # Kabeldurchführung Ø 6 für das CO₂-Servo (Stand 2d von (−18 | 8) verlegt, dort liegt jetzt das GPS)
 
 DISC_Z = (TUBE_B[1] - 146.0, TUBE_B[1] - 144.0)   # untere Scheibe 155 … 157, Stand 2c 2 statt 3 mm (nur Staub- und Druckschutz)
 DISC_OD = P.COUPLER_ID - 0.6           # sitzt noch im Kuppler J1 (endet bei 162,5)
@@ -93,14 +100,24 @@ TRAY_WALL = 1.6
 BAT2S = dict(l=55.0, w=30.0, h=10.0, v0=6.0)   # [reichelt LRC 2S 450] LemonRC 2S 450 mAh 35C, XT30, 29 g
 BAT1S = dict(l=50.0, w=30.0, h=7.0, v0=64.0)   # endet bei v = 114, unter dem Steg im Zapfenring
 STRAP_SLOT = (2.5, 16.0)
-FLOOR_WINDOW_W = 18.0            # Stand 2c: Fenster im Trägerboden unter den Akkus (|x| < 9), zwischen den Klettschlitzen
+FLOOR_WINDOW_W = 22.0            # Stand 2d: 22 statt 18; Akkus (30 breit) liegen auf je 4 mm Rand
+SIDE_WINDOWS = dict(x=(17.0, 23.4), v=((13.0, 31.0), (41.0, 59.0), (75.0, 93.0), (101.0, 111.0)))   # Stand 2d: Bodenfenster
+#   neben den Akkus unter den Wandaussparungen, 2 mm Steg zur Wand
 FLOOR_WINDOW_GAP = 2.0           # Steg zwischen Fenster und Klettschlitz bzw. Fachgrenze
 TRAY_TO_DISC = [(-20.0, -9.0), (20.0, -9.0)]
 PLUGS_TVC_END = [("Servo Gieren J5", -14.4), ("Servo Nicken J6", -2.8), ("XT30 2S J1", 10.2)]
 PLUG_REACH = 12.0
 
 # Antennen (Stand 2): GPS flach unter dem Spant, Patch nach oben; LoRa-Wendel axial am unteren Ende
-GPS = dict(w=20.0, l=20.0, h=7.0, y=(9.0, 29.0), z_top=SPIGOT_B["z"][1] - 0.5)   # [Annahme] M10-Modul 20 × 20 mit Patch
+# Stand 2d (27.10.2026): vorhandenes GPS ist ein u-blox NEO-6M auf Breakout GY-GPS6MV2 (Berrybase): Platine 36 × 26 × 5,
+# Keramik-Patch 25 × 25 × 9 am Kabel. Stapel unter der Spantplatte: Patch oben (zum Himmel), Modulplatine darunter.
+# Zwei Leisten quer (entlang x) an den y-Enden mit je einer Auflagekante; das Modul wird von der Seite eingeschoben,
+# die Stiftleiste an der kurzen Kante (x = ±18) bleibt frei. Ecke (18 | 28,8) liegt auf r = 33,9 < 34,1 (Zapfen innen).
+GPS_BOARD = dict(w=36.0, l=26.0, h=5.0)     # [Berrybase] Modul 36 × 26 × 5, 4 Löcher Ø 3
+GPS_PATCH = dict(w=25.0, l=25.0, h=9.0)     # [Berrybase] Antenne 25 × 25 × 9
+GPS = dict(w=GPS_BOARD["w"], l=GPS_BOARD["l"], h=GPS_BOARD["h"] + GPS_PATCH["h"], y=(2.8, 28.8),
+           z_top=BAND_Z[1] - PLATE_T - 0.2, m=12.0)   # Stapel 288,3 … 302,3; Masse [Annahme] 12 g, wiegen
+GPS_RAIL = dict(t=2.0, x=14.0, lip=1.5, lip_t=1.2)   # Leisten 2 mm, x = ±14, Auflagekante 1,5 mm breit, 1,2 mm dick
 LORA_HELIX = dict(d=8.0, l=30.0, z_top=DISC_Z[0] - 1.0, x=0.0, y=-8.0)           # [Annahme] 433-MHz-Wendel, ragt aus der Scheibe nach unten
 
 # Luken in Rohr B (eine Wand, der Kuppler J1 endet bei 162,5)
@@ -215,7 +232,7 @@ def checks():
     chk(DISC_Z[1] < OLD_HOLES_B_Z - 3, f"alte Löcher bei z = {OLD_HOLES_B_Z:.0f} liegen über der Scheibe, also im Avionikraum (Druckausgleich)")
     chk(BOARD_V0_Z - PLUG_REACH >= DISC_Z[0], f"Stecker J5/J6/J1 enden bei z = {BOARD_V0_Z - PLUG_REACH:.0f}, im Fenster der Scheibe")
     chk(BOARD_V0_Z + BOARD_L + 0.5 <= SPIGOT_B_SCREW_Z - BOSS_D / 2, f"Platine endet bei z = {BOARD_V0_Z + BOARD_L:.0f}, Schraubenauge ab {SPIGOT_B_SCREW_Z - BOSS_D / 2:.0f}")
-    chk(GPS["y"][1] ** 2 + (GPS["w"] / 2) ** 2 < (SPIGOT_B["id"] / 2) ** 2, f"GPS 20 × 20 passt in den Zapfenring (Ecke r = {math.hypot(GPS['w'] / 2, GPS['y'][1]):.1f} < {SPIGOT_B['id'] / 2:.0f})")
+    chk(GPS["y"][1] ** 2 + (GPS["w"] / 2) ** 2 < (SPIGOT_B["id"] / 2) ** 2, f"GPS-Stapel NEO-6M 36 × 26 passt in den Zapfenring (Ecke r = {math.hypot(GPS['w'] / 2, GPS['y'][1]):.1f} < {SPIGOT_B['id'] / 2:.0f})")
     for nm, hd in (("A1", HATCH_A1), ("A2", HATCH_A2), ("B", HATCH_B)):
         z0, z1 = v_to_z(hd["v"][0]), v_to_z(hd["v"][1])
         chk(J1_COUPLER[1] + 3 < z0 and z1 <= SPIGOT_B["z"][0] - 3, f"Luke {nm} z {z0:.0f} … {z1:.0f}: nur Rohr B, über dem Kuppler ({J1_COUPLER[1]:.1f}), unter dem Zapfen ({SPIGOT_B['z'][0]:.0f})")

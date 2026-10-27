@@ -3,9 +3,9 @@
   {
    "teil": "Schlitten mit Spant",
    "datei": "cad/export/modular/Schlitten_mit_Spant.stl",
-   "cm3": 53.0,
-   "g_75": 50.4,
-   "g": 64.2
+   "cm3": 46.6,
+   "g_75": 44.4,
+   "g": 57.7
   },
   {
    "teil": "Untere Scheibe",
@@ -29,12 +29,12 @@
    "g": 5.8
   }
  ],
- "druckteile_g": 80.0,
+ "druckteile_g": 73.5,
  "rohre_g": {
   "A": 30.0,
   "B": 42.2,
   "C": 46.8
  },
- "start_g": 671.0,
+ "start_g": 664.5,
  "laenge_mm": 731.0
 }

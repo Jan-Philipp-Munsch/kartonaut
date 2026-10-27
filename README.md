@@ -29,7 +29,7 @@ motor and pyro channels are kept for later flights and already provided for on t
 |---|---|
 | Airframe | Klima cardboard tube Ø 75 mm (ID 72.6 mm) in three modules: tube A 125 mm (gimbal), tube B 176 mm (avionics), tube C 195 mm (recovery); two half couplers, Klima plastic nose cone; 731 mm overall. All radial screws M3 |
 | Motor | TSP E12-0, 24 mm, 39 Ns, 12 N average, 28 N peak, 3.5 s burn, no ejection charge; four on hand |
-| Lift-off mass | **705 g** in the mass budget ([`cad/mass_stand2b.md`](cad/mass_stand2b.md), printed parts state 2c), centre of gravity 259 mm above the nozzle, lever arm gimbal–CG 190 mm, thrust-to-weight 1.7; target below 750 g met. Nothing weighed yet |
+| Lift-off mass | **705 g** in the mass budget ([`cad/mass_stand2b.md`](cad/mass_stand2b.md), printed parts state 2d), centre of gravity 260 mm above the nozzle, lever arm gimbal–CG 190 mm, thrust-to-weight 1.7; target below 750 g met. Nothing weighed yet |
 | Flight computer | Teensy 4.1 on mainboard **rev B1** (KiCad from code, fully routed, DRC 0 errors; in production at JLCPCB, delivery around 4–6 Nov): LSM6DSV16X IMU, BMP388 barometer (BMP390 not available at JLCPCB, pin-compatible), INA239 power monitor, all on SPI1 behind a chip-select decoder; LIS3MDL magnetometer and SHT40 on I²C; LoRa E22-400T22S, microSD, four pyro channels (two populated), stacking connector |
 | Power | two batteries: 1S LiPo for the electronics (buck-boost), 2S LemonRC 450 mAh for the servos; FET load switches behind a mechanical switch, both charged inside the rocket |
 | Actuators | push-rod gimbal with 2 × FrSky Xact W5652H directly on 2S (built and fitted into tube A); one servo releases the CO₂ cartridge. No roll motor on the first flight |
@@ -44,7 +44,7 @@ motor and pyro channels are kept for later flights and already provided for on t
 **Done**
 
 - Concept, mass and power budget; airframe parts, parachute, motors, CO₂ cartridges and the test-rig drive bought; push-rod gimbal with the W5652H built.
-- **Build manual for *Kartonaut 1*** in modular construction with drawings, 1:1 drilling templates, parts list, build steps, maintenance and cable plan; mass budget state 2c (705 g).
+- **Build manual for *Kartonaut 1*** in modular construction with drawings, 1:1 drilling templates, parts list, build steps, maintenance and cable plan; mass budget state 2d (705 g).
 - **6DOF simulation**: MATLAB/Simulink model ported to Python with a 1:1 copy of the flight controller; physics review (drag, ground contact, propellant model), Bayesian gain tuning, landing-burn and throttle studies; 45 tests.
 - **Flight firmware**: gyro quaternion, flight state machine, pyro logic, telemetry protocol with CRC, watchdog with state memory, sensor backends for breakouts and rev B, landing burn and throttle law (disabled for the first flight); 42 native tests including software-in-the-loop against the simulation.
 - **Bench-test firmware for rev B1**: drivers for LIS3MDL, SHT40, ADXL375, IMU self-test, test console `revb_test`, guided calibration stored with CRC, `bench_test.py` on the PC, experiment procedures E01, E02, E05 and twelve bench procedures.
@@ -55,7 +55,7 @@ motor and pyro channels are kept for later flights and already provided for on t
 
 **Next**
 
-1. Order the AliExpress cart (E22-400T22S ×2, E22-400T22U, antennas, XT30PW, cables, USB-C breakout; €60.02, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); get the 2S 450 mAh flight battery (Reichelt), check whether epoxy is on hand (Teensy pin headers, switches and a u-blox NEO-6M GPS are on hand); adapt the GPS holder in the sled to the 25 mm patch, then print the printed parts. The board arrives around 4–6 Nov, then solder in the hand-solder parts.
+1. Order the AliExpress cart (E22-400T22S ×2, E22-400T22U, antennas, XT30PW, cables, USB-C breakout; €60.02, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); get the 2S 450 mAh flight battery (Reichelt), check whether epoxy is on hand (Teensy pin headers, switches and a u-blox NEO-6M GPS are on hand); print the state 2d parts (GPS holder for the NEO-6M is in, sled 58 instead of 64 g) and weigh them. The board arrives around 4–6 Nov, then solder in the hand-solder parts.
 2. Firmware: **on-board ignition with the authenticated launch protocol and a laptop script** per [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md) (cloud session), LSM6DSV16X driver behind `Imu.h`, CO₂ release from the state machine, calibration data into the rev B sensor path.
 3. Build the rocket after the manual: print and weigh the parts, weigh the rocket, balance the centre of gravity, put mass, lever arm and the new gains into `Config.h`.
 4. Bench test of rev B1 with `revb_test`, then ground tests: servo-to-gimbal ratio (E01/E02), CO₂ ejection three times (also cold), TVC test rig with the propeller motor, radio range, launch sequence with a dummy load instead of the igniter, then an igniter without motor (burn-through time, polyfuse F1).
@@ -109,7 +109,8 @@ weighing follows the printing.
 | `voll` (21 Oct): 1000 mm, legs, ring stack, piston | 981 g | 449 mm | 372 mm | 0.110 kg·m² | 0.00105 kg·m² | 20 m, thrust-to-weight 1.1 |
 | `erstflug` (22 Oct): 700 mm, no legs, piston | 761 g | 318 mm | 242 mm | 0.046 kg·m² | 0.00057 kg·m² | – |
 | State 2b (22 Oct): 496 mm tube in three modules, CO₂, no roll motor | 723 g | 256 mm | 186 mm | 0.021 kg·m² | 0.00047 kg·m² | 63 m |
-| **State 2c (23 Oct): lightweight printed parts** | **705 g** | 259 mm | 190 mm | 0.021 kg·m² | 0.00047 kg·m² | **74 m**, thrust-to-weight 1.7 |
+| State 2c (23 Oct): lightweight printed parts | 705 g | 259 mm | 190 mm | 0.021 kg·m² | 0.00047 kg·m² | 74 m, thrust-to-weight 1.7 |
+| **State 2d (27 Oct): NEO-6M GPS (+6 g), sled with windows (−6 g)** | **705 g** | 260 mm | 190 mm | 0.021 kg·m² | 0.00047 kg·m² | as 2c (same mass and lever arm, not re-simulated) |
 
 The lever arm is half that of `voll`, the transverse inertia a fifth. With the true values the old gains
 Kp 5 / Kd 1 sit at the gimbal stop for two thirds of the burn; Kp 2 / Ki 1 / Kd 0.45 from a Bayesian

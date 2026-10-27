@@ -8,257 +8,257 @@
  "configurations": {
   "liftoff": {
    "label": "Start, voller Motor",
-   "mass_kg": 0.705,
-   "cg_from_nozzle_m": 0.2591,
+   "mass_kg": 0.7045,
+   "cg_from_nozzle_m": 0.2595,
    "cg_lateral_m": [
     -6e-05,
-    -0.00151
+    -0.00136
    ],
    "inertia_kgm2": {
-    "Ixx": 0.021103,
-    "Iyy": 0.021121,
-    "Izz": 0.00047,
-    "Ixy": -1e-06,
-    "Ixz": -8e-06,
-    "Iyz": -0.000131
-   },
-   "lever_arm_m": 0.1896
-  },
-  "burnout": {
-   "label": "Brennschluss, Treibstoff verbraucht",
-   "mass_kg": 0.677,
-   "cg_from_nozzle_m": 0.2684,
-   "cg_lateral_m": [
-    -6e-05,
-    -0.00158
-   ],
-   "inertia_kgm2": {
-    "Ixx": 0.019632,
-    "Iyy": 0.019649,
+    "Ixx": 0.021094,
+    "Iyy": 0.02111,
     "Izz": 0.000469,
     "Ixy": -1e-06,
     "Ixz": -8e-06,
-    "Iyz": -0.000141
+    "Iyz": -0.000133
    },
-   "lever_arm_m": 0.1989
+   "lever_arm_m": 0.19
+  },
+  "burnout": {
+   "label": "Brennschluss, Treibstoff verbraucht",
+   "mass_kg": 0.6765,
+   "cg_from_nozzle_m": 0.2688,
+   "cg_lateral_m": [
+    -6e-05,
+    -0.00142
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.019617,
+    "Iyy": 0.019633,
+    "Izz": 0.000467,
+    "Ixy": -1e-06,
+    "Ixz": -8e-06,
+    "Iyz": -0.000142
+   },
+   "lever_arm_m": 0.1993
   },
   "no_motor": {
    "label": "Ohne Motor (Adapter bleibt)",
-   "mass_kg": 0.641,
-   "cg_from_nozzle_m": 0.2809,
+   "mass_kg": 0.6405,
+   "cg_from_nozzle_m": 0.2813,
    "cg_lateral_m": [
     -6e-05,
-    -0.00167
+    -0.0015
    ],
    "inertia_kgm2": {
-    "Ixx": 0.017731,
-    "Iyy": 0.017749,
-    "Izz": 0.000464,
+    "Ixx": 0.017709,
+    "Iyy": 0.017725,
+    "Izz": 0.000463,
     "Ixy": -1e-06,
     "Ixz": -9e-06,
-    "Iyz": -0.000155
+    "Iyz": -0.000154
    },
-   "lever_arm_m": 0.2114
+   "lever_arm_m": 0.2118
   }
  },
  "levers": {
   "base": {
-   "label": "Stand 2c (Druckteile Leichtbau), Ausgangslage",
-   "mass_kg": 0.705,
-   "cg_from_nozzle_m": 0.2591,
+   "label": "Stand 2d (Druckteile Leichtbau, GPS NEO-6M), Ausgangslage",
+   "mass_kg": 0.7045,
+   "cg_from_nozzle_m": 0.2595,
    "cg_lateral_m": [
     -6e-05,
-    -0.00151
+    -0.00136
    ],
    "inertia_kgm2": {
-    "Ixx": 0.021103,
-    "Iyy": 0.021121,
-    "Izz": 0.00047,
+    "Ixx": 0.021094,
+    "Iyy": 0.02111,
+    "Izz": 0.000469,
     "Ixy": -1e-06,
     "Ixz": -8e-06,
-    "Iyz": -0.000131
+    "Iyz": -0.000133
    },
-   "lever_arm_m": 0.1896
+   "lever_arm_m": 0.19
   },
   "akku300": {
    "label": "2S-Akku 300 statt 450 mAh (ca. 20 statt 29 g) [Annahme]",
-   "mass_kg": 0.696,
-   "cg_from_nozzle_m": 0.2599,
+   "mass_kg": 0.6955,
+   "cg_from_nozzle_m": 0.2603,
    "cg_lateral_m": [
     -6e-05,
-    -0.00141
+    -0.00126
    ],
    "inertia_kgm2": {
-    "Ixx": 0.021069,
-    "Iyy": 0.021086,
-    "Izz": 0.000469,
+    "Ixx": 0.021059,
+    "Iyy": 0.021075,
+    "Izz": 0.000467,
+    "Ixy": -1e-06,
+    "Ixz": -8e-06,
+    "Iyz": -0.000129
+   },
+   "lever_arm_m": 0.1908
+  },
+  "adapter": {
+   "label": "Motoradapter 29→24 als drei Ringe statt Vollrohr (7 statt 15 g) [Annahme]",
+   "mass_kg": 0.6965,
+   "cg_from_nozzle_m": 0.2619,
+   "cg_lateral_m": [
+    -6e-05,
+    -0.00138
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.020735,
+    "Iyy": 0.020751,
+    "Izz": 0.000467,
+    "Ixy": -1e-06,
+    "Ixz": -8e-06,
+    "Iyz": -0.000135
+   },
+   "lever_arm_m": 0.1924
+  },
+  "mikroservo": {
+   "label": "Mikroservo 4,5 g statt SG90 (9 g) für die CO₂-Auslösung [Annahme]",
+   "mass_kg": 0.7,
+   "cg_from_nozzle_m": 0.2591,
+   "cg_lateral_m": [
+    -6e-05,
+    -0.00149
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.021067,
+    "Iyy": 0.021085,
+    "Izz": 0.000467,
     "Ixy": -1e-06,
     "Ixz": -8e-06,
     "Iyz": -0.000127
    },
-   "lever_arm_m": 0.1904
-  },
-  "adapter": {
-   "label": "Motoradapter 29→24 als drei Ringe statt Vollrohr (7 statt 15 g) [Annahme]",
-   "mass_kg": 0.697,
-   "cg_from_nozzle_m": 0.2615,
-   "cg_lateral_m": [
-    -6e-05,
-    -0.00153
-   ],
-   "inertia_kgm2": {
-    "Ixx": 0.020746,
-    "Iyy": 0.020763,
-    "Izz": 0.000469,
-    "Ixy": -1e-06,
-    "Ixz": -8e-06,
-    "Iyz": -0.000134
-   },
-   "lever_arm_m": 0.192
-  },
-  "mikroservo": {
-   "label": "Mikroservo 4,5 g statt SG90 (9 g) für die CO₂-Auslösung [Annahme]",
-   "mass_kg": 0.7005,
-   "cg_from_nozzle_m": 0.2587,
-   "cg_lateral_m": [
-    -6e-05,
-    -0.00164
-   ],
-   "inertia_kgm2": {
-    "Ixx": 0.021076,
-    "Iyy": 0.021095,
-    "Izz": 0.000469,
-    "Ixy": -1e-06,
-    "Ixz": -8e-06,
-    "Iyz": -0.000125
-   },
-   "lever_arm_m": 0.1892
+   "lever_arm_m": 0.1896
   },
   "kuppler50": {
    "label": "Spitzen-Kuppler 50 statt 75 mm (25 in der Spitze, 25 in Rohr C), Rohr C 170 statt 195 mm",
-   "mass_kg": 0.6934,
-   "cg_from_nozzle_m": 0.2519,
+   "mass_kg": 0.6929,
+   "cg_from_nozzle_m": 0.2523,
    "cg_lateral_m": [
     -6e-05,
-    -0.00154
+    -0.00139
    ],
    "inertia_kgm2": {
-    "Ixx": 0.019049,
-    "Iyy": 0.019067,
-    "Izz": 0.000455,
+    "Ixx": 0.019044,
+    "Iyy": 0.01906,
+    "Izz": 0.000453,
     "Ixy": -1e-06,
     "Ixz": -8e-06,
-    "Iyz": -0.000124
+    "Iyz": -0.000126
    },
-   "lever_arm_m": 0.1824
+   "lever_arm_m": 0.1828
   },
   "schirm100": {
    "label": "Fallschirm 100 statt 125 cm (ca. 35 statt 50 g, gepackt 80 statt 100 mm) [Annahme]",
-   "mass_kg": 0.6852,
-   "cg_from_nozzle_m": 0.2515,
+   "mass_kg": 0.6847,
+   "cg_from_nozzle_m": 0.2519,
    "cg_lateral_m": [
     -6e-05,
-    -0.00156
+    -0.0014
    ],
    "inertia_kgm2": {
-    "Ixx": 0.019318,
-    "Iyy": 0.019335,
-    "Izz": 0.000455,
+    "Ixx": 0.019313,
+    "Iyy": 0.019329,
+    "Izz": 0.000453,
+    "Ixy": -1e-06,
+    "Ixz": -8e-06,
+    "Iyz": -0.000126
+   },
+   "lever_arm_m": 0.1824
+  },
+  "feder": {
+   "label": "Federausstoß mit Servoriegel statt CO₂ (Feder 5 g + Riegel 3 g + Mikroservo 4,5 g statt 44 g) [Konzept]",
+   "mass_kg": 0.673,
+   "cg_from_nozzle_m": 0.2561,
+   "cg_lateral_m": [
+    -6e-05,
+    -0.00155
+   ],
+   "inertia_kgm2": {
+    "Ixx": 0.020909,
+    "Iyy": 0.020918,
+    "Izz": 0.000457,
     "Ixy": -1e-06,
     "Ixz": -8e-06,
     "Iyz": -0.000123
    },
-   "lever_arm_m": 0.182
-  },
-  "feder": {
-   "label": "Federausstoß mit Servoriegel statt CO₂ (Feder 5 g + Riegel 3 g + Mikroservo 4,5 g statt 44 g) [Konzept]",
-   "mass_kg": 0.6735,
-   "cg_from_nozzle_m": 0.2556,
-   "cg_lateral_m": [
-    -6e-05,
-    -0.00171
-   ],
-   "inertia_kgm2": {
-    "Ixx": 0.020917,
-    "Iyy": 0.020926,
-    "Izz": 0.000459,
-    "Ixy": -1e-06,
-    "Ixz": -8e-06,
-    "Iyz": -0.000121
-   },
-   "lever_arm_m": 0.1861
+   "lever_arm_m": 0.1866
   },
   "spitze_druck": {
    "label": "Spitze gedruckt, dünnwandig (45 statt 83 g) [Annahme]",
-   "mass_kg": 0.667,
-   "cg_from_nozzle_m": 0.241,
+   "mass_kg": 0.6665,
+   "cg_from_nozzle_m": 0.2414,
    "cg_lateral_m": [
     -6e-05,
-    -0.0016
+    -0.00144
    ],
    "inertia_kgm2": {
-    "Ixx": 0.016903,
+    "Ixx": 0.016904,
     "Iyy": 0.01692,
-    "Izz": 0.000443,
+    "Izz": 0.000442,
     "Ixy": -1e-06,
     "Ixz": -7e-06,
-    "Iyz": -0.000112
+    "Iyz": -0.000116
    },
-   "lever_arm_m": 0.1715
+   "lever_arm_m": 0.1719
   },
   "P1": {
    "label": "ohne Konzeptänderung: Akku, Adapter, Mikroservo, kurzer Spitzen-Kuppler",
-   "mass_kg": 0.6719,
-   "cg_from_nozzle_m": 0.2544,
+   "mass_kg": 0.6714,
+   "cg_from_nozzle_m": 0.2548,
    "cg_lateral_m": [
     -6e-05,
-    -0.00158
+    -0.00143
    ],
    "inertia_kgm2": {
-    "Ixx": 0.018656,
-    "Iyy": 0.018675,
-    "Izz": 0.00045,
+    "Ixx": 0.01865,
+    "Iyy": 0.018668,
+    "Izz": 0.000449,
     "Ixy": -1e-06,
     "Ixz": -8e-06,
-    "Iyz": -0.000115
+    "Iyz": -0.000118
    },
-   "lever_arm_m": 0.1849
+   "lever_arm_m": 0.1853
   },
   "P2": {
    "label": "P1 + Federausstoß + 100-cm-Schirm",
-   "mass_kg": 0.6311,
-   "cg_from_nozzle_m": 0.245,
+   "mass_kg": 0.6306,
+   "cg_from_nozzle_m": 0.2455,
    "cg_lateral_m": [
     -7e-05,
-    -0.00168
+    -0.00152
    ],
    "inertia_kgm2": {
-    "Ixx": 0.017112,
-    "Iyy": 0.017122,
-    "Izz": 0.000433,
+    "Ixx": 0.017111,
+    "Iyy": 0.01712,
+    "Izz": 0.000432,
     "Ixy": -1e-06,
     "Ixz": -7e-06,
-    "Iyz": -0.000105
+    "Iyz": -0.000109
    },
-   "lever_arm_m": 0.1755
+   "lever_arm_m": 0.176
   },
   "P3": {
    "label": "P2 + gedruckte Spitze",
-   "mass_kg": 0.5931,
-   "cg_from_nozzle_m": 0.2266,
+   "mass_kg": 0.5926,
+   "cg_from_nozzle_m": 0.227,
    "cg_lateral_m": [
     -7e-05,
-    -0.00179
+    -0.00161
    ],
    "inertia_kgm2": {
-    "Ixx": 0.013641,
-    "Iyy": 0.013651,
-    "Izz": 0.000406,
+    "Ixx": 0.01365,
+    "Iyy": 0.013659,
+    "Izz": 0.000405,
     "Ixy": -1e-06,
-    "Ixz": -6e-06,
-    "Iyz": -8.6e-05
+    "Ixz": -7e-06,
+    "Iyz": -9.1e-05
    },
-   "lever_arm_m": 0.1571
+   "lever_arm_m": 0.1575
   }
  }
 }

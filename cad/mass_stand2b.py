@@ -36,7 +36,7 @@ NOSE_M = 83.0                                  # [Klima] Kegel ca. 80 g + Holzpl
 SCREWS_M = 8.0                                 # [Annahme] ca. 20 × M3 mit Muttern
 MISC_M = P.MISC_M + 2.0                        # [Annahme] Kabel, Kleber 20 g + Moosgummi, Schaum, Durchführung 2 g
 HORN_M = 1.5                                   # [Annahme] je Servo: Hebel + Drahtbügel
-BAND_SHARE = 0.59                              # [CAD] Volumenanteil von Rand, Spantplatte und Zapfen am Schlitten (Stand 2c: 31,2 von 53,0 cm³)
+BAND_SHARE = 0.62                              # [CAD] Volumenanteil von Rand, Spantplatte und Zapfen am Schlitten (Stand 2d: ca. 29 von 46,6 cm³, Zapfen mit Fenstern)
 MASS_2B = 723.0                                # Startmasse Stand 2b (Druckteile 98 g nach der 75-%-Regel), zum Vergleich
 
 
@@ -72,7 +72,7 @@ def parts():
     sled = PRINTED["Schlitten mit Spant"]
     band_m = BAND_SHARE * sled
     ps.append(shell("Schlitten: Band, Spantplatte, beide Zapfen", band_m, 33.0, P.TUBE_OD / 2, M.SPIGOT_B["z"][0], M.SPIGOT_C["z"][1], "printed",
-                    f"[CAD] {100 * BAND_SHARE:.0f} % der {sled:.0f} g (Volumenanteil Stand 2c, Slicer-Modell)"))
+                    f"[CAD] {100 * BAND_SHARE:.0f} % der {sled:.0f} g (Volumenanteil Stand 2d, Slicer-Modell)"))
     ps.append(box("Schlitten: Träger, Säulen, Fächer, GPS-Leisten", sled - band_m, P.BOARD_W, 14.0, M.SPIGOT_B["z"][0] - M.DISC_Z[1],
                   0.0, -7.0, (M.DISC_Z[1] + M.SPIGOT_B["z"][0]) / 2, "printed", "Rest der Schlittenmasse, unter der Platine"))
     ps.append(box("Platine rev B1 + Teensy + Bauteile", P.ERSTFLUG_BOARD_M, P.BOARD_W, P.BOARD_T, P.BOARD_L, 0.0, 0.0,
@@ -84,7 +84,7 @@ def parts():
     ps.append(box("Akku 1S 600 mAh", BAT1S_M, b["w"], b["h"], b["l"], 0.0, M.TRAY_FLOOR_Y + b["h"] / 2,
                   M.v_to_z(b["v0"]) + b["l"] / 2, "fc", "[Annahme] 14 g, vorhanden (BUILD §1.3)"))
     g = M.GPS
-    ps.append(box("GPS-Modul 20 × 20 (Patch nach oben)", 6.0, g["w"], g["h"], g["l"], 0.0, sum(g["y"]) / 2, g["z_top"] - g["h"] / 2, "fc", "[Annahme] 6 g"))
+    ps.append(box("GPS NEO-6M (GY-GPS6MV2) mit Patch 25 × 25", g["m"], g["w"], g["h"], g["l"], 0.0, sum(g["y"]) / 2, g["z_top"] - g["h"] / 2, "fc", "[Annahme] 12 g, wiegen"))
     h = M.LORA_HELIX
     ps.append(rod("LoRa-Wendel + Pigtail", LORA_M, (h["x"], h["y"], h["z_top"] - h["l"]), (h["x"], h["y"], h["z_top"] + 20), "fc", "[Annahme] 5 g"))
     ps.append(box("Schalterbrett (gedruckt)", PRINTED["Schalterbrett"], M.PANEL_W, M.PANEL_T, M.HATCH_B["v"][1] - M.HATCH_B["v"][0],
@@ -212,7 +212,7 @@ def _props(ps):
 
 def lever_table(base):
     funcs = {k: f for k, _, f, _ in LEVERS}
-    rows = [("base", "Stand 2c (Druckteile Leichtbau), Ausgangslage", _props(base), "")]
+    rows = [("base", "Stand 2d (Druckteile Leichtbau, GPS NEO-6M), Ausgangslage", _props(base), "")]
     for k, txt, f, note in LEVERS:
         rows.append((k, txt, _props(f(list(base))), note))
     for k, txt, keys in PACKAGES:
@@ -292,7 +292,7 @@ def write_md(confs, base, path, levers=None):
     L.append("| `erstflug` (22.10.), 700 mm Rohr, Kolben, Schlüsselschalter | 761 g | 242 mm | Ziel 750 g um 11 g verfehlt |")
     L.append("| Stand 2b, Schätzung in `modular.py` | 689 g | – | Differenz zu 761 g aus Listen MASS_REMOVED / MASS_ADDED_HW |")
     L.append(f"| Stand 2b, Stabmodell (22.10. nachts) | {MASS_2B:.0f} g | 186 mm | mit LoRa-Wendel, CO₂-Servo, Schalterbrett-Bauteilen, Ringschraube, Hebeln; Druckteile 98 g (75-%-Regel) |")
-    L.append(f"| **Stand 2c, dieses Modell** | **{m:.0f} g** | {v['lever_arm_m'] * 1000:.0f} mm | Druckteile Leichtbau, {sum(p.m for p in base if p.group == 'printed'):.0f} g nach dem Slicer-Modell ({m - MASS_2B:+.0f} g) |")
+    L.append(f"| **Stand 2d, dieses Modell** | **{m:.0f} g** | {v['lever_arm_m'] * 1000:.0f} mm | Druckteile Leichtbau, {sum(p.m for p in base if p.group == 'printed'):.0f} g nach dem Slicer-Modell ({m - MASS_2B:+.0f} g) |")
     L.append("")
     L.append("Die großen Hebel gegenüber 761 g: keine Gewindestangen (−30 g), Rohr 496 statt 700 mm (−49 g), kein Kolben (−31 g), "
              "kein Schlüsselschalter mit Kragen (−28 g), halbe Kuppler (−34 g); dagegen CO₂-Modul mit Kapsel und Servo (+44 g) und "

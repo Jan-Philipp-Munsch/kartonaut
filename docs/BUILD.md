@@ -61,7 +61,7 @@ Maximum 33 N) ist ein anderer Motor und kommt nur zum Vergleich in die Python-Si
 | Akku 1S LiPo 3,7 V (Elektronik) | 1 | 600 mAh, JST-PH; Maße gegen das Fach 50 × 30 × 7 prüfen, Schutzschaltung `[?]` | Bauanleitung §3.5 |
 | Akku 2S LemonRC 450 mAh 35C, XT30 (55 × 30 × 10, 29 g) | 0 | zu bestellen (2 Stück, Reichelt `LRC 2S 450`); der vorhandene 2S 1200 mAh ist zu groß und zu schwer | Bauanleitung §3.1 |
 | Servo SG90 für die CO₂-Auslösung | 1 (aus Bestand) | an `J_SERVO3` | Bauanleitung §3.5 |
-| GPS-Modul | 1 | u-blox **NEO-6M** auf Breakout GY-GPS6MV2 (Berrybase, Kennung 24221903263): Platine 36 × 26 × 5 mm mit 4 Löchern Ø 3, Keramik-Patch 25 × 25 × 9 mm am Kabel, 3–5 V (eigener Regler, an 3V3_RF reicht es), UART ab Werk 9600 Bd NMEA 1 Hz (bis 5 Hz einstellbar). An J11: VCC → Pin 1 (3V3_RF), GND → 2, TX → 3 (GPS_TX), RX → 4 (GPS_RX). Patch passt nicht in den 20 × 20 × 7-Halter unter dem Spant (Bauanleitung §3.6) | Jan, 27.10.2026 |
+| GPS-Modul | 1 | u-blox **NEO-6M** auf Breakout GY-GPS6MV2 (Berrybase, Kennung 24221903263): Platine 36 × 26 × 5 mm mit 4 Löchern Ø 3, Keramik-Patch 25 × 25 × 9 mm am Kabel, 3–5 V (eigener Regler, an 3V3_RF reicht es), UART ab Werk 9600 Bd NMEA 1 Hz (bis 5 Hz einstellbar). An J11: VCC → Pin 1 (3V3_RF), GND → 2, TX → 3 (GPS_TX), RX → 4 (GPS_RX). Halter unter dem Spant ab Stand 2d dafür ausgelegt (Bauanleitung §3.6) | Jan, 27.10.2026 |
 | Stiftleisten für den Teensy, Schalter, einige Elkos | vorhanden | Teensy-Stiftleisten müssen nicht gekauft werden | Jan, 27.10.2026 |
 | Epoxid | `[?]` | Jan sieht nach; gebraucht für Kuppler J1, Schraubring und die Kabeldurchführung im Band | Jan, 27.10.2026 |
 | 1S-Lader (JST-PH), microSD, Arming-Schalter, Zünder, 4 Motoren (Space Rocket Technologies), Fallschirm | je vorhanden | | Jan, 26.10.2026 |
@@ -72,7 +72,7 @@ Maximum 33 N) ist ein anderer Motor und kommt nur zum Vergleich in die Python-Si
 |---|---|---|---|
 | TVC-Kardan: Schubstangen-Kardan, Außen-/Innenrahmen, Motorrohr | `inner/outer_gimbal_dual_TVC.blend` (12.06.2025), STL in `cad/export/asbuilt/` | **ja, gebaut und in Rohr A eingepasst** (Jan, 22.10.2026): 2 × W5652H flach über dem Außenrahmen, Hebel 15 mm, Stangen 2 mm | `[?]` |
 | Flugcomputer-Ring-Stack (Ø 69 mm, 8× M2-Stangen) | `flight_computer.blend` | verworfen (22.10.2026: Schlitten mit Spant) | – |
-| Schlitten mit Spant, untere Scheibe, Schalterbrett, Schraubring J1 (Stand 2b) | `cad/modular.py` → `cad/export/modular/*.stl` | nein | PETG, 3 Wände, 25 % Gyroid; nach dem Druck wiegen (Modell 74 / 8 / 2 / 14 g) |
+| Schlitten mit Spant, untere Scheibe, Schalterbrett, Schraubring J1 (Stand 2b) | `cad/modular.py` → `cad/export/modular/*.stl` | nein | PETG, 3 Wände, 25 % Gyroid; nach dem Druck wiegen (Slicer-Modell Stand 2d: 58 / 7 / 3 / 6 g) |
 | CO₂-Modul (Anstecher, Kapselhalter) | eigene Konstruktion (Bauanleitung O6) | nein | PETG (PLA wird am kalten CO₂ spröde) |
 | Spitze (federgelagert, M2,5-Gewindestange) | `rocket nose.blend` | verworfen (Klima-Spitze 8539) | – |
 | Landebeine und Beinanbindung | `LegConnectors.blend`, `model_rocket.blend` | `[?]` | `[?]` |
@@ -104,8 +104,8 @@ sich die Lageregelung mit TVC am Boden testen, ohne Treibsatz. Siehe `PROJECT.md
 **Stand 22.10.2026, Modulbauweise (`docs/Bauanleitung_Kartonaut1.md`):** vier Module, Rohr A 125 (Kardan, gebaut),
 Rohr B 176 (Avionik: Kuppler J1 mit Schraubring, Schlitten mit Spant, Platine, Akkus, GPS, LoRa-Wendel, Schalterbrett),
 Rohr C 195 (CO₂-Modul, Schirm, Schnur), Klima-Spitze über dem zweiten halben Kuppler; Gesamtlänge 731 mm; Trennstellen
-T1–T3 mit je vier M3 in Muttern-Taschen bei 0°/90°/180°/270° (Rohr C 45° versetzt). Massenbudget 705 g (Druckteile Stand 2c), Schwerpunkt
-259 mm, Hebelarm Kardan–Schwerpunkt 190 mm (`cad/mass_stand2b.md`), alles ungewogen. Die folgenden Absätze beschreiben
+T1–T3 mit je vier M3 in Muttern-Taschen bei 0°/90°/180°/270° (Rohr C 45° versetzt). Massenbudget 705 g (Druckteile Stand 2d), Schwerpunkt
+260 mm, Hebelarm Kardan–Schwerpunkt 190 mm (`cad/mass_stand2b.md`), alles ungewogen. Die folgenden Absätze beschreiben
 den Stand vom 21.10. (Ring-Stack im Kuppler, Pyro-Kolben), der damit überholt ist.
 
 - **Rohr:** Klima 75 mm, innen 72,6 mm. **Der Flugcomputer sitzt im Kuppler** (innen 70,2 mm,

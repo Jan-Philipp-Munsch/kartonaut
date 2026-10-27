@@ -30,7 +30,7 @@ auf der Platine schon vorgesehen.
 |---|---|
 | Rumpf | Klima-Papprohr Ø 75 mm (innen 72,6 mm) in drei Modulen: Rohr A 125 mm (Kardan), Rohr B 176 mm (Avionik), Rohr C 195 mm (Bergung); zwei halbe Kuppler, Klima-Kunststoffspitze; 731 mm lang. Alle radialen Schrauben M3 |
 | Motor | TSP E12-0, 24 mm, 39 Ns, 12 N mittlerer Schub, 28 N Spitze, 3,5 s Brenndauer, ohne Ausstoßladung; vier vorhanden |
-| Startmasse | **705 g** im Massenbudget ([`cad/mass_stand2b.md`](cad/mass_stand2b.md), Druckteile Stand 2c), Schwerpunkt 259 mm über der Düse, Hebelarm Kardan–Schwerpunkt 190 mm, Schub-Gewicht 1,7; Ziel unter 750 g erreicht. Noch nichts gewogen |
+| Startmasse | **705 g** im Massenbudget ([`cad/mass_stand2b.md`](cad/mass_stand2b.md), Druckteile Stand 2d), Schwerpunkt 260 mm über der Düse, Hebelarm Kardan–Schwerpunkt 190 mm, Schub-Gewicht 1,7; Ziel unter 750 g erreicht. Noch nichts gewogen |
 | Flugcomputer | Teensy 4.1 auf Mainboard **rev B1** (KiCad aus Code, fertig geroutet, DRC 0 Fehler; bei JLCPCB in Fertigung, Lieferung um den 4.–6.11.): IMU LSM6DSV16X, Barometer BMP388 (BMP390 bei JLCPCB nicht lieferbar, pinkompatibel), Strommonitor INA239, alle an SPI1 hinter einem CS-Decoder; Magnetometer LIS3MDL und SHT40 an I²C; LoRa E22-400T22S, microSD, vier Pyro-Kanäle (zwei bestückt), Stapelstecker |
 | Versorgung | zwei Akkus: 1S-LiPo für die Elektronik (Buck-Boost), 2S LemonRC 450 mAh für die Servos; FET-Lastschalter hinter einem mechanischen Schalter, beide in der Rakete ladbar |
 | Aktorik | Schubstangen-Kardan mit 2 × FrSky Xact W5652H direkt an 2S (gebaut und in Rohr A eingepasst); ein Servo löst die CO₂-Kartusche aus. Kein Rollmotor beim Erstflug |
@@ -45,7 +45,7 @@ auf der Platine schon vorgesehen.
 **Erledigt**
 
 - Konzept, Massen- und Strombudget; Rumpfteile, Fallschirm, Motoren, CO₂-Kartuschen und Antrieb des Prüfstands gekauft; Schubstangen-Kardan mit den W5652H gebaut.
-- **Bauanleitung *Kartonaut 1*** in Modulbauweise mit Zeichnungen, Bohrschablonen 1:1, Stückliste, Bauschritten, Wartung und Kabelplan; Massenbudget Stand 2c (705 g).
+- **Bauanleitung *Kartonaut 1*** in Modulbauweise mit Zeichnungen, Bohrschablonen 1:1, Stückliste, Bauschritten, Wartung und Kabelplan; Massenbudget Stand 2d (705 g).
 - **6DOF-Simulation**: MATLAB/Simulink-Modell nach Python portiert, mit 1:1-Kopie des Flugreglers; Physik-Durchsicht (Luftwiderstand, Bodenkontakt, Treibstoffmodell), Reglergewinne per Bayes-Optimierung, Studien zu Landebrennen und Schubdrossel; 45 Tests.
 - **Flug-Firmware**: Gyro-Quaternion, Zustandsautomat, Pyro-Logik, Telemetrieprotokoll mit CRC, Watchdog mit Zustandsspeicher, Sensor-Backends für Breakouts und rev B, Landebrennen und Drosselregler (für den Erstflug abgeschaltet); 42 native Tests inkl. Software-in-the-Loop gegen die Simulation.
 - **Tischtest-Firmware rev B1**: Treiber für LIS3MDL, SHT40, ADXL375, IMU-Selbsttest, Testkonsole `revb_test`, geführte Kalibrierung mit CRC, `bench_test.py` am PC, Versuche E01, E02, E05 und zwölf Tischversuche.
@@ -56,7 +56,7 @@ auf der Platine schon vorgesehen.
 
 **Als Nächstes**
 
-1. AliExpress-Korb bestellen (E22-400T22S ×2, E22-400T22U, Antennen, XT30PW, Kabel, USB-C-Breakout; 60,02 €, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); Flugakku 2S 450 mAh (Reichelt) besorgen, nachsehen, ob Epoxid da ist (Teensy-Stiftleisten, Schalter und GPS u-blox NEO-6M sind vorhanden); GPS-Halter im Schlitten auf den 25-mm-Patch anpassen, dann die Druckteile drucken. Platine kommt um den 4.–6.11., dann Selbstlöt-Teile einlöten.
+1. AliExpress-Korb bestellen (E22-400T22S ×2, E22-400T22U, Antennen, XT30PW, Kabel, USB-C-Breakout; 60,02 €, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); Flugakku 2S 450 mAh (Reichelt) besorgen, nachsehen, ob Epoxid da ist (Teensy-Stiftleisten, Schalter und GPS u-blox NEO-6M sind vorhanden); Druckteile Stand 2d drucken (GPS-Halter für den NEO-6M ist eingebaut, Schlitten 58 statt 64 g) und wiegen. Platine kommt um den 4.–6.11., dann Selbstlöt-Teile einlöten.
 2. Firmware: **Bordzündung mit gesichertem Startprotokoll und Laptop-Skript** nach [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md) (Cloud-Session), Treiber LSM6DSV16X hinter `Imu.h`, CO₂-Auslösung aus dem Zustandsautomaten, Kalibrierwerte in den rev-B-Sensorpfad.
 3. Rakete nach der Anleitung bauen: Teile drucken und wiegen, Rakete wiegen, Schwerpunkt auspendeln, Masse, Hebelarm und die neuen Gewinne in `Config.h`.
 4. Tischtest rev B1 mit `revb_test`, dann Bodentests: Servo-Kardan-Verhältnis (E01/E02), CO₂-Ausstoß dreimal (auch kalt), TVC-Prüfstand mit Propellermotor, Funkreichweite, Startablauf mit Ersatzlast statt Anzünder, dann Anzünder ohne Motor (Durchbrennzeit, Polyfuse F1).
@@ -110,7 +110,8 @@ gewogen wird nach dem Drucken.
 | `voll` (21.10.): 1000 mm, Beine, Ringstapel, Kolben | 981 g | 449 mm | 372 mm | 0,110 kg·m² | 0,00105 kg·m² | 20 m, Schub-Gewicht 1,1 |
 | `erstflug` (22.10.): 700 mm, ohne Beine, Kolben | 761 g | 318 mm | 242 mm | 0,046 kg·m² | 0,00057 kg·m² | – |
 | Stand 2b (22.10.): 496 mm Rohr in drei Modulen, CO₂, ohne Rollmotor | 723 g | 256 mm | 186 mm | 0,021 kg·m² | 0,00047 kg·m² | 63 m |
-| **Stand 2c (23.10.): Druckteile im Leichtbau** | **705 g** | 259 mm | 190 mm | 0,021 kg·m² | 0,00047 kg·m² | **74 m**, Schub-Gewicht 1,7 |
+| Stand 2c (23.10.): Druckteile im Leichtbau | 705 g | 259 mm | 190 mm | 0,021 kg·m² | 0,00047 kg·m² | 74 m, Schub-Gewicht 1,7 |
+| **Stand 2d (27.10.): GPS NEO-6M (+6 g), Schlitten mit Fenstern (−6 g)** | **705 g** | 260 mm | 190 mm | 0,021 kg·m² | 0,00047 kg·m² | wie 2c (Masse und Hebelarm gleich, nicht neu simuliert) |
 
 Der Hebelarm ist halb so lang wie bei `voll`, die Querträgheit ein Fünftel. Mit den echten Werten stehen
 die alten Gewinne Kp 5 / Kd 1 zwei Drittel des Brennens am Kardananschlag; Kp 2 / Ki 1 / Kd 0,45 aus

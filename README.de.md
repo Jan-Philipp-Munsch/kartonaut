@@ -56,7 +56,7 @@ auf der Platine schon vorgesehen.
 
 **Als Nächstes**
 
-1. AliExpress-Korb bestellen (E22-400T22S ×2, E22-400T22U, Antennen, XT30PW, Kabel, USB-C-Breakout; 60,02 €, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); Flugakku 2S 450 mAh (Reichelt) und Epoxid besorgen; Teensy-Stiftleisten und GPS-Typ prüfen. Platine kommt um den 4.–6.11., dann Selbstlöt-Teile einlöten.
+1. AliExpress-Korb bestellen (E22-400T22S ×2, E22-400T22U, Antennen, XT30PW, Kabel, USB-C-Breakout; 60,02 €, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); Flugakku 2S 450 mAh (Reichelt) besorgen, nachsehen, ob Epoxid da ist (Teensy-Stiftleisten, Schalter und GPS u-blox NEO-6M sind vorhanden); GPS-Halter im Schlitten auf den 25-mm-Patch anpassen, dann die Druckteile drucken. Platine kommt um den 4.–6.11., dann Selbstlöt-Teile einlöten.
 2. Firmware: **Bordzündung mit gesichertem Startprotokoll und Laptop-Skript** nach [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md) (Cloud-Session), Treiber LSM6DSV16X hinter `Imu.h`, CO₂-Auslösung aus dem Zustandsautomaten, Kalibrierwerte in den rev-B-Sensorpfad.
 3. Rakete nach der Anleitung bauen: Teile drucken und wiegen, Rakete wiegen, Schwerpunkt auspendeln, Masse, Hebelarm und die neuen Gewinne in `Config.h`.
 4. Tischtest rev B1 mit `revb_test`, dann Bodentests: Servo-Kardan-Verhältnis (E01/E02), CO₂-Ausstoß dreimal (auch kalt), TVC-Prüfstand mit Propellermotor, Funkreichweite, Startablauf mit Ersatzlast statt Anzünder, dann Anzünder ohne Motor (Durchbrennzeit, Polyfuse F1).

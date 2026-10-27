@@ -296,6 +296,10 @@ Im DigiKey-Auftrag stecken auch der Summer AI-1223-TWT-5V-R ×2 (BZ1, Position 4
 ERJ-3EKF6803V ×10 (ohne Rückstand) und B3B-XH-A ×10 statt S3B-XH-A für J5/J6 (stehend statt liegend, kein Rückstand).
 Noch nirgends bestellt: Flugakkus (2S 450 mAh XT30, 1S für das Fach 50 × 30 × 7), Epoxid, Teile der Zündbox.
 
+**Nachtrag Jan 27.10.:** Teensy-Stiftleisten, Schalter und einige Elkos sind vorhanden. Das GPS ist ein u-blox NEO-6M
+auf dem Berrybase-Breakout GY-GPS6MV2 (36 × 26 mm, Patch 25 × 25 × 9 am Kabel, 3–5 V, UART 9600 Bd), passt elektrisch
+an J11. Epoxid: Jan sieht nach, ob noch welches da ist.
+
 ## 6c. AliExpress-Bestellung (Rest für Rakete und Bodenstation), Preise vom 26.10.2026 abends
 
 Entscheidung 26.10. abends: **Bestückung bei JLCPCB bleibt** (Auftrag W2026102623077325, noch unbezahlt, Status

@@ -55,7 +55,7 @@ motor and pyro channels are kept for later flights and already provided for on t
 
 **Next**
 
-1. Order the AliExpress cart (E22-400T22S ×2, E22-400T22U, antennas, XT30PW, cables, USB-C breakout; €60.02, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); get the 2S 450 mAh flight battery (Reichelt) and epoxy; check the Teensy pin headers and the GPS type. The board arrives around 4–6 Nov, then solder in the hand-solder parts.
+1. Order the AliExpress cart (E22-400T22S ×2, E22-400T22U, antennas, XT30PW, cables, USB-C breakout; €60.02, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); get the 2S 450 mAh flight battery (Reichelt), check whether epoxy is on hand (Teensy pin headers, switches and a u-blox NEO-6M GPS are on hand); adapt the GPS holder in the sled to the 25 mm patch, then print the printed parts. The board arrives around 4–6 Nov, then solder in the hand-solder parts.
 2. Firmware: **on-board ignition with the authenticated launch protocol and a laptop script** per [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md) (cloud session), LSM6DSV16X driver behind `Imu.h`, CO₂ release from the state machine, calibration data into the rev B sensor path.
 3. Build the rocket after the manual: print and weigh the parts, weigh the rocket, balance the centre of gravity, put mass, lever arm and the new gains into `Config.h`.
 4. Bench test of rev B1 with `revb_test`, then ground tests: servo-to-gimbal ratio (E01/E02), CO₂ ejection three times (also cold), TVC test rig with the propeller motor, radio range, launch sequence with a dummy load instead of the igniter, then an igniter without motor (burn-through time, polyfuse F1).

@@ -61,7 +61,9 @@ Maximum 33 N) ist ein anderer Motor und kommt nur zum Vergleich in die Python-Si
 | Akku 1S LiPo 3,7 V (Elektronik) | 1 | 600 mAh, JST-PH; Maße gegen das Fach 50 × 30 × 7 prüfen, Schutzschaltung `[?]` | Bauanleitung §3.5 |
 | Akku 2S LemonRC 450 mAh 35C, XT30 (55 × 30 × 10, 29 g) | 0 | zu bestellen (2 Stück, Reichelt `LRC 2S 450`); der vorhandene 2S 1200 mAh ist zu groß und zu schwer | Bauanleitung §3.1 |
 | Servo SG90 für die CO₂-Auslösung | 1 (aus Bestand) | an `J_SERVO3` | Bauanleitung §3.5 |
-| GPS-Modul | 1 | Berrybase-Bestellung, Typ nicht im Repo; auf dem Modul nachsehen (UART 3,3 V, Patch) | Jan, 26.10.2026 |
+| GPS-Modul | 1 | u-blox **NEO-6M** auf Breakout GY-GPS6MV2 (Berrybase, Kennung 24221903263): Platine 36 × 26 × 5 mm mit 4 Löchern Ø 3, Keramik-Patch 25 × 25 × 9 mm am Kabel, 3–5 V (eigener Regler, an 3V3_RF reicht es), UART ab Werk 9600 Bd NMEA 1 Hz (bis 5 Hz einstellbar). An J11: VCC → Pin 1 (3V3_RF), GND → 2, TX → 3 (GPS_TX), RX → 4 (GPS_RX). Patch passt nicht in den 20 × 20 × 7-Halter unter dem Spant (Bauanleitung §3.6) | Jan, 27.10.2026 |
+| Stiftleisten für den Teensy, Schalter, einige Elkos | vorhanden | Teensy-Stiftleisten müssen nicht gekauft werden | Jan, 27.10.2026 |
+| Epoxid | `[?]` | Jan sieht nach; gebraucht für Kuppler J1, Schraubring und die Kabeldurchführung im Band | Jan, 27.10.2026 |
 | 1S-Lader (JST-PH), microSD, Arming-Schalter, Zünder, 4 Motoren (Space Rocket Technologies), Fallschirm | je vorhanden | | Jan, 26.10.2026 |
 
 ### 1.4 Gedruckte Teile

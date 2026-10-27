@@ -231,7 +231,7 @@ den USA), Balancer-Verlängerung (JST-XH 3 hast du), Crimpzange, JST-Sortiment, 
 | ☐ | Klima-Spitze 8539 mit Holzplatte und Haken, Fallschirm 125 cm, Kevlar und Gummischnur |
 | ☐ | 4 × TSP E12-0, 5 × CO₂-Kapsel 8 g |
 | ☐ | 1S-LiPo 600 mAh (Maße mit dem Fach 50 × 30 × 7 vergleichen, JST-PH, ohne Schutzschaltung?) |
-| ☐ | GPS-Modul (alt), siehe §3.6 |
+| ☐ | GPS-Modul u-blox NEO-6M (GY-GPS6MV2, Berrybase), siehe §3.6 |
 | ☐ | Teensy 4.1, microSD, SG90 (CO₂-Auslösung), 2 × HC-12, JST-Stecker, Kleber, Klett, Schaum |
 
 ### 3.6 Das alte GPS-Modul
@@ -242,6 +242,12 @@ einer 25 × 25-Patch-Antenne am Kabel; dann kommt die Patch-Antenne flach unter 
 breit, mit einer Aussparung im Zapfenring) und die Platine des Moduls seitlich an den Träger. **Störfestigkeit:** Die
 alten Module haben oft keinen SAW-Filter vor dem Verstärker. Bodentest: GPS-Fix halten, während LoRa sendet; wenn er
 abreißt, LoRa auf 14 dBm senken oder ein M10-Modul kaufen. Typ und Maße deines Moduls genügen mir, um den Halter anzupassen.
+
+**Stand 27.10.2026:** Es ist ein NEO-6M auf dem Breakout GY-GPS6MV2 von Berrybase: Platine 36 × 26 × 5 mm mit vier
+Löchern Ø 3, Keramik-Patch 25 × 25 × 9 mm am Kabel, 3–5 V, UART 9600 Bd. Der Patch passt **nicht** zwischen die Leisten
+für 20 × 20 × 7 im Schlitten. Den Schlitten deshalb erst drucken, wenn der Halter im CAD auf den 25-mm-Patch geändert
+ist (Leisten 27 mm auseinander, 10 mm hoch), oder den Patch mit Schaumklebepad flach unter den Spant kleben und die
+Modulplatine mit Klett seitlich an den Träger. Anschluss an J_GPS: VCC → Pin 1, GND → 2, TX → 3, RX → 4.
 
 ## 4. Druckeinstellungen und Muttern
 
@@ -354,7 +360,7 @@ Jedes Teil nach dem Druck wiegen.
 |---|---|
 | O1 | Servofenster laut Druckdatei und Servo-Lage bei ca. 207° und 336° ab der Längslinie (27° bzw. 24° neben einer Schraube, passt zu deinen Fotos). Rampenführungen deshalb bei **45°/135°/250°** statt im 45°-Raster (Startrampe, Branch `landepad`, anpassen). |
 | O2 | Spitzenlänge (230 mm angenommen) nachmessen; ändert nur die Gesamtlänge. |
-| O3 | Altes GPS-Modul: Typ und Maße, dann den Halter unter dem Spant anpassen (§3.6). |
+| O3 | GPS ist ein NEO-6M (GY-GPS6MV2, Patch 25 × 25 × 9, Platine 36 × 26): Halter unter dem Spant im CAD anpassen, vor dem Druck des Schlittens (§3.6). |
 | O4 | Gedruckt ist der Kardan aus `outer_gimbal_dual_TVC.blend` und `inner_gimbal_dual_TVC.blend` (12.06.2025, `E:\Archiv_Projekte\Blender\Dateien\`); als Netz in `cad/export/asbuilt/` und im GLB-Gesamtmodell an seiner Lage (Grundfläche 38 mm, Bohrungen auf 44 mm). `cad/tvc.py` (Bild auf GitHub) ist ein späterer Entwurf vom 21.10.2026, nicht gedruckt. Servo-Umrechnung am gebauten Kardan messen. |
 | O5 | **TODO Firmware:** Lage als Quaternion aus dem Gyro, Regelfehler aus dem Oben-Vektor im Körpersystem (Befund 3 in `PROJECT.md`). Voraussetzung für den Verzicht auf den Rollmotor; vor dem Erstflug. |
 | O6 | CO₂-Modul: Kapselgröße und Anstechmechanismus festlegen, Bodentests. |

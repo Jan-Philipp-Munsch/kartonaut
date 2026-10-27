@@ -403,7 +403,7 @@ Store): zwei für die Platinen, eins für die Bodenstation am Raspberry Pi Pico.
 | Teil | Ersatz |
 |---|---|
 | E22-400T22U (USB) | Raspberry Pi Pico + drittes E22-400T22S, frei verdrahtet; Pico aus Bestand oder Berrybase (etwa 5 €) |
-| Wendel TX433-TH-3, Stabantenne | Rakete: 433-MHz-Wendel aus einem alten HC-12-Modul am ANT-Pad. Boden: selbstgebaute λ/4-Groundplane (Strahler etwa 16,5 cm, vier Radiale etwa 17,5 cm unter 45°, 1,5-mm²-Kupferdraht) |
+| Wendel TX433-TH-3, Stabantenne | Rakete: 433-MHz-Wendel aus einem alten HC-12-Modul am ANT-Pad. Boden: senkrechter Halbwellen-Dipol, 2 × 164 mm 1,5-mm²-Kupferdraht, im Druckgehäuse `cad/groundbridge.py` |
 | Pigtails | entfällt; Antenne sitzt am Modul statt unten durch die Scheibe |
 | XT30PW (J1) | vorerst der JST-RCY des vorhandenen 2S, Gegenstück mit kurzer Litze in J1, mit Klebeband gesichert |
 | USB-C-Breakout | entfällt; beide Akkus extern laden |

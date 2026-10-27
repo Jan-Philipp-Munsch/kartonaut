@@ -128,14 +128,16 @@ Zündbefehl, damit der Countdown vollständig im Log steht.
 **Funkbrücke (neues PlatformIO-Projekt `tools/ground/bridge_pico/`, Raspberry Pi Pico, Arduino-Core
 `earlephilhower/arduino-pico`):** ein drittes E22-400T22S, frei verdrahtet am Pico (Entscheidung Jan, 27.10. abends).
 - Verdrahtung (in der README des Projekts als Tabelle): E22 VCC → Pico 3V3 OUT, GND → GND, E22 TXD → GP5 (UART1 RX),
-  E22 RXD → GP4 (UART1 TX), M0 → GP6, M1 → GP7, AUX → GP8 (Eingang). Antenne am ANT-Pad (selbstgebaute
-  λ/4-Groundplane, siehe Bauanleitung), IPEX frei.
+  E22 RXD → GP4 (UART1 TX), M0 → GP6, M1 → GP7, AUX → GP8 (Eingang). Antenne am ANT-Pad (Halbwellen-Dipol im
+  Gehäuse, `cad/groundbridge.py`), IPEX frei.
 - Transparent: Bytes von USB-CDC nach UART1 und zurück, ohne die Rahmen zu verändern; dadurch braucht `launch.py` keinen
   eigenen Treiber. Baudrate wie die Rakete (`RADIO_BAUD` aus `firmware/src/Config.h`).
 - Setzt M0/M1 für den Normalbetrieb auf LOW. Ein Konfigurationsmodus (z. B. Escape-Sequenz oder eigener USB-Befehl,
   Umsetzung frei) setzt M0/M1 auf Konfiguration und schreibt Kanal, Adresse und Luftrate passend zur Rakete (Werte aus
   `firmware/src/Config.h`, gemeinsamer Header, kein Kopieren). Liest RSSI aus, wenn das E22 es anhängt.
 - Status über die Pico-LED (Dauerlicht: Rahmen empfangen in den letzten 2 s; Blinken: kein Empfang).
+- Gehäuse und Antenne: `cad/groundbridge.py` (Kasten für Pico und E22, senkrechter Halbwellen-Dipol 2 × 164 mm
+  statt Groundplane, Entscheidung Jan 27.10.; Druckteile in `cad/export/groundbridge/`). Pinbelegung oben gilt.
 - Der CI-Lauf baut das Projekt mit (eigener PlatformIO-Job).
 
 **Laptop-Werkzeug `tools/ground/launch.py`:**
@@ -169,7 +171,7 @@ Zündbefehl, damit der Countdown vollständig im Log steht.
 ## 7. Dokumentation, die mitgezogen wird
 
 - `docs/Schnittstellen_Bodensystem_2026-10-22.md`: S2 (Zündleitung) entfällt, S3 um ARM/LAUNCH/HEARTBEAT/IGN.
-- `groundstation/README.md`: Minimum = Laptop + Pico-Funkbrücke mit E22 und Groundplane-Antenne; ESP32-Station als
+- `groundstation/README.md`: Minimum = Laptop + Pico-Funkbrücke mit E22 und Dipol im Druckgehäuse; ESP32-Station als
   möglicher späterer Ausbau.
 - `docs/Bauanleitung_Kartonaut1.md`: Kabelweg Anzünder (§2), Startcheckliste (§6.1) mit Reihenfolge Hauptschalter →
   Anzünder → Arming-Schalter → Weggehen → PAD_READY → ARM → LAUNCH; Vorgehen bei MISFIRE (60 s warten, dann SAFE, erst

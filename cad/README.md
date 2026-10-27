@@ -40,6 +40,7 @@ nur die Bilder.
 | `legs.py` | Hülse am Rohrende, Ring 70 mm darüber, vier Beine mit Haupt- und oberer Strebe, Fuß, Gelenke |
 | `testrig.py` | TVC-Prüfstand um die gebaute Rakete: Gestell, Rahmen, Klemmkragen mit Lukenfenstern, Prop-Adapter mit BR2814 und Propeller, Schutzkäfig; Prüfung, Druckteile einzeln als STL (siehe unten) |
 | `build.py` | Zusammenbau, Export, Kollisionsprüfung, Render-Aufrufe |
+| `groundbridge.py` | Gehäuse der Bodenstations-Funkbrücke (Raspberry Pi Pico + E22-400T22S) mit senkrechtem Halbwellen-Dipol in einer Leiste, Stativmutter 1/4"; Druckteile als STL (siehe unten) |
 | `landingpad.py` | Startrampe: Platte mit Loch, drei verstellbare Beine, Startstützen bei 45°/135°/250°; Prüfung gegen die gebaute Rakete, eigener Export und Bilder (siehe unten) |
 | `mass_model.py` | Stabmodell für Schwerpunkt und Trägheitstensor (Konfigurationen `voll` und `erstflug`) |
 | `modular.py`, `modular_params.py` | Modulbauweise *Kartonaut 1* Stand 2b: Rohre A/B/C mit Bohrungen und Luken, Druckteile, gebauter Kardan als Netz, Servos und Gestänge schematisch, Kollisionsprüfung, Gesamtmodell STEP/GLB, Bilder (siehe unten) |
@@ -327,6 +328,24 @@ Erde; keine Landefläche Ø 1200 (eigenes Teil für die Konfiguration `voll`, sp
 2 × M6 in 18 mm Sperrholz am Muster prüfen. Temperatur der Alu-Auflagen (direkt neben der Düse, seitlich vom Strahl) beim ersten
 Abbrand prüfen. Ob die Servoarme bei Vollausschlag aus den Servofenstern ragen (Bauanleitung O1), am Kardan nachsehen; das Modell
 hat sie im Rohr. Landefläche für `voll` konstruieren.
+
+## Funkbrücke der Bodenstation (`groundbridge.py`, 27.10.2026)
+
+| Mit Dipol, Deckel abgehoben | Innenraum |
+|---|---|
+| ![](../docs/img/cad/groundbridge.png) | ![](../docs/img/cad/groundbridge_detail.png) |
+
+`python cad/groundbridge.py` baut das Gehäuse für den Pico und das dritte E22 (Plan Bordzündung §5), prüft, dass Pico und
+E22 frei liegen, und schreibt die Druckteile nach `export/groundbridge/` (Unterteil ≈ 23 g, Deckel ≈ 8 g, PETG, ohne
+Stützen). Kasten 62 × 16 × 70 mm, links eine Leiste mit Drahtkanal Ø 2,2 für den Dipol: zwei Arme aus 1,5-mm²-Kupferdraht,
+je 164 mm ab der Lötstelle (λ/4 bei 433,125 MHz × 0,95), oberer Arm an ANT, unterer an GND des E22. Beide biegen im Fenster
+der Leiste rechtwinklig durch die linke Wand zu den Pads. Der Pico sitzt auf vier Domen (M2 × 5), die USB-Buchse in der
+rechten Wand; das E22 klebt mit Schaumband in einem Rahmen. Rückseite: Sechskanttasche für eine 1/4"-20-Mutter
+(Kamerastativ), zwei Kabelbinderschlitze in der Leiste für die Montage an einem Stab. Deckel mit vier M3 × 10 und einem
+Fenster über der Pico-LED.
+
+**Offen:** Lage der LED und der Pads am echten Pico/E22 prüfen (Fenster und Drahtdurchführungen sind großzügig). Die Arme
+nach dem ersten Reichweitentest gegebenenfalls kürzen; ohne Messgerät ist 164 mm der Startwert.
 
 ## Annahmen, am Gerät nachzumessen
 

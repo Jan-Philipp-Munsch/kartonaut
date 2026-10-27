@@ -98,6 +98,11 @@ elif view == "pad":
     aim((-1.0, -1.3, 0.75), ctr, max(ext.z * 1.15, ext.x * 1.25), 1400, 1300)
 elif view == "pad_detail":
     aim((-1.0, -1.1, 0.8), ctr, max(ext.x, ext.y) * 1.3, 1300, 1100)
+elif view == "groundbridge":
+    # Funkbrücke (cad/groundbridge.py) mit Dipol, Deckel abgehoben, von schräg vorn
+    aim((0.8, 1.3, 0.35), ctr, ext.z * 1.05, 900, 1500)
+elif view == "groundbridge_detail":
+    aim((0.8, 1.3, 0.45), ctr, max(ext.x, ext.z) * 1.35, 1200, 1100)
 elif view == "pad_section":
     # Schnitt y = 0 durch die Stütze bei 180°, Blick aus -y
     aim((0.0, -1.0, 0.15), ctr, max(ext.x * 1.08, ext.z * 1.6), 1400, 1000)

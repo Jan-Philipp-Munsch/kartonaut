@@ -95,3 +95,25 @@ Passive, Polyfuses, TVS, 74HC und MCP73831 dort vermutlich erhältlich, nicht ei
 3. Parallel bestellen: INA239 (DigiKey/Mouser), E22-400T22S (Ebyte/AliExpress), WS2812B-2020, Polymerelkos oder
    eigene Elkos, die Teile aus §2.2 bei Reichelt/LCSC, dazu `EINKAUFSLISTE_revB1.md` (THT, Stecker, Akkus).
 4. Firmware: BMP388 statt BMP390 (CHIP_ID 0x50), Treiber `BMP3XX` unterstützt beide.
+
+## 4. Platzierungsbestätigung (geprüft 27.10.2026)
+
+JLCPCB hat nach der Zahlung (239,50 USD inkl. DDP) das korrigierte Platzierungsbild vorgelegt. Der Ingenieur hat
+13 Positionen geändert: Q1–Q7, U4, U5, U7 (genau die zehn aus der Chat-Liste) sowie C16, C17 und R4.
+
+Teil für Teil gegen `mainboard.kicad_pcb` (Pad-1-Lage) und den Bestückungsdruck geprüft:
+
+| Bauteil | Pin 1 / Polarität im Bestätigungsbild | KiCad | |
+|---|---|---|---|
+| Q2, Q3, Q4, Q6, Q7 | oben links am Dreieck | oben links | richtig |
+| Q1 (180°) | unten rechts am Dreieck | unten rechts | richtig |
+| Q5 (90°) | unten links am Dreieck | unten links | richtig |
+| U4 LSM6DSV16X | oben links | oben links | richtig |
+| U5 BMP388 | unten links | unten links | richtig |
+| U7 DRV8833 | oben links am Dreieck | oben links | richtig |
+| C16, C17 | Plus/Anodenband links | Pad 1 (+) links | richtig |
+| R4 | nur gedreht, unpolar | – | ohne Belang |
+| U2, U16, U18 (nicht geändert) | wie KiCad | | richtig |
+| D1, D4 (nicht geändert) | Kathodenband links bzw. unten | Pad 1 = K links bzw. unten | richtig |
+
+Ergebnis: Platzierung freigeben („Yes, please proceed to production“).

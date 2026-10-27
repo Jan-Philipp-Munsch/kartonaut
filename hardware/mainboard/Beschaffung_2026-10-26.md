@@ -373,6 +373,25 @@ Fehlerstelle unter Vibration.
 normalem LiPo-Programm auf 4,2 V/Zelle laden, dann etwas weniger Kapazität). 1S 550 mAh PH2.0: GNB HV 9,49 €,
 Teranty 80C ca. 8 €. Alternative ohne Versandrisiko: LemonRC 2S 450 bei Reichelt 9,30 € (Bauanleitung §3.1).
 
+### Bodenstation nach der Entscheidung Bordzündung (27.10.2026)
+
+Die Rakete zündet den Motor selbst (`docs/Plan_Bordzuendung_2026-10-27.md`). **Zündbox, Zündleitung, ESP32-Station und
+D4184-Module werden nicht gekauft.** Bodenstation = Laptop + E22-400T22U (im AliExpress-Korb) + Startrampe.
+
+Für die Bordzündung zusätzlich nötig, alles aus Bestand oder bereits bestellt:
+
+| Teil | Zweck | Quelle |
+|---|---|---|
+| XHP-2 + SXH-Kontakte | Stecker der Anzünderleitung an J9 | DigiKey-Auftrag 102484398 |
+| Silikonlitze 2 × 26 AWG, ca. 40 cm | Anzünderleitung von J9 am Kardan vorbei zur Düse | Bestand (Litze vorhanden) |
+| Leistungswiderstand 1 Ω / 5 W oder 12-V-Glühlampe | Ersatzlast für den Tischtest des Startablaufs | Bestand oder Baumarkt |
+| Multimeter | Widerstand der TSP-Anzünder messen | Bestand |
+| 2S 450 mAh XT30 (LemonRC, Reichelt `LRC 2S 450`, 9,30 €) | Flugakku; der vorhandene 2S 1200 mAh ist zu schwer und passt nicht ins Fach | noch zu kaufen |
+
+**Zur Antenne:** Die SMA-Pigtails im Korb sind Absicht. Ein Pigtail mit der 3-dBi-Stabantenne ist der Aufbau für den
+Tischtest. Für den Flug wird ein zweiter Pigtail hinter der SMA-Buchse abgeschnitten und die Wendel TX433-TH-3 an den
+Innenleiter gelötet. Ein Kabel mit offenem Ende hätte denselben Preis, spart nur den Schnitt.
+
 ### Bodenstation, absolutes Minimum (Entscheidung Jan 26.10.: Station ist nice-to-have)
 
 Am Starttag sind nur zwei Dinge nötig: Telemetrie empfangen und den Motor zünden. Minimal:

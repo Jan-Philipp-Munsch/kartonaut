@@ -36,7 +36,7 @@ motor and pyro channels are kept for later flights and already provided for on t
 | Recovery | 8 g CO₂ cartridge pushes the nose cone off; 125 cm parachute in tube C |
 | Control | attitude as a quaternion from the gyro, PID on pitch/yaw → torque → gimbal angle via `M = l · T · sin δ`; 100 Hz; roll uncontrolled. Flight state machine `SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED` with watchdog and state memory |
 | Simulation | Python 6DOF: at 705 g one E12 carries the rocket to about 74 m (no drag); Kp 2 / Ki 1 / Kd 0.45 from a Bayesian optimisation keep the tilt below 2.5° without hitting the gimbal stop |
-| Ground system | ESP32-S3 ground station with a web UI for the phone, ignition over a 15 m line with key, ARM switch and relay; launch stand 600 × 600 mm on three adjustable legs |
+| Ground system | **Since 27 Oct: on-board motor ignition** through pyro channel 1, triggered by an authenticated radio command (ARM/LAUNCH with HMAC, countdown, heartbeat) from a laptop with the E22-400T22U USB radio ([plan](docs/Plan_Bordzuendung_2026-10-27.md)); launch stand 600 × 600 mm on three adjustable legs. The ESP32 station with its firing line stays documented as a later option |
 | Status | gimbal, tube A and tube B built; board ordered and in production, hand-solder parts from DigiKey on the way; flight and bench-test firmware written and tested without hardware; **no flight yet** |
 
 ## Project status
@@ -55,11 +55,11 @@ motor and pyro channels are kept for later flights and already provided for on t
 
 **Next**
 
-1. Order the AliExpress cart (E22-400T22S ×2, E22-400T22U, antennas, XT30PW, cables, USB-C breakout; €60.02, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); get flight batteries 2S 450 mAh and 1S, epoxy and the igniter-box parts; check the Teensy pin headers and the GPS type. The board arrives around 4–6 Nov, then solder in the hand-solder parts.
-2. Firmware: LSM6DSV16X driver behind `Imu.h`, CO₂ release from the state machine, calibration data into the rev B sensor path, shared telemetry header with the ground station.
+1. Order the AliExpress cart (E22-400T22S ×2, E22-400T22U, antennas, XT30PW, cables, USB-C breakout; €60.02, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); get the 2S 450 mAh flight battery (Reichelt) and epoxy; check the Teensy pin headers and the GPS type. The board arrives around 4–6 Nov, then solder in the hand-solder parts.
+2. Firmware: **on-board ignition with the authenticated launch protocol and a laptop script** per [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md) (cloud session), LSM6DSV16X driver behind `Imu.h`, CO₂ release from the state machine, calibration data into the rev B sensor path.
 3. Build the rocket after the manual: print and weigh the parts, weigh the rocket, balance the centre of gravity, put mass, lever arm and the new gains into `Config.h`.
-4. Bench test of rev B1 with `revb_test`, then ground tests: servo-to-gimbal ratio (E01/E02), CO₂ ejection three times (also cold), TVC test rig with the propeller motor, radio range, launch interlock from the phone.
-5. Build ground station and launch stand (about €80 and €86).
+4. Bench test of rev B1 with `revb_test`, then ground tests: servo-to-gimbal ratio (E01/E02), CO₂ ejection three times (also cold), TVC test rig with the propeller motor, radio range, launch sequence with a dummy load instead of the igniter, then an igniter without motor (burn-through time, polyfuse F1).
+5. Build the launch stand (about €86); route the igniter lead past the gimbal.
 6. *Kartonaut 1*: controlled ascent on one motor, parachute recovery.
 
 Work packages, findings and changelog are in [PROJECT.md](PROJECT.md), the build log in

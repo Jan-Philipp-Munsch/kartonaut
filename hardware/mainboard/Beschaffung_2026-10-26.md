@@ -386,6 +386,15 @@ Ringschraube M4, Epoxid, PETG für die Druckteile, Material der Startrampe (Baua
 CO₂-Moduls; aus Bestand: Lade-LED 3 mm mit Vorwiderstand, Flussmittel/Lötpaste, Litze. Die 2S-Ladebuchse am
 Schalterbrett ist eine der XT30PW-F aus den 5 Paaren (Leitungen direkt anlöten).
 
+
+**Nachtrag 27.10. abends (Bestellseite):** Das GH-Kabel-Angebot (ZANHDZBF) erlaubt nur 1 Stück je Kunde über alle
+Varianten. AliExpress rechnet außerdem **Einfuhrabgaben** auf (seit 1.7.2026 keine Zollfreigrenze mehr in der EU;
+der Betrag wächst mit der Zahl der Positionen). Bei 10 Positionen: 48,78 € Ware + 41,93 € Abgaben − 10,14 € Rabatt =
+84,13 €. Korb deshalb auf **7 Positionen** verkleinert: entfernt wurden GH 3-polig (J13 Kamera, J14 LED-Band: beim
+Erstflug nicht belegt), SH/Qwiic-Kabel (2 × Adafruit 4210 kommen von DigiKey) und die Stabantenne TX433-JZ-10 (dem
+USB-Stick liegt eine Antenne bei; am Tisch reicht die Wendel). Stand: **44,89 € Ware, Versand frei, 35,73 €
+Abgaben − 5,96 € Rabatt = 74,66 €** (alles inklusive, nichts bei Zustellung).
+
 ### Bodenstation nach der Entscheidung Bordzündung (27.10.2026)
 
 Die Rakete zündet den Motor selbst (`docs/Plan_Bordzuendung_2026-10-27.md`). **Zündbox, Zündleitung, ESP32-Station und

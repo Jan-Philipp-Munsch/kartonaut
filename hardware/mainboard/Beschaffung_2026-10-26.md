@@ -323,7 +323,7 @@ sicherstellen, dass keine Schutzschaltung (PCM) drin ist.
 
 ### AliExpress-Warenkorb, angelegt 27.10.2026 (Konto Jan, im eingebauten Browser; nicht bestellt)
 
-9 Positionen, **50,92 € + 3,56 € Versand = 54,48 €**. Die Kleinteile sind „Choice“-Artikel (Sammelversand durch
+10 Positionen, **56,46 € + 3,56 € Versand = 60,02 €** (Stand 27.10. nachmittags, Mengen für zwei Platinen). Die Kleinteile sind „Choice“-Artikel (Sammelversand durch
 AliExpress, versandfrei ab 10 €), die Funkteile kommen direkt von Ebyte (CDEBYTE Official Store und CDSENET Official
 Store = Ebytes eigene Marke; Antenne aus dem CDSENET IOT Module Store).
 
@@ -337,12 +337,29 @@ Store = Ebytes eigene Marke; Antenne aus dem CDSENET IOT Module Store).
 | JST-GH 1,25 mm 4-polig 15 cm, 10 Stück (ZANHDZBF, Choice) | 10PCS / 4P / Single Head | 1 | 3,99 € |
 | JST-GH 1,25 mm 3-polig 15 cm, 10 Stück (ZANHDZBF, Choice) | 10PCS / 3P / Single Head | 1 | 3,69 € |
 | JST-SH 1,0 mm 4-polig 10 cm beidseitig, 10 Stück (excellence electronic, Choice) | 10cm / 4P / Gleiche Seite | 1 | 3,19 € |
-| USB-C-Breakout 2,54 mm mit CC-5,1 k (Global IC Distributor, Choice) | – | 1 | 1,85 € |
+| USB-C-Breakout 2,54 mm mit CC-5,1 k (Global IC Distributor, Choice) | – | 2 | 2 × 1,85 € |
+| Wendelantenne TX433-TH-3, 433 MHz, 37 mm, 10 Stück (CDEBYTE Official Store) | TX433-TH-3 | 1 | 3,69 € |
 
 Die V2-Version des E22-400T22S ist Ebytes aktuelle Fertigung, gleiches Gehäuse (16 × 26 mm, Stempelloch) und gleiches
 UART-Protokoll wie LCSC C2903765. Die 5 Paare XT30PW enthalten je einen PW-M (Platine) und eine Buchse (Kabelseite).
 Nicht im Korb (bewusst): Einzelteile, die 4–5 € Versand je Händler gekostet hätten (erste Fassung des Korbs lag bei
 65 € mit 26 € Versand).
+
+
+**Flugantenne:** TX433-TH-3 ist eine Ebyte-Wendel zum Einlöten (37 mm, 1 dBi). Aufbau: einen der 10-cm-Pigtails
+(IPEX → SMA) nahe der SMA-Buchse abschneiden, Wendel an den Innenleiter löten, Schirm frei lassen, Lötstelle mit
+Schrumpfschlauch; IPEX ans E22, Wendel axial durch die untere Scheibe (Bauanleitung §5). Im Rumpf, nicht an der
+Außenhaut: Pappe ist für 433 MHz durchlässig. Reichweite am Tisch mit RSSI aus dem ACK prüfen.
+
+**Servostecker:** Die W5652H haben JR-Stecker (2,54 mm, Signal/+/−), J5/J6/J7/J16 sind JST-XH-3 mit derselben
+Reihenfolge (Pin 1 Signal, 2 VSERVO, 3 GND; `kicad/circuit.py`). Weg: JR-Stecker abschneiden, SXH-001T-P0.6 crimpen,
+in XHP-3 stecken (beides im DigiKey-Auftrag, Crimpzange vorhanden). Pin 1 = Signal (orange/weiß) an die Seite mit der
+Pin-1-Markierung im Bestückungsdruck. Kein Adapter dazwischen: jeder zusätzliche Steckkontakt ist im Flug eine
+Fehlerstelle unter Vibration.
+
+**Akkus (AliExpress-Preise 27.10., nicht im Korb):** 2S 450 mAh XT30: Tattu 75C 13,99 €, GNB 80C HV 12,19 € (HV: mit
+normalem LiPo-Programm auf 4,2 V/Zelle laden, dann etwas weniger Kapazität). 1S 550 mAh PH2.0: GNB HV 9,49 €,
+Teranty 80C ca. 8 €. Alternative ohne Versandrisiko: LemonRC 2S 450 bei Reichelt 9,30 € (Bauanleitung §3.1).
 
 ### Bodenstation, absolutes Minimum (Entscheidung Jan 26.10.: Station ist nice-to-have)
 

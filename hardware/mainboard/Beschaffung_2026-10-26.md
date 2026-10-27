@@ -396,13 +396,14 @@ USB-Stick liegt eine Antenne bei; am Tisch reicht die Wendel). Stand: **44,89 �
 Abgaben − 5,96 € Rabatt = 74,66 €** (alles inklusive, nichts bei Zustellung).
 
 
-**Endstand AliExpress, 27.10. abends (Entscheidung Jan):** Bestellt werden **nur E22-400T22S-V2 ×2** (CDEBYTE Official
-Store): 15,18 € + 5,95 € Einfuhrabgaben = **21,13 €**. Alles andere entfällt:
+**Endstand AliExpress, 27.10. abends (Entscheidung Jan):** Bestellt werden **nur E22-400T22S-V2 ×3** (CDEBYTE Official
+Store): zwei für die Platinen, eins für die Bodenstation am Raspberry Pi Pico. 22,77 € + 5,95 € Einfuhrabgaben =
+**28,72 €** (die Abgaben hängen am Artikeltyp, nicht an der Stückzahl). Alles andere entfällt:
 
 | Teil | Ersatz |
 |---|---|
-| E22-400T22U (USB) | zweites Mainboard rev B1 als Funkbrücke (braucht einen zweiten Teensy 4.1) |
-| Wendel TX433-TH-3, Stabantenne | zwei 433-MHz-Wendeln aus den alten HC-12-Modulen, direkt an den ANT-Pad des E22 gelötet |
+| E22-400T22U (USB) | Raspberry Pi Pico + drittes E22-400T22S, frei verdrahtet; Pico aus Bestand oder Berrybase (etwa 5 €) |
+| Wendel TX433-TH-3, Stabantenne | Rakete: 433-MHz-Wendel aus einem alten HC-12-Modul am ANT-Pad. Boden: selbstgebaute λ/4-Groundplane (Strahler etwa 16,5 cm, vier Radiale etwa 17,5 cm unter 45°, 1,5-mm²-Kupferdraht) |
 | Pigtails | entfällt; Antenne sitzt am Modul statt unten durch die Scheibe |
 | XT30PW (J1) | vorerst der JST-RCY des vorhandenen 2S, Gegenstück mit kurzer Litze in J1, mit Klebeband gesichert |
 | USB-C-Breakout | entfällt; beide Akkus extern laden |

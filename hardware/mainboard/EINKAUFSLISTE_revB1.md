@@ -122,7 +122,7 @@ Nicht bei Reichelt: XT30PW-M, Pigtail, GH-/SH-Kabel (7.2). Summer, Litze und Cri
 
 ### 7.2 AliExpress (eine Bestellung, „Versand aus EU“ filtern)
 
-Stand 27.10. abends: **nur noch E22-400T22S ×2** (CDEBYTE Official Store, 21,13 € mit Abgaben); alle anderen Positionen
+Stand 27.10. abends: **nur noch E22-400T22S ×3** (CDEBYTE Official Store, 28,72 € mit Abgaben; zwei Platinen, eins Bodenstation); alle anderen Positionen
 unten entfallen oder kommen aus dem Bestand, Begründung in `Beschaffung_2026-10-26.md` §6c.
 
 | Teil | Suche | Worauf achten | Stück |

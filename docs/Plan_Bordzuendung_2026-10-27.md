@@ -2,7 +2,7 @@
 
 **Entscheidung Jan, 27.10.2026:** Die Rakete zündet ihren Motor selbst über Pyro-Kanal 1. Gestartet wird per Funk vom
 Laptop aus, nachdem die Rakete am Pad eingeschaltet und von Hand entsichert wurde. Die Bodenstation ist der Laptop mit
-dem **zweiten Mainboard rev B1** (eigener Teensy 4.1, E22-400T22S) als Funkbrücke über USB, dazu die Startrampe.
+einer **Funkbrücke aus Raspberry Pi Pico und einem dritten E22-400T22S** über USB, dazu die Startrampe.
 Zündbox, 15-m-Zündleitung, ESP32-Station und das USB-Modul E22-400T22U entfallen für *Kartonaut 1* (Jan, 27.10. abends).
 Antennen: 433-MHz-Wendeln aus den alten HC-12-Modulen, direkt an den ANT-Pad des E22 gelötet (IPEX bleibt frei).
 
@@ -123,18 +123,20 @@ Pulses wird VBAT_ARMED mit mindestens 1 kHz abgetastet (Mux fest auf Kanal 6), d
 **Aufzeichnung:** Ab ARMED schreibt der Logger mit voller Rate; ein Ringpuffer hält die letzten 2 s vor dem
 Zündbefehl, damit der Countdown vollständig im Log steht.
 
-## 5. Bodenstation: Funkbrücke auf Board 2 und Laptop-Werkzeug
+## 5. Bodenstation: Funkbrücke (Pico + E22) und Laptop-Werkzeug
 
-**Funkbrücke (`firmware/`, neue PlatformIO-Umgebung `ground_bridge`):** läuft auf dem Teensy 4.1 des zweiten Mainboards.
-- Transparent: Bytes von USB-Seriell nach `Serial8` (E22) und zurück, ohne die Rahmen zu verändern; dadurch braucht
-  `launch.py` keinen eigenen Treiber.
-- Setzt M0/M1 für den Normalbetrieb auf LOW, NRST hoch. Ein Konfigurationsmodus (z. B. Escape-Sequenz oder eigener
-  USB-Befehl, Umsetzung frei) setzt M0/M1 auf Konfiguration und schreibt Kanal, Adresse und Luftrate passend zur Rakete
-  (Werte aus `firmware/src/Config.h`, gemeinsamer Header). Liest RSSI aus, wenn das E22 es anhängt.
-- Status über die WS2812 (grün: Funk empfängt, rot: kein Rahmen seit 2 s) und den Summer bei Verbindungsverlust.
-- Keine Pyro-, Servo- oder Sensorfunktionen; Pyro-Pins bleiben LOW. Board 2 bekommt keinen Anzünder und keinen
-  Arming-Schalter.
-- Versorgung über USB (Teensy-VIN → 5V_SYS laut Schaltplan prüfen; falls nicht, 1S-Akku an J2).
+**Funkbrücke (neues PlatformIO-Projekt `tools/ground/bridge_pico/`, Raspberry Pi Pico, Arduino-Core
+`earlephilhower/arduino-pico`):** ein drittes E22-400T22S, frei verdrahtet am Pico (Entscheidung Jan, 27.10. abends).
+- Verdrahtung (in der README des Projekts als Tabelle): E22 VCC → Pico 3V3 OUT, GND → GND, E22 TXD → GP5 (UART1 RX),
+  E22 RXD → GP4 (UART1 TX), M0 → GP6, M1 → GP7, AUX → GP8 (Eingang). Antenne am ANT-Pad (selbstgebaute
+  λ/4-Groundplane, siehe Bauanleitung), IPEX frei.
+- Transparent: Bytes von USB-CDC nach UART1 und zurück, ohne die Rahmen zu verändern; dadurch braucht `launch.py` keinen
+  eigenen Treiber. Baudrate wie die Rakete (`RADIO_BAUD` aus `firmware/src/Config.h`).
+- Setzt M0/M1 für den Normalbetrieb auf LOW. Ein Konfigurationsmodus (z. B. Escape-Sequenz oder eigener USB-Befehl,
+  Umsetzung frei) setzt M0/M1 auf Konfiguration und schreibt Kanal, Adresse und Luftrate passend zur Rakete (Werte aus
+  `firmware/src/Config.h`, gemeinsamer Header, kein Kopieren). Liest RSSI aus, wenn das E22 es anhängt.
+- Status über die Pico-LED (Dauerlicht: Rahmen empfangen in den letzten 2 s; Blinken: kein Empfang).
+- Der CI-Lauf baut das Projekt mit (eigener PlatformIO-Job).
 
 **Laptop-Werkzeug `tools/ground/launch.py`:**
 
@@ -160,14 +162,15 @@ Zündbefehl, damit der Countdown vollständig im Log steht.
 
 **Am Tisch (Hardware, nach Lieferung der Platine):**
 1. Ersatzlast statt Anzünder (Glühlampe 12 V oder Leistungswiderstand), kompletter Ablauf ARM → LAUNCH → Puls.
-2. Funk-Abbruch: USB-Kabel der Funkbrücke im Countdown abziehen → SAFE.
+2. Funk-Abbruch: USB-Kabel des Pico im Countdown abziehen → SAFE.
 3. Anzünder ohne Motor (im Freien, Abstand): Durchbrennzeit, Spannungseinbruch, VSERVO, F1 löst nicht aus.
 4. Erst dann mit Motor auf der Rampe.
 
 ## 7. Dokumentation, die mitgezogen wird
 
 - `docs/Schnittstellen_Bodensystem_2026-10-22.md`: S2 (Zündleitung) entfällt, S3 um ARM/LAUNCH/HEARTBEAT/IGN.
-- `groundstation/README.md`: Minimum = Laptop + Board 2 als Funkbrücke; ESP32-Station als möglicher späterer Ausbau.
+- `groundstation/README.md`: Minimum = Laptop + Pico-Funkbrücke mit E22 und Groundplane-Antenne; ESP32-Station als
+  möglicher späterer Ausbau.
 - `docs/Bauanleitung_Kartonaut1.md`: Kabelweg Anzünder (§2), Startcheckliste (§6.1) mit Reihenfolge Hauptschalter →
   Anzünder → Arming-Schalter → Weggehen → PAD_READY → ARM → LAUNCH; Vorgehen bei MISFIRE (60 s warten, dann SAFE, erst
   dann hingehen, Arming-Schalter aus).
@@ -182,7 +185,7 @@ Zündbefehl, damit der Countdown vollständig im Log steht.
 
 ## 9. Offen
 
-- **Zweiter Teensy 4.1** für Board 2 (Funkbrücke) beschaffen, oder für Tischtests den einen Teensy umstecken.
+- Raspberry Pi Pico beschaffen (Bestand prüfen; sonst Berrybase, etwa 5 €).
 - Antenne am ANT-Pad statt unten durch die Scheibe: Reichweite am Boden mit RSSI prüfen (Ziel: sicherer Empfang über
   300 m).
 

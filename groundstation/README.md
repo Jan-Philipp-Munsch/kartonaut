@@ -223,7 +223,7 @@ Stiftleiste und SMA-Buchse statt Lötpads; passt auf Lochraster. Auf der Rakete 
 
 **Entscheidung 26.10.2026 (Jan):** Für den Erstflug läuft das absolute Minimum, die Station hier ist der spätere
 Ausbau. **Stand 27.10. abends:** Die Rakete zündet selbst (`docs/Plan_Bordzuendung_2026-10-27.md`); Minimum = Laptop
-plus zweites Mainboard rev B1 als Funkbrücke über USB; keine Zündbox. Siehe `hardware/mainboard/Beschaffung_2026-10-26.md` §6c.
+plus Funkbrücke aus Raspberry Pi Pico und E22-400T22S (λ/4-Groundplane-Antenne, selbst gebaut); keine Zündbox. Siehe `hardware/mainboard/Beschaffung_2026-10-26.md` §6c.
 
 Preise sind Richtwerte (Stand Okt. 2026, nicht einzeln geprüft), keine Angebote. Zwei Varianten mit
 **derselben Schaltung** (`Schaltung.md`) und derselben Firmware; sie unterscheiden sich nur in der

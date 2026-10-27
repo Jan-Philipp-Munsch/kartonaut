@@ -30,7 +30,7 @@ auf der Platine schon vorgesehen.
 |---|---|
 | Rumpf | Klima-Papprohr Ø 75 mm (innen 72,6 mm) in drei Modulen: Rohr A 125 mm (Kardan), Rohr B 176 mm (Avionik), Rohr C 195 mm (Bergung); zwei halbe Kuppler, Klima-Kunststoffspitze; 731 mm lang. Alle radialen Schrauben M3 |
 | Motor | TSP E12-0, 24 mm, 39 Ns, 12 N mittlerer Schub, 28 N Spitze, 3,5 s Brenndauer, ohne Ausstoßladung; vier vorhanden |
-| Startmasse | **705 g** im Massenbudget ([`cad/mass_stand2b.md`](cad/mass_stand2b.md), Druckteile Stand 2d), Schwerpunkt 260 mm über der Düse, Hebelarm Kardan–Schwerpunkt 190 mm, Schub-Gewicht 1,7; Ziel unter 750 g erreicht. Noch nichts gewogen |
+| Startmasse | **704 g** im Massenbudget ([`cad/mass_stand2b.md`](cad/mass_stand2b.md), Druckteile Stand 2d), Schwerpunkt 260 mm über der Düse, Hebelarm Kardan–Schwerpunkt 190 mm, Schub-Gewicht 1,7; Ziel unter 750 g erreicht. Noch nichts gewogen |
 | Flugcomputer | Teensy 4.1 auf Mainboard **rev B1** (KiCad aus Code, fertig geroutet, DRC 0 Fehler; bei JLCPCB in Fertigung, Lieferung um den 4.–6.11.): IMU LSM6DSV16X, Barometer BMP388 (BMP390 bei JLCPCB nicht lieferbar, pinkompatibel), Strommonitor INA239, alle an SPI1 hinter einem CS-Decoder; Magnetometer LIS3MDL und SHT40 an I²C; LoRa E22-400T22S, microSD, vier Pyro-Kanäle (zwei bestückt), Stapelstecker |
 | Versorgung | zwei Akkus: 1S-LiPo für die Elektronik (Buck-Boost), 2S LemonRC 450 mAh für die Servos; FET-Lastschalter hinter einem mechanischen Schalter, beide in der Rakete ladbar |
 | Aktorik | Schubstangen-Kardan mit 2 × FrSky Xact W5652H direkt an 2S (gebaut und in Rohr A eingepasst); ein Servo löst die CO₂-Kartusche aus. Kein Rollmotor beim Erstflug |
@@ -111,7 +111,7 @@ gewogen wird nach dem Drucken.
 | `erstflug` (22.10.): 700 mm, ohne Beine, Kolben | 761 g | 318 mm | 242 mm | 0,046 kg·m² | 0,00057 kg·m² | – |
 | Stand 2b (22.10.): 496 mm Rohr in drei Modulen, CO₂, ohne Rollmotor | 723 g | 256 mm | 186 mm | 0,021 kg·m² | 0,00047 kg·m² | 63 m |
 | Stand 2c (23.10.): Druckteile im Leichtbau | 705 g | 259 mm | 190 mm | 0,021 kg·m² | 0,00047 kg·m² | 74 m, Schub-Gewicht 1,7 |
-| **Stand 2d (27.10.): GPS NEO-6M (+6 g), Schlitten mit Fenstern (−6 g)** | **705 g** | 260 mm | 190 mm | 0,021 kg·m² | 0,00047 kg·m² | wie 2c (Masse und Hebelarm gleich, nicht neu simuliert) |
+| **Stand 2d (27.10.): GPS NEO-6M (+6 g), Schlitten mit Fenstern (−6 g), Zapfen Ø 72,1 fürs gemessene Rohr** | **704 g** | 260 mm | 190 mm | 0,021 kg·m² | 0,00047 kg·m² | wie 2c (Masse und Hebelarm gleich, nicht neu simuliert) |
 
 Der Hebelarm ist halb so lang wie bei `voll`, die Querträgheit ein Fünftel. Mit den echten Werten stehen
 die alten Gewinne Kp 5 / Kd 1 zwei Drittel des Brennens am Kardananschlag; Kp 2 / Ki 1 / Kd 0,45 aus

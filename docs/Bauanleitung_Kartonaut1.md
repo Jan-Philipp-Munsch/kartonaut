@@ -131,13 +131,13 @@ Ganzes Stabmodell mit Schwerpunkt und Trägheit: `cad/mass_stand2b.md` (`python 
 | Motor E12 mit Treibstoff | 64 |
 | Kardan, zwei W5652H, Hebel, Adapter 29→24 | 88 |
 | Rohre A + B + C, zwei halbe Kuppler | 30 + 42 + 47 + 34 |
-| neue Druckteile Stand 2d (Schlitten mit Spant 58, Scheibe 7, Schalterbrett 3, Schraubring 6) | 74 |
+| neue Druckteile Stand 2d (Schlitten mit Spant 58, Scheibe 7, Schalterbrett 3, Schraubring 6) | 73 |
 | Platine, Akkus 2S 29 + 1S 14, GPS NEO-6M 12 [Annahme], LoRa-Wendel, Schalterbrett-Bauteile | 115 |
 | CO₂-Aufbau 10 + Kapsel 25 + Servo 9 [Annahme] | 44 |
 | Fallschirm mit Schnur | 50 |
 | Spitze mit Holzplatte | 83 |
 | Schrauben, Kabel, Kleber, Schaum | 34 |
-| **Start, ein E12** | **≈ 705** |
+| **Start, ein E12** | **≈ 704** |
 
 **Druckteile Stand 2c (Leichtbau, 23.10.2026):** Spantplatte 3,5 statt 5 mm mit 5-mm-Rand, Zapfen 2 statt 4,1/3,1 mm,
 U-Profil statt des vollen Klotzes zwischen Träger und Zapfen, Fenster im Trägerboden, Scheibe 2 statt 3 mm, Schraubring
@@ -149,7 +149,10 @@ Perimetern ohnehin voll. Die Slicer-Vorschau und die Waage entscheiden. Danach H
 (−20 | −7) verlegt, Fenster in beiden Zapfen zwischen den Schraubenaugen (3 mm Rand oben und unten bleiben; die Augen
 hängen direkt am Band, die Zapfen zentrieren nur), Bodenfenster unter den Akkus 22 statt 18 mm breit und neue Fenster
 neben den Akkus. Schlitten 53,0 → 46,6 cm³, im Slicer-Modell 64 → 58 g. Die Spantplatte bleibt 3,5 mm: Sie ist das
-Druckschott für den CO₂-Ausstoß. Start weiter 705 g, weil das GPS 6 g schwerer ist als angenommen.
+Druckschott für den CO₂-Ausstoß. Start weiter rund 705 g (704 g), weil das GPS 6 g schwerer ist als angenommen.
+Passmaße nach Jans Messung (Rohr innen 72,5 statt 72,6): **Zapfen Ø 72,1** (0,2 mm Spiel je Seite), **Schraubring
+Ø 69,8** (Kuppler noch nicht gemessen, Nennmaß 70,2; 0,2 mm Klebespalt), untere Scheibe Ø 69,6 wie bisher. Vor dem
+Schlitten lohnt ein Probering aus dem Zapfen.
 
 <hr class="pb">
 
@@ -319,7 +322,7 @@ Jedes Teil nach dem Druck wiegen.
 2. Schnur: Ringschraube Spant → Kevlar → Wirbel mit Schirm → Gummischnur → Haken der Spitze. Schirm 100 × Ø 70 packen,
    Schnur im Zickzack darüber, Spitze aufsetzen.
 3. Rohr C aufstecken, 4 × M3 bei T3.
-4. **Wiegen** (Schätzung ≈ 705 g) und **Schwerpunkt** auswiegen (Modell 260 mm über der Düse); Hebelarm Kardanpunkt–Schwerpunkt und Masse in
+4. **Wiegen** (Schätzung ≈ 704 g) und **Schwerpunkt** auswiegen (Modell 260 mm über der Düse); Hebelarm Kardanpunkt–Schwerpunkt und Masse in
    `firmware/src/Config.h` (`MOMENT_ARM_M`, `MASS_KG`) eintragen.
 5. **Servo-Umrechnung messen:** Servo um 10° stellen, Kardanwinkel messen (Befund 13); `SERVO_*_GAIN` setzen.
 6. **CO₂-Bodentest** (draußen, Rakete waagrecht): Spitze fliegt ab, Schirm und Schnur vollständig draußen, Spant und

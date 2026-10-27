@@ -61,7 +61,8 @@ PUSHROD = dict(d=2.0, l=(29.0, 30.0))   # [Jan]
 
 # Stoß J1: Kuppler in B verklebt, 4 × M3 durch Rohr A und Kuppler in einen Schraubring im Kuppler
 J1_SCREW_Z = TUBE_A[1] - 15.0    # 110: 15 mm unter der Oberkante von A
-J1_RING = dict(z=(J1_SCREW_Z - 5.0, J1_SCREW_Z + 5.0), od=P.COUPLER_ID - 0.2, id=66.0)   # gedruckt, im Kuppler verklebt;
+J1_RING = dict(z=(J1_SCREW_Z - 5.0, J1_SCREW_Z + 5.0), od=P.COUPLER_ID - 0.4, id=66.0)   # gedruckt, im Kuppler verklebt (Stand 2d:
+#   69,8 statt 70,0, Kuppler noch nicht nachgemessen; 0,2 mm Klebespalt je Seite für Epoxid);
 #   Stand 2c (Leichtbau): Wand 2 mm statt 6 mm, 10 statt 12 mm hoch; die vier Augen tragen die Muttern, der Ring nur die Lage
 
 # --------------------------------------------------------------------------- Rohr B: Avionik-Schlitten
@@ -72,8 +73,10 @@ PLATE_T = 3.5                     # Stand 2c: Spantplatte 3,5 mm oben im Band (D
 #   Platte Ø 68 bei 2,6 bar (Spitze klemmt, Obergrenze aus co2_pressure_bar): eingespannt 0,75·p·r²/t² = 21 MPa,
 #   frei aufliegend 1,24·p·r²/t² = 34 MPa; PETG in der Ebene ca. 45–50 MPa. Bei < 0,1 bar (Spitze geht ab) unter 2 MPa.
 SPIGOT_WALL = 2.0                 # Stand 2c: Zapfen nur zum Zentrieren, die Last tragen die Schraubenaugen (vorher 4,1 / 3,1 mm)
-SPIGOT_B = dict(z=(TUBE_B[1] - 18.0, TUBE_B[1]), od=TUBE_ID - 0.4, id=TUBE_ID - 0.4 - 2 * SPIGOT_WALL)   # Zapfen nach unten in B
-SPIGOT_C = dict(z=(BAND_Z[1], BAND_Z[1] + 15.0), od=TUBE_ID - 0.4, id=TUBE_ID - 0.4 - 2 * SPIGOT_WALL)   # Zapfen nach oben in C
+TUBE_ID_MEASURED = 72.5          # [Jan 27.10.2026] Rohr innen gemessen (Klima nennt 72,6); Zapfen 0,4 mm darunter
+SPIGOT_OD = TUBE_ID_MEASURED - 0.4   # 72,1
+SPIGOT_B = dict(z=(TUBE_B[1] - 18.0, TUBE_B[1]), od=SPIGOT_OD, id=SPIGOT_OD - 2 * SPIGOT_WALL)   # Zapfen nach unten in B
+SPIGOT_C = dict(z=(BAND_Z[1], BAND_Z[1] + 15.0), od=SPIGOT_OD, id=SPIGOT_OD - 2 * SPIGOT_WALL)   # Zapfen nach oben in C
 SPIGOT_B_SCREW_Z = TUBE_B[1] - 8.0    # 293
 SPIGOT_C_SCREW_Z = BAND_Z[1] + 7.5    # 313,5
 SPIGOT_C_PHI = (45.0, 135.0, 225.0, 315.0)   # Rohr C liegt über den Rampenführungen; so bleibt 0°–180° frei für die quer liegende CO₂-Kapsel
@@ -112,7 +115,7 @@ PLUG_REACH = 12.0
 # Stand 2d (27.10.2026): vorhandenes GPS ist ein u-blox NEO-6M auf Breakout GY-GPS6MV2 (Berrybase): Platine 36 × 26 × 5,
 # Keramik-Patch 25 × 25 × 9 am Kabel. Stapel unter der Spantplatte: Patch oben (zum Himmel), Modulplatine darunter.
 # Zwei Leisten quer (entlang x) an den y-Enden mit je einer Auflagekante; das Modul wird von der Seite eingeschoben,
-# die Stiftleiste an der kurzen Kante (x = ±18) bleibt frei. Ecke (18 | 28,8) liegt auf r = 33,9 < 34,1 (Zapfen innen).
+# die Stiftleiste an der kurzen Kante (x = ±18) bleibt frei. Ecke (18 | 28,8) liegt auf r = 33,9 < 34,05 (Zapfen innen).
 GPS_BOARD = dict(w=36.0, l=26.0, h=5.0)     # [Berrybase] Modul 36 × 26 × 5, 4 Löcher Ø 3
 GPS_PATCH = dict(w=25.0, l=25.0, h=9.0)     # [Berrybase] Antenne 25 × 25 × 9
 GPS = dict(w=GPS_BOARD["w"], l=GPS_BOARD["l"], h=GPS_BOARD["h"] + GPS_PATCH["h"], y=(2.8, 28.8),

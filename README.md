@@ -29,7 +29,7 @@ motor and pyro channels are kept for later flights and already provided for on t
 |---|---|
 | Airframe | Klima cardboard tube Ø 75 mm (ID 72.6 mm) in three modules: tube A 125 mm (gimbal), tube B 176 mm (avionics), tube C 195 mm (recovery); two half couplers, Klima plastic nose cone; 731 mm overall. All radial screws M3 |
 | Motor | TSP E12-0, 24 mm, 39 Ns, 12 N average, 28 N peak, 3.5 s burn, no ejection charge; four on hand |
-| Lift-off mass | **705 g** in the mass budget ([`cad/mass_stand2b.md`](cad/mass_stand2b.md), printed parts state 2d), centre of gravity 260 mm above the nozzle, lever arm gimbal–CG 190 mm, thrust-to-weight 1.7; target below 750 g met. Nothing weighed yet |
+| Lift-off mass | **704 g** in the mass budget ([`cad/mass_stand2b.md`](cad/mass_stand2b.md), printed parts state 2d), centre of gravity 260 mm above the nozzle, lever arm gimbal–CG 190 mm, thrust-to-weight 1.7; target below 750 g met. Nothing weighed yet |
 | Flight computer | Teensy 4.1 on mainboard **rev B1** (KiCad from code, fully routed, DRC 0 errors; in production at JLCPCB, delivery around 4–6 Nov): LSM6DSV16X IMU, BMP388 barometer (BMP390 not available at JLCPCB, pin-compatible), INA239 power monitor, all on SPI1 behind a chip-select decoder; LIS3MDL magnetometer and SHT40 on I²C; LoRa E22-400T22S, microSD, four pyro channels (two populated), stacking connector |
 | Power | two batteries: 1S LiPo for the electronics (buck-boost), 2S LemonRC 450 mAh for the servos; FET load switches behind a mechanical switch, both charged inside the rocket |
 | Actuators | push-rod gimbal with 2 × FrSky Xact W5652H directly on 2S (built and fitted into tube A); one servo releases the CO₂ cartridge. No roll motor on the first flight |
@@ -110,7 +110,7 @@ weighing follows the printing.
 | `erstflug` (22 Oct): 700 mm, no legs, piston | 761 g | 318 mm | 242 mm | 0.046 kg·m² | 0.00057 kg·m² | – |
 | State 2b (22 Oct): 496 mm tube in three modules, CO₂, no roll motor | 723 g | 256 mm | 186 mm | 0.021 kg·m² | 0.00047 kg·m² | 63 m |
 | State 2c (23 Oct): lightweight printed parts | 705 g | 259 mm | 190 mm | 0.021 kg·m² | 0.00047 kg·m² | 74 m, thrust-to-weight 1.7 |
-| **State 2d (27 Oct): NEO-6M GPS (+6 g), sled with windows (−6 g)** | **705 g** | 260 mm | 190 mm | 0.021 kg·m² | 0.00047 kg·m² | as 2c (same mass and lever arm, not re-simulated) |
+| **State 2d (27 Oct): NEO-6M GPS (+6 g), sled with windows (−6 g), spigots Ø 72.1 for the measured tube** | **704 g** | 260 mm | 190 mm | 0.021 kg·m² | 0.00047 kg·m² | as 2c (same mass and lever arm, not re-simulated) |
 
 The lever arm is half that of `voll`, the transverse inertia a fifth. With the true values the old gains
 Kp 5 / Kd 1 sit at the gimbal stop for two thirds of the burn; Kp 2 / Ki 1 / Kd 0.45 from a Bayesian

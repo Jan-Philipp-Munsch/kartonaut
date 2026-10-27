@@ -117,3 +117,8 @@ Teil für Teil gegen `mainboard.kicad_pcb` (Pad-1-Lage) und den Bestückungsdruc
 | D1, D4 (nicht geändert) | Kathodenband links bzw. unten | Pad 1 = K links bzw. unten | richtig |
 
 Ergebnis: Platzierung freigeben („Yes, please proceed to production“).
+
+Zweitprüfung am 27.10. auf Jans Wunsch: Teileliste im Bestätigungsbild hat 106 bestückte Teile, 0 unbestückte,
+Werte und LCSC-Nummern wie `mainboard_bom_jlc.csv` plus die Ersetzungen aus §2.1; kein Handlötteil darunter.
+Pad-1-Lagen neu aus `mainboard.kicad_pcb` gelesen und jedes gepolte Teil (U2, U4, U5, U7, U16, U18, Q1–Q7, D1, D4,
+C16, C17) einzeln vergrößert: Pin-1-Punkt des Gehäuses, Bestückungsdruck und KiCad stimmen überall überein.

@@ -349,7 +349,7 @@ Store = Ebytes eigene Marke; Antenne aus dem CDSENET IOT Module Store).
 | E22-400T22U (CDSENET Official Store) | 433M, USB mit Antenne | 1 | 10,39 € |
 | TX433-JZ-10 3 dBi SMA-Stecker (CDSENET IOT Module Store) | 1 Stück | 1 | 4,69 € + 3,56 € Versand |
 | XT30PW M-F, 5 Paare (JCD MC Store, Choice, 10 000+ verkauft) | 5 Paare | 1 | 5,19 € |
-| Pigtail IPX → SMA-K 10 cm, 5 Stück (STX Store, Choice) | 10CM / IPX to SMA-K | 1 | 2,75 € |
+| Pigtail IPX → SMA-K **15 cm**, 5 Stück (STX Store, Choice) | 15CM / IPX to SMA-K | 1 | 2,75 € |
 | JST-GH 1,25 mm 4-polig 15 cm, 10 Stück (ZANHDZBF, Choice) | 10PCS / 4P / Single Head | 1 | 3,99 € |
 | JST-GH 1,25 mm 3-polig 15 cm, 10 Stück (ZANHDZBF, Choice) | 10PCS / 3P / Single Head | 1 | 3,69 € |
 | JST-SH 1,0 mm 4-polig 10 cm beidseitig, 10 Stück (excellence electronic, Choice) | 10cm / 4P / Gleiche Seite | 1 | 3,19 € |
@@ -362,7 +362,7 @@ Nicht im Korb (bewusst): Einzelteile, die 4–5 € Versand je Händler gekostet
 65 € mit 26 € Versand).
 
 
-**Flugantenne:** TX433-TH-3 ist eine Ebyte-Wendel zum Einlöten (37 mm, 1 dBi). Aufbau: einen der 10-cm-Pigtails
+**Flugantenne:** TX433-TH-3 ist eine Ebyte-Wendel zum Einlöten (37 mm, 1 dBi). Aufbau: einen der 15-cm-Pigtails (E22-IPEX liegt etwa 7 cm über der unteren Scheibe, dazu der Weg um die Platinenkante; 10 cm wären zu knapp)
 (IPEX → SMA) nahe der SMA-Buchse abschneiden, Wendel an den Innenleiter löten, Schirm frei lassen, Lötstelle mit
 Schrumpfschlauch; IPEX ans E22, Wendel axial durch die untere Scheibe (Bauanleitung §5). Im Rumpf, nicht an der
 Außenhaut: Pappe ist für 433 MHz durchlässig. Reichweite am Tisch mit RSSI aus dem ACK prüfen.
@@ -376,6 +376,15 @@ Fehlerstelle unter Vibration.
 **Akkus (AliExpress-Preise 27.10., nicht im Korb):** 2S 450 mAh XT30: Tattu 75C 13,99 €, GNB 80C HV 12,19 € (HV: mit
 normalem LiPo-Programm auf 4,2 V/Zelle laden, dann etwas weniger Kapazität). 1S 550 mAh PH2.0: GNB HV 9,49 €,
 Teranty 80C ca. 8 €. Alternative ohne Versandrisiko: LemonRC 2S 450 bei Reichelt 9,30 € (Bauanleitung §3.1).
+
+
+**Stand 27.10. abends, vor der Bestellung:** Mit JLCPCB (in Fertigung), DigiKey-Auftrag 102484398 und diesem
+AliExpress-Korb ist die **Elektronik vollständig**. Akkus: vorhandene Packs (2S 55 × 30 × 10, 1S 45 × 25 × 7, beide
+passen in die Fächer) zuerst nach §6c prüfen, Ersatz nur bei Bedarf (Tattu 2S 450 bei AliExpress 13,99 € oder
+LemonRC bei Reichelt). Noch nicht beschafft, kein Elektronik-Teil: Schrauben M3 × 6/8 ISO 7380 und Muttern,
+Ringschraube M4, Epoxid, PETG für die Druckteile, Material der Startrampe (Bauanleitung, ca. 86 €), Teile des
+CO₂-Moduls; aus Bestand: Lade-LED 3 mm mit Vorwiderstand, Flussmittel/Lötpaste, Litze. Die 2S-Ladebuchse am
+Schalterbrett ist eine der XT30PW-F aus den 5 Paaren (Leitungen direkt anlöten).
 
 ### Bodenstation nach der Entscheidung Bordzündung (27.10.2026)
 

@@ -6,6 +6,10 @@ eLab/
 *.one
 *.onetoc2
 
+# Startschlüssel und Funk-Logs des Laptop-Werkzeugs (Vorlage tools/ground/secrets.example.json)
+tools/ground/secrets.json
+tools/ground/logs/
+
 # Python
 __pycache__/
 *.pyc

@@ -319,6 +319,12 @@ static void mapFrameToI16(const SDFrame& f, int16_t out[40]){
 // Slack-aware Logging
 // ===========================
 bool SDLogger_logFrame(const SDFrame& f, uint32_t slack_us){
+  return SDLogger_logFrameAt(f, micros(), slack_us);
+}
+
+// Frame mit eigener Zeitmarke (Ringpuffer vor ARMED, main.cpp). ts_us muss gegenüber dem
+// vorigen Record wachsen, sonst endet die Wiederherstellung und der Export dort.
+bool SDLogger_logFrameAt(const SDFrame& f, uint32_t ts_us, uint32_t slack_us){
   if (!logging || !file.isOpen()) return false;
 
   // 1) Opportunistischer PRE-FLUSH, wenn Puffer Daten hat und Slack groß genug
@@ -332,7 +338,7 @@ bool SDLogger_logFrame(const SDFrame& f, uint32_t slack_us){
 
   // 2) Record packen + in Page schreiben
   Record r;
-  r.ts_us = micros();
+  r.ts_us = ts_us;
   r.write_us_prev = last_write_us;
   r._pad = 0;
   mapFrameToI16(f, r.v);
@@ -344,10 +350,11 @@ bool SDLogger_logFrame(const SDFrame& f, uint32_t slack_us){
   last_write_us = (wdt > 0xFFFF) ? 0xFFFF : (uint16_t)wdt;
 
   // 3) Periodisches SYNC nur bei genügend Slack & Intervall erfüllt
-  uint32_t sinceStart = r.ts_us - startUs;
+  const uint32_t now_us = micros();
+  uint32_t sinceStart = now_us - startUs;
   uint32_t interval   = (sinceStart < 10000000UL) ? SYNC_INTERVAL_US_EARLY : SYNC_INTERVAL_US_LATE;
 
-  if (slack_us > 0 && (r.ts_us - lastSyncUs) >= interval) {
+  if (slack_us > 0 && (now_us - lastSyncUs) >= interval) {
     uint32_t est_sync = max(g_tim.sync_us_avg, g_tim.sync_us_max/2);
     est_sync = (uint32_t)(g_safety_factor * (float)max(est_sync, (uint32_t)1500)); // ≥1.5 ms konservativ
     if (slack_us >= max(est_sync, g_min_slack_sync)) {

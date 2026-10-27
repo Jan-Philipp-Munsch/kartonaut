@@ -13,6 +13,13 @@
 // Auf dem Breakout-Aufbau gibt es weder ARM- noch Durchgangsmessung: das Backend meldet
 // armed = false, damit ist Zünden unmöglich (Jan, 22.10.2026).
 // Kein Arduino: die Pins schaltet main.cpp nach dem Ergebnis von update().
+//
+// Startpuls (Motorstart an Bord, Plan Bordzündung 27.10.2026 §2.1/§4): updateLaunch() schaltet den
+// Startkanal (LAUNCH_CH) genau einmal, nur solange der Automat in IGNITION ist. Der Puls endet beim
+// ersten von: Schub erkannt, Durchgang weg, launch_pulse_max_ms (300 ms, schont F1 und VSERVO),
+// Zustand verlassen, Arming-Spannung weg. Den Durchgang misst main.cpp während des Pulses in einer
+// kurzen Messlücke (FET kurz aus, Drain lesen), denn bei leitendem Low-Side-FET liegt der Drain auf
+// 0 V und die Messung sähe immer "kein Durchgang" (Jan, 27.10.2026).
 #include <stdint.h>
 
 struct PyroInputs {
@@ -29,6 +36,17 @@ struct PyroParams {
   uint32_t min_flight_ms, backup_delay_ms, retry_delay_ms;
   uint8_t  max_fires;
   bool     backup_pair;           // true: Kanal 2 ist die Reserve von Kanal 1 (Fallschirm-Modus)
+  uint32_t launch_pulse_max_ms = 300;   // Startpuls höchstens so lang
+};
+
+// Startpuls: Eingänge je Takt
+struct LaunchPulseInputs {
+  uint32_t t_ms = 0;
+  bool     allowed = false;       // FlightStateMachine::launchAllowed() (nur IGNITION)
+  bool     armed = false;
+  bool     continuity = false;    // vor dem Puls: normale Messung; während des Pulses: Messlücke
+  bool     continuity_valid = false;   // false: in diesem Takt keine Messung (Durchgang nicht auswerten)
+  bool     thrust = false;        // |a| über der Startschwelle (erste Probe, ohne Haltezeit)
 };
 
 class PyroLogic {
@@ -45,6 +63,16 @@ public:
   bool done() const { return done_; }
   bool done(int ch) const { return done_ch_[ch]; }
   const char* lastRefusal() const { return refusal_; }
+  // Startpuls (Kanal LAUNCH_CH): Sollzustand des Ausgangs für diesen Takt
+  bool updateLaunch(const LaunchPulseInputs& in);
+  bool launchFiring() const { return launch_firing_; }
+  bool launchUsed() const { return launch_used_; }       // Puls begonnen oder verweigert, kein zweiter
+  uint32_t launchOnTime() const { return t_launch_on_; }  // 0 = nie an
+  uint32_t launchOffTime() const { return t_launch_off_; }
+  uint8_t  launchEndReason() const { return launch_end_; }   // tlm::IgnEnd
+  // Neuer Startablauf (Eintritt in ARMED, z. B. nach MISFIRE -> SAFE mit neuem Anzünder)
+  void resetLaunch() { if (!launch_firing_) { launch_used_ = false; t_launch_on_ = t_launch_off_ = 0; launch_end_ = 0; } }
+
   // Nach einem Neustart im Flug (StateMemory): Zählerstände übernehmen
   void restore(uint8_t fires0, uint8_t fires1) { fires_[0] = fires0; fires_[1] = fires1; done_ = fires0 > 0; done_ch_[0] = fires0 > 0; done_ch_[1] = fires1 > 0; }
 
@@ -61,4 +89,7 @@ private:
   bool     done_ = false;
   bool     done_ch_[2] = {false, false};
   const char* refusal_ = "";
+  bool     launch_firing_ = false, launch_used_ = false;
+  uint32_t t_launch_on_ = 0, t_launch_off_ = 0;
+  uint8_t  launch_end_ = 0;
 };

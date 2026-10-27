@@ -116,3 +116,6 @@ bool Sensors_calibrateStep(const SensorSample& s) {
 bool Sensors_calibrated() { return cal.done; }
 void Sensors_getBias(Vec3& g, float& p0) { g = cal.gyro_bias_dps; p0 = cal.ground_p_pa; }
 void Sensors_setBias(const Vec3& g, float p0) { cal.gyro_bias_dps = g; cal.ground_p_pa = p0; cal.done = true; cal.running = false; }
+
+float Sensors_readArmV() { return 0.f; }
+float Sensors_readPyroSenseV(int) { return 0.f; }

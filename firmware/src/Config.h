@@ -57,6 +57,7 @@ constexpr int PIN_PYRO1       = 23;
 constexpr int PIN_PYRO2       = 22;
 constexpr int PIN_RADIO_M0    = 33;   // E22: M0 = M1 = 0 -> transparenter Modus
 constexpr int PIN_RADIO_M1    = 32;
+constexpr int PIN_RADIO_AUX   = 36;   // E22: hoch = bereit
 #else
 constexpr int PIN_BEEPER      = 13;
 constexpr int PIN_LED1        = 5;    // WS2812B
@@ -191,10 +192,55 @@ constexpr uint8_t  PYRO_MAX_FIRES       = 2;       // Versuche je Kanal
 constexpr float    PYRO_ARM_MIN_V       = 5.0f;    // ARM_SENSE darüber = scharf (2S hinter dem Schlüssel)
 constexpr float    PYRO_CONT_MIN_RATIO  = 0.8f;    // Durchgang: PYRO_SENSE > Ratio · ARM
 
+// ===== Motorstart an Bord (docs/Plan_Bordzuendung_2026-10-27.md) =====
+// Die Rakete zündet ihren Motor selbst über Pyro 1 (J9, Index 0), gestartet per Funk vom Laptop
+// (tools/ground/launch.py). Pyro 2 bleibt dem Anzünder des Landebrennens (PYRO_CH_IGNITER).
+// Schlüssel: src/Secrets.h (nicht im Repo, Vorlage Secrets.example.h). Ohne ihn baut die Firmware
+// mit LAUNCH_ENABLED = false und verweigert ARM.
+#if __has_include("Secrets.h")
+#include "Secrets.h"
+constexpr bool     LAUNCH_ENABLED = true;
+#else
+constexpr uint8_t  LAUNCH_KEY[16] = {0};
+constexpr bool     LAUNCH_ENABLED = false;
+#endif
+constexpr uint8_t  ROCKET_ID                = 1;       // geht in den MAC; Laptop liest ihn von hier
+constexpr int      LAUNCH_CH                = 0;       // Pyro 1
+constexpr uint32_t ARM_TIMEOUT_S            = 30;      // ARMED ohne LAUNCH: zurück nach SAFE
+constexpr uint32_t LAUNCH_COUNTDOWN_S       = 5;
+constexpr uint32_t HEARTBEAT_TIMEOUT_MS     = 1000;    // Laptop sendet mindestens 2 Hz
+constexpr uint32_t LAUNCH_PULSE_MAX_MS      = 300;     // Startpuls höchstens (F1, VSERVO)
+constexpr uint32_t LAUNCH_THRUST_TIMEOUT_MS = 2000;    // IGNITION ohne Schub: MISFIRE
+constexpr float    LAUNCH_MAX_TILT_DEG      = 25.0f;   // Rampenwinkel
+constexpr float    LAUNCH_STILL_DPS         = 5.0f;    // ruhig: alle Drehraten darunter ...
+constexpr uint32_t LAUNCH_STILL_HOLD_MS     = 2000;    // ... für so lange
+constexpr float    LAUNCH_MIN_VBAT1_V       = 3.5f;    // 1S (Warnschwelle des Mainboards)
+constexpr float    LAUNCH_MIN_VBAT2_V       = 7.0f;    // 2S, liefert den Zündstrom
+constexpr uint32_t LAUNCH_ARM_SAMPLE_US     = 1000;    // VBAT_ARMED während des Pulses mit 1 kHz
+// Messlücke während des Startpulses: der FET geht alle 10 ms für LAUNCH_GAP_US aus, dann wird der Drain
+// gelesen. Die Messteiler haben 100 nF (circuit.py, divider): tau = (100 k || 33 k) · 100 nF = 2,48 ms.
+// Nach 250 µs steigt der Drain-Messwert mit heilem Anzünder auf ca. 10 % von VBAT_ARMED, offen bleibt er
+// bei 0. Durchgang gilt, wenn der Anstieg über PYRO_GAP_RATIO des erwarteten Werts liegt (Tastgrad 97 %).
+constexpr uint32_t LAUNCH_GAP_US            = 250;
+constexpr float    PYRO_SENSE_TAU_US        = 2480.0f;
+constexpr float    PYRO_GAP_RATIO           = 0.5f;
+// Servo-Selbsttest in PAD_READY (Vorbedingung 6)
+constexpr float    SERVO_TEST_DEG           = 8.0f;    // Ausschlag in Servo-Grad um die Mitte
+constexpr uint32_t SERVO_TEST_STEP_MS       = 250;     // sechs Schritte, 1,5 s
+constexpr float    SERVO_TEST_MIN_A         = 0.0f;    // Spitzenstrom VSERVO; 0 = nicht prüfen (am Tisch messen)
+
 // ===== Telemetrie (Telemetry.h) =====
 constexpr long     RADIO_BAUD        = 9600;
 constexpr uint32_t TLM_PERIOD_MS     = 100;     // 10 Hz
 constexpr uint32_t TLM_CMD_TIMEOUT_MS = 1000;   // Kommando-Rahmen älter als das wird verworfen
+// E22-400T22: Rakete (E22-400T22S) und Laptop (E22-400T22U) müssen gleich eingestellt sein.
+// tools/ground/e22_config.py liest diese Werte und schreibt sie in das USB-Modul.
+constexpr uint8_t  E22_ADDH     = 0x00;
+constexpr uint8_t  E22_ADDL     = 0x00;
+constexpr uint8_t  E22_NETID    = 0x00;
+constexpr uint8_t  E22_CHANNEL  = 0x17;         // 410,125 MHz + 23 MHz = 433,125 MHz
+constexpr uint8_t  E22_AIR_RATE = 0b100;        // 9,6 kbit/s (Entscheidung Jan 22.10.2026, PROJECT.md Befund 18)
+constexpr uint8_t  E22_POWER    = 0b11;         // 10 dBm (SRD); 0b00 = 22 dBm nur mit Amateurfunk
 
 // ===== Watchdog und Zustandsspeicher =====
 constexpr bool     WDT_ENABLED    = true;
@@ -203,7 +249,11 @@ constexpr uint32_t STATE_SAVE_EVERY_N_LOOPS = 1;
 
 // ===== Logging =====
 constexpr bool     LOG_DATA = false;
-constexpr uint32_t LOG_EVERY_N_LOOPS = 1;       // 1 = 100 Hz, 10 = 10 Hz
+constexpr uint32_t LOG_EVERY_N_LOOPS = 1;       // ab ARMED und im Flug: 1 = 100 Hz, 10 = 10 Hz
+constexpr uint32_t LOG_PAD_EVERY_N_LOOPS = 10;  // in SAFE und PAD_READY (10 Hz)
+// Ringpuffer: die letzten 2 s vor ARMED mit voller Rate, beim Scharfschalten ins Log nachgetragen
+constexpr uint32_t LOG_PRE_ARM_MS = 2000;
+constexpr uint32_t LOG_RING_DRAIN_PER_LOOP = 3; // so viele Frames je Takt aus dem Ringpuffer schreiben
 // Nach so vielen Frames stoppen und die CSV exportieren (Tischtest). 0 = nie.
 constexpr uint32_t LOG_STOP_AFTER_FRAMES = 1000;
 constexpr bool     LOOP_WARNING = true;         // Overrun auf Serial melden

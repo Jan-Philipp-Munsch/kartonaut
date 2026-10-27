@@ -4,6 +4,7 @@
 #   simulation  Tests des Python-Pakets tvcsim
 #   pins        Pinbelegung der Firmware (BoardRevB.h) gegen die Schaltung (circuit.py)
 #   tischtest   Parser-Tests von tools/bench_test.py und Host-Tests der Kalibrierbibliothek (g++)
+#   ground      Laptop-Werkzeug tools/ground (Protokoll, MAC, gleiche Testvektoren wie die Firmware)
 name: CI
 
 on:
@@ -118,3 +119,15 @@ jobs:
           /tmp/test_calstore
           g++ -std=c++17 -Wall -Wextra -I firmware/examples/revb_test firmware/test/host/test_nmea.cpp -o /tmp/test_nmea
           /tmp/test_nmea
+
+  ground:
+    name: Laptop-Werkzeug (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install pytest
+      - name: Protokoll und MAC gegen firmware/test/data/radio_vectors.csv
+        run: python -m pytest -q tools/ground

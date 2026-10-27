@@ -1,4 +1,5 @@
 #include "Pyro.h"
+#include "Telemetry.h"
 
 bool PyroLogic::conditions(const PyroInputs& in, int ch) {
   if (!in.fitted[ch])                       { refusal_ = "nicht bestueckt"; return false; }
@@ -12,7 +13,8 @@ bool PyroLogic::conditions(const PyroInputs& in, int ch) {
 }
 
 void PyroLogic::update(const PyroInputs& in, bool fire[2]) {
-  if (in.allowed[0]) {
+  // Bezug der Reservezeit: erste Freigabe eines Kanals (Kanal 1 kann nach einem Bordstart gesperrt sein)
+  if (in.allowed[0] || in.allowed[1]) {
     if (t_allowed_since_ == 0) t_allowed_since_ = in.t_ms ? in.t_ms : 1;
   } else {
     t_allowed_since_ = 0;
@@ -49,4 +51,31 @@ void PyroLogic::update(const PyroInputs& in, bool fire[2]) {
       if (ch == 0) done_ = true;
     }
   }
+}
+
+bool PyroLogic::updateLaunch(const LaunchPulseInputs& in) {
+  if (launch_firing_) {
+    uint8_t end = tlm::IGN_END_NONE;
+    if (in.thrust)                                    end = tlm::IGN_END_THRUST;
+    else if (in.continuity_valid && !in.continuity)   end = tlm::IGN_END_CONT_LOST;
+    else if (!in.allowed)                             end = tlm::IGN_END_STOPPED;
+    else if (!in.armed)                               end = tlm::IGN_END_DISARMED;
+    else if (in.t_ms - t_launch_on_ >= p_.launch_pulse_max_ms) end = tlm::IGN_END_TIMEOUT;
+    if (end != tlm::IGN_END_NONE) {
+      launch_firing_ = false;
+      launch_end_ = end;
+      t_launch_off_ = in.t_ms;
+    }
+    return launch_firing_;
+  }
+  if (launch_used_ || !in.allowed) return false;
+  launch_used_ = true;                                // genau ein Versuch je Startablauf
+  if (!in.armed || !in.continuity) {
+    launch_end_ = tlm::IGN_END_REFUSED;
+    refusal_ = !in.armed ? "nicht scharf" : "kein Durchgang";
+    return false;
+  }
+  launch_firing_ = true;
+  t_launch_on_ = in.t_ms ? in.t_ms : 1;
+  return true;
 }

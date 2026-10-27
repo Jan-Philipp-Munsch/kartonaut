@@ -26,21 +26,33 @@
 //   Landebrennen unmöglich (in.landing_possible = false: nicht scharf, kein Durchgang am
 //   Anzünder, ABORT), fällt die Bergung auf den Fallschirm in APOGEE zurück.
 //
+// Motorstart an Bord (docs/Plan_Bordzuendung_2026-10-27.md §4), Zustände 9 bis 12:
+//   PAD_READY --ARM (MAC ok, Vorbedingungen ok)--> ARMED --LAUNCH (MAC ok)--> COUNTDOWN
+//   COUNTDOWN --nach countdown_ms--> IGNITION (Startpuls auf LAUNCH_CH)
+//   IGNITION  --Schub erkannt--> BOOST (bestehender Flugablauf)
+//   IGNITION  --kein Schub nach thrust_timeout_ms oder ABORT--> MISFIRE
+//   ARMED/COUNTDOWN --ABORT | SAFE | Heartbeat fehlt | Vorbedingung verletzt | ARM-Zeit um--> SAFE
+//   MISFIRE: Startpuls gesperrt, bleibt bis SAFE per Funk. Zündet der Motor doch noch (Spätzünder),
+//            erkennt die Rakete den Start wie in PAD_READY und fliegt mit Bergung (Jan, 27.10.2026).
+// Die MAC-Prüfung macht main.cpp (LaunchAuth.h) vor dem Automaten; hier kommen nur gültige ARM/LAUNCH an.
+//
 // Jeder Übergang landet mit Zeitstempel und Grund im Ereignispuffer (Log, Telemetrie).
 // Kein Arduino: läuft in den nativen Tests. Zeiten in ms (millis()).
 #include <stdint.h>
 
 enum class FlightState : uint8_t {
   SAFE = 0, PAD_READY = 1, BOOST = 2, COAST = 3, APOGEE = 4, DESCENT = 5, LANDED = 6, ABORT = 7,
-  LANDING_BURN = 8
+  LANDING_BURN = 8,
+  ARMED = 9, COUNTDOWN = 10, IGNITION = 11, MISFIRE = 12   // Motorstart an Bord; 0..8 bleiben (Zustandsspeicher, Telemetrie)
 };
 
-enum class FlightCmd : uint8_t { NONE = 0, PAD_READY = 1, ABORT = 2, SAFE = 3 };
+enum class FlightCmd : uint8_t { NONE = 0, PAD_READY = 1, ABORT = 2, SAFE = 3, ARM = 4, LAUNCH = 5 };
 
 enum class FlightReason : uint8_t {
   NONE = 0, CMD = 1, ACCEL = 2, BURNOUT_ACCEL = 3, BURN_TIMEOUT = 4, APOGEE_SENSORS = 5,
   APOGEE_TIMEOUT = 6, PYRO_DONE = 7, LANDED_SENSORS = 8, FLIGHT_TIMEOUT = 9, RESTORED = 10,
-  NOT_READY = 11, LANDING_FREEFALL = 12, IGNITION = 13, LANDING_FALLBACK = 14, BURN_END = 15
+  NOT_READY = 11, LANDING_FREEFALL = 12, IGNITION = 13, LANDING_FALLBACK = 14, BURN_END = 15,
+  HEARTBEAT_LOST = 16, PRECOND_LOST = 17, ARM_TIMEOUT = 18, COUNTDOWN_END = 19, THRUST_TIMEOUT = 20
 };
 
 const char* flightStateName(FlightState s);
@@ -57,6 +69,8 @@ struct FlightInputs {
   bool     pyro_done = false;  // Pyro.h: Zündpuls beendet (oder nicht möglich)
   bool     landing_possible = true;   // Landemodus: Anzünder hat Durchgang, scharf, kein Abbruch
   bool     ignite_now = false;        // Landemodus: LandingPlanner sagt zünden
+  bool     launch_ready = false;      // Motorstart: alle Vorbedingungen erfüllt (LaunchControl.h)
+  uint32_t heartbeat_age_ms = 0xFFFFFFFF;   // seit dem letzten Kommando vom Boden
   FlightCmd cmd = FlightCmd::NONE;
 };
 
@@ -72,6 +86,8 @@ struct FlightParams {
            apogee_fallback_ms, descent_after_ms, landed_hold_ms, flight_max_ms;
   bool     landing_mode = false;       // true = Landebrennen statt Fallschirm
   uint32_t landing_burn_max_ms = 6000; // LANDING_BURN -> LANDED spätestens danach
+  // Motorstart an Bord (Config.h)
+  uint32_t arm_timeout_ms = 30000, countdown_ms = 5000, heartbeat_timeout_ms = 1000, thrust_timeout_ms = 2000;
 };
 
 class FlightStateMachine {
@@ -84,6 +100,20 @@ public:
   bool inFlight() const { return s_ == FlightState::BOOST || s_ == FlightState::COAST || s_ == FlightState::APOGEE
                                  || s_ == FlightState::DESCENT || s_ == FlightState::LANDING_BURN
                                  || (s_ == FlightState::ABORT && t_launch_ms_ != 0); }
+  // ARMED, COUNTDOWN, IGNITION, MISFIRE
+  bool launchSequence() const { return s_ == FlightState::ARMED || s_ == FlightState::COUNTDOWN
+                                       || s_ == FlightState::IGNITION || s_ == FlightState::MISFIRE; }
+  // Startpuls (LAUNCH_CH) darf nur hier an sein
+  bool launchAllowed() const { return s_ == FlightState::IGNITION; }
+  // Gestartet über den Bordzünder (aus IGNITION oder MISFIRE): LAUNCH_CH bleibt danach gesperrt
+  bool onboardLaunch() const { return onboard_launch_; }
+  uint32_t armedTime() const { return t_armed_ms_; }
+  uint32_t ignitionStartTime() const { return t_ign_start_ms_; }   // Ende des Countdowns
+  uint32_t countdownLeftMs(uint32_t t_ms) const {
+    if (s_ != FlightState::COUNTDOWN) return 0;
+    const uint32_t el = t_ms - t_countdown_ms_;
+    return el >= p_.countdown_ms ? 0 : p_.countdown_ms - el;
+  }
   bool controlActive() const { return s_ == FlightState::BOOST || s_ == FlightState::LANDING_BURN; }
   // Fallschirm-Kanal: in APOGEE/DESCENT; im Landemodus nur als Rückfall (landing_fallback_)
   bool pyroAllowed() const {
@@ -101,6 +131,9 @@ public:
   // Einen Takt rechnen; true, wenn ein Übergang stattfand (dann steht er in lastEvent()).
   bool update(const FlightInputs& in);
 
+  // Start erkannt (|a| über der Schwelle für launch_hold_ms): in PAD_READY, IGNITION und MISFIRE
+  bool launchDetected(const FlightInputs& in);
+
   // Nach einem Neustart im Flug (StateMemory): Zustand und Zeiten wiederherstellen
   void restore(FlightState s, uint32_t t_launch_ms, uint32_t t_burnout_ms, uint32_t t_apogee_ms,
                float baro_max_m, uint32_t now_ms);
@@ -116,7 +149,9 @@ private:
   FlightParams p_;
   FlightState s_ = FlightState::SAFE;
   uint32_t t_launch_ms_ = 0, t_burnout_ms_ = 0, t_apogee_ms_ = 0, t_ignite_ms_ = 0;
+  uint32_t t_armed_ms_ = 0, t_countdown_ms_ = 0, t_ign_start_ms_ = 0;
   bool     landing_fallback_ = false;
+  bool     onboard_launch_ = false;
   uint32_t launch_since_ = 0, burnout_since_ = 0, apogee_since_ = 0, landed_since_ = 0;
   float    baro_max_m_ = -1e9f;
   FlightEvent events_[MAX_EVENTS];

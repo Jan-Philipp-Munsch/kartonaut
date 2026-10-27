@@ -37,7 +37,7 @@ auf der Platine schon vorgesehen.
 | Bergung | 8-g-CO₂-Kartusche drückt die Spitze ab; Fallschirm 125 cm in Rohr C |
 | Regelung | Lage als Quaternion aus dem Gyro, PID auf Nick/Gier → Moment → Kardanwinkel über `M = l · T · sin δ`; 100 Hz; Rollen ungeregelt. Flugzustandsautomat `SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED` mit Watchdog und Zustandsspeicher |
 | Simulation | Python-6DOF: mit 705 g trägt eine E12 die Rakete auf etwa 74 m (ohne Luftwiderstand); Kp 2 / Ki 1 / Kd 0,45 aus einer Bayes-Optimierung halten die Neigung unter 2,5°, ohne dass der Kardan anschlägt |
-| Bodensystem | **Seit 27.10.: Motorzündung an Bord** über Pyro-Kanal 1, ausgelöst per gesichertem Funkbefehl (ARM/LAUNCH mit HMAC, Countdown, Heartbeat) vom Laptop mit USB-Funkmodul E22-400T22U ([Plan](docs/Plan_Bordzuendung_2026-10-27.md)); Startrampe 600 × 600 mm auf drei verstellbaren Beinen. Die ESP32-Station mit Zündleitung bleibt als späterer Ausbau dokumentiert |
+| Bodensystem | **Seit 27.10.: Motorzündung an Bord** über Pyro-Kanal 1, ausgelöst per gesichertem Funkbefehl (ARM/LAUNCH mit HMAC, Countdown, Heartbeat) vom Laptop über das zweite Mainboard als Funkbrücke ([Plan](docs/Plan_Bordzuendung_2026-10-27.md)); Startrampe 600 × 600 mm auf drei verstellbaren Beinen. Die ESP32-Station mit Zündleitung bleibt als späterer Ausbau dokumentiert |
 | Stand | Kardan, Rohr A und Rohr B gebaut; Platine bestellt und in Fertigung, Selbstlöt-Teile von DigiKey unterwegs; Flug- und Tischtest-Firmware geschrieben und ohne Hardware getestet; **noch kein Flug** |
 
 ## Projektstand
@@ -56,7 +56,7 @@ auf der Platine schon vorgesehen.
 
 **Als Nächstes**
 
-1. AliExpress-Korb bestellen (E22-400T22S ×2, E22-400T22U, Antennen, XT30PW, Kabel, USB-C-Breakout; 60,02 €, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); Flugakku 2S 450 mAh (Reichelt) besorgen, nachsehen, ob Epoxid da ist (Teensy-Stiftleisten, Schalter und GPS u-blox NEO-6M sind vorhanden); Druckteile Stand 2d drucken (GPS-Halter für den NEO-6M ist eingebaut, Schlitten 58 statt 64 g) und wiegen. Platine kommt um den 4.–6.11., dann Selbstlöt-Teile einlöten.
+1. Bei AliExpress nur die zwei E22-400T22S bestellen (21,13 € mit Einfuhrabgaben, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); einen zweiten Teensy 4.1 für die Funkbrücke besorgen; vorhandene Akkus prüfen (2S und 1S passen in die Fächer), nachsehen, ob Epoxid da ist (Teensy-Stiftleisten, Schalter und GPS u-blox NEO-6M sind vorhanden); Druckteile Stand 2d drucken (GPS-Halter für den NEO-6M ist eingebaut, Schlitten 58 statt 64 g) und wiegen. Platine kommt um den 4.–6.11., dann Selbstlöt-Teile einlöten.
 2. Firmware: **Bordzündung mit gesichertem Startprotokoll und Laptop-Skript** nach [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md) (Cloud-Session), Treiber LSM6DSV16X hinter `Imu.h`, CO₂-Auslösung aus dem Zustandsautomaten, Kalibrierwerte in den rev-B-Sensorpfad.
 3. Rakete nach der Anleitung bauen: Teile drucken und wiegen, Rakete wiegen, Schwerpunkt auspendeln, Masse, Hebelarm und die neuen Gewinne in `Config.h`.
 4. Tischtest rev B1 mit `revb_test`, dann Bodentests: Servo-Kardan-Verhältnis (E01/E02), CO₂-Ausstoß dreimal (auch kalt), TVC-Prüfstand mit Propellermotor, Funkreichweite, Startablauf mit Ersatzlast statt Anzünder, dann Anzünder ohne Motor (Durchbrennzeit, Polyfuse F1).

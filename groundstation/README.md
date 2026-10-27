@@ -222,8 +222,8 @@ Stiftleiste und SMA-Buchse statt Lötpads; passt auf Lochraster. Auf der Rakete 
 ## 7. Stückliste
 
 **Entscheidung 26.10.2026 (Jan):** Für den Erstflug läuft das absolute Minimum, die Station hier ist der spätere
-Ausbau. Minimum = E22-400T22U (USB) am Laptop für Telemetrie und Kommandos plus verdrahtete Zündbox mit Schlüssel;
-siehe `hardware/mainboard/Beschaffung_2026-10-26.md` §6c.
+Ausbau. **Stand 27.10. abends:** Die Rakete zündet selbst (`docs/Plan_Bordzuendung_2026-10-27.md`); Minimum = Laptop
+plus zweites Mainboard rev B1 als Funkbrücke über USB; keine Zündbox. Siehe `hardware/mainboard/Beschaffung_2026-10-26.md` §6c.
 
 Preise sind Richtwerte (Stand Okt. 2026, nicht einzeln geprüft), keine Angebote. Zwei Varianten mit
 **derselben Schaltung** (`Schaltung.md`) und derselben Firmware; sie unterscheiden sich nur in der

@@ -395,6 +395,22 @@ Erstflug nicht belegt), SH/Qwiic-Kabel (2 × Adafruit 4210 kommen von DigiKey) u
 USB-Stick liegt eine Antenne bei; am Tisch reicht die Wendel). Stand: **44,89 € Ware, Versand frei, 35,73 €
 Abgaben − 5,96 € Rabatt = 74,66 €** (alles inklusive, nichts bei Zustellung).
 
+
+**Endstand AliExpress, 27.10. abends (Entscheidung Jan):** Bestellt werden **nur E22-400T22S-V2 ×2** (CDEBYTE Official
+Store): 15,18 € + 5,95 € Einfuhrabgaben = **21,13 €**. Alles andere entfällt:
+
+| Teil | Ersatz |
+|---|---|
+| E22-400T22U (USB) | zweites Mainboard rev B1 als Funkbrücke (braucht einen zweiten Teensy 4.1) |
+| Wendel TX433-TH-3, Stabantenne | zwei 433-MHz-Wendeln aus den alten HC-12-Modulen, direkt an den ANT-Pad des E22 gelötet |
+| Pigtails | entfällt; Antenne sitzt am Modul statt unten durch die Scheibe |
+| XT30PW (J1) | vorerst der JST-RCY des vorhandenen 2S, Gegenstück mit kurzer Litze in J1, mit Klebeband gesichert |
+| USB-C-Breakout | entfällt; beide Akkus extern laden |
+| GH-Kabel (GPS) | später, wenn das GPS fliegt (funduinoshop, mybotshop.de) |
+
+Zoll und Gebühren laut AliExpress-Kasse: 3 € + MwSt. je unterschiedlichem Artikeltyp, Bearbeitungsgebühr 4 € + MwSt.
+je Warengruppe (HS-Code); mehrere Stück desselben Artikels zählen einmal.
+
 ### Bodenstation nach der Entscheidung Bordzündung (27.10.2026)
 
 Die Rakete zündet den Motor selbst (`docs/Plan_Bordzuendung_2026-10-27.md`). **Zündbox, Zündleitung, ESP32-Station und

@@ -3,9 +3,9 @@
   {
    "teil": "Schlitten mit Spant",
    "datei": "cad/export/modular/Schlitten_mit_Spant.stl",
-   "cm3": 53.0,
-   "g_75": 50.4,
-   "g": 64.2
+   "cm3": 46.6,
+   "g_75": 44.4,
+   "g": 57.6
   },
   {
    "teil": "Untere Scheibe",
@@ -24,17 +24,17 @@
   {
    "teil": "Schraubring J1",
    "datei": "cad/export/modular/Schraubring_J1.stl",
-   "cm3": 4.5,
-   "g_75": 4.3,
-   "g": 5.8
+   "cm3": 4.3,
+   "g_75": 4.1,
+   "g": 5.5
   }
  ],
- "druckteile_g": 80.0,
+ "druckteile_g": 73.1,
  "rohre_g": {
   "A": 30.0,
   "B": 42.2,
   "C": 46.8
  },
- "start_g": 671.0,
+ "start_g": 664.1,
  "laenge_mm": 731.0
 }

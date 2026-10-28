@@ -38,9 +38,10 @@ nur die Bilder.
 | `avionics.py` | Flugcomputer-Kuppler: Endringe, 8 × M2-Stangen, Träger, Platine 54 × 120 mit Teensy, Akkus 2S/1S, obere Endplatte = Spant mit Ladungsschale |
 | `ejection.py` | Kolben (Kuppler-Stück mit Platte und Öse), Fallschirm als Platzhalter; Gasraum 11 mm (war 5, die Ladungsschale ragte in die Kolbenplatte) |
 | `legs.py` | Hülse am Rohrende, Ring 70 mm darüber, vier Beine mit Haupt- und oberer Strebe, Fuß, Gelenke |
-| `testrig.py` | TVC-Prüfstand: Gestell, Rahmen, Klemmkragen, Prop-Adapter mit BR2814 und Propeller, Schutzkäfig (siehe unten) |
+| `testrig.py` | TVC-Prüfstand um die gebaute Rakete: Gestell, Rahmen, Klemmkragen mit Lukenfenstern, Prop-Adapter mit BR2814 und Propeller, Schutzkäfig; Prüfung, Druckteile einzeln als STL (siehe unten) |
 | `build.py` | Zusammenbau, Export, Kollisionsprüfung, Render-Aufrufe |
-| `landingpad.py` | Startrampe: Platte mit Loch, drei verstellbare Beine, Startstützen, Zündkasten; Prüfung gegen die Rakete, eigener Export und Bilder (siehe unten) |
+| `groundbridge.py` | Gehäuse der Bodenstations-Funkbrücke (Raspberry Pi Pico + E22-400T22S) mit senkrechtem Halbwellen-Dipol in einer Leiste, Stativmutter 1/4"; Druckteile als STL (siehe unten) |
+| `landingpad.py` | Startrampe: Platte mit Loch, drei verstellbare Beine, Startstützen bei 45°/135°/250°; Prüfung gegen die gebaute Rakete, eigener Export und Bilder (siehe unten) |
 | `mass_model.py` | Stabmodell für Schwerpunkt und Trägheitstensor (Konfigurationen `voll` und `erstflug`) |
 | `modular.py`, `modular_params.py` | Modulbauweise *Kartonaut 1* Stand 2b: Rohre A/B/C mit Bohrungen und Luken, Druckteile, gebauter Kardan als Netz, Servos und Gestänge schematisch, Kollisionsprüfung, Gesamtmodell STEP/GLB, Bilder (siehe unten) |
 | `mass_stand2b.py` | Massenbudget der Modulbauweise: Masse, Schwerpunkt, Hebelarm, Trägheit je Flugzustand → `mass_stand2b.md/.json` (liest die Simulation als `--vehicle stand2b`) |
@@ -119,7 +120,7 @@ und rechnet alle Varianten in einem Lauf, ohne die Umgebungsvariable.
 | Luken | eine USB-Luke (+y) | Luke A (+y) und Luke B (−y), Schlüsselschalter-Kragen |
 | Start | 981 g | **761 g** (700 mm), 755 g (675 mm): Ziel 750 g um 11 g verfehlt, siehe `mass_properties.md` |
 
-Der Prüfstand (`rig=True`) und die Bilder der Gesamtübersicht gehören zu `voll`; `build.py --config erstflug` schreibt
+Die Bilder der Gesamtübersicht gehören zu `voll` (der Prüfstand steht seit 27.10. in `testrig.py`); `build.py --config erstflug` schreibt
 `export/erstflug/*` und `export/rocket_erstflug.step` und rendert `rocket_erstflug_*.png` und `hatches_*.png`.
 Dazu prüft es (`check_erstflug`), ob Schalterbrett und Schlüsselschalter frei von Stangen, Platine, Akkus und Rohren sind, ob die
 Steckerräume (Micro-USB, microSD, die fünf Teile des Schalterbretts, Schlüssel) weder Einbauten noch die Wand von Kuppler und Rohr
@@ -180,7 +181,7 @@ Ring-Stack, kein Rollmotor, CO₂-Ausstoß, Schirm im Rohr C, Spitze über den z
 Schraubring, Schlitten mit Spant (Band Ø 75 zwischen B und C), alle Radialschrauben bei 0°/90°/180°/270° (Rohr C 45°
 versetzt), Rampenführungen bei 45°/135°/250° zwischen Schrauben und Servofenstern (207°/336° laut Druckdatei).
 Grundlage der Bauanleitung `docs/Bauanleitung_Kartonaut1.md`. Das Massenbudget dazu rechnet `mass_stand2b.py`:
-**705 g** beim Start (Druckteile Stand 2c im Leichtbau, 23.10.), Schwerpunkt 259 mm, Hebelarm Kardan–Schwerpunkt 190 mm,
+**704 g** beim Start (Druckteile Stand 2d: Leichtbau vom 23.10., GPS-Halter NEO-6M und Zapfenfenster vom 27.10.), Schwerpunkt 260 mm, Hebelarm Kardan–Schwerpunkt 190 mm,
 Ixx = 0,021, Izz = 0,00047 kg·m², dazu eine Hebeltabelle bis 593 g
 (`mass_stand2b.md`; die Überschlagsrechnung in `modular.py` kommt ohne LoRa-Wendel, CO₂-Servo und Schalterbrett-Teile
 auf 689 g).
@@ -195,56 +196,77 @@ Gesamtmodell (Grundfläche 38 mm, Bohrungen auf 44 mm, Drehung −45°), Servos,
 `tvc.py` beschreibt noch den Direktantrieb und ist auf den Schubstangen-Kardan umzustellen (Bauanleitung §8 O4). Die Prüfung meldet Durchdringungen von Schlitten, Platine,
 Steckern, Akkus, GPS, LoRa-Wendel, Schalterbrett, Schraubring, CO₂-Modul und Schirm mit Rohren, Kuppler und einander.
 
-## Prüfstand (`testrig.py`, 21.10.2026)
+## Prüfstand (`testrig.py`, 21.10.2026; auf die gebaute Rakete umgestellt 27.10.2026)
 
-| Rakete im Gestell, 12° genickt, 8° gegiert | Antriebsende: Prop-Adapter, BR2814, Propeller, Schutzkäfig |
+| Rakete im Gestell, 12° genickt, 8° gegiert, Kardan 4°/3° | Antriebsende aufgeschnitten: Prop-Adapter, BR2814, Propeller, Schutzkäfig |
 |---|---|
 | ![](../docs/img/cad/testrig.png) | ![](../docs/img/cad/testrig_drive.png) |
 
-Die Rakete hängt in einem zweiachsigen Gestell mit Drehpunkt im Schwerpunkt (`RIG_PIVOT_Z`, aus dem
-Massenmodell, nach dem Auswiegen setzen) und bekommt ihren Schub von einem Propellermotor im Kardan:
+`python cad/testrig.py` baut den Prüfstand um die gebaute Rakete (`modular.build_all()`, Stand 2d), prüft ihn, schreibt
+`export/testrig.step` (mit Rakete, im Repo), `export/testrig.stl` (Gestell und Rahmen) und die Druckteile einzeln nach
+`export/testrig/` und rendert zwei Bilder (`--no-render` ohne Blender). Laufzeit unter 1 min. Die alte Fassung hing an
+`tvc.py` (Rohr 20 mm über der Düse, Drehpunkt 448 mm) und ist aus `build.py`, `tvc.py` und `params.py` entfernt.
 
-- **Gestell:** Sperrholzplatte 820 × 500, zwei Alu-Stützen 40 × 40 bei x = ±350 mit je drei Streben,
-  Kugellager 608 in Höhe des Drehpunkts (800 mm über dem Boden), zwei Achsstummel Ø 8.
-- **Rahmen:** Rechteck aus Alu-Profil 20 × 20 (innen 116 × 135 mm), auf den Stummeln geklemmt, nickt
-  um x. Auf den y-Stäben zwei gedruckte Lagerböcke mit 608-Lagern.
-- **Klemmkragen:** gedruckt, zweiteilig (Teilung x = 0), Ø 95 × 40 um das Rohr, Ohren an ±y mit je
-  zwei M4; der Zapfen Ø 8 liegt in der Teilung und wird mitgeklemmt. Die Rakete giert damit um y,
-  Rollen ist gesperrt (das Reaktionsmoment des Propellers geht in den Kragen).
-- **Antrieb:** Adapter mit Ø-29-Zapfen im Motorrohr (die Klemmschraube greift wie beim E12-Adapter)
-  und Flansch Ø 44 mit M3-Kreuz 16/19 unter dem Motorrohr; daran der BR2814 mit Welle nach unten,
-  Propeller 12 × 6 (oder 11 × 7) unter der Rohrunterkante. Der Schubvektor läuft durch den
-  Kardanpunkt, der Kardan lenkt ihn wie im Flug; `build_all(rig=True)` tauscht Adapter und E12 gegen
-  diese drei Teile (`tvc.build(..., motor_kind="prop")`).
-- **Schutzkäfig:** zwei Ringe Ø 337 aus 8-mm-Rohr, zwölf Stäbe, vier Speichen zu einem zweiteiligen
-  Klemmring am Rohr über dem Außenrahmen-Flansch. Sitzt an der Rakete, schwenkt mit; die
-  Propellerspitze hat 12 mm radiales Spiel und steigt bei 10° Kardanneigung bis z = 24 mm, der obere
-  Ring liegt bei z = 40.
-- **Auslenkung:** ±20° je Rig-Achse (`RIG_TILT_MAX_DEG`), begrenzt per Gurt zwischen Rohr und Rahmen
-  (nicht modelliert). `build.py` prüft bei ±20° Nicken und Gieren und ±7° Kardan, dass Propeller,
-  Käfig, Rohr, Spitze und Kragen weder Gestell, Rahmen noch Achsstummel berühren, und dass der
-  Propeller frei vom Käfig bleibt; der Propeller reicht bei 20° Gieren bis x = 304 (Stützen bei 350).
+Die Rakete hängt in einem zweiachsigen Gestell mit Drehpunkt im Schwerpunkt und bekommt ihren Schub von einem
+Propellermotor im gebauten Kardan:
 
-Export: `cad/export/testrig.step` (Gestell mit Rakete, im Repo) und `testrig.stl` (nur Gestell).
-Nicht modelliert: Kabel (ESC und 4S-Akku sitzen als Klotz auf dem Rahmen), Gurt-Anschläge, Schrauben.
-Maße des BR2814 (Ø 35 × 36, Lochkreuz 16/19, 75 g) sind Annahmen für einen 2814-Außenläufer und am
-Teil nachzumessen; danach `PM_*` in `params.py` anpassen. Der Schwerpunkt verschiebt sich gegenüber
-dem Flugzustand (kein E12, dafür Motor, Propeller und Käfig unten), deshalb vor dem Einbau auswiegen.
+- **Schwerpunkt:** aus `mass_stand2b.json` (ohne Motor 641 g) minus 29→24-Adapter, plus BR2814, Propeller, Prop-Adapter,
+  Käfig und Käfig-Klemmring: **908 g, z = 200 mm**. `RIG_PIVOT_Z = 200`; nach dem Auswiegen am Gerät setzen.
+- **Gestell:** Sperrholzplatte 820 × 500, zwei Alu-Stützen 40 × 40 bei x = ±350 mit je drei Streben, Kugellager 608 in
+  Höhe des Drehpunkts (**600 mm über dem Boden**, der Propeller läuft dann 386 mm über dem Boden), zwei Achsstummel Ø 8.
+- **Rahmen:** Rechteck aus Alu-Profil 20 × 20 (innen 120 × 135 mm), auf den Stummeln geklemmt, nickt um x. Auf den
+  y-Stäben zwei gedruckte Lagerböcke mit 608-Lagern.
+- **Klemmkragen:** gedruckt, zweiteilig (Teilung x = 0), Ø 95, z = 185 … 250 um Rohr B, Ohren an ±y mit je zwei M4; der
+  Zapfen Ø 8 liegt in der Teilung und wird mitgeklemmt. Die Rakete steckt um 90° gedreht im Kragen: ihre Längslinie 0°
+  (Kardanschraube) zeigt zum Zapfen +y, Luke B nach +x. **Fenster** lassen Luke B (Hauptschalter, USB-C, Laden 2S), den
+  Schraubschalter (282°, z 237) und Luke A1 frei; über dem Fenster für Luke B bleibt ein 9-mm-Rand, damit jede Hälfte
+  ein Stück ist. Luke A2 (ab z 254) und die Schraubenebenen z 169 und 293 liegen außerhalb. Rollen ist gesperrt.
+- **Antrieb:** Statt 29→24-Adapter und E12 sitzt ein gedruckter Adapter mit Zapfen Ø 28,4 (Bohrung des Motorrohrs laut
+  Druckdatei 28,6, **nachmessen**) im gebauten Motorrohr (Unterkante z = 34) und ein Flansch Ø 34 × 5 mit M3-Kreuz 16/19
+  darunter; Ø 34 wie das Motorrohr, so kippt er bei ±7°/±7° (9,9°) mit 0,5 mm Luft unter den Kardanrahmen (ab z = 38)
+  durch. Daran der BR2814 mit Welle nach unten, Propeller 12 × 6 rund 14 mm unter der Rohrunterkante. Der Schubvektor läuft
+  durch den Kardanpunkt (z = 69,5), der Kardan lenkt ihn wie im Flug.
+- **Schutzkäfig:** zwei Ringe Ø 337 aus 8-mm-Alu-Rohr, zwölf Stäbe, vier Speichen in Buchsen eines zweiteiligen gedruckten
+  Klemmrings an Rohr A (z = 6 … 26, unter den Kardanschrauben bei z = 44), je Teilung eine M4. Propellerspitze 12 mm radial
+  vom Käfig.
+- **Auslenkung:** ±20° je Rig-Achse (`RIG_TILT_MAX_DEG`), begrenzt per Gurt zwischen Rohr und Rahmen (nicht modelliert).
 
-## Startrampe (`landingpad.py`, 22.10.2026)
+**Prüfungen** (alle frei, 27.10.): Adapterflansch bei voller Kardankippung unter den Rahmen (z 37,5 < 38); Flansch und
+Glocke bleiben im Rohr (r ≤ 30,4 < 36,3); Propeller, Glocke, Adapter und Käfig-Klemmring gegen Rohr A und Käfig bei Kardan
+0° und allen Ecken ±7°; Kragen lässt Luke B, Schraubschalter und Luke A1 frei, jede Hälfte ist ein Stück; Rakete (alle Teile),
+Antrieb, Käfig und Kragen gegen Gestell, Rahmen, Lagerböcke und ESC bei Rig ±20° je Achse und in vier Ecken mit Kardan ±7°.
 
-| Start (Erstflug, Aufbauzustand: Shunt steckt), Boden 6° geneigt | Stützen, Loch, Zündkasten |
+**Druckteile** (`export/testrig/`, liegend fürs Bett, PETG wie die Modulbauweise; Massen 75 % des CAD-Volumens,
+`druckteile.json`):
+
+| Datei | Stück | Masse | Hinweis |
+|---|---|---|---|
+| `Klemmkragen_Haelfte_LukeB.stl` | 1 | ≈ 76 g | +x-Hälfte mit dem Fenster für Luke B und den Schraubschalter |
+| `Klemmkragen_Haelfte_LukeA.stl` | 1 | ≈ 87 g | −x-Hälfte mit dem Fenster für Luke A1 |
+| `Lagerbock_608.stl` | 2 | ≈ 7 g | sitzt auf dem y-Stab des Rahmens |
+| `Prop_Adapter.stl` | 1 | ≈ 27 g | Zapfen erst nach dem Nachmessen der Motorrohr-Bohrung drucken |
+| `Kaefig_Klemmring_Haelfte.stl` | 2 | ≈ 37 g | Speichenbuchsen Ø 8,2 |
+
+Nicht modelliert: Kabel (ESC und 4S-Akku sitzen als Klotz auf dem Rahmen), Gurt-Anschläge, Schrauben. Maße des BR2814
+(Glocke Ø 35 × 36, Lochkreuz 16/19, 75 g) sind Annahmen für einen 2814-Außenläufer; am Teil nachmessen und `PM_*` oben in
+`testrig.py` anpassen.
+
+## Startrampe (`landingpad.py`, 22.10.2026; auf die gebaute Rakete umgestellt 27.10.2026)
+
+| Start, Boden 6° geneigt | Stützen, Loch, Stahlblech |
 |---|---|
 | ![](../docs/img/cad/landingpad.png) | ![](../docs/img/cad/landingpad_detail.png) |
-| **Schnitt y = 0 durch die Stütze bei 180°** | |
+| **Schnitt y = 0** | |
 | ![](../docs/img/cad/landingpad_section.png) | |
 
-Anforderungen: [`docs/Schnittstellen_Bodensystem_2026-10-22.md`](../docs/Schnittstellen_Bodensystem_2026-10-22.md), S1 und S2.
-`python cad/landingpad.py` baut die Rampe in den Koordinaten der Rakete (z = 0 Düse), prüft sie gegen die Rakete aus
-`build.build_all()` (Erstflug, Kardan ±7°/±7°, Abheben bis 200 mm), schreibt `export/landingpad.step` (Rampe mit Erstflug-Rakete)
-und rendert drei Bilder (`--no-render` ohne Blender). Laufzeit unter 1 min.
+Anforderungen: [`docs/Schnittstellen_Bodensystem_2026-10-22.md`](../docs/Schnittstellen_Bodensystem_2026-10-22.md), S1;
+Zündung an Bord nach [`docs/Plan_Bordzuendung_2026-10-27.md`](../docs/Plan_Bordzuendung_2026-10-27.md) (S2 entfällt).
+`python cad/landingpad.py` baut die Rampe in den Koordinaten der Modulbauweise (z = 0 Düse = Rohrunterkante, der Motor steht
+bündig), prüft sie gegen die gebaute Rakete aus `modular.build_all()` mit den M3-Linsenköpfen der Radialschrauben (Kardan
+±7°/±7° um den Kardanpunkt z = 69,5, Abheben bis 200 mm), schreibt `export/landingpad.step` (Rampe mit Rakete) und rendert drei
+Bilder (`--no-render` ohne Blender). Laufzeit unter 1 min.
 
-Zweiter Stand vom selben Tag: der erste Entwurf (Achteck 1250 mit Stahldeck und Strahlplatte als Landefläche, 34 kg, 230 €) war
+Zweiter Stand vom 22.10.: der erste Entwurf (Achteck 1250 mit Stahldeck und Strahlplatte als Landefläche, 34 kg, 230 €) war
 für den Erstflug zu schwer und zu teuer (Jan, 22.10.). Jetzt: kleine Startrampe aus B1/OBI-Teilen, Strahl durch ein Loch in die
 Erde, Beine einzeln verstellbar für unebenen Boden. **Die Landefläche für die Konfiguration `voll` (S1: Ø ≥ 1200, nicht brennbar)
 ist damit ein eigenes Teil für später**; diese Rampe trägt die Beine nicht (Füße auf r ≈ 320, Platte 600).
@@ -259,64 +281,71 @@ ist damit ein eigenes Teil für später**; diese Rampe trägt die Beine nicht (F
   Kontermutter oben; unten eine Karosseriescheibe Ø 30 zwischen zwei Muttern. Drei Beine stehen auf jedem Boden ohne Kippeln.
   Jedes Bein einzeln drehen, bis die Libelle einspielt: Platte 80 … 274 mm über dem Boden, das gleicht **bis 23° Neigung** aus
   (im Bild 6°). Auf weichem Boden die Scheiben weglassen und die Stangen 3 cm einstecken.
-- **Startstützen (drei, abschraubbar):** bei 60°, 180°, 300°, also nicht vor dem Schlüsselschalter (+x) und den Luken (±y).
-  Je ein Alu-Vierkantrohr 20 × 20 × 1,5 als **Führung, 160 mm über der Rohrunterkante, 1,5 mm Luft** zum Rohr, oben innen
-  angefast; ein **Auflage-Klotz** Alu 20 × 5 × 10 innen an der Führung, Oberkante z = 20 unter der Ringfläche (r 34 … 39 deckt
-  36,3 … 37,5). Die Führung endet unten bei z = 10, also über der Düse; eine Schrägstrebe aus demselben Rohr und zwei Knotenbleche
-  Alu 3 mm führen zur Fußplatte Alu 40 × 5 auf r = 150 … 250 mit zwei M6 in Langlöchern (radial einstellbar). Im Strahl steht nichts.
-  Verbunden mit M5 durch Rohr und Knotenbleche. Einstellen mit einem gedruckten Ring Ø 78 (Lehre = Rohr + 2 × 1,5) statt der
+- **Startstützen (drei, abschraubbar):** bei **45°, 135°, 250°** (Befund 17): zwischen den Radialschrauben bei 0/90/180/270° und
+  den Servofenstern bei 207°/336°; die Luken bei 90°/270° liegen über der Führung. Je ein Alu-Vierkantrohr 20 × 20 × 1,5 als
+  **Führung, 160 mm über der Rohrunterkante, 2 mm Luft** zum Rohr (S1: 1 … 2 mm), oben innen angefast. 2 statt 1,5 mm, weil die
+  Linsenköpfe der M3-Schrauben (ISO 7380, 1,65 mm hoch) bei z 44 und 110 in der Führungshöhe liegen: so gehen sie bei jeder
+  Rolllage durch. Ein **Auflage-Klotz** Alu 20 × 5 × 10 innen an der Führung, Oberkante z = 0 unter der Ringfläche (r 34 … 39
+  deckt 36,3 … 37,5). Die Führung endet unten bei z = −10; eine Schrägstrebe aus demselben Rohr und zwei Knotenbleche Alu 3 mm
+  führen zur Fußplatte Alu 40 × 5 auf r = 150 … 250 mit zwei M6 in Langlöchern (radial einstellbar). Im Strahl steht nichts.
+  Verbunden mit M5 durch Rohr und Knotenbleche. Einstellen mit einem gedruckten Ring Ø 79 (Lehre = Rohr + 2 × 2) statt der
   Rakete: Stützen anlegen, M6 festziehen, Lehre nach oben abziehen.
-- **Zündkasten** auf der Platte bei 120°: Abzweigkasten 100 × 100 × 55, außen zwei XT30-Buchsen nebeneinander: **LEITUNG**
-  (Stecker der 15-m-Zündleitung, S2) und **SHUNT** (gebrückter XT30-Stecker mit Fahne REMOVE BEFORE FLIGHT). Beide Buchsen liegen
-  parallel am Anzünder; verwechselt man sie, passiert nichts. Oben zwei Polklemmen 4 mm für das 30-cm-Kabel mit Krokoklemmen,
-  davor ein Hitzeschild aus dem Rest des Stahlblechs. Litze 1,5 mm² im Kasten.
+- **Zündung:** kein Zündkasten, keine Zündleitung und kein Shunt mehr an der Rampe. Die Rakete zündet über Pyro 1; die
+  Anzünderleitung kommt von innen aus der Düse und hängt nach dem Start lose.
 
-**Prüfungen** (alle frei, Stand 22.10.): Rakete Erstflug bei Kardan 0° und allen vier Ecken ±7°/±7° gegen jedes Teil; Düse
-mindestens 99 mm über dem Stahlblech; Strahlkegel ±22° bis 400 mm unter der Düse frei (nur das Anzünderkabel liegt darin, es ist
-biegsam); Kardan-Freiraum r < 30 unter der Rohrunterkante leer; Auflagen auf z = 20 über der Ringfläche, Führungen 160 mm hoch,
-Luft 1,50 mm (Grenze 1 … 2); Abheben in Schritten bis 200 mm gegen die Stützen; Beinlängen bei 6° Bodenneigung im Verstellbereich;
-Kippsicherheit im Wind (5 N auf die Rakete, 0,86 m über dem Boden) Faktor 2,2 mit 6,5 kg Rampe und 0,72 kg Rakete.
-Ein Gegentest (Rakete 5 mm tiefer bzw. 3 mm seitlich) meldet Auflagen und Führungen, die Prüfung greift also.
+**Prüfungen** (alle frei, 27.10.): gebaute Rakete bei Kardan 0° und allen vier Ecken ±7°/±7° gegen jedes Teil; Düse mindestens
+99 mm über dem Stahlblech; Strahlkegel ±22° bis 400 mm unter der Düse frei; Kardan-Freiraum r < 30 unter der Rohrunterkante
+leer; Auflagen auf z = 0 unter der Ringfläche, Führungen 160 mm hoch, Luft 2,00 mm; Linsenköpfe bis r = 39,15, Führung innen
+bei 39,50; Abheben in Schritten bis 200 mm gegen die Stützen; Beinlängen bei 6° Bodenneigung im Verstellbereich; Kippsicherheit
+im Wind (5 N auf die Rakete, 0,84 m über dem Boden) Faktor 2,1 mit 6,1 kg Rampe und 705 g Rakete.
 
 **Stückliste** (Massen aus dem Modell mit Dichten [Annahme], Preise grob B1/OBI Oktober 2026 [Annahme]):
 
 | Teil | Masse | Preis |
 |---|---|---|
 | Siebdruckplatte 18 mm, Zuschnitt 600 × 600, Loch Ø 130 (Lochsäge oder Stichsäge) | 4,2 kg | 13 € |
-| Stahlblech 1 mm, 250 × 500 (halbiert: um das Loch, Rest als Hitzeschild) | 0,5 kg | 9 € |
+| Stahlblech 1 mm, 250 × 250 (Tafel 250 × 500 halbiert), um das Loch | 0,5 kg | 9 € |
 | Gewindestange M10, 1 m; Einschlagmuttern M10 (3) und M6 (6), Muttern M10 (9), Karosseriescheiben (3) | 0,6 kg | 10 € |
 | Alu-Vierkantrohr 20 × 20 × 1,5, 2 × 1 m; Alu-Flach 40 × 5, 1 m; Alu 3 mm Rest; M6 × 20, M5 × 30 | 0,9 kg | 31 € |
 | Dosenlibelle Ø 40 | – | 4 € |
-| Zündkasten: Abzweigkasten IP54, Polklemmen, Krokoklemmen, Litze, Fahne | 0,3 kg | 13 € |
-| XT30-Buchsen (2) und Stecker (2, einer als Shunt): gibt es nicht im Baumarkt, Modellbau-Handel | – | 5 € |
-| Druckteil PETG: Lehre Ø 78 | – | 1 € |
-| **gesamt** | **6,5 kg** | **ca. 86 €** |
+| Druckteil PETG: Lehre Ø 79 | – | 1 € |
+| **gesamt** | **6,1 kg** | **ca. 68 €** |
 
 **Transport:** Platte 600 × 600 (passt in jeden Kofferraum), Beine herausgedreht, Stützen abgeschraubt oder dran gelassen
 (Höhe dann 300 mm). Aufbau: Beine eindrehen, Rampe hinstellen, mit der Libelle ausrichten, Rakete von oben zwischen die
-Führungen setzen.
+Führungen setzen, Schraubenköpfe zwischen die Stützen drehen.
 
-**Sicherheit:**
-- Shunt-Stecker steckt, solange jemand an der Rampe ist. Reihenfolge: Bodenstation ohne Schlüssel, Zündleitung an LEITUNG,
-  Anzünder einsetzen und an die Polklemmen, Rakete scharf schalten, **zuletzt Shunt ziehen** und mit der Fahne mitnehmen, dann
-  zur Station (≥ 10 m, Leitung 15 m). Bei Abbruch: Schlüssel ziehen, 60 s warten, Shunt wieder stecken, erst dann Anzünder lösen.
-- Der Shunt schließt den Anzünder kurz; die Durchgangsprüfung der Station (≤ 10 mA, S2) sieht dann ebenfalls Durchgang. Die
-  Station kann Shunt und Anzünder nur am Widerstand unterscheiden (Leitung 15 m × 2 × 0,75 mm² ≈ 0,7 Ω, Anzünder etwa 1 Ω):
-  Hinweis an `groundstation/`.
+**Sicherheit:** Ablauf am Pad nach dem Plan Bordzündung, Startcheckliste (Hauptschalter, Anzünder, Arming-Schalter, weggehen, dann PAD_READY,
+ARM, LAUNCH vom Laptop; bei MISFIRE 60 s warten, SAFE, erst dann hingehen).
 - Unter dem Loch nackte Erde, kein trockenes Gras, kein Laub; im Umkreis von 2 m nichts Brennbares. Auf Asphalt oder Stein
   ein Stück Gehwegplatte oder Blech unter das Loch legen (Strahl prallt dann zurück, Abstand ≥ 150 mm). Wasser oder Löscher bereit.
-- Bei Wind über etwa 10 m/s nicht starten; auf weichem Boden die Stangen einstecken, sonst Heringe über die Platte (Kippfaktor 2,2).
+- Bei Wind über etwa 10 m/s nicht starten; auf weichem Boden die Stangen einstecken, sonst Heringe über die Platte (Kippfaktor 2,1).
 
 **Abweichungen von S1** (an den Besitzer der Schnittstellendatei): keine Strahlplatte mit seitlichem Abzug, sondern Loch und
 Erde; keine Landefläche Ø 1200 (eigenes Teil für die Konfiguration `voll`, später).
 
-**Offen:** Die Rampe ist gegen das Erstflug-CAD (`build.py --config erstflug`) geprüft, nicht gegen die Modulbauweise:
-dort liegen alle Schrauben bei 0°/90°/180°/270°, die Luken bei 90°/270°, die Servofenster laut Druckdatei bei 207°/336°,
-und es gibt keinen Schlüsselschalter; `modular_params.py` sieht die Führungen bei 45°/135°/250° vor (PROJECT.md Befund 17).
-`STAND_PHI` darauf setzen und gegen `modular.build_all()` prüfen. Schrauben, Muttern und Einschlagmuttern der Stützen
-sind nur als Langlöcher modelliert. Steifigkeit der Stütze mit
-2 × M6 in 18 mm Sperrholz am Muster prüfen. Temperatur der Alu-Auflagen (10 mm über der Düse, seitlich vom Strahl) beim ersten
-Abbrand prüfen. Landefläche für `voll` konstruieren. `export/landingpad.step` ist in `.gitignore` nicht freigegeben.
+**Offen:** Schrauben, Muttern und Einschlagmuttern der Stützen sind nur als Langlöcher modelliert. Steifigkeit der Stütze mit
+2 × M6 in 18 mm Sperrholz am Muster prüfen. Temperatur der Alu-Auflagen (direkt neben der Düse, seitlich vom Strahl) beim ersten
+Abbrand prüfen. Ob die Servoarme bei Vollausschlag aus den Servofenstern ragen (Bauanleitung O1), am Kardan nachsehen; das Modell
+hat sie im Rohr. Landefläche für `voll` konstruieren.
+
+## Funkbrücke der Bodenstation (`groundbridge.py`, 27.10.2026)
+
+| Mit Dipol, Deckel abgehoben | Innenraum |
+|---|---|
+| ![](../docs/img/cad/groundbridge.png) | ![](../docs/img/cad/groundbridge_detail.png) |
+
+`python cad/groundbridge.py` baut das Gehäuse für den Pico und das dritte E22 (Plan Bordzündung §5), prüft, dass Pico und
+E22 frei liegen, und schreibt die Druckteile nach `export/groundbridge/` (Unterteil ≈ 23 g, Deckel ≈ 8 g, PETG, ohne
+Stützen). Kasten 62 × 16 × 70 mm, links eine Leiste mit Drahtkanal Ø 2,2 für den Dipol: zwei Arme aus 1,5-mm²-Kupferdraht,
+je 164 mm ab der Lötstelle (λ/4 bei 433,125 MHz × 0,95), oberer Arm an ANT, unterer an GND des E22. Beide biegen im Fenster
+der Leiste rechtwinklig durch die linke Wand zu den Pads. Der Pico sitzt auf vier Domen (M2 × 5), die USB-Buchse in der
+rechten Wand; das E22 klebt mit Schaumband in einem Rahmen. Rückseite: Sechskanttasche für eine 1/4"-20-Mutter
+(Kamerastativ), zwei Kabelbinderschlitze in der Leiste für die Montage an einem Stab. Deckel mit vier M3 × 10 und einem
+Fenster über der Pico-LED.
+
+**Offen:** Lage der LED und der Pads am echten Pico/E22 prüfen (Fenster und Drahtdurchführungen sind großzügig). Die Arme
+nach dem ersten Reichweitentest gegebenenfalls kürzen; ohne Messgerät ist 164 mm der Startwert.
 
 ## Annahmen, am Gerät nachzumessen
 
@@ -339,4 +368,4 @@ Abbrand prüfen. Landefläche für `voll` konstruieren. `export/landingpad.step`
 4. Ob die Ringe mit 4,4 mm Spiel noch genug Führung haben, oder ob der Innenrahmen tiefer hängen soll
    (kleinerer Hebel zur Ring-Unterkante, weniger Spiel nötig).
 5. Druckausgleichsbohrungen für das Barometer (3 bis 4 × Ø 2 auf Höhe v ≈ 80, `hardware/mainboard/README.md`) fehlen im Modell.
-6. Prüfstand: Gurt-Anschläge, Kabelführung vom ESC zum Motor über den Kragen, Gas-Ausgang in der Firmware; BR2814 nachmessen.
+6. Prüfstand: Gurt-Anschläge, Kabelführung vom ESC zum Motor über den Kragen, Gas-Ausgang in der Firmware; BR2814 und die Bohrung des Motorrohrs nachmessen, Drehpunkt nach dem Auswiegen setzen.

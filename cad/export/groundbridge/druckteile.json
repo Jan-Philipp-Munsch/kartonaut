@@ -1,0 +1,31 @@
+{
+ "quelle": "cad/groundbridge.py",
+ "material": "PETG, 3 Wände, 25 % Gyroid",
+ "dipol_arm_mm": 164,
+ "schrauben": "4 × M3 × 10 (Deckel), 4 × M2 × 5 (Pico), 1 × Mutter 1/4\"-20 (Stativ)",
+ "masse_regel": "75% des CAD-Volumens × 1.27 g/cm³",
+ "teile": [
+  {
+   "datei": "cad/export/groundbridge/Funkbruecke_Unterteil.stl",
+   "stueck": 1,
+   "cm3": 24.3,
+   "g": 23.1,
+   "mm": [
+    70,
+    100,
+    14
+   ]
+  },
+  {
+   "datei": "cad/export/groundbridge/Funkbruecke_Deckel.stl",
+   "stueck": 1,
+   "cm3": 8.4,
+   "g": 8.0,
+   "mm": [
+    62,
+    70,
+    2
+   ]
+  }
+ ]
+}

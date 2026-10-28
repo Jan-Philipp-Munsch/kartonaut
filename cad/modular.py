@@ -133,7 +133,7 @@ def sled():
     s = bosses(s, M.SPIGOT_C_SCREW_Z, sc["id"] / 2 - 4.0, sc["od"] / 2 - 0.5, b1, phis=M.SPIGOT_C_PHI)   # ≥ 2,9 mm hinter der Mutter
     # Ringschraube M4 (Schockschnur) und Kabelverschraubung für das Servo der CO₂-Auslösung
     s = s.cut(cyl(4.3, b0 - 1, b1 + 1, 0, -16))
-    s = s.cut(cyl(6.0, b0 - 1, b1 + 1, -18, 8))
+    s = s.cut(cyl(6.0, b0 - 1, b1 + 1, *M.SERVO_GLAND))
     # Träger: U-Profil (Boden + zwei Wände) bis unter die Spantplatte; im Zapfen läuft der Boden als Sehne bis an die
     # Zapfenwand (statt des vollen Klotzes von Stand 2b, 11,5 cm³)
     tz0, tz1 = M.DISC_Z[1], p0
@@ -170,10 +170,24 @@ def sled():
     for (u, v) in M.PANEL_COLS:      # Auflage der Schalterbrett-Säulen bleibt voll
         s = s.union(cyl_between(M.PANEL_COL_D + 3.0, (u, M.TRAY_FLOOR_Y, v0 + v), (u, M.TRAY_FLOOR_Y + M.TRAY_WALL, v0 + v)))
         s = s.cut(cyl_between(3.3, (u, M.TRAY_FLOOR_Y - 1, v0 + v), (u, M.TRAY_FLOOR_Y + 3, v0 + v)))
-    # GPS-Halter: zwei Leisten unter der Platte, Patch nach oben
-    g = M.GPS
-    for x in (-g["w"] / 2 - 2.0, g["w"] / 2):
-        s = s.union(box_from(x, x + 2.0, g["y"][0], g["y"][1], g["z_top"] - g["h"] - 1.5, p0))
+    # Stand 2d: Fenster im Zapfen B zwischen den Augen, Bodenfenster neben den Akkus
+    for w, sp in ((M.SPIGOT_B_WINDOWS, sb), (M.SPIGOT_C_WINDOWS, sc)):
+        for a, b in w["phi"]:
+            wedge = (cq.Workplane("XY").workplane(offset=w["z"][0])
+                     .polyline([(0, 0)] + [polar(45.0, a + (b - a) * i / 8, 0)[:2] for i in range(9)]).close()
+                     .extrude(w["z"][1] - w["z"][0]))
+            s = s.cut(wedge.cut(cyl(sp["id"] - 0.4, w["z"][0] - 1, w["z"][1] + 1)))
+    sw = M.SIDE_WINDOWS
+    for va, vb in sw["v"]:
+        for x0, x1 in ((sw["x"][0], sw["x"][1]), (-sw["x"][1], -sw["x"][0])):
+            s = s.cut(box_from(x0, x1, M.TRAY_FLOOR_Y - 1, M.TRAY_FLOOR_Y + M.TRAY_WALL + 0.5, v0 + va, v0 + vb))
+    # GPS-Halter (Stand 2d): zwei Leisten quer an den y-Enden des Stapels, je mit Auflagekante unter der Modulplatine
+    g, r = M.GPS, M.GPS_RAIL
+    zb = g["z_top"] - g["h"]
+    for y0, y1, ly0, ly1 in ((g["y"][0] - r["t"], g["y"][0], g["y"][0], g["y"][0] + r["lip"]),
+                             (g["y"][1], g["y"][1] + r["t"], g["y"][1] - r["lip"], g["y"][1])):
+        s = s.union(box_from(-r["x"], r["x"], y0, y1, zb - r["lip_t"], p0))
+        s = s.union(box_from(-r["x"], r["x"], ly0, ly1, zb - r["lip_t"], zb))
     return s
 
 
@@ -309,7 +323,11 @@ def build_all():
         y0 = M.TRAY_FLOOR_Y + M.TRAY_WALL + 0.3
         parts.add(nm, box_from(-bat["w"] / 2, bat["w"] / 2, y0, y0 + bat["h"], v0 + bat["v0"], v0 + bat["v0"] + bat["l"]), "battery", "avionik")
     g = M.GPS
-    parts.add("GPS-Modul (Patch nach oben)", box_from(-g["w"] / 2, g["w"] / 2, g["y"][0], g["y"][1], g["z_top"] - g["h"], g["z_top"]), "teensy", "avionik")
+    gb, gp = M.GPS_BOARD, M.GPS_PATCH
+    zb, ym = g["z_top"] - g["h"], sum(g["y"]) / 2
+    gps = box_from(-gb["w"] / 2, gb["w"] / 2, g["y"][0], g["y"][1], zb, zb + gb["h"])
+    gps = gps.union(box_from(-gp["w"] / 2, gp["w"] / 2, ym - gp["l"] / 2, ym + gp["l"] / 2, zb + gb["h"], g["z_top"]))
+    parts.add("GPS-Modul (Patch nach oben)", gps, "teensy", "avionik")
     lh = M.LORA_HELIX
     parts.add("LoRa-Wendel 433 MHz", cyl(lh["d"], lh["z_top"] - lh["l"], lh["z_top"], lh["x"], lh["y"]), "steel", "avionik")
     c = M.CO2

@@ -1,9 +1,10 @@
 # Plan: Motorzündung an Bord über ein gesichertes Funkprotokoll (27.10.2026)
 
 **Entscheidung Jan, 27.10.2026:** Die Rakete zündet ihren Motor selbst über Pyro-Kanal 1. Gestartet wird per Funk vom
-Laptop aus, nachdem die Rakete am Pad eingeschaltet und von Hand entsichert wurde. Die Bodenstation ist nur noch der
-Laptop mit dem USB-Funkmodul E22-400T22U und die Startrampe. Zündbox, 15-m-Zündleitung und ESP32-Station entfallen für
-*Kartonaut 1*.
+Laptop aus, nachdem die Rakete am Pad eingeschaltet und von Hand entsichert wurde. Die Bodenstation ist der Laptop mit
+einer **Funkbrücke aus Raspberry Pi Pico und einem dritten E22-400T22S** über USB, dazu die Startrampe.
+Zündbox, 15-m-Zündleitung, ESP32-Station und das USB-Modul E22-400T22U entfallen für *Kartonaut 1* (Jan, 27.10. abends).
+Antennen: 433-MHz-Wendeln aus den alten HC-12-Modulen, direkt an den ANT-Pad des E22 gelötet (IPEX bleibt frei).
 
 **Gründe:** (1) Die eigenständige Zündung muss vor den Landeversuchen ohnehin erprobt werden (Landebrennen,
 `LandingBurn`). (2) Die Zündung lässt sich auswerten: Verzögerung Befehl → Durchbrennen → Schub, Spannungseinbruch.
@@ -122,17 +123,33 @@ Pulses wird VBAT_ARMED mit mindestens 1 kHz abgetastet (Mux fest auf Kanal 6), d
 **Aufzeichnung:** Ab ARMED schreibt der Logger mit voller Rate; ein Ringpuffer hält die letzten 2 s vor dem
 Zündbefehl, damit der Countdown vollständig im Log steht.
 
-## 5. Laptop-Werkzeug `tools/ground/launch.py`
+## 5. Bodenstation: Funkbrücke (Pico + E22) und Laptop-Werkzeug
+
+**Funkbrücke (neues PlatformIO-Projekt `tools/ground/bridge_pico/`, Raspberry Pi Pico, Arduino-Core
+`earlephilhower/arduino-pico`):** ein drittes E22-400T22S, frei verdrahtet am Pico (Entscheidung Jan, 27.10. abends).
+- Verdrahtung (in der README des Projekts als Tabelle): E22 VCC → Pico 3V3 OUT, GND → GND, E22 TXD → GP5 (UART1 RX),
+  E22 RXD → GP4 (UART1 TX), M0 → GP6, M1 → GP7, AUX → GP8 (Eingang). Antenne am ANT-Pad (Halbwellen-Dipol im
+  Gehäuse, `cad/groundbridge.py`), IPEX frei.
+- Transparent: Bytes von USB-CDC nach UART1 und zurück, ohne die Rahmen zu verändern; dadurch braucht `launch.py` keinen
+  eigenen Treiber. Baudrate wie die Rakete (`RADIO_BAUD` aus `firmware/src/Config.h`).
+- Setzt M0/M1 für den Normalbetrieb auf LOW. Ein Konfigurationsmodus (z. B. Escape-Sequenz oder eigener USB-Befehl,
+  Umsetzung frei) setzt M0/M1 auf Konfiguration und schreibt Kanal, Adresse und Luftrate passend zur Rakete (Werte aus
+  `firmware/src/Config.h`, gemeinsamer Header, kein Kopieren). Liest RSSI aus, wenn das E22 es anhängt.
+- Status über die Pico-LED (Dauerlicht: Rahmen empfangen in den letzten 2 s; Blinken: kein Empfang).
+- Gehäuse und Antenne: `cad/groundbridge.py` (Kasten für Pico und E22, senkrechter Halbwellen-Dipol 2 × 164 mm
+  statt Groundplane, Entscheidung Jan 27.10.; Druckteile in `cad/export/groundbridge/`). Pinbelegung oben gilt.
+- Der CI-Lauf baut das Projekt mit (eigener PlatformIO-Job).
+
+**Laptop-Werkzeug `tools/ground/launch.py`:**
 
 - Python 3, `pyserial`, keine weiteren Abhängigkeiten außer `hmac`/`hashlib` aus der Standardbibliothek.
-- Liest den E22-400T22U (USB-Seriell), dekodiert TLM/EVT/ACK/IGN, zeigt Zustand, Akkus, Flags, Lage, RSSI; schreibt
+- Öffnet den USB-Port der Funkbrücke, dekodiert TLM/EVT/ACK/IGN, zeigt Zustand, Akkus, Flags, Lage, RSSI; schreibt
   alles als CSV mit Zeitstempel.
 - Befehle per Taste: PING, CALIBRATE, PAD_READY, SAFE, ABORT (Leertaste, jederzeit), ARM, LAUNCH.
 - **LAUNCH nur mit Bestätigung:** Eingabe des Wortes `START`, danach sendet das Skript LAUNCH und hält den Heartbeat.
   Leertaste bricht ab.
 - Zeigt bei verweigertem ARM die fehlenden Vorbedingungen im Klartext.
-- Ein zweites Skript `tools/ground/e22_config.py` setzt Kanal, Adresse und Luftrate des USB-Moduls passend zur
-  Rakete (Werte aus `firmware/src/Config.h`).
+- `launch.py --config` löst den Konfigurationsmodus der Funkbrücke aus (Kanal, Adresse, Luftrate wie die Rakete).
 
 ## 6. Tests
 
@@ -147,14 +164,15 @@ Zündbefehl, damit der Countdown vollständig im Log steht.
 
 **Am Tisch (Hardware, nach Lieferung der Platine):**
 1. Ersatzlast statt Anzünder (Glühlampe 12 V oder Leistungswiderstand), kompletter Ablauf ARM → LAUNCH → Puls.
-2. Funk-Abbruch: USB-Stick im Countdown abziehen → SAFE.
+2. Funk-Abbruch: USB-Kabel des Pico im Countdown abziehen → SAFE.
 3. Anzünder ohne Motor (im Freien, Abstand): Durchbrennzeit, Spannungseinbruch, VSERVO, F1 löst nicht aus.
 4. Erst dann mit Motor auf der Rampe.
 
 ## 7. Dokumentation, die mitgezogen wird
 
 - `docs/Schnittstellen_Bodensystem_2026-10-22.md`: S2 (Zündleitung) entfällt, S3 um ARM/LAUNCH/HEARTBEAT/IGN.
-- `groundstation/README.md`: Minimum = Laptop + E22-400T22U; ESP32-Station als möglicher späterer Ausbau.
+- `groundstation/README.md`: Minimum = Laptop + Pico-Funkbrücke mit E22 und Dipol im Druckgehäuse; ESP32-Station als
+  möglicher späterer Ausbau.
 - `docs/Bauanleitung_Kartonaut1.md`: Kabelweg Anzünder (§2), Startcheckliste (§6.1) mit Reihenfolge Hauptschalter →
   Anzünder → Arming-Schalter → Weggehen → PAD_READY → ARM → LAUNCH; Vorgehen bei MISFIRE (60 s warten, dann SAFE, erst
   dann hingehen, Arming-Schalter aus).
@@ -168,6 +186,10 @@ Zündbefehl, damit der Countdown vollständig im Log steht.
 - Kein bestehender Test bricht; Zustandsnummern 0–8 unverändert.
 
 ## 9. Offen
+
+- Raspberry Pi Pico beschaffen (Bestand prüfen; sonst Berrybase, etwa 5 €).
+- Antenne am ANT-Pad statt unten durch die Scheibe: Reichweite am Boden mit RSSI prüfen (Ziel: sicherer Empfang über
+  300 m).
 
 - Widerstand und Zündstrom der TSP-Anzünder (messen).
 - F1 bei Ersatzlast: löst sie in 300 ms aus? Falls ja, Pulsgrenze weiter senken oder F1 für rev C überdenken.

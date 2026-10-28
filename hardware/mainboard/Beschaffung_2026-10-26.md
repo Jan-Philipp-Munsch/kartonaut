@@ -296,6 +296,10 @@ Im DigiKey-Auftrag stecken auch der Summer AI-1223-TWT-5V-R ×2 (BZ1, Position 4
 ERJ-3EKF6803V ×10 (ohne Rückstand) und B3B-XH-A ×10 statt S3B-XH-A für J5/J6 (stehend statt liegend, kein Rückstand).
 Noch nirgends bestellt: Flugakkus (2S 450 mAh XT30, 1S für das Fach 50 × 30 × 7), Epoxid, Teile der Zündbox.
 
+**Nachtrag Jan 27.10.:** Teensy-Stiftleisten, Schalter und einige Elkos sind vorhanden. Das GPS ist ein u-blox NEO-6M
+auf dem Berrybase-Breakout GY-GPS6MV2 (36 × 26 mm, Patch 25 × 25 × 9 am Kabel, 3–5 V, UART 9600 Bd), passt elektrisch
+an J11. Epoxid: Jan sieht nach, ob noch welches da ist.
+
 ## 6c. AliExpress-Bestellung (Rest für Rakete und Bodenstation), Preise vom 26.10.2026 abends
 
 Entscheidung 26.10. abends: **Bestückung bei JLCPCB bleibt** (Auftrag W2026102623077325, noch unbezahlt, Status
@@ -345,7 +349,7 @@ Store = Ebytes eigene Marke; Antenne aus dem CDSENET IOT Module Store).
 | E22-400T22U (CDSENET Official Store) | 433M, USB mit Antenne | 1 | 10,39 € |
 | TX433-JZ-10 3 dBi SMA-Stecker (CDSENET IOT Module Store) | 1 Stück | 1 | 4,69 € + 3,56 € Versand |
 | XT30PW M-F, 5 Paare (JCD MC Store, Choice, 10 000+ verkauft) | 5 Paare | 1 | 5,19 € |
-| Pigtail IPX → SMA-K 10 cm, 5 Stück (STX Store, Choice) | 10CM / IPX to SMA-K | 1 | 2,75 € |
+| Pigtail IPX → SMA-K **15 cm**, 5 Stück (STX Store, Choice) | 15CM / IPX to SMA-K | 1 | 2,75 € |
 | JST-GH 1,25 mm 4-polig 15 cm, 10 Stück (ZANHDZBF, Choice) | 10PCS / 4P / Single Head | 1 | 3,99 € |
 | JST-GH 1,25 mm 3-polig 15 cm, 10 Stück (ZANHDZBF, Choice) | 10PCS / 3P / Single Head | 1 | 3,69 € |
 | JST-SH 1,0 mm 4-polig 10 cm beidseitig, 10 Stück (excellence electronic, Choice) | 10cm / 4P / Gleiche Seite | 1 | 3,19 € |
@@ -358,7 +362,7 @@ Nicht im Korb (bewusst): Einzelteile, die 4–5 € Versand je Händler gekostet
 65 € mit 26 € Versand).
 
 
-**Flugantenne:** TX433-TH-3 ist eine Ebyte-Wendel zum Einlöten (37 mm, 1 dBi). Aufbau: einen der 10-cm-Pigtails
+**Flugantenne:** TX433-TH-3 ist eine Ebyte-Wendel zum Einlöten (37 mm, 1 dBi). Aufbau: einen der 15-cm-Pigtails (E22-IPEX liegt etwa 7 cm über der unteren Scheibe, dazu der Weg um die Platinenkante; 10 cm wären zu knapp)
 (IPEX → SMA) nahe der SMA-Buchse abschneiden, Wendel an den Innenleiter löten, Schirm frei lassen, Lötstelle mit
 Schrumpfschlauch; IPEX ans E22, Wendel axial durch die untere Scheibe (Bauanleitung §5). Im Rumpf, nicht an der
 Außenhaut: Pappe ist für 433 MHz durchlässig. Reichweite am Tisch mit RSSI aus dem ACK prüfen.
@@ -372,6 +376,41 @@ Fehlerstelle unter Vibration.
 **Akkus (AliExpress-Preise 27.10., nicht im Korb):** 2S 450 mAh XT30: Tattu 75C 13,99 €, GNB 80C HV 12,19 € (HV: mit
 normalem LiPo-Programm auf 4,2 V/Zelle laden, dann etwas weniger Kapazität). 1S 550 mAh PH2.0: GNB HV 9,49 €,
 Teranty 80C ca. 8 €. Alternative ohne Versandrisiko: LemonRC 2S 450 bei Reichelt 9,30 € (Bauanleitung §3.1).
+
+
+**Stand 27.10. abends, vor der Bestellung:** Mit JLCPCB (in Fertigung), DigiKey-Auftrag 102484398 und diesem
+AliExpress-Korb ist die **Elektronik vollständig**. Akkus: vorhandene Packs (2S 55 × 30 × 10, 1S 45 × 25 × 7, beide
+passen in die Fächer) zuerst nach §6c prüfen, Ersatz nur bei Bedarf (Tattu 2S 450 bei AliExpress 13,99 € oder
+LemonRC bei Reichelt). Noch nicht beschafft, kein Elektronik-Teil: Schrauben M3 × 6/8 ISO 7380 und Muttern,
+Ringschraube M4, Epoxid, PETG für die Druckteile, Material der Startrampe (Bauanleitung, ca. 86 €), Teile des
+CO₂-Moduls; aus Bestand: Lade-LED 3 mm mit Vorwiderstand, Flussmittel/Lötpaste, Litze. Die 2S-Ladebuchse am
+Schalterbrett ist eine der XT30PW-F aus den 5 Paaren (Leitungen direkt anlöten).
+
+
+**Nachtrag 27.10. abends (Bestellseite):** Das GH-Kabel-Angebot (ZANHDZBF) erlaubt nur 1 Stück je Kunde über alle
+Varianten. AliExpress rechnet außerdem **Einfuhrabgaben** auf (seit 1.7.2026 keine Zollfreigrenze mehr in der EU;
+der Betrag wächst mit der Zahl der Positionen). Bei 10 Positionen: 48,78 € Ware + 41,93 € Abgaben − 10,14 € Rabatt =
+84,13 €. Korb deshalb auf **7 Positionen** verkleinert: entfernt wurden GH 3-polig (J13 Kamera, J14 LED-Band: beim
+Erstflug nicht belegt), SH/Qwiic-Kabel (2 × Adafruit 4210 kommen von DigiKey) und die Stabantenne TX433-JZ-10 (dem
+USB-Stick liegt eine Antenne bei; am Tisch reicht die Wendel). Stand: **44,89 € Ware, Versand frei, 35,73 €
+Abgaben − 5,96 € Rabatt = 74,66 €** (alles inklusive, nichts bei Zustellung).
+
+
+**Endstand AliExpress, 27.10. abends (Entscheidung Jan):** Bestellt werden **nur E22-400T22S-V2 ×3** (CDEBYTE Official
+Store): zwei für die Platinen, eins für die Bodenstation am Raspberry Pi Pico. 22,77 € + 5,95 € Einfuhrabgaben =
+**28,72 €** (die Abgaben hängen am Artikeltyp, nicht an der Stückzahl). Alles andere entfällt:
+
+| Teil | Ersatz |
+|---|---|
+| E22-400T22U (USB) | Raspberry Pi Pico + drittes E22-400T22S, frei verdrahtet; Pico aus Bestand oder Berrybase (etwa 5 €) |
+| Wendel TX433-TH-3, Stabantenne | Rakete: 433-MHz-Wendel aus einem alten HC-12-Modul am ANT-Pad. Boden: senkrechter Halbwellen-Dipol, 2 × 164 mm 1,5-mm²-Kupferdraht, im Druckgehäuse `cad/groundbridge.py` |
+| Pigtails | entfällt; Antenne sitzt am Modul statt unten durch die Scheibe |
+| XT30PW (J1) | vorerst der JST-RCY des vorhandenen 2S, Gegenstück mit kurzer Litze in J1, mit Klebeband gesichert |
+| USB-C-Breakout | entfällt; beide Akkus extern laden |
+| GH-Kabel (GPS) | später, wenn das GPS fliegt (funduinoshop, mybotshop.de) |
+
+Zoll und Gebühren laut AliExpress-Kasse: 3 € + MwSt. je unterschiedlichem Artikeltyp, Bearbeitungsgebühr 4 € + MwSt.
+je Warengruppe (HS-Code); mehrere Stück desselben Artikels zählen einmal.
 
 ### Bodenstation nach der Entscheidung Bordzündung (27.10.2026)
 

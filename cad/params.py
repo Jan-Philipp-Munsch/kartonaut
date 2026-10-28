@@ -190,61 +190,7 @@ COLORS = {
     "leg": (0.30, 0.30, 0.32), "foot": (0.80, 0.20, 0.15),
 }
 
-# --------------------------------------------------------------------------- Prüfstand (TVC-Testrig, 21.10.2026)
-# Die Rakete hängt dreh- und schwenkbar in einem Gestell, Drehpunkt im Schwerpunkt. An Stelle des E12
-# sitzt ein Brushless-Motor mit Propeller im Kardan (Teile: docs/BUILD.md §1.5). Rig-Achsen: Achse der
-# Stützen = x (Nicken), Zapfen des Kragens = y (Gieren); die Rakete behält ihre Koordinaten (z ab Düse).
-RIG_PIVOT_Z = 448.0        # [cad] Schwerpunkt Start aus mass_properties.md; nach dem Auswiegen setzen
-RIG_PIVOT_ABOVE_FLOOR = 800.0   # [Annahme] Propeller etwa 330 mm über dem Boden (ein Durchmesser Bodenabstand)
-RIG_TILT_MAX_DEG = 20.0    # [Annahme] Auslenkung je Achse, Begrenzung per Gurt/Schnur zwischen Rohr und Rahmen
-RIG_FLOOR_Z = RIG_PIVOT_Z - RIG_PIVOT_ABOVE_FLOOR
-
-RIG_BASE = (820.0, 500.0, 18.0)   # [Annahme] Sperrholz-Grundplatte x × y × Dicke
-RIG_UPRIGHT_X = 350.0      # [Annahme] Stützen bei ±x; Prop reicht bei 20° Gieren bis x = 304 (Prop Ø 305)
-RIG_PROFILE = 40.0         # [Annahme] Alu-Profil 40 × 40 (Stützen, Streben)
-RIG_UPRIGHT_TOP = RIG_PIVOT_Z + 60.0
-RIG_BEARING = (22.0, 8.0, 7.0)    # [Annahme] Kugellager 608: Außen Ø 22, Bohrung 8, Breite 7
-RIG_AXLE_D = 8.0           # [Annahme] zwei Achsstummel Ø 8 Stahl (keine durchgehende Welle, die Rakete steht dazwischen), in den Rahmenbossen geklemmt
-RIG_FRAME_BAR = 20.0       # [Annahme] Rahmen aus Alu-Profil 20 × 20
-RIG_FRAME_X = (58.0, 78.0) # Innen-/Außenkante der x-Stäbe; der Kragen (Ø 95, 40 hoch) reicht bei 20° Gieren bis x = 51,5
-RIG_FRAME_Y = (67.5, 87.5) # Innen-/Außenkante der y-Stäbe (Kragen Ø 95 + Zapfen)
-RIG_FRAME_H = 20.0
-RIG_BEARING_BLOCK = (30.0, 20.0, 30.0)   # [Annahme] gedruckter Lagerbock auf den y-Stäben
-RIG_COLLAR_OD = 95.0       # [Annahme] gedruckter Klemmkragen, zweiteilig, Teilung in der Ebene x = 0 (Ohren an ±y)
-RIG_COLLAR_ID = TUBE_OD + 0.2
-RIG_COLLAR_H = 40.0
-RIG_COLLAR_FLANGE = (14.0, 16.0)   # Ohren an ±y: radiale Länge, Breite (x); je Seite 2 × M4 über und unter dem Zapfen
-RIG_STUD_D = 8.0           # Zapfen Ø 8 auf der y-Achse, zwischen den Ohrenhälften geklemmt, läuft in den Lagerböcken
-RIG_ESC_BOX = (75.0, 35.0, 25.0)   # [Annahme] ESC + 4S-Akku als Klotz auf dem Rahmen (−y)
-
-# Brushless-Motor Racerstar BR2814 1000 KV [BUILD]; Maße [Annahme] typischer 2814-Außenläufer, am Teil nachmessen
-PM_CAN_D = 35.0
-PM_CAN_L = 36.0
-PM_SHAFT_D = 4.0
-PM_MOUNT_CROSS = (16.0, 19.0)   # [Annahme] Kreuz-Lochbild M3
-PM_M = 75.0                # [Annahme] g
-PM_FLANGE_D = 44.0         # Adapterflansch unter dem Motorrohr
-PM_FLANGE_T = 5.0
-PM_SPIGOT_D = ADAPTER_OD   # Zapfen wie der 29-mm-Adapter, Klemmschraube des Motorrohrs greift
-PM_SPIGOT_L = 54.0         # Zapfen im Motorrohr (Motorrohr 45 … 103, Klemmschraube bei 95)
-PM_FLANGE_Z = (MOTOR_TUBE_Z[0] - PM_FLANGE_T, MOTOR_TUBE_Z[0])   # Flansch direkt unter dem Motorrohr (40 … 45)
-PM_CAN_Z = (PM_FLANGE_Z[0] - PM_CAN_L, PM_FLANGE_Z[0])           # Glocke hängt darunter (4 … 40), Welle nach unten
-PROP_DIA = 305.0           # [BUILD] 12 × 6 (11 × 7 wäre 279)
-PROP_CHORD = 28.0          # [Annahme]
-PROP_T = 8.0               # [Annahme] Nabendicke
-PROP_HUB_D = 16.0
-PROP_Z = PM_CAN_Z[0] - 3.0 - PROP_T / 2   # Propellerebene unter der Glocke (≈ −3)
-PROP_M = 15.0              # [Annahme] g
-
-# Propellerschutz: Käfig aus zwei Ringen, Stäben und Speichen zu einem Klemmring am unteren Rohrende
-GUARD_R = PROP_DIA / 2 + 16.0   # Mitte des Ringrohrs: 12 mm radiales Spiel zur Propellerspitze
-GUARD_TUBE_D = 8.0
-GUARD_RING_Z = (PROP_Z - 32.0, 40.0)   # unterer und oberer Ring; die Spitze steigt bei 10° Kardanneigung bis z = 24
-GUARD_BARS = 12
-GUARD_SPOKES = 4
-GUARD_COLLAR_Z = (TUBE_BOTTOM_Z + 25.0, TUBE_BOTTOM_Z + 45.0)   # Klemmring am Rohr über dem Außenrahmen-Flansch
-GUARD_COLLAR_OD = 90.0
-GUARD_M = 90.0             # [Annahme] g, Alu-Rohr 8 mm und Druckteile
+# Prüfstand: seit 27.10.2026 in testrig.py (gebaute Rakete, Modulbauweise), Maße dort.
 COLORS.update({"alu": (0.75, 0.76, 0.78), "wood": (0.82, 0.70, 0.50), "prop": (0.20, 0.20, 0.22)})
 
 

@@ -8,11 +8,11 @@ Kardanpunkt der gebauten Druckdatei: **69.5 mm** (Grundfläche 38 + Servomitte 3
 
 | Zustand | Masse | Schwerpunkt ab Düse | Hebelarm Kardan–Schwerpunkt | Ixx = Iyy | Izz (Roll) |
 |---|---|---|---|---|---|
-| Start, voller Motor | **705 g** | 259 mm | 190 mm | 0.0211 kg·m² | 0.00047 kg·m² |
-| Brennschluss, Treibstoff verbraucht | **677 g** | 268 mm | 199 mm | 0.0196 kg·m² | 0.00047 kg·m² |
-| Ohne Motor (Adapter bleibt) | **641 g** | 281 mm | 211 mm | 0.0177 kg·m² | 0.00046 kg·m² |
+| Start, voller Motor | **704 g** | 260 mm | 190 mm | 0.0211 kg·m² | 0.00047 kg·m² |
+| Brennschluss, Treibstoff verbraucht | **676 g** | 269 mm | 199 mm | 0.0196 kg·m² | 0.00047 kg·m² |
+| Ohne Motor (Adapter bleibt) | **640 g** | 281 mm | 212 mm | 0.0177 kg·m² | 0.00046 kg·m² |
 
-Schub-Gewichts-Verhältnis mit 12 N mittlerem Schub des TSP E12: **1.73** (Spitzenschub 28,3 N: 4.1). Ziel unter 750 g: **erreicht**, Reserve 45 g. Seitlicher Schwerpunktversatz beim Start x = -0.1 mm, y = -1.5 mm.
+Schub-Gewichts-Verhältnis mit 12 N mittlerem Schub des TSP E12: **1.74** (Spitzenschub 28,3 N: 4.1). Ziel unter 750 g: **erreicht**, Reserve 46 g. Seitlicher Schwerpunktversatz beim Start x = -0.1 mm, y = -1.4 mm.
 
 ## Nach Baugruppen
 
@@ -22,13 +22,13 @@ Schub-Gewichts-Verhältnis mit 12 N mittlerem Schub des TSP E12: **1.73** (Spitz
 | Treibstoff | 28 g | 4 % |
 | Kardan, Servos, Adapter | 88 g | 12 % |
 | Rohre und Kuppler | 136 g | 19 % |
-| neue Druckteile | 80 g | 11 % |
-| Flugcomputer, Akkus, Antennen, Schalterbrett | 109 g | 15 % |
+| neue Druckteile | 73 g | 10 % |
+| Flugcomputer, Akkus, Antennen, Schalterbrett | 115 g | 16 % |
 | CO₂-Ausstoß | 44 g | 6 % |
 | Fallschirm | 50 g | 7 % |
 | Spitze | 100 g | 14 % |
 | Kleinteile | 34 g | 5 % |
-| **Start gesamt** | **705 g** | |
+| **Start gesamt** | **704 g** | |
 
 ## Was sich gegenüber den Vorgängern geändert hat
 
@@ -38,7 +38,7 @@ Schub-Gewichts-Verhältnis mit 12 N mittlerem Schub des TSP E12: **1.73** (Spitz
 | `erstflug` (22.10.), 700 mm Rohr, Kolben, Schlüsselschalter | 761 g | 242 mm | Ziel 750 g um 11 g verfehlt |
 | Stand 2b, Schätzung in `modular.py` | 689 g | – | Differenz zu 761 g aus Listen MASS_REMOVED / MASS_ADDED_HW |
 | Stand 2b, Stabmodell (22.10. nachts) | 723 g | 186 mm | mit LoRa-Wendel, CO₂-Servo, Schalterbrett-Bauteilen, Ringschraube, Hebeln; Druckteile 98 g (75-%-Regel) |
-| **Stand 2c, dieses Modell** | **705 g** | 190 mm | Druckteile Leichtbau, 80 g nach dem Slicer-Modell (-18 g) |
+| **Stand 2d, dieses Modell** | **704 g** | 190 mm | Druckteile Leichtbau, 73 g nach dem Slicer-Modell (-19 g) |
 
 Die großen Hebel gegenüber 761 g: keine Gewindestangen (−30 g), Rohr 496 statt 700 mm (−49 g), kein Kolben (−31 g), kein Schlüsselschalter mit Kragen (−28 g), halbe Kuppler (−34 g); dagegen CO₂-Modul mit Kapsel und Servo (+44 g) und der Schlitten mit Spant als ein großes Druckteil (+74 g gegen Endringe und Träger 40 g).
 
@@ -62,17 +62,17 @@ Jeder Hebel einzeln gegen die Ausgangslage, dann drei Pakete. Masse, Schwerpunkt
 
 | Hebel | Start | Δ | Schwerpunkt | Hebelarm | Ixx | Schub/Gewicht | Bewertung |
 |---|---|---|---|---|---|---|---|
-| Stand 2c (Druckteile Leichtbau), Ausgangslage | 705 g | +0 g | 259 mm | 190 mm | 0.0211 | 1.73 |  |
-| 2S-Akku 300 statt 450 mAh (ca. 20 statt 29 g) [Annahme] | 696 g | -9 g | 260 mm | 190 mm | 0.0211 | 1.76 | reicht für 2 Servos und das CO₂-Servo über Stunden; 35C × 0,3 Ah = 10 A Spitze |
-| Motoradapter 29→24 als drei Ringe statt Vollrohr (7 statt 15 g) [Annahme] | 697 g | -8 g | 262 mm | 192 mm | 0.0207 | 1.75 | neu drucken; der Motor sitzt weiter im gebauten Motorrohr |
-| Mikroservo 4,5 g statt SG90 (9 g) für die CO₂-Auslösung [Annahme] | 701 g | -4 g | 259 mm | 189 mm | 0.0211 | 1.75 | Stellkraft für den Anstecher prüfen |
-| Spitzen-Kuppler 50 statt 75 mm (25 in der Spitze, 25 in Rohr C), Rohr C 170 statt 195 mm | 693 g | -12 g | 252 mm | 182 mm | 0.0190 | 1.76 | Schnurraum 97 statt 194 cm³; 1 m Kevlar und 1,8 m Gummischnur brauchen ca. 30 cm³ |
-| Fallschirm 100 statt 125 cm (ca. 35 statt 50 g, gepackt 80 statt 100 mm) [Annahme] | 685 g | -20 g | 252 mm | 182 mm | 0.0193 | 1.79 | Sinkrate 3,4 → 4,3 m/s (Cd 0,75), Aufprallenergie +60 %; muss gekauft werden |
-| Federausstoß mit Servoriegel statt CO₂ (Feder 5 g + Riegel 3 g + Mikroservo 4,5 g statt 44 g) [Konzept] | 674 g | -31 g | 256 mm | 186 mm | 0.0209 | 1.82 | Konzeptänderung (Jan 22.10.: CO₂); Feder muss Spitze und Schirm 100 mm weit schieben, am Tisch beliebig testbar |
-| Spitze gedruckt, dünnwandig (45 statt 83 g) [Annahme] | 667 g | -38 g | 241 mm | 171 mm | 0.0169 | 1.83 | nimmt Masse ganz oben weg: Schwerpunkt und Hebelarm sinken deutlich |
-| **P1** ohne Konzeptänderung: Akku, Adapter, Mikroservo, kurzer Spitzen-Kuppler | 672 g | -33 g | 254 mm | 185 mm | 0.0187 | 1.82 | akku300+adapter+mikroservo+kuppler50 |
-| **P2** P1 + Federausstoß + 100-cm-Schirm | 631 g | -74 g | 245 mm | 176 mm | 0.0171 | 1.94 | akku300+adapter+kuppler50+feder+schirm100 |
-| **P3** P2 + gedruckte Spitze | 593 g | -112 g | 227 mm | 157 mm | 0.0136 | 2.06 | akku300+adapter+kuppler50+feder+schirm100+spitze_druck |
+| Stand 2d (Druckteile Leichtbau, GPS NEO-6M), Ausgangslage | 704 g | +0 g | 260 mm | 190 mm | 0.0211 | 1.74 |  |
+| 2S-Akku 300 statt 450 mAh (ca. 20 statt 29 g) [Annahme] | 695 g | -9 g | 260 mm | 191 mm | 0.0211 | 1.76 | reicht für 2 Servos und das CO₂-Servo über Stunden; 35C × 0,3 Ah = 10 A Spitze |
+| Motoradapter 29→24 als drei Ringe statt Vollrohr (7 statt 15 g) [Annahme] | 696 g | -8 g | 262 mm | 193 mm | 0.0207 | 1.76 | neu drucken; der Motor sitzt weiter im gebauten Motorrohr |
+| Mikroservo 4,5 g statt SG90 (9 g) für die CO₂-Auslösung [Annahme] | 700 g | -4 g | 259 mm | 190 mm | 0.0211 | 1.75 | Stellkraft für den Anstecher prüfen |
+| Spitzen-Kuppler 50 statt 75 mm (25 in der Spitze, 25 in Rohr C), Rohr C 170 statt 195 mm | 692 g | -12 g | 252 mm | 183 mm | 0.0190 | 1.77 | Schnurraum 97 statt 194 cm³; 1 m Kevlar und 1,8 m Gummischnur brauchen ca. 30 cm³ |
+| Fallschirm 100 statt 125 cm (ca. 35 statt 50 g, gepackt 80 statt 100 mm) [Annahme] | 684 g | -20 g | 252 mm | 183 mm | 0.0193 | 1.79 | Sinkrate 3,4 → 4,3 m/s (Cd 0,75), Aufprallenergie +60 %; muss gekauft werden |
+| Federausstoß mit Servoriegel statt CO₂ (Feder 5 g + Riegel 3 g + Mikroservo 4,5 g statt 44 g) [Konzept] | 673 g | -31 g | 256 mm | 187 mm | 0.0209 | 1.82 | Konzeptänderung (Jan 22.10.: CO₂); Feder muss Spitze und Schirm 100 mm weit schieben, am Tisch beliebig testbar |
+| Spitze gedruckt, dünnwandig (45 statt 83 g) [Annahme] | 666 g | -38 g | 241 mm | 172 mm | 0.0169 | 1.84 | nimmt Masse ganz oben weg: Schwerpunkt und Hebelarm sinken deutlich |
+| **P1** ohne Konzeptänderung: Akku, Adapter, Mikroservo, kurzer Spitzen-Kuppler | 671 g | -33 g | 255 mm | 185 mm | 0.0186 | 1.82 | akku300+adapter+mikroservo+kuppler50 |
+| **P2** P1 + Federausstoß + 100-cm-Schirm | 630 g | -74 g | 246 mm | 176 mm | 0.0171 | 1.94 | akku300+adapter+kuppler50+feder+schirm100 |
+| **P3** P2 + gedruckte Spitze | 592 g | -112 g | 227 mm | 158 mm | 0.0136 | 2.07 | akku300+adapter+kuppler50+feder+schirm100+spitze_druck |
 
 Was nicht in der Tabelle steht, weil es fest oder schon minimal ist: Motor 64 g, Platine mit Teensy 45 g (Schätzung), Rohre A/B 72 g (gebaut), Kardan mit Servos 73 g (gebaut, wiegen), GPS 6 g und LoRa 5 g (für die Suche in abgelegenem Gelände nötig), 1S 14 g.
 
@@ -92,15 +92,15 @@ Was nicht in der Tabelle steht, weil es fest oder schon minimal ist: Motor 64 g,
 | Hebel + Drahtbügel (Innenrahmen) | 1.5 g | 70 mm | [Annahme] 1,5 g je Servo, Hebel nach oben (Jans Fotos) |
 | Rohr A 125 (Kardan) | 30.0 g | 62 mm | [Klima] 0,24 g/mm, Länge [Jan] |
 | Kuppler J1 75 mm (in B verklebt) | 17.0 g | 125 mm | [Klima] halber Kuppler 17 g |
-| Schraubring J1 (gedruckt) | 5.8 g | 110 mm | masses.json, 75 % Volumen PETG |
+| Schraubring J1 (gedruckt) | 5.5 g | 110 mm | masses.json, 75 % Volumen PETG |
 | Rohr B 176 (Avionik) | 42.2 g | 213 mm | [Klima] 0,24 g/mm, Länge [Jan] |
 | Untere Scheibe (gedruckt) | 7.3 g | 156 mm | masses.json |
-| Schlitten: Band, Spantplatte, beide Zapfen | 37.9 g | 302 mm | [CAD] 59 % der 64 g (Volumenanteil Stand 2c, Slicer-Modell) |
-| Schlitten: Träger, Säulen, Fächer, GPS-Leisten | 26.3 g | 220 mm | Rest der Schlittenmasse, unter der Platine |
+| Schlitten: Band, Spantplatte, beide Zapfen | 35.7 g | 302 mm | [CAD] 62 % der 58 g (Volumenanteil Stand 2d, Slicer-Modell) |
+| Schlitten: Träger, Säulen, Fächer, GPS-Leisten | 21.9 g | 220 mm | Rest der Schlittenmasse, unter der Platine |
 | Platine rev B1 + Teensy + Bauteile | 45.0 g | 227 mm | [Vorgabe] 45 g |
 | Akku 2S LemonRC 450 mAh | 29.0 g | 200 mm | [reichelt] 29 g |
 | Akku 1S 600 mAh | 14.0 g | 256 mm | [Annahme] 14 g, vorhanden (BUILD §1.3) |
-| GPS-Modul 20 × 20 (Patch nach oben) | 6.0 g | 297 mm | [Annahme] 6 g |
+| GPS NEO-6M (GY-GPS6MV2) mit Patch 25 × 25 | 12.0 g | 295 mm | [Annahme] 12 g, wiegen |
 | LoRa-Wendel + Pigtail | 5.0 g | 149 mm | [Annahme] 5 g |
 | Schalterbrett (gedruckt) | 2.7 g | 211 mm | masses.json |
 | Schalterbrett: Schalter, USB-C, XT30, XH-3, LED, Kabel | 8.0 g | 212 mm | [Annahme] 8 g |
@@ -115,7 +115,7 @@ Was nicht in der Tabelle steht, weil es fest oder schon minimal ist: Motor 64 g,
 | Spitze Klima 8539 mit Holzplatte und Haken | 83.0 g | 578 mm | [Klima] ca. 100 g inkl. Schulter; hier ohne Schulter |
 | M3-Schrauben und Muttern (ca. 20) | 8.0 g | 200 mm | [Annahme] 8 g |
 | Kabel, Kleber, Moosgummi, Schaum | 22.0 g | 230 mm | [Annahme] 22 g |
-| **Summe** | **705 g** | | |
+| **Summe** | **704 g** | | |
 
 ## Nachzumessen
 

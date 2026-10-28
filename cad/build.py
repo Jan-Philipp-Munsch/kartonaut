@@ -23,23 +23,21 @@ import cadquery as cq
 from cadquery import exporters
 import params as P
 from common import Parts, box_from
-import airframe, tvc, avionics, ejection, legs, testrig
+import airframe, tvc, avionics, ejection, legs
 
 EXPORT = HERE / "export" / P.CONFIG if P.CONFIG != "voll" else HERE / "export"
 IMG = HERE.parent / "docs" / "img" / "cad"
 BLENDER = os.environ.get("BLENDER", r"C:\Program Files\Blender Foundation\Blender 5.2\blender.exe")
 
 
-def build_all(pitch=0.0, yaw=0.0, legs_deployed=None, rig=False, rig_pitch=0.0, rig_yaw=0.0):
-    """Rakete; mit rig=True ohne Beine, mit Propellerantrieb im Kardan und im Prüfstand (testrig.py)."""
+def build_all(pitch=0.0, yaw=0.0, legs_deployed=None):
+    """Rakete der Konfiguration P.CONFIG. Der Prüfstand steht seit 27.10.2026 in testrig.py (gebaute Rakete)."""
     parts = Parts()
     hatch = airframe.build(parts)
-    tvc.build(parts, pitch_deg=pitch, yaw_deg=yaw, motor_kind="prop" if rig else "e12")
+    tvc.build(parts, pitch_deg=pitch, yaw_deg=yaw)
     avionics.build(parts, hatch)
     ejection.build(parts)
-    if rig:
-        testrig.build(parts, rig_pitch=rig_pitch, rig_yaw=rig_yaw)
-    elif P.LEGS:
+    if P.LEGS:
         legs.build(parts, deployed=legs_deployed)
     return parts
 
@@ -67,16 +65,6 @@ def export_groups(parts):
     comp = cq.Compound.makeCompound([s for _, s, _, _ in parts])
     exporters.export(cq.Workplane().add(comp), str(EXPORT / "rocket.stl"), tolerance=0.05, angularTolerance=0.2)
     print(f"  {step.name} (Gesamtmodell, im Repo) und rocket.stl")
-
-
-def export_rig(parts):
-    """Prüfstand mit Rakete als testrig.step (im Repo) und das Gestell allein als testrig.stl."""
-    EXPORT.mkdir(exist_ok=True)
-    assembly(parts, names=True).export(str(EXPORT / "testrig.step"))
-    shapes = [s for _, s, _, g in parts if g == "testrig"]
-    comp = cq.Compound.makeCompound(shapes)
-    exporters.export(cq.Workplane().add(comp), str(EXPORT / "testrig.stl"), tolerance=0.05, angularTolerance=0.2)
-    print(f"  testrig    {len(shapes):3d} Teile -> testrig.step (mit Rakete, im Repo) / testrig.stl")
 
 
 def write_render_manifest(parts, name, cut=None, only_groups=None, exclude=(), include=None):
@@ -150,36 +138,6 @@ def _overlap(by, a, b):
 def _vol(a, b):
     r = cq.Workplane().add(a).intersect(cq.Workplane().add(b))
     return sum(s.Volume() for s in r.vals()) if r.vals() else 0.0
-
-
-def check_rig_clearance():
-    """Prüfstand: Propeller gegen Schutzkäfig bei voller Kardanauslenkung; Rakete, Käfig und Kragen gegen
-    Gestell und Rahmen bei voller Rig-Auslenkung (RIG_TILT_MAX_DEG) in beiden Achsen."""
-    g = P.GIMBAL_MAX_DEG
-    tmax = P.RIG_TILT_MAX_DEG
-    rocket_names = ["Rohr unten 75x500", "Rohr oben 75x500 (mit Luke)", "Spitze Klima 8539", "Propeller 12x6",
-                    "Motor BR2814", "Propellerschutz Käfig", "Propellerschutz Klemmring", "Klemmkragen (gedruckt, 2-teilig)"]
-    bad = []
-    cases = [("Kardan ±7°, Rig 0°", dict(pitch=g, yaw=g)),
-             ("Rig Nicken +20°", dict(rig_pitch=tmax)), ("Rig Nicken -20°", dict(rig_pitch=-tmax)),
-             ("Rig Gieren +20°", dict(rig_yaw=tmax)), ("Rig Gieren -20°", dict(rig_yaw=-tmax)),
-             ("Rig Nicken +20°, Gieren +20°, Kardan ±7°", dict(pitch=g, yaw=g, rig_pitch=tmax, rig_yaw=tmax))]
-    for label, kw in cases:
-        parts = build_all(rig=True, **kw)
-        by = {n: s for n, s, _, _ in parts}
-        fixed = [n for n in by if n.startswith(("Stütze", "Strebe", "Grundplatte", "Achsstummel", "Rahmen", "Lagerbock", "ESC"))]
-        pairs = [("Propeller 12x6", "Propellerschutz Käfig"), ("Propeller 12x6", "Propellerschutz Klemmring"),
-                 ("Propeller 12x6", "Rohr unten 75x500"), ("Motor BR2814", "Außenrahmen")]
-        pairs += [(a, f) for a in rocket_names for f in fixed]
-        for a, f in pairs:
-            v = _overlap(by, a, f)
-            if v > 0.5:
-                bad.append((label, a, f, v))
-    print("Prüfstand-Kollisionsprüfung: " + ("frei" if not bad else "DURCHDRINGUNG"))
-    for label, a, f, v in bad:
-        print(f"  {label}: {a} / {f}: {v:.0f} mm³")
-    return bad
-
 
 
 def check_erstflug(parts):
@@ -311,10 +269,6 @@ def main():
     print("Export ...")
     export_groups(parts)
     check_clearance()
-    print("Prüfstand ...")
-    parts_rig = build_all(rig=True, rig_pitch=12.0, rig_yaw=8.0, pitch=4.0, yaw=3.0)
-    export_rig(parts_rig)
-    check_rig_clearance()
     if no_render:
         return
     IMG.mkdir(parents=True, exist_ok=True)
@@ -333,14 +287,6 @@ def main():
     # 4 Flugcomputer-Modul ohne Kuppler (herausgezogen)
     d = write_render_manifest(parts, "avionics", only_groups={"avionics"}, exclude=("Kuppler",))
     render(d, IMG / "rocket_avionics.png", "avionics")
-    # 5 Prüfstand: Rakete im Gestell, 12° genickt und 8° gegiert, Kardan leicht ausgelenkt
-    d = write_render_manifest(parts_rig, "testrig")
-    render(d, IMG / "testrig.png", "testrig")
-    # 6 Prüfstand, Antriebsende: Kardan mit Prop-Adapter, Motor, Propeller und Schutzkäfig
-    parts_drive = build_all(rig=True, pitch=5.0, yaw=4.0)
-    d = write_render_manifest(parts_drive, "testrig_drive", only_groups={"tvc"},
-                              include=("Propellerschutz", "Rohr unten"), cut=(0, 400, -400, 400, 120, 2000))
-    render(d, IMG / "testrig_drive.png", "testrig_drive")
     print(f"fertig in {time.time() - t0:.0f} s")
 
 

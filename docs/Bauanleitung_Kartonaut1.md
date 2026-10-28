@@ -100,8 +100,9 @@ Ein Druckteil: oben das **Band** Ø 75 (ein 5 mm hoher Rand, liegt auf Rohr B, a
 3,5 mm auf der Druckseite, **Zapfen nach unten** in Rohr B (4 Augen für T2) und **Zapfen nach oben** in Rohr C (4 Augen
 für T3), beide mit 2 mm Wand; darunter der **Träger** als U-Profil mit vier Säulen für die Platine und Fächern für den
 2S-Akku (v = 6 … 62) und den 1S-Akku (v = 64 … 114), im Boden unter den Akkus Fenster zwischen den Klettschlitzen
-(Stand 2c, Leichtbau). Unter dem Band zwei Leisten für das
-**GPS-Modul** (20 × 20, Patch nach oben). Unten verschraubt die **untere Scheibe** mit Steckerfenster; durch ihr
+(Stand 2c, Leichtbau), Stand 2d dazu Fenster neben den Akkus und in beiden Zapfen zwischen den Schraubenaugen. Unter
+dem Band zwei Querleisten mit Auflagekante für das **GPS NEO-6M** (Modulplatine 36 × 26 von der Seite eingeschoben,
+Patch 25 × 25 obenauf, zum Himmel). Unten verschraubt die **untere Scheibe** mit Steckerfenster; durch ihr
 Kabelloch ragt die **LoRa-Wendel** nach unten. Hinter Luke B das **Schalterbrett**. Im Band: Ringschraube M4 für die
 Schnur und eine Kabeldurchführung Ø 6 für das CO₂-Servo (mit Epoxid abdichten).
 
@@ -131,19 +132,28 @@ Ganzes Stabmodell mit Schwerpunkt und Trägheit: `cad/mass_stand2b.md` (`python 
 | Motor E12 mit Treibstoff | 64 |
 | Kardan, zwei W5652H, Hebel, Adapter 29→24 | 88 |
 | Rohre A + B + C, zwei halbe Kuppler | 30 + 42 + 47 + 34 |
-| neue Druckteile Stand 2c (Schlitten mit Spant 64, Scheibe 7, Schalterbrett 3, Schraubring 6) | 80 |
-| Platine, Akkus 2S 29 + 1S 14, GPS, LoRa-Wendel, Schalterbrett-Bauteile | 109 |
+| neue Druckteile Stand 2d (Schlitten mit Spant 58, Scheibe 7, Schalterbrett 3, Schraubring 6) | 73 |
+| Platine, Akkus 2S 29 + 1S 14, GPS NEO-6M 12 [Annahme], LoRa-Wendel, Schalterbrett-Bauteile | 115 |
 | CO₂-Aufbau 10 + Kapsel 25 + Servo 9 [Annahme] | 44 |
 | Fallschirm mit Schnur | 50 |
 | Spitze mit Holzplatte | 83 |
 | Schrauben, Kabel, Kleber, Schaum | 34 |
-| **Start, ein E12** | **≈ 705** |
+| **Start, ein E12** | **≈ 704** |
 
 **Druckteile Stand 2c (Leichtbau, 23.10.2026):** Spantplatte 3,5 statt 5 mm mit 5-mm-Rand, Zapfen 2 statt 4,1/3,1 mm,
 U-Profil statt des vollen Klotzes zwischen Träger und Zapfen, Fenster im Trägerboden, Scheibe 2 statt 3 mm, Schraubring
 mit 2 statt 6 mm Wand. Das Volumen sinkt von 103 auf 65 cm³, die Druckmasse aber nur von 96 auf 80 g: Die Massen rechnen
 jetzt mit einem Slicer-Modell (Oberfläche × 1 mm voll, Rest 25 % Gyroid), und dünne Wände druckt der Slicer mit drei
 Perimetern ohnehin voll. Die Slicer-Vorschau und die Waage entscheiden. Danach Hebelarm neu bestimmen (§5.6).
+
+**Stand 2d (27.10.2026):** GPS-Halter für den vorhandenen NEO-6M (§3.6), Kabeldurchführung des CO₂-Servos nach
+(−20 | −7) verlegt, Fenster in beiden Zapfen zwischen den Schraubenaugen (3 mm Rand oben und unten bleiben; die Augen
+hängen direkt am Band, die Zapfen zentrieren nur), Bodenfenster unter den Akkus 22 statt 18 mm breit und neue Fenster
+neben den Akkus. Schlitten 53,0 → 46,6 cm³, im Slicer-Modell 64 → 58 g. Die Spantplatte bleibt 3,5 mm: Sie ist das
+Druckschott für den CO₂-Ausstoß. Start weiter rund 705 g (704 g), weil das GPS 6 g schwerer ist als angenommen.
+Passmaße nach Jans Messung (Rohr innen 72,5 statt 72,6): **Zapfen Ø 72,1** (0,2 mm Spiel je Seite), **Schraubring
+Ø 69,8** (Kuppler noch nicht gemessen, Nennmaß 70,2; 0,2 mm Klebespalt), untere Scheibe Ø 69,6 wie bisher. Vor dem
+Schlitten lohnt ein Probering aus dem Zapfen.
 
 ### 2.6 Anzünderleitung (Motorstart an Bord, 27.10.2026)
 
@@ -249,7 +259,7 @@ den USA), Balancer-Verlängerung (JST-XH 3 hast du), Crimpzange, JST-Sortiment, 
 | ☐ | Klima-Spitze 8539 mit Holzplatte und Haken, Fallschirm 125 cm, Kevlar und Gummischnur |
 | ☐ | 4 × TSP E12-0, 5 × CO₂-Kapsel 8 g |
 | ☐ | 1S-LiPo 600 mAh (Maße mit dem Fach 50 × 30 × 7 vergleichen, JST-PH, ohne Schutzschaltung?) |
-| ☐ | GPS-Modul (alt), siehe §3.6 |
+| ☐ | GPS-Modul u-blox NEO-6M (GY-GPS6MV2, Berrybase), siehe §3.6 |
 | ☐ | Teensy 4.1, microSD, SG90 (CO₂-Auslösung), 2 × HC-12, JST-Stecker, Kleber, Klett, Schaum |
 
 ### 3.6 Das alte GPS-Modul
@@ -260,6 +270,13 @@ einer 25 × 25-Patch-Antenne am Kabel; dann kommt die Patch-Antenne flach unter 
 breit, mit einer Aussparung im Zapfenring) und die Platine des Moduls seitlich an den Träger. **Störfestigkeit:** Die
 alten Module haben oft keinen SAW-Filter vor dem Verstärker. Bodentest: GPS-Fix halten, während LoRa sendet; wenn er
 abreißt, LoRa auf 14 dBm senken oder ein M10-Modul kaufen. Typ und Maße deines Moduls genügen mir, um den Halter anzupassen.
+
+**Stand 27.10.2026:** Es ist ein NEO-6M auf dem Breakout GY-GPS6MV2 von Berrybase: Platine 36 × 26 × 5 mm mit vier
+Löchern Ø 3, Keramik-Patch 25 × 25 × 9 mm am Kabel, 3–5 V, UART 9600 Bd. Der Patch passt **nicht** zwischen die Leisten
+für 20 × 20 × 7 im Schlitten. **Umgesetzt in Stand 2d:** Unter der Spantplatte
+sitzen zwei Querleisten mit 1,5 mm Auflagekante; die Modulplatine wird von der Seite eingeschoben (Stiftleiste an der
+kurzen Kante bleibt frei), der Patch liegt mit doppelseitigem Schaumband obenauf und zeigt zum Himmel. Ein Tropfen
+Heißkleber an der Leiste sichert das Modul. Anschluss an J_GPS: VCC → Pin 1, GND → 2, TX → 3, RX → 4.
 
 ## 4. Druckeinstellungen und Muttern
 
@@ -323,7 +340,7 @@ Jedes Teil nach dem Druck wiegen.
 2. Schnur: Ringschraube Spant → Kevlar → Wirbel mit Schirm → Gummischnur → Haken der Spitze. Schirm 100 × Ø 70 packen,
    Schnur im Zickzack darüber, Spitze aufsetzen.
 3. Rohr C aufstecken, 4 × M3 bei T3.
-4. **Wiegen** (Schätzung ≈ 705 g) und **Schwerpunkt** auswiegen (Modell 259 mm über der Düse); Hebelarm Kardanpunkt–Schwerpunkt und Masse in
+4. **Wiegen** (Schätzung ≈ 704 g) und **Schwerpunkt** auswiegen (Modell 260 mm über der Düse); Hebelarm Kardanpunkt–Schwerpunkt und Masse in
    `firmware/src/Config.h` (`MOMENT_ARM_M`, `MASS_KG`) eintragen.
 5. **Servo-Umrechnung messen:** Servo um 10° stellen, Kardanwinkel messen (Befund 13); `SERVO_*_GAIN` setzen.
 6. **CO₂-Bodentest** (draußen, Rakete waagrecht): Spitze fliegt ab, Schirm und Schnur vollständig draußen, Spant und
@@ -396,7 +413,7 @@ Die Rakete geht von selbst nach SAFE, wenn der Laptop länger als 1 s schweigt (
 |---|---|
 | O1 | Servofenster laut Druckdatei und Servo-Lage bei ca. 207° und 336° ab der Längslinie (27° bzw. 24° neben einer Schraube, passt zu deinen Fotos). Rampenführungen deshalb bei **45°/135°/250°** statt im 45°-Raster (Startrampe, Branch `landepad`, anpassen). |
 | O2 | Spitzenlänge (230 mm angenommen) nachmessen; ändert nur die Gesamtlänge. |
-| O3 | Altes GPS-Modul: Typ und Maße, dann den Halter unter dem Spant anpassen (§3.6). |
+| O3 | Erledigt 27.10.: GPS ist ein NEO-6M (GY-GPS6MV2), Halter im CAD angepasst (Stand 2d, §3.6). |
 | O4 | Gedruckt ist der Kardan aus `outer_gimbal_dual_TVC.blend` und `inner_gimbal_dual_TVC.blend` (12.06.2025, `E:\Archiv_Projekte\Blender\Dateien\`); als Netz in `cad/export/asbuilt/` und im GLB-Gesamtmodell an seiner Lage (Grundfläche 38 mm, Bohrungen auf 44 mm). `cad/tvc.py` (Bild auf GitHub) ist ein späterer Entwurf vom 21.10.2026, nicht gedruckt. Servo-Umrechnung am gebauten Kardan messen. |
 | O5 | **TODO Firmware:** Lage als Quaternion aus dem Gyro, Regelfehler aus dem Oben-Vektor im Körpersystem (Befund 3 in `PROJECT.md`). Voraussetzung für den Verzicht auf den Rollmotor; vor dem Erstflug. |
 | O6 | CO₂-Modul: Kapselgröße und Anstechmechanismus festlegen, Bodentests. |

@@ -8,13 +8,14 @@ Bodenstation getrennt konstruiert werden können. Zahlen der Rakete kommen aus `
 
 **Nachtrag 27.10.2026 (Entscheidung Jan, `docs/Plan_Bordzuendung_2026-10-27.md`):** Die Rakete zündet ihren
 Motor selbst über Pyro-Kanal 1, gestartet per gesichertem Funkbefehl vom Laptop. Das Bodensystem für
-*Kartonaut 1* ist nur noch **Laptop mit USB-Funkmodul E22-400T22U** (`tools/ground/launch.py`) und die
+*Kartonaut 1* ist nur noch **Laptop mit Funkbrücke aus Raspberry Pi Pico und E22-400T22S** am USB
+(`tools/ground/launch.py`, `tools/ground/bridge_pico/`, Gehäuse mit Dipol `cad/groundbridge.py`) und die
 Startrampe. **S2 (Zündleitung) entfällt**, S3 hat die Kommandos ARM, LAUNCH, HEARTBEAT und den Rahmen IGN
 bekommen, S4 (Handy) und die ESP32-Station (`groundstation/`) sind ein möglicher späterer Ausbau.
 
 ```
  Kartonaut 1 (ab 27.10.2026):
- Laptop + E22-400T22U (USB) ──LoRa 433 MHz── Rakete (E22-400T22S an Serial8, Anzünder an Pyro 1 / J9)
+ Laptop ──USB── Funkbrücke (Pico + E22) ──LoRa 433 MHz── Rakete (E22-400T22S an Serial8, Anzünder an Pyro 1 / J9)
                                                steht auf der Startrampe (S1), keine Leitung zur Rampe
 
  Bisheriger Entwurf (späterer Ausbau):
@@ -73,8 +74,8 @@ Festlegung bleibt für einen späteren Ausbau mit Bodenstation stehen.
 
 | Größe | Festlegung |
 |---|---|
-| Funkmodul | Ebyte E22-400T22S in der Rakete, **E22-400T22U (USB) am Laptop** (27.10.), 433 MHz, transparenter UART-Modus, 9600 Bd am UART |
-| Luftrate / Kanal | **9,6 kbit/s** (Entscheidung 22.10., PROJECT.md Befund 18), Kanal 0x17 (433,125 MHz), Adresse 0x0000; Werte in `firmware/src/Config.h` (`E22_*`). Die Rakete prüft ihre Register beim Start und schreibt sie bei Abweichung, das USB-Modul stellt `tools/ground/e22_config.py` ein (dort zusätzlich RSSI-Byte an) |
+| Funkmodul | Ebyte E22-400T22S in der Rakete, **E22-400T22S an einem Raspberry Pi Pico als Funkbrücke am Laptop** (27.10. abends), 433 MHz, transparenter UART-Modus, 9600 Bd am UART |
+| Luftrate / Kanal | **9,6 kbit/s** (Entscheidung 22.10., PROJECT.md Befund 18), Kanal 0x17 (433,125 MHz), Adresse 0x0000; Werte in `firmware/src/Config.h` (`E22_*`). Die Rakete prüft ihre Register beim Start und schreibt sie bei Abweichung, die Funkbrücke stellt ihres auf `launch.py --config` ein (dort zusätzlich RSSI-Byte an); beide nutzen `firmware/src/E22Config.h` |
 | Rakete → Boden | Telemetrie 10 Hz: Flugzustand, Zeit, Höhe, Steiggeschwindigkeit, Lage (Quaternion), Kardanwinkel, Spannung 1S und 2S, ARM, Pyro-Durchgang, GPS 1 Hz |
 | Boden → Rakete | Kommandos mit Quittung: PING, CALIBRATE, PAD_READY_QUERY, ABORT |
 | Rahmen | Vorschlag: `0xA5 0x5A`, Typ (1 Byte), Länge (1 Byte), Nutzlast, CRC-16/CCITT |
@@ -136,4 +137,4 @@ Für *Kartonaut 1* nicht gebraucht (27.10.2026): bedient wird am Laptop.
 |---|---|---|
 | Start-/Landepad | `cad/landingpad.py`, `docs/img/cad/landingpad*.png`, eigener Abschnitt in `cad/README.md` | `cad/params.py`, `build.py` und die übrigen Module (nur importieren) |
 | Bodenstation (späterer Ausbau) | `groundstation/` (Konzept, Schaltung, Stückliste, Firmware ESP32-S3, Weboberfläche) | `firmware/`, `hardware/`, `simulation/`, `cad/` |
-| Laptop-Werkzeug (Kartonaut 1) | `tools/ground/` (`launch.py`, `e22_config.py`, Protokoll in Python) | Protokoll nur zusammen mit `firmware/src/Telemetry.h` und den Testvektoren ändern |
+| Laptop-Werkzeug (Kartonaut 1) | `tools/ground/` (`launch.py`, Funkbrücke `bridge_pico/`, Protokoll in Python) | Protokoll nur zusammen mit `firmware/src/Telemetry.h` und den Testvektoren ändern |

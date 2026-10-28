@@ -3,8 +3,9 @@
 //   ADDH, ADDL, NETID, REG0 (UART 9600 8N1 + Luftrate), REG1 (240-Byte-Teilpakete, Sendeleistung),
 //   REG2 (Kanal), REG3 (RSSI-Byte, transparent, kein LBT, WOR 2000 ms), CRYPT_H, CRYPT_L.
 // Bitlagen nach Ebyte-Handbuch E22-400T22S (wie groundstation/firmware/src/Radio.cpp). Das RSSI-Byte
-// hängt das empfangende Modul an jedes Paket; an der Rakete aus, am Laptop an (tools/ground/e22_config.py
-// rechnet dasselbe). Kein Arduino: läuft in den nativen Tests.
+// hängt das empfangende Modul an jedes Paket; an der Rakete aus, an der Funkbrücke am Laptop an
+// (tools/ground/bridge_pico nutzt diesen Header, kartonaut_radio.py rechnet dasselbe zum Vergleich).
+// Kein Arduino: läuft in den nativen Tests.
 #include <stdint.h>
 #include "Config.h"
 

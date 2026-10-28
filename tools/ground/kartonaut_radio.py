@@ -4,7 +4,7 @@ Rahmen: A5 5A | Typ | Länge | Nutzlast | CRC-16/CCITT (little-endian, über Typ
 MAC für ARM und LAUNCH wie firmware/src/LaunchAuth.h:
     erste 8 Byte von HMAC-SHA256(Schlüssel, Typ | seq | nonce (4 Byte LE) | Raketen-ID)
 
-Nur Standardbibliothek; pyserial braucht erst launch.py bzw. e22_config.py.
+Nur Standardbibliothek; pyserial braucht erst launch.py.
 """
 from __future__ import annotations
 
@@ -27,12 +27,16 @@ MAX_PAYLOAD = 64
 TLM, EVT, GPS, IGN, ACK = 0x01, 0x02, 0x03, 0x04, 0x10
 CMD_PING, CMD_CALIBRATE, CMD_PAD_READY, CMD_ABORT, CMD_SAFE = 0x20, 0x21, 0x22, 0x23, 0x24
 CMD_ARM, CMD_LAUNCH, CMD_HEARTBEAT = 0x25, 0x26, 0x27
+BRIDGE_CONFIG, BRIDGE_ACK = 0x70, 0x71          # Laptop <-> Funkbrücke (tools/ground/bridge_pico), nie über Funk
 
 TYPE_NAMES = {
     TLM: "TLM", EVT: "EVT", GPS: "GPS", IGN: "IGN", ACK: "ACK",
     CMD_PING: "PING", CMD_CALIBRATE: "CALIBRATE", CMD_PAD_READY: "PAD_READY", CMD_ABORT: "ABORT",
     CMD_SAFE: "SAFE", CMD_ARM: "ARM", CMD_LAUNCH: "LAUNCH", CMD_HEARTBEAT: "HEARTBEAT",
+    BRIDGE_CONFIG: "BRIDGE_CONFIG", BRIDGE_ACK: "BRIDGE_ACK",
 }
+
+BRIDGE_RESULTS = {0: "ok", 1: "E22 antwortet nicht im Konfigurationsmodus", 2: "Schreiben fehlgeschlagen"}
 
 STATES = ["SAFE", "PAD_READY", "BOOST", "COAST", "APOGEE", "DESCENT", "LANDED", "ABORT", "LANDING_BURN",
           "ARMED", "COUNTDOWN", "IGNITION", "MISFIRE"]
@@ -84,8 +88,8 @@ def encode(ftype: int, payload: bytes = b"") -> bytes:
 class Parser:
     """Byteweiser Empfänger mit Resynchronisation, wie tlm::Parser in der Firmware.
 
-    rssi_byte=True: das E22 am Laptop hängt an jedes empfangene Paket ein RSSI-Byte an
-    (tools/ground/e22_config.py). Folgt auf einen Rahmen ein Byte, das kein Sync ist, gilt es als
+    rssi_byte=True: das E22 der Funkbrücke hängt an jedes empfangene Paket ein RSSI-Byte an
+    (launch.py --config schaltet es ein). Folgt auf einen Rahmen ein Byte, das kein Sync ist, gilt es als
     RSSI (Wert -(256 - Byte) dBm).
     """
 
@@ -188,14 +192,18 @@ def decode_ign(p: bytes) -> dict:
     return dict(zip(keys, struct.unpack("<HHHHHHHHB", p[:17])))
 
 
-DECODERS = {TLM: decode_tlm, EVT: decode_evt, ACK: decode_ack, IGN: decode_ign}
+def decode_bridge_ack(p: bytes) -> dict:
+    return {"result": p[0], "regs": bytes(p[1:10])}
+
+
+DECODERS = {TLM: decode_tlm, EVT: decode_evt, ACK: decode_ack, IGN: decode_ign, BRIDGE_ACK: decode_bridge_ack}
 
 
 def decode(ftype: int, payload: bytes) -> dict:
     f = DECODERS.get(ftype)
     if f:
         return f(payload)
-    if ftype >= CMD_PING and payload:
+    if CMD_PING <= ftype <= CMD_HEARTBEAT and payload:
         return {"seq": payload[0]}
     return {}
 
@@ -244,6 +252,16 @@ def e22_registers(cfg: dict, rssi_byte: bool) -> bytes:
         (0x80 if rssi_byte else 0x00) | 0x03,
         0x00, 0x00,
     ])
+
+
+AIR_RATES = {0: "0,3", 1: "1,2", 2: "2,4", 3: "4,8", 4: "9,6", 5: "19,2", 6: "38,4", 7: "62,5"}
+POWERS = {0: "22 dBm", 1: "17 dBm", 2: "13 dBm", 3: "10 dBm"}
+
+
+def describe_e22(regs: bytes) -> str:
+    return (f"Adresse 0x{regs[0]:02X}{regs[1]:02X}, Netz-ID {regs[2]}, Kanal {regs[5]} = {410.125 + regs[5]:.3f} MHz, "
+            f"Luftrate {AIR_RATES[regs[3] & 7]} kbit/s, Leistung {POWERS[regs[4] & 3]}, "
+            f"RSSI-Byte {'an' if regs[6] & 0x80 else 'aus'}")
 
 
 def load_key(path: str = SECRETS_JSON) -> bytes:

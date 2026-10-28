@@ -220,11 +220,18 @@ Neustart in ARMED/COUNTDOWN beginnt frisch in SAFE. Log in SAFE/PAD_READY mit 10
 Abweichung, weil das Modul ab Werk auf 2,4 statt 9,6 kbit/s steht. Gefundener Fehler: die Reservezeit von
 Pyro 2 hing an der Freigabe von Pyro 1 und wäre mit gesperrtem Pyro 1 nie abgelaufen (behoben).
 
+**Funkbrücke (§5 in der Fassung vom 27.10. abends, nach Rückfrage mit in diesen PR genommen):**
+`tools/ground/bridge_pico/` (Pico, arduino-pico, Verdrahtung wie oben). Laptop → Funk gehen nur vollständige Rahmen mit
+gültiger CRC, unverändert; Funk → Laptop jedes Byte samt RSSI. Konfigurationsmodus über einen eigenen USB-Rahmen
+`BRIDGE_CONFIG` (0x70, `launch.py --config`), der nie über Funk geht; Antwort `BRIDGE_ACK` (0x71) mit den gelesenen
+Registern. Register aus `firmware/src/E22Config.h`, Protokoll aus `Telemetry.h`/`.cpp`, nichts kopiert. LED dauernd
+bei Empfang in den letzten 2 s, sonst blinkend. CI-Job `bridge`. `e22_config.py` entfällt.
+
 **Abnahme (§8):**
 
 | Punkt | Stand |
 |---|---|
-| Native Tests, Python-Tests, CI grün | ✅ 66 native (24 neu), 21 Python, CI mit allen PlatformIO-Umgebungen grün |
+| Native Tests, Python-Tests, CI grün | ✅ 66 native (24 neu), 23 Python, CI mit allen PlatformIO-Umgebungen und der Funkbrücke grün |
 | Probelauf mit Ersatzlast zeichnet Log und IGN-Rahmen auf | ⬜ nach Lieferung der Platine (§6 am Tisch); der Ablauf Laptop ↔ Rakete ist gegen eine nachgebildete Rakete geprüft |
 | Ohne `Secrets.h` baut die Firmware und verweigert ARM | ✅ CI baut ohne Schlüssel; Bit `PRE_KEY` fehlt, Test `zero_key_never_authenticates` |
 | Kein bestehender Test bricht, Zustände 0–8 unverändert | ✅ Test `launch_sequence_states_and_numbers` |

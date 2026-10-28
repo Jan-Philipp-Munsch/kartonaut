@@ -233,8 +233,8 @@ constexpr float    SERVO_TEST_MIN_A         = 0.0f;    // Spitzenstrom VSERVO; 0
 constexpr long     RADIO_BAUD        = 9600;
 constexpr uint32_t TLM_PERIOD_MS     = 100;     // 10 Hz
 constexpr uint32_t TLM_CMD_TIMEOUT_MS = 1000;   // Kommando-Rahmen älter als das wird verworfen
-// E22-400T22: Rakete (E22-400T22S) und Laptop (E22-400T22U) müssen gleich eingestellt sein.
-// tools/ground/e22_config.py liest diese Werte und schreibt sie in das USB-Modul.
+// E22-400T22S: Rakete und Funkbrücke am Laptop (Pico + E22, tools/ground/bridge_pico) müssen gleich
+// eingestellt sein. Beide schreiben diese Werte über E22Config.h in ihr Modul (Brücke: launch.py --config).
 constexpr uint8_t  E22_ADDH     = 0x00;
 constexpr uint8_t  E22_ADDL     = 0x00;
 constexpr uint8_t  E22_NETID    = 0x00;

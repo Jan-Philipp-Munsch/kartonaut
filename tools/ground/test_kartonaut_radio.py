@@ -49,6 +49,8 @@ def built():
         "ign": kr.encode(kr.IGN, struct.pack("<HHHHHHHHB", 10, 50, 130, 50, 7800, 6912, 3900, 80, 2)),
         "tlm_armed": kr.encode(kr.TLM, struct.pack("<BBHhhbbbbbBBB", 9, 0x0B, 4321, -12, 3, -4, 6, 45, 0, -1,
                                                    200, 160, 33)),
+        "bridge_config": kr.encode(kr.BRIDGE_CONFIG),
+        "bridge_ack": kr.encode(kr.BRIDGE_ACK, bytes([0]) + kr.e22_registers(kr.read_config_h(), True)),
     }
 
 
@@ -85,6 +87,8 @@ def test_decode_vectors():
     assert kr.state_name(tlm["state"]) == "ARMED" and tlm["alt_m"] == pytest.approx(-1.2)
     assert tlm["vbat2_V"] == pytest.approx(8.0) and tlm["roll_deg"] == 90
     assert by["cmd_heartbeat"] == {"seq": 9}
+    assert by["bridge_config"] == {}
+    assert by["bridge_ack"]["result"] == 0 and "9,6 kbit/s" in kr.describe_e22(by["bridge_ack"]["regs"])
 
 
 def test_mac_matches_and_rejects():

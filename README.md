@@ -56,7 +56,7 @@ the board.
 
 **Waiting for review and merge**
 
-- **On-board motor start** ([PR #8](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/8), branch `claude/bold-gauss-ar9lia`, implemented per [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md)): states ARMED, COUNTDOWN, IGNITION, MISFIRE; ARM and LAUNCH with HMAC-SHA256 over a TRNG random number that is valid only once; heartbeat, preconditions shown in plain words on the laptop, servo self-test; launch pulse on pyro 1 (ends on thrust, when the igniter burns through, or after 300 ms), continuity measured in a short gap, IGN frame with timestamps and voltage sag; laptop tool [`tools/ground/`](tools/ground/README.md); 66 native tests (24 new) and 21 Python tests with shared test vectors. Not run on hardware.
+- **On-board motor start** ([PR #8](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/8), branch `claude/bold-gauss-ar9lia`, implemented per [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md)): states ARMED, COUNTDOWN, IGNITION, MISFIRE; ARM and LAUNCH with HMAC-SHA256 over a TRNG random number that is valid only once; heartbeat, preconditions shown in plain words on the laptop, servo self-test; launch pulse on pyro 1 (ends on thrust, when the igniter burns through, or after 300 ms), continuity measured in a short gap, IGN frame with timestamps and voltage sag; laptop tool [`tools/ground/`](tools/ground/README.md) with the radio bridge firmware (Pico + E22, [`bridge_pico/`](tools/ground/bridge_pico/README.md)); 66 native tests (24 new) and 23 Python tests with shared test vectors. Not run on hardware.
 
 **Next**
 
@@ -206,7 +206,7 @@ reasoning behind the sled layout are kept in [`rev_a_2026-10-15.md`](hardware/ma
 
 **On-board motor start (since 27 Oct 2026):** the rocket ignites its own motor through pyro channel 1. At
 the pad the main switch, the igniter and then the arming switch are set by hand; then everyone walks away
-and the laptop with the E22-400T22U USB radio takes over ([`tools/ground/launch.py`](tools/ground/README.md)):
+and the laptop with the radio bridge (Raspberry Pi Pico and E22) takes over ([`tools/ground/launch.py`](tools/ground/README.md)):
 `PAD_READY` (the gimbal servos test themselves), `ARM` and `LAUNCH` (only after typing `START`). ARM and
 LAUNCH carry an HMAC over a random number from the rocket that is valid only once; another radio or a
 recorded command cannot fire. The rocket checks its preconditions (arming voltage, igniter continuity,
@@ -277,7 +277,7 @@ firmware/               flight firmware (PlatformIO, Teensy 4.1)              ->
   lib/calstore/         calibration data with CRC, ellipsoid fit, axis mapping
   examples/             revb_test, revb_bringup, servo_ident and small test sketches
   test/                 native tests (pio test -e native) and host tests
-tools/ground/           laptop tool: launch, telemetry, E22 setup             -> tools/ground/README.md
+tools/ground/           laptop tool and radio bridge (Pico + E22)             -> tools/ground/README.md
 groundstation/          ground station (later option): concept, circuit, ESP32-S3 firmware -> groundstation/README.md
 simulation/             6DOF simulation in Python, package tvcsim             -> simulation/README.md
 hardware/mainboard/     mainboard: specification, decisions, KiCad from code, fab files, datasheet, reviews, order
@@ -308,7 +308,7 @@ repository; their content is ported here.
 | [docs/BUILD.md](docs/BUILD.md) | as-built: parts, mechanics, wiring, tests, build log |
 | [docs/Plan_Bordzuendung_2026-10-27.md](docs/Plan_Bordzuendung_2026-10-27.md) | on-board motor start: risks, radio protocol, state machine, tests, implementation |
 | [docs/Schnittstellen_Bodensystem_2026-10-22.md](docs/Schnittstellen_Bodensystem_2026-10-22.md) | interfaces rocket/pad, radio (with ARM/LAUNCH since 27 Oct), firing line and phone (later option) |
-| [tools/ground/README.md](tools/ground/README.md) | laptop tool: launch, telemetry, key, E22 setup |
+| [tools/ground/README.md](tools/ground/README.md) | laptop tool: launch, telemetry, key; radio bridge Pico + E22 |
 | [hardware/mainboard/README.md](hardware/mainboard/README.md) | mainboard specification |
 | [hardware/mainboard/review_brief_2026-10-23.md](hardware/mainboard/review_brief_2026-10-23.md) | rev B1 for the reviewer, with [review guide](hardware/mainboard/REVIEW_ANLEITUNG_revB1.md) and [shopping list](hardware/mainboard/EINKAUFSLISTE_revB1.md); [review package of 2026-10-26](hardware/mainboard/REVIEW_PAKET_2026-10-26.md) with checks run, reading order and decisions before ordering; [JLCPCB test quote](hardware/mainboard/Angebot_JLCPCB_2026-10-23.md); [JLCPCB order 2026-10-26](hardware/mainboard/Bestellung_JLCPCB_2026-10-26.md) (configuration, what JLCPCB assembles, what is hand-soldered); [procurement 2026-10-26](hardware/mainboard/Beschaffung_2026-10-26.md) (hand-soldered parts with article numbers and stock; DigiKey order 102484398 and JLCPCB order W2026102623077325 placed on 2026-10-26; §6b prepares the self-assembly option with a second DigiKey list); [final check of 2026-10-26](hardware/mainboard/Abschlusspruefung_2026-10-26.md) of the fab files against the spec and the JLCPCB limits; [review assessment](hardware/mainboard/Review_Bewertung_2026-10-26.md): the ten review questions answered with measured copper widths, pin-by-pin wiring check; points B1–B3 applied to the layout on 2026-10-26, fab files regenerated |
 | [hardware/mainboard/Komponenten_2026-10-22.md](hardware/mainboard/Komponenten_2026-10-22.md) | decisions, parts by rail and interface, pin budget |

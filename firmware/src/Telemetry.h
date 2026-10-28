@@ -28,6 +28,10 @@
 //   ARM 0x25 und LAUNCH 0x26 mit Folgenummer und MAC (8 Byte, LaunchAuth.h) über die nonce,
 //   HEARTBEAT 0x27 (nur Folgenummer, ohne ACK) während ARMED und COUNTDOWN mindestens 2 Hz.
 //   ABORT bleibt ohne MAC, damit ein Abbruch nie an der Authentisierung scheitert.
+//
+// Laptop <-> Funkbrücke (tools/ground/bridge_pico), geht nie über Funk:
+//   BRIDGE_CONFIG 0x70 (ohne Nutzlast): die Brücke stellt ihr E22 auf die Werte aus Config.h (E22Config.h)
+//   BRIDGE_ACK    0x71: Ergebnis und die neun gelesenen Register
 #include <stdint.h>
 #include <stddef.h>
 
@@ -40,7 +44,8 @@ constexpr size_t  OVERHEAD = 6;                  // Sync 2, Typ 1, Länge 1, CRC
 enum Type : uint8_t {
   TLM = 0x01, EVT = 0x02, GPS = 0x03, IGN = 0x04, ACK = 0x10,
   CMD_PING = 0x20, CMD_CALIBRATE = 0x21, CMD_PAD_READY = 0x22, CMD_ABORT = 0x23, CMD_SAFE = 0x24,
-  CMD_ARM = 0x25, CMD_LAUNCH = 0x26, CMD_HEARTBEAT = 0x27
+  CMD_ARM = 0x25, CMD_LAUNCH = 0x26, CMD_HEARTBEAT = 0x27,
+  BRIDGE_CONFIG = 0x70, BRIDGE_ACK = 0x71
 };
 
 enum Flag : uint8_t {
@@ -132,6 +137,14 @@ struct __attribute__((packed)) IgnPayload {
   uint8_t  end_reason;     // IgnEnd
 };
 static_assert(sizeof(IgnPayload) == 17, "IgnPayload");
+
+// BRIDGE_ACK: Ergebnis (BridgeResult) und die Register 00H..08H, wie sie das E22 der Brücke danach meldet
+enum BridgeResult : uint8_t { BRIDGE_OK = 0, BRIDGE_NO_REPLY = 1, BRIDGE_WRITE_FAILED = 2 };
+struct __attribute__((packed)) BridgeAckPayload {
+  uint8_t result;
+  uint8_t regs[9];
+};
+static_assert(sizeof(BridgeAckPayload) == 10, "BridgeAckPayload");
 
 // Rahmen bauen: liefert die Länge in out (mindestens payload_len + OVERHEAD groß)
 size_t encode(uint8_t type, const uint8_t* payload, size_t payload_len, uint8_t* out, size_t out_cap);

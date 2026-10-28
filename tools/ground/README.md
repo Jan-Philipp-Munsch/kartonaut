@@ -1,13 +1,13 @@
 # Laptop-Werkzeug für den Motorstart an Bord
 
 Seit dem 27.10.2026 zündet *Kartonaut 1* seinen Motor selbst über Pyro-Kanal 1. Bodenstation ist ein
-Laptop mit dem USB-Funkmodul **E22-400T22U** (`docs/Plan_Bordzuendung_2026-10-27.md`). Protokoll:
+Laptop mit einer **Funkbrücke aus Raspberry Pi Pico und E22-400T22S** am USB (`docs/Plan_Bordzuendung_2026-10-27.md`). Protokoll:
 `firmware/src/Telemetry.h`, Ablauf am Pad: Bauanleitung §6.1.
 
 | Datei | Zweck |
 |---|---|
 | `launch.py` | Telemetrie anzeigen, Kommandos senden, ARM und LAUNCH mit MAC, Heartbeat, ABORT mit der Leertaste; schreibt alles als CSV nach `logs/` |
-| `e22_config.py` | stellt das USB-Funkmodul auf die Werte aus `firmware/src/Config.h` (`E22_*`), dazu RSSI-Byte an |
+| `bridge_pico/` | Firmware der Funkbrücke (PlatformIO, Raspberry Pi Pico): reicht Rahmen durch, stellt ihr E22 ein; Verdrahtung in [`bridge_pico/README.md`](bridge_pico/README.md) |
 | `kartonaut_radio.py` | Protokoll in Python: Rahmen, CRC, Parser, Dekoder, MAC, `Config.h` lesen |
 | `test_kartonaut_radio.py` | Tests gegen `firmware/test/data/radio_vectors.csv` (dieselben Bytes prüfen die nativen Firmware-Tests) |
 | `secrets.example.json` | Vorlage für `secrets.json` (nicht im Repo) |
@@ -15,7 +15,8 @@ Laptop mit dem USB-Funkmodul **E22-400T22U** (`docs/Plan_Bordzuendung_2026-10-27
 ```bash
 pip install pyserial
 python tools/ground/launch.py --new-key                 # einmal: secrets.json und firmware/src/Secrets.h
-python tools/ground/e22_config.py --port COM5           # einmal: USB-Modul einstellen (M0 = 0, M1 = 1)
+pio run -d tools/ground/bridge_pico -t upload          # einmal: Funkbrücke flashen
+python tools/ground/launch.py --port COM5 --config      # einmal: E22 der Brücke wie die Rakete einstellen
 python tools/ground/launch.py --port COM5               # am Startplatz
 python -m pytest -q tools/ground                        # Tests (laufen auch in der CI)
 ```
@@ -37,7 +38,7 @@ Nach `--new-key` die Firmware neu bauen und flashen, damit die Rakete den Schlü
 | `q` | Ende |
 
 Ab ARM sendet das Skript den Heartbeat mit 4 Hz, solange die Rakete ARMED oder COUNTDOWN meldet. Fehlt er
-länger als 1 s (Laptop zu, USB-Stick abgezogen), geht die Rakete selbst nach SAFE.
+länger als 1 s (Laptop zu, USB-Kabel der Brücke abgezogen), geht die Rakete selbst nach SAFE.
 
 ## Sicherheit des Protokolls
 

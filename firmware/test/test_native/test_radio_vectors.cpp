@@ -52,6 +52,9 @@ static int build(Vec* out) {
     p.vz_cms = 3; p.tilt_x_hd = -4; p.tilt_y_hd = 6; p.roll_2d = 90 / 2; p.tvc_y_dd = 0; p.tvc_p_dd = -1;
     p.vbat1_20mv = 200; p.vbat2_50mv = 160; p.seq = 33;
     out[n++] = make("tlm_armed", tlm::TLM, &p, sizeof p); }
+  out[n++] = make("bridge_config", tlm::BRIDGE_CONFIG, nullptr, 0);
+  { tlm::BridgeAckPayload b{tlm::BRIDGE_OK, {0x00, 0x00, 0x00, 0x64, 0x03, 0x17, 0x83, 0x00, 0x00}};
+    out[n++] = make("bridge_ack", tlm::BRIDGE_ACK, &b, sizeof b); }
   return n;
 }
 

@@ -153,8 +153,8 @@ static uint32_t trngNext() {
 }
 
 // ======= E22 (rev B): Register beim Start prüfen, nur bei Abweichung schreiben =======
-// Ab Werk steht das Modul auf 2,4 kbit/s; Rakete und Laptop (tools/ground/e22_config.py) müssen dieselben
-// Werte aus Config.h haben. Konfiguration: M0 = 0, M1 = 1, 9600 Bd; Lesen C1 00 09, Schreiben C0 00 09.
+// Ab Werk steht das Modul auf 2,4 kbit/s; Rakete und Funkbrücke am Laptop (tools/ground/bridge_pico,
+// launch.py --config) müssen dieselben Werte aus Config.h haben. Konfiguration: M0 = 0, M1 = 1, 9600 Bd; Lesen C1 00 09, Schreiben C0 00 09.
 #ifdef BOARD_REVB
 static bool e22WaitAux(uint32_t timeout_ms) {
   const uint32_t t0 = millis();
@@ -311,7 +311,8 @@ static void handleCommand(uint8_t type, const uint8_t* payload, size_t len) {
 static void pollRadio() {
   while (radio.available()) {
     if (radioParser.feed((uint8_t)radio.read())) {
-      if (radioParser.type() >= tlm::CMD_PING) last_cmd_ms = clock_ms();   // jedes Kommando ist ein Lebenszeichen
+      if (radioParser.type() >= tlm::CMD_PING && radioParser.type() <= tlm::CMD_HEARTBEAT)
+        last_cmd_ms = clock_ms();                                        // jedes Kommando ist ein Lebenszeichen
       handleCommand(radioParser.type(), radioParser.payload(), radioParser.length());
     }
   }

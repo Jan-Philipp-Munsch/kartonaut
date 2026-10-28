@@ -362,8 +362,8 @@ Jedes Teil nach dem Druck wiegen.
 ### 6.1 Flugvorbereitung am Startplatz
 
 Motorstart an Bord (27.10.2026): Reihenfolge **Hauptschalter → Anzünder → Arming-Schalter → Weggehen → PAD_READY →
-ARM → LAUNCH**. Bedient wird am Laptop mit `tools/ground/launch.py`; das USB-Funkmodul ist einmal mit
-`tools/ground/e22_config.py` eingestellt.
+ARM → LAUNCH**. Bedient wird am Laptop mit `tools/ground/launch.py` über die Funkbrücke (Pico + E22, `tools/ground/bridge_pico/`);
+ihr E22 ist einmal mit `launch.py --config` eingestellt.
 
 | ✓ | Schritt |
 |---|---|

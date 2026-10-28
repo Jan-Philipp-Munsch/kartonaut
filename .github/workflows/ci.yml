@@ -5,6 +5,7 @@
 #   pins        Pinbelegung der Firmware (BoardRevB.h) gegen die Schaltung (circuit.py)
 #   tischtest   Parser-Tests von tools/bench_test.py und Host-Tests der Kalibrierbibliothek (g++)
 #   ground      Laptop-Werkzeug tools/ground (Protokoll, MAC, gleiche Testvektoren wie die Firmware)
+#   bridge      Funkbrücke tools/ground/bridge_pico (Raspberry Pi Pico, arduino-pico) bauen
 name: CI
 
 on:
@@ -131,3 +132,20 @@ jobs:
       - run: pip install pytest
       - name: Protokoll und MAC gegen firmware/test/data/radio_vectors.csv
         run: python -m pytest -q tools/ground
+
+  bridge:
+    name: Funkbrücke (Pico)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: actions/cache@v6
+        with:
+          path: ~/.platformio
+          key: pio-bridge-${{ hashFiles('tools/ground/bridge_pico/platformio.ini') }}
+          restore-keys: pio-bridge-
+      - run: pip install platformio
+      - name: pio run (tools/ground/bridge_pico)
+        run: pio run -d tools/ground/bridge_pico

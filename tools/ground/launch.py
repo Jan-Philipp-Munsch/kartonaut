@@ -1,7 +1,8 @@
-"""Startwerkzeug am Laptop: Telemetrie, Kommandos und Motorstart über das E22-400T22U (USB).
+"""Startwerkzeug am Laptop: Telemetrie, Kommandos und Motorstart über die Funkbrücke (Pico + E22, USB).
 
     python tools/ground/launch.py --port COM5          (Windows)
-    python tools/ground/launch.py --port /dev/ttyUSB0  (Linux)
+    python tools/ground/launch.py --port /dev/ttyACM0  (Linux)
+    python tools/ground/launch.py --port COM5 --config E22 der Brücke passend zur Rakete einstellen
     python tools/ground/launch.py --new-key            Schlüssel erzeugen (secrets.json und Secrets.h)
 
 Tasten:  p PING   c CALIBRATE   r PAD_READY   s SAFE   a ARM   l LAUNCH   q Ende
@@ -12,6 +13,9 @@ Servo-Selbsttest durch ist, ARM (holt per PING die nonce, sendet ARM mit MAC; be
 fehlenden Vorbedingungen im Klartext da), LAUNCH (erst nach Eingabe von START). Ab ARM sendet das
 Skript den Heartbeat mit 4 Hz, solange die Rakete ARMED oder COUNTDOWN meldet; fehlt er länger als 1 s,
 geht die Rakete selbst nach SAFE. Alles Empfangene und Gesendete landet als CSV in tools/ground/logs/.
+
+Die Funkbrücke (tools/ground/bridge_pico) reicht Rahmen unverändert durch; --config stellt Kanal, Adresse,
+Luftrate und Sendeleistung ihres E22 auf die Werte aus firmware/src/Config.h und schaltet das RSSI-Byte ein.
 
 Abhängigkeiten: Python 3.9+, pyserial.
 """
@@ -336,6 +340,29 @@ def run(args):
         link.close()
 
 
+def configure_bridge(args) -> int:
+    import serial
+    want = kr.e22_registers(kr.read_config_h(), rssi_byte=True)
+    with serial.Serial(args.port, 115200, timeout=0.1) as ser:
+        time.sleep(0.2)
+        ser.reset_input_buffer()
+        ser.write(kr.encode(kr.BRIDGE_CONFIG))
+        parser = kr.Parser()
+        end = time.time() + 5.0
+        while time.time() < end:
+            for ftype, payload in parser.feed(ser.read(64)):
+                if ftype != kr.BRIDGE_ACK:
+                    continue                      # Telemetrie der Rakete, die noch unterwegs war
+                d = kr.decode_bridge_ack(payload)
+                print("Brücke: " + kr.BRIDGE_RESULTS.get(d["result"], str(d["result"])))
+                if d["result"] != 1:
+                    print("Modul:  " + kr.describe_e22(d["regs"]))
+                print("Soll:   " + kr.describe_e22(want))
+                return 0 if d["result"] == 0 and d["regs"] == want else 2
+    print("Keine Antwort der Funkbrücke (Port richtig? Firmware tools/ground/bridge_pico geflasht?)")
+    return 2
+
+
 def new_key(args):
     if os.path.exists(args.secrets) or os.path.exists(SECRETS_H):
         print(f"Abbruch: {args.secrets} oder {SECRETS_H} gibt es schon (nicht überschreiben).")
@@ -354,17 +381,20 @@ def new_key(args):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="Startwerkzeug Kartonaut (Laptop + E22-400T22U)")
-    ap.add_argument("--port", help="serielle Schnittstelle des USB-Funkmoduls")
+    ap = argparse.ArgumentParser(description="Startwerkzeug Kartonaut (Laptop + Funkbrücke Pico/E22)")
+    ap.add_argument("--port", help="serielle Schnittstelle der Funkbrücke (USB)")
     ap.add_argument("--baud", type=int, default=0, help="UART-Baudrate (Standard: RADIO_BAUD aus Config.h)")
     ap.add_argument("--secrets", default=kr.SECRETS_JSON, help="Schlüsseldatei (Standard: tools/ground/secrets.json)")
-    ap.add_argument("--no-rssi", action="store_true", help="USB-Modul hängt kein RSSI-Byte an")
+    ap.add_argument("--no-rssi", action="store_true", help="E22 der Brücke hängt kein RSSI-Byte an")
+    ap.add_argument("--config", action="store_true", help="E22 der Funkbrücke passend zur Rakete einstellen und beenden")
     ap.add_argument("--new-key", action="store_true", help="neuen Schlüssel erzeugen und beenden")
     args = ap.parse_args(argv)
     if args.new_key:
         return new_key(args)
     if not args.port:
         ap.error("--port fehlt")
+    if args.config:
+        return configure_bridge(args)
     run(args)
     return 0
 

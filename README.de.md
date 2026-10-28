@@ -56,7 +56,7 @@ sind auf der Platine schon vorgesehen.
 
 **Wartet auf Review und Merge**
 
-- **Motorstart an Bord** ([PR #8](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/8), Branch `claude/bold-gauss-ar9lia`, umgesetzt nach [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md)): Zustände ARMED, COUNTDOWN, IGNITION, MISFIRE; ARM und LAUNCH mit HMAC-SHA256 über eine TRNG-Zufallszahl, die nur einmal gilt; Heartbeat, Vorbedingungen mit Klartext am Laptop, Servo-Selbsttest; Startpuls auf Pyro 1 (endet bei Schub, wenn der Anzünder durchbrennt, oder nach 300 ms), Durchgangsmessung in einer Messlücke, IGN-Rahmen mit Zeitmarken und Spannungseinbruch; Laptop-Werkzeug [`tools/ground/`](tools/ground/README.md); 66 native Tests (24 neu) und 21 Python-Tests mit gemeinsamen Testvektoren. Nicht am Gerät gelaufen.
+- **Motorstart an Bord** ([PR #8](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/8), Branch `claude/bold-gauss-ar9lia`, umgesetzt nach [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md)): Zustände ARMED, COUNTDOWN, IGNITION, MISFIRE; ARM und LAUNCH mit HMAC-SHA256 über eine TRNG-Zufallszahl, die nur einmal gilt; Heartbeat, Vorbedingungen mit Klartext am Laptop, Servo-Selbsttest; Startpuls auf Pyro 1 (endet bei Schub, wenn der Anzünder durchbrennt, oder nach 300 ms), Durchgangsmessung in einer Messlücke, IGN-Rahmen mit Zeitmarken und Spannungseinbruch; Laptop-Werkzeug [`tools/ground/`](tools/ground/README.md) mit Firmware der Funkbrücke (Pico + E22, [`bridge_pico/`](tools/ground/bridge_pico/README.md)); 66 native Tests (24 neu) und 23 Python-Tests mit gemeinsamen Testvektoren. Nicht am Gerät gelaufen.
 
 **Als Nächstes**
 
@@ -206,7 +206,7 @@ Begründung für das Schlittenlayout stehen in [`rev_a_2026-10-15.md`](hardware/
 
 **Motorstart an Bord (seit 27.10.2026):** Die Rakete zündet ihren Motor selbst über Pyro-Kanal 1. Am Pad
 werden Hauptschalter, Anzünder und dann der Arming-Schalter von Hand eingeschaltet; danach gehen alle weg,
-und der Laptop mit dem USB-Funkmodul E22-400T22U übernimmt ([`tools/ground/launch.py`](tools/ground/README.md)):
+und der Laptop mit der Funkbrücke aus Raspberry Pi Pico und E22 übernimmt ([`tools/ground/launch.py`](tools/ground/README.md)):
 `PAD_READY` (die Kardanservos testen sich), `ARM` und `LAUNCH` (erst nach Eingabe von `START`). ARM und
 LAUNCH tragen einen HMAC über eine Zufallszahl der Rakete, die nur einmal gilt; ein anderes Funkgerät oder
 ein aufgezeichneter Befehl kann nicht zünden. Die Rakete prüft ihre Vorbedingungen (Arming-Spannung,
@@ -278,7 +278,7 @@ firmware/               Flug-Firmware (PlatformIO, Teensy 4.1)                ->
   lib/calstore/         Kalibrierdaten mit CRC, Ellipsoid-Fit, Achszuordnung
   examples/             revb_test, revb_bringup, servo_ident und kleine Testprogramme
   test/                 native Tests (pio test -e native) und Host-Tests
-tools/ground/           Laptop-Werkzeug: Start, Telemetrie, E22-Einstellung   -> tools/ground/README.md
+tools/ground/           Laptop-Werkzeug und Funkbrücke (Pico + E22)          -> tools/ground/README.md
 groundstation/          Bodenstation (späterer Ausbau): Konzept, Schaltung, ESP32-S3-Firmware -> groundstation/README.md
 simulation/             6DOF-Simulation in Python, Paket tvcsim               -> simulation/README.md
 hardware/mainboard/     Mainboard: Spezifikation, Entscheidungen, KiCad aus Code, Fertigungsdaten, Datenblatt, Reviews, Bestellung
@@ -309,7 +309,7 @@ dieses Repositorys; ihr Inhalt ist hierher portiert.
 | [docs/BUILD.md](docs/BUILD.md) | Ist-Stand: Teile, Mechanik, Verkabelung, Tests, Baulog |
 | [docs/Plan_Bordzuendung_2026-10-27.md](docs/Plan_Bordzuendung_2026-10-27.md) | Motorstart an Bord: Risiken, Funkprotokoll, Zustandsautomat, Tests, Umsetzung |
 | [docs/Schnittstellen_Bodensystem_2026-10-22.md](docs/Schnittstellen_Bodensystem_2026-10-22.md) | Schnittstellen Rakete/Rampe, Funk (seit 27.10. mit ARM/LAUNCH), Zündleitung und Handy (späterer Ausbau) |
-| [tools/ground/README.md](tools/ground/README.md) | Laptop-Werkzeug: Start, Telemetrie, Schlüssel, E22-Einstellung |
+| [tools/ground/README.md](tools/ground/README.md) | Laptop-Werkzeug: Start, Telemetrie, Schlüssel; Funkbrücke Pico + E22 |
 | [hardware/mainboard/README.md](hardware/mainboard/README.md) | Spezifikation des Mainboards |
 | [hardware/mainboard/review_brief_2026-10-23.md](hardware/mainboard/review_brief_2026-10-23.md) | rev B1 für den Prüfer, mit [Prüfanleitung](hardware/mainboard/REVIEW_ANLEITUNG_revB1.md) und [Einkaufsliste](hardware/mainboard/EINKAUFSLISTE_revB1.md); [Review-Paket vom 26.10.](hardware/mainboard/REVIEW_PAKET_2026-10-26.md) mit gelaufenen Prüfungen, Lesereihenfolge und Entscheidungen vor der Bestellung; [JLCPCB-Testangebot](hardware/mainboard/Angebot_JLCPCB_2026-10-23.md); [Bestellung JLCPCB 26.10.](hardware/mainboard/Bestellung_JLCPCB_2026-10-26.md) (Konfiguration, was JLCPCB bestückt, was selbst gelötet wird); [Beschaffung 26.10.](hardware/mainboard/Beschaffung_2026-10-26.md) (Selbstlöt-Teile mit Artikelnummern und Bestand; DigiKey-Auftrag 102484398 und JLCPCB-Auftrag W2026102623077325 am 26.10. aufgegeben; §6b bereitet die Option Selbstbestückung mit einer zweiten DigiKey-Liste vor); [Abschlussprüfung vom 26.10.](hardware/mainboard/Abschlusspruefung_2026-10-26.md) der Fertigungsdaten gegen Spezifikation und JLCPCB-Grenzen; [Review-Bewertung](hardware/mainboard/Review_Bewertung_2026-10-26.md): die zehn Reviewfragen mit gemessenen Kupferbreiten, Verschaltung Pin für Pin; B1–B3 am 26.10. ins Layout eingearbeitet, Bestelldateien neu |
 | [hardware/mainboard/Komponenten_2026-10-22.md](hardware/mainboard/Komponenten_2026-10-22.md) | Entscheidungen, Bauteile nach Schiene und Schnittstelle, Pinbudget |

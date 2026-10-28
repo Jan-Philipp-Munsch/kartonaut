@@ -188,7 +188,7 @@ eigener Rahmen, sobald es ein Modul gibt.
 | `PY_CONTROL_ACTIVE`, `ROLL_CONTROL_ACTIVE` | Regler freigeben. Ohne Freigabe bleiben die Servos auf Mitte und der Motor aus. |
 | `LOG_DATA`, `LOG_EVERY_N_LOOPS`, `LOG_PAD_EVERY_N_LOOPS`, `LOG_STOP_AFTER_FRAMES` | SD-Log an (Vorbedingung für ARM); jeden N-ten Takt im Flug und ab ARMED bzw. in SAFE/PAD_READY; nach N Frames stoppen und einmal als CSV exportieren (Tischtest, 0 = nie; nie in PAD_READY oder im Startablauf). |
 | `LAUNCH_*`, `ARM_TIMEOUT_S`, `HEARTBEAT_TIMEOUT_MS`, `SERVO_TEST_*`, `ROCKET_ID` | Motorstart an Bord (Kanal, Zeiten, Schwellen der Vorbedingungen, Messlücke, Servo-Selbsttest) |
-| `E22_*` | Register des Funkmoduls; gleich am Laptop (`tools/ground/e22_config.py`) |
+| `E22_*` | Register des Funkmoduls; gleich an der Funkbrücke (`tools/ground/bridge_pico`, `launch.py --config`) |
 | `WDT_ENABLED`, `WDT_TIMEOUT_MS` | Watchdog |
 | `PLOT_KALMAN`, `PLOT_ROLL`, `PLOT_PY`, `PLOT_ELECTRICS`, `PLOT_STATE` | Teleplot-Zeilen (`>Name:Wert`) auf USB-Serial |
 | `LOOP_WARNING`, `VERBOSE` | Overrun-Meldungen, Kalibrierausgaben |

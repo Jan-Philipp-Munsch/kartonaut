@@ -173,9 +173,9 @@ imu             Erkennung, Konfiguration, Datenrate, Ruhe, Selbsttest
 cal show        bestehende Werte (gyro_bias_dps, acc_offset_ms2, acc_scale)
 ```
 
-**Was gemessen wird**: `imu`: WHO_AM_I, Flugkonfiguration zurückgelesen, neue Sätze in 500 ms (Soll 1 kHz),
-300 ms Ruhe (|a|, |ω|), Werksselbsttest (Gyro ±250 °/s, Accel ±2 g, 200 Sätze mit und ohne
-Testsignal, Vergleich mit dem Werkswert). `cal gyro <s>`: Mittel und Standardabweichung über die Dauer,
+**Was gemessen wird**: `imu`: WHO_AM_I, Flugkonfiguration zurückgelesen, neue Sätze in 500 ms (Soll 960 Hz),
+300 ms Ruhe (|a|, |ω|), Selbsttest nach ST AN5763 (Accel 60 Hz / ±4 g, Gyro 240 Hz / ±2000 °/s, je 5 Sätze mit
+und ohne Testsignal, Betrag der Antwort gegen die Datenblattgrenzen; der Chip hat keinen Werkswert). `cal gyro <s>`: Mittel und Standardabweichung über die Dauer,
 Neustart bei > 3 °/s Spanne. `cal acc`: sechs Lagen je 1,5 s, Offset = (max + min)/2, Skalierung =
 2 g / (max − min) je Chip-Achse.
 
@@ -198,11 +198,11 @@ halten, dann Enter; „bewegt, noch einmal“ wiederholt die Lage.
 
 | Zeile | Soll |
 |---|---|
-| `imu_whoami` | 0x47 |
-| `imu_rate` | 900–1100 Hz |
+| `imu_whoami` | 0x70 (LSM6DSV16X; der frühere ICM-42688-P meldete 0x47) |
+| `imu_rate` | 860–1060 Hz (Soll 960 Hz) |
 | `imu_rest` | \|a\| 9,0–10,6 m/s², \|ω\| < 5 °/s |
-| `imu_selftest_gyro` | Verhältnis 0,5–1,5 je Achse, Offset < 20 °/s |
-| `imu_selftest_acc` | Verhältnis 0,5–1,5 je Achse |
+| `imu_selftest_gyro` | Antwort 20–80 °/s je Achse (Datenblatt), Offset < 20 °/s |
+| `imu_selftest_acc` | Antwort 0,05–1,7 g je Achse (Datenblatt) |
 | `cal_gyro` | Nullpunkt je Achse < 2 °/s (typisch < 1), Rauschen < 0,2 °/s |
 | `cal_acc` | Offset je Achse < 0,3 m/s², Skalierung 0,98–1,02 |
 | Lauf 4 gegen 2 | Nullpunktänderung je Grad notieren; > 0,05 °/s je K ist für den Flug relevant |
@@ -214,7 +214,7 @@ oder doppelt.
 **Protokoll**: WHO_AM_I, Datenrate, Selbsttestwerte, Nullpunkt mit Temperatur, sechs Lagenwerte (aus den
 `INFO`-Zeilen), Offset und Skalierung, Raumtemperatur.
 
-**Grenzen**: Die Grenzwerte des Selbsttests (50–150 % des Werkswerts) sind aus dem TDK-Referenztreiber,
+**Grenzen**: Die Grenzwerte des Selbsttests (20–80 °/s, 50–1700 mg) sind aus dem ST-Datenblatt,
 nicht an dieser Platine bestätigt. Ein Nullpunkt bei einer Temperatur; der Temperaturgang wird nur
 protokolliert, die Firmware kompensiert ihn noch nicht. Die Skalierung aus sechs Lagen trifft nur die
 Hauptachsen, keine Querempfindlichkeit.

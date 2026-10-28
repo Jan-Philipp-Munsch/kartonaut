@@ -20,7 +20,7 @@ its attitude during the burn and comes back on a parachute pushed out by a CO₂
 landing burn on a second motor and a roll motor are kept for later flights and already provided for on
 the board.
 
-*Last updated: 27 Oct 2026.*
+*Last updated: 28 Oct 2026.*
 
 <img src="docs/img/bauanleitung/Z1_uebersicht.png" width="260" align="right" alt="Kartonaut 1 in modular construction: overview drawing">
 
@@ -57,11 +57,12 @@ the board.
 **Waiting for review and merge**
 
 - **On-board motor start** ([PR #8](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/8), branch `claude/bold-gauss-ar9lia`, implemented per [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md)): states ARMED, COUNTDOWN, IGNITION, MISFIRE; ARM and LAUNCH with HMAC-SHA256 over a TRNG random number that is valid only once; heartbeat, preconditions shown in plain words on the laptop, servo self-test; launch pulse on pyro 1 (ends on thrust, when the igniter burns through, or after 300 ms), continuity measured in a short gap, IGN frame with timestamps and voltage sag; laptop tool [`tools/ground/`](tools/ground/README.md) with the radio bridge firmware (Pico + E22, [`bridge_pico/`](tools/ground/bridge_pico/README.md)); 66 native tests (24 new) and 23 Python tests with shared test vectors. Not run on hardware.
+- **Assembling and testing board rev B1** (same PR): [part II of the build manual](docs/Platine_revB1_Bestueckung_Pruefung.md) with a placement plan of the 42 hand-soldered parts in four stages, multimeter checks after each stage, test sequence V01–V12 with `revb_test`, flight firmware and on-board ignition with a dummy load; combined [PDF](docs/bauanleitung/Bauanleitung_Kartonaut1.pdf). Plus the **LSM6DSV16X driver** (the board's IMU) behind `Imu.h`, wired into the test console, bring-up and flight firmware, core with a host test in CI.
 
 **Next**
 
 1. Order only three E22-400T22S from AliExpress (two boards, one ground station; €28.72 including import charges, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); a Raspberry Pi Pico for the radio bridge (on hand or Berrybase), print its enclosure with the dipole (`cad/groundbridge.py`); test the existing batteries (2S and 1S fit the bays), check whether epoxy is on hand (Teensy pin headers, switches and a u-blox NEO-6M GPS are on hand); print the state 2d parts (GPS holder for the NEO-6M is in, sled 58 instead of 64 g) and weigh them. The board arrives around 4–6 Nov, then solder in the hand-solder parts.
-2. Firmware: LSM6DSV16X driver behind `Imu.h`, CO₂ release from the state machine, calibration data into the rev B sensor path; measurement gap also for the recovery pulses (PROJECT.md finding 24).
+2. Firmware: CO₂ release from the state machine, calibration data into the rev B sensor path; measurement gap also for the recovery pulses (PROJECT.md finding 24).
 3. Build the rocket after the manual: print and weigh the parts, weigh the rocket, balance the centre of gravity, put mass, lever arm and the new gains into `Config.h`.
 4. Bench test of rev B1 with `revb_test`, then ground tests: servo-to-gimbal ratio (E01/E02), CO₂ ejection three times (also cold), TVC test rig with the propeller motor, radio range, launch sequence with a dummy load instead of the igniter, then an igniter without motor (burn-through time, polyfuse F1).
 5. Build the launch stand (about €68); route the igniter lead past the gimbal ([build manual §2.6](docs/Bauanleitung_Kartonaut1.md)), fit an arming screw switch rated ≥ 5 A, flash the radio bridge and set it up with `launch.py --config`, create the key with `launch.py --new-key`. Build the test rig: measure the motor-tube bore and the BR2814, print the parts from `cad/export/testrig/`, balance the rocket with the drive.
@@ -298,7 +299,8 @@ repository; their content is ported here.
 |---|---|
 | [PROJECT.md](PROJECT.md) | key data, work packages with status, findings, next steps, changelog |
 | [docs/Baustellen_2026-10-26.md](docs/Baustellen_2026-10-26.md) | open work by strand (board, repo, firmware, mechanics, simulation, ground systems) with a suggested order up to the first flight |
-| [docs/Bauanleitung_Kartonaut1.md](docs/Bauanleitung_Kartonaut1.md) | build manual: modules, parts list, build steps, maintenance, cable plan ([PDF](docs/bauanleitung/Bauanleitung_Kartonaut1.pdf), [drawings](docs/bauanleitung/Zeichnungen_Kartonaut1.pdf), [1:1 templates](docs/bauanleitung/Bohrschablonen_1zu1.pdf)) |
+| [docs/Bauanleitung_Kartonaut1.md](docs/Bauanleitung_Kartonaut1.md) | build manual part I: modules, parts list, build steps, maintenance, cable plan ([PDF with part II](docs/bauanleitung/Bauanleitung_Kartonaut1.pdf), [drawings](docs/bauanleitung/Zeichnungen_Kartonaut1.pdf), [1:1 templates](docs/bauanleitung/Bohrschablonen_1zu1.pdf)) |
+| [docs/Platine_revB1_Bestueckung_Pruefung.md](docs/Platine_revB1_Bestueckung_Pruefung.md) | build manual part II: assembling board rev B1 (placement plan, four stages), multimeter checks, tests with `revb_test`, flight firmware and on-board ignition (German) |
 | [cad/mass_stand2b.md](cad/mass_stand2b.md) | mass budget *Kartonaut 1*: mass, CG, lever arm, inertia, parts list |
 | [docs/Gewicht_und_Landung_2026-10-23.md](docs/Gewicht_und_Landung_2026-10-23.md) | weight levers to 593 g, gains, landing study with our masses |
 | [docs/Physik_Review_2026-10-23.md](docs/Physik_Review_2026-10-23.md) | physics review of the simulation, landing burn, throttle |

@@ -1,10 +1,14 @@
-"""Build docs/bauanleitung/Bauanleitung_Kartonaut1.pdf from docs/Bauanleitung_Kartonaut1.md.
+"""Build docs/bauanleitung/Bauanleitung_Kartonaut1.pdf from docs/Bauanleitung_Kartonaut1.md
+and docs/Platine_revB1_Bestueckung_Pruefung.md (Teil II, seit 28.10.2026).
 
 Same pipeline as docs/build_design_guide.py: Markdown -> HTML (python-markdown) -> PDF (Chrome headless).
 The HTML is written next to the Markdown so that the relative image paths resolve, and deleted afterwards.
-Before: MS_CONFIG=erstflug python cad/modular.py and python docs/bauanleitung/zeichnungen.py.
+Before: MS_CONFIG=erstflug python cad/modular.py, python docs/bauanleitung/zeichnungen.py and
+python docs/platine/bestueckungsplan.py.
 
 Run:  python docs/bauanleitung/build_pdf.py
+Browsers: Chrome/Edge on Windows, else chromium/google-chrome on PATH, else Playwright's Chromium through node
+(`require('playwright')`), which is what the cloud session uses (a bare headless Chromium hangs there on network calls).
 """
 import shutil
 import subprocess
@@ -16,10 +20,24 @@ import markdown
 
 HERE = Path(__file__).resolve().parent
 SRC = HERE.parent / "Bauanleitung_Kartonaut1.md"
+SRC2 = HERE.parent / "Platine_revB1_Bestueckung_Pruefung.md"      # Teil II
 HTML = HERE.parent / "_Bauanleitung_Kartonaut1_build.html"
 PDF = HERE / "Bauanleitung_Kartonaut1.pdf"
 BROWSERS = [Path(r"C:\Program Files\Google\Chrome\Application\chrome.exe"),
-            Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe")]
+            Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"),
+            *[Path(p) for p in map(shutil.which, ("chromium", "chromium-browser", "google-chrome")) if p]]
+
+PLAYWRIGHT_JS = """
+const { chromium } = require('playwright');
+(async () => {
+  const [html, pdf] = process.argv.slice(2);
+  const browser = await chromium.launch({ args: ['--no-sandbox'] });
+  const page = await browser.newPage();
+  await page.goto('file://' + html, { waitUntil: 'load', timeout: 60000 });
+  await page.pdf({ path: pdf, format: 'A4', printBackground: true, preferCSSPageSize: true });
+  await browser.close();
+})().catch(e => { console.error(e); process.exit(1); });
+"""
 
 CSS = """
 @page { size: A4; margin: 18mm 16mm 18mm 16mm; }
@@ -43,10 +61,16 @@ td:first-child { white-space: nowrap; }
 """
 
 
-def main():
-    md = SRC.read_text(encoding="utf-8")
-    body = markdown.markdown(md, extensions=["tables", "toc", "fenced_code", "attr_list", "md_in_html"],
+def render(md_path):
+    md = md_path.read_text(encoding="utf-8")
+    return markdown.markdown(md, extensions=["tables", "toc", "fenced_code", "attr_list", "md_in_html"],
                              extension_configs={"toc": {"toc_depth": "2-3", "title": "Inhalt"}})
+
+
+def main():
+    body = render(SRC)
+    if SRC2.exists():
+        body += '<hr class="pb">' + render(SRC2)
     html = f'<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Bauanleitung Kartonaut 1</title>' \
            f'<style>{CSS}</style></head><body>{body}</body></html>'
     HTML.write_text(html, encoding="utf-8")
@@ -55,12 +79,18 @@ def main():
         if not browser.exists():
             continue
         profile = Path(tempfile.mkdtemp(prefix="ba_profile_"))
-        cmd = [str(browser), "--headless=new", "--disable-gpu", "--no-first-run", f"--user-data-dir={profile}",
-               "--no-pdf-header-footer", "--virtual-time-budget=10000", f"--print-to-pdf={PDF}", HTML.as_uri()]
+        cmd = [str(browser), "--headless=new", "--disable-gpu", "--no-first-run", "--no-sandbox",
+               f"--user-data-dir={profile}", "--no-pdf-header-footer", "--virtual-time-budget=10000",
+               f"--print-to-pdf={PDF}", HTML.as_uri()]
         subprocess.run(cmd, check=False, timeout=180, capture_output=True)
         shutil.rmtree(profile, ignore_errors=True)
         if PDF.exists():
             break
+    if not PDF.exists() and shutil.which("node"):
+        js = Path(tempfile.mkdtemp(prefix="ba_pw_")) / "html2pdf.js"
+        js.write_text(PLAYWRIGHT_JS, encoding="utf-8")
+        subprocess.run(["node", str(js), str(HTML), str(PDF)], check=False, timeout=180, capture_output=True)
+        shutil.rmtree(js.parent, ignore_errors=True)
     if not PDF.exists():
         print("no browser produced a PDF; HTML left at", HTML)
         return 1

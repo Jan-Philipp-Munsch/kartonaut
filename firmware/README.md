@@ -31,7 +31,7 @@ pio run -e i2c_scanner -t upload   # einen Test-Sketch flashen
 | `src/Config.h` | Alle Pins (je Board), physikalischen Parameter, Reglergewinne, Schwellen des Automaten, Pyro, Telemetrie, Watchdog, Schalter | – |
 | `src/Sensors.h` | Schnittstelle: `SensorSample` (spezifische Kraft, Drehrate im Körpersystem, Druck, Höhe, Akkus, ARM, Durchgang), Kalibrierung | – |
 | `src/Sensors_breakout.cpp` | Rückende Breakouts: ICM-20948 roh ohne DMP (±4 g, ±2000 °/s, DLPF 50 Hz), BMP280, INA219. Kein ARM, kein Durchgang: Pyro gesperrt. | – |
-| `src/Sensors_revb.cpp` | Rückende Mainboard rev B: ICM-42688-P, BMP390, INA239 an SPI1, Akkus/ARM/Durchgang über die Mux (`lib/mainboard_revb/`) | – |
+| `src/Sensors_revb.cpp` | Rückende Mainboard rev B: LSM6DSV16X, BMP390/BMP388, INA239 an SPI1, Akkus/ARM/Durchgang über die Mux (`lib/mainboard_revb/`) | – |
 | `src/Attitude.*` | Lage als Gyro-Quaternion, Init aus der Beschleunigung auf dem Pad, Oben-Vektor, Kippwinkel in Servoachsen, Rollwinkel | ✅ |
 | `src/KalmanZ.*` | 2-Zustands-Kalman (Höhe, Vertikalgeschwindigkeit) mit Beschleunigung als Eingang und Barometer als Messung | – |
 | `src/FlightState.*` | Flugzustandsautomat SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED, ABORT; Motorstart ARMED → COUNTDOWN → IGNITION, MISFIRE; Ereignisse mit Zeitstempel | ✅ |
@@ -253,7 +253,8 @@ Bibliothek nur in Umgebungen, die sie benutzen (`revb_bringup`, `revb_test`).
 | `BoardRevB.h` | Teensy-Pins, Chip-Selects (74HC138, `revb::Cs`), Analogkanäle (74HC4051, `revb::Mux`), I²C-Adressen, Teiler und Shunt |
 | `BusRevB.*` | SPI1 auf 26/27/39, Chip-Select über den Decoder, Analogmessung über die Mux |
 | `Imu.h` | Schmale IMU-Schnittstelle (`begin`, `whoAmI`, `dataReady`, `read`, `selfTest`); ein zweiter Treiber (LSM6DSV16X) käme ohne Umbau des Rests dazu |
-| `ICM42688.*` | IMU über SPI, ±2000 °/s, ±16 g, 1 kHz, INT1 Daten bereit, Werksselbsttest. **Offen:** die Platine rev B1 trägt seit 23.10. einen LSM6DSV16X (E12, WHO_AM_I 0x70, gleiche Pins); der Treiber hinter `Imu.h` ist noch zu schreiben |
+| `LSM6DSV16X.*`, `Lsm6dsv16xCore.h` | IMU der Platine rev B1 (E12) über SPI: WHO_AM_I 0x70, ±2000 °/s, ±16 g, 960 Hz, INT1 Daten bereit, Selbsttest nach ST AN5763; Register, Codes und Umrechnungen ohne Arduino im Kern (`test/host/test_lsm6dsv16x.cpp`). Seit 28.10.2026 in `revb_test`, `revb_bringup` und `Sensors_revb.cpp`; Registerwerte aus dem Datenblatt, am Gerät noch nicht geprüft |
+| `ICM42688.*` | früherer IMU-Treiber (ICM-42688-P), bleibt in der Bibliothek, wird nicht mehr eingehängt |
 | `BMP390.*` | Barometer über SPI, Bosch-Kompensation, erkennt auch den BMP388 |
 | `INA239.*` | Strom und Spannung im 2S-Pfad über SPI |
 | `I2cRevB.h`, `LIS3MDL.*`, `SHT40.*`, `ADXL375.*` | I²C an Wire (18/19): Magnetometer 0x1E mit Selbsttest, Feuchte/Temperatur 0x44, ±200 g 0x53 (DNP, nur erkennen) |

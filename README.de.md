@@ -20,7 +20,7 @@ einer TSP E12, hält während des Brennens die Lage und kommt am Fallschirm zur�
 ausstößt. Landebeine, Landebrennen mit zweitem Motor und Rollmotor bleiben späteren Flügen vorbehalten und
 sind auf der Platine schon vorgesehen.
 
-*Stand: 27.10.2026.*
+*Stand: 28.10.2026.*
 
 <img src="docs/img/bauanleitung/Z1_uebersicht.png" width="260" align="right" alt="Kartonaut 1 in Modulbauweise: Übersichtszeichnung">
 
@@ -57,11 +57,12 @@ sind auf der Platine schon vorgesehen.
 **Wartet auf Review und Merge**
 
 - **Motorstart an Bord** ([PR #8](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/8), Branch `claude/bold-gauss-ar9lia`, umgesetzt nach [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md)): Zustände ARMED, COUNTDOWN, IGNITION, MISFIRE; ARM und LAUNCH mit HMAC-SHA256 über eine TRNG-Zufallszahl, die nur einmal gilt; Heartbeat, Vorbedingungen mit Klartext am Laptop, Servo-Selbsttest; Startpuls auf Pyro 1 (endet bei Schub, wenn der Anzünder durchbrennt, oder nach 300 ms), Durchgangsmessung in einer Messlücke, IGN-Rahmen mit Zeitmarken und Spannungseinbruch; Laptop-Werkzeug [`tools/ground/`](tools/ground/README.md) mit Firmware der Funkbrücke (Pico + E22, [`bridge_pico/`](tools/ground/bridge_pico/README.md)); 66 native Tests (24 neu) und 23 Python-Tests mit gemeinsamen Testvektoren. Nicht am Gerät gelaufen.
+- **Platine rev B1 bestücken und prüfen** (derselbe PR): [Teil II der Bauanleitung](docs/Platine_revB1_Bestueckung_Pruefung.md) mit Bestückungsplan der 42 Handlöt-Teile in vier Stufen, Multimeter-Prüfung nach jeder Stufe, Testfolge V01–V12 mit `revb_test`, Flug-Firmware und Bordzündung mit Ersatzlast; gemeinsames [PDF](docs/bauanleitung/Bauanleitung_Kartonaut1.pdf). Dazu der **LSM6DSV16X-Treiber** (die IMU der Platine) hinter `Imu.h`, eingehängt in Testkonsole, Bring-up und Flug-Firmware, Kern mit Host-Test in der CI.
 
 **Als Nächstes**
 
 1. Bei AliExpress nur drei E22-400T22S bestellen (zwei Platinen, eins Bodenstation; 28,72 € mit Einfuhrabgaben, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); Raspberry Pi Pico für die Funkbrücke (Bestand oder Berrybase), ihr Gehäuse mit Dipol drucken (`cad/groundbridge.py`); vorhandene Akkus prüfen (2S und 1S passen in die Fächer), nachsehen, ob Epoxid da ist (Teensy-Stiftleisten, Schalter und GPS u-blox NEO-6M sind vorhanden); Druckteile Stand 2d drucken (GPS-Halter für den NEO-6M ist eingebaut, Schlitten 58 statt 64 g) und wiegen. Platine kommt um den 4.–6.11., dann Selbstlöt-Teile einlöten.
-2. Firmware: Treiber LSM6DSV16X hinter `Imu.h`, CO₂-Auslösung aus dem Zustandsautomaten, Kalibrierwerte in den rev-B-Sensorpfad; Messlücke auch für die Pulse der Bergung (PROJECT.md Befund 24).
+2. Firmware: CO₂-Auslösung aus dem Zustandsautomaten, Kalibrierwerte in den rev-B-Sensorpfad; Messlücke auch für die Pulse der Bergung (PROJECT.md Befund 24).
 3. Rakete nach der Anleitung bauen: Teile drucken und wiegen, Rakete wiegen, Schwerpunkt auspendeln, Masse, Hebelarm und die neuen Gewinne in `Config.h`.
 4. Tischtest rev B1 mit `revb_test`, dann Bodentests: Servo-Kardan-Verhältnis (E01/E02), CO₂-Ausstoß dreimal (auch kalt), TVC-Prüfstand mit Propellermotor, Funkreichweite, Startablauf mit Ersatzlast statt Anzünder, dann Anzünder ohne Motor (Durchbrennzeit, Polyfuse F1).
 5. Startrampe bauen (etwa 68 €); Anzünderleitung am Kardan vorbei verlegen ([Bauanleitung §2.6](docs/Bauanleitung_Kartonaut1.md)), Arming-Schraubschalter ≥ 5 A einbauen, Funkbrücke flashen und mit `launch.py --config` einstellen, Schlüssel mit `launch.py --new-key` erzeugen. Prüfstand bauen: Motorrohr-Bohrung und BR2814 nachmessen, Druckteile aus `cad/export/testrig/` drucken, Rakete mit Antrieb auswiegen.
@@ -299,7 +300,8 @@ dieses Repositorys; ihr Inhalt ist hierher portiert.
 |---|---|
 | [PROJECT.md](PROJECT.md) | Eckdaten, Arbeitspakete mit Stand, Befunde, nächste Schritte, Änderungsverlauf |
 | [docs/Baustellen_2026-10-26.md](docs/Baustellen_2026-10-26.md) | offene Arbeiten nach Strängen (Platine, Repo, Firmware, Mechanik, Simulation, Bodensysteme) mit Reihenfolge bis zum Erstflug |
-| [docs/Bauanleitung_Kartonaut1.md](docs/Bauanleitung_Kartonaut1.md) | Bauanleitung: Module, Stückliste, Bauschritte, Wartung, Kabelplan ([PDF](docs/bauanleitung/Bauanleitung_Kartonaut1.pdf), [Zeichnungen](docs/bauanleitung/Zeichnungen_Kartonaut1.pdf), [Schablonen 1:1](docs/bauanleitung/Bohrschablonen_1zu1.pdf)) |
+| [docs/Bauanleitung_Kartonaut1.md](docs/Bauanleitung_Kartonaut1.md) | Bauanleitung Teil I: Module, Stückliste, Bauschritte, Wartung, Kabelplan ([PDF mit Teil II](docs/bauanleitung/Bauanleitung_Kartonaut1.pdf), [Zeichnungen](docs/bauanleitung/Zeichnungen_Kartonaut1.pdf), [Schablonen 1:1](docs/bauanleitung/Bohrschablonen_1zu1.pdf)) |
+| [docs/Platine_revB1_Bestueckung_Pruefung.md](docs/Platine_revB1_Bestueckung_Pruefung.md) | Bauanleitung Teil II: Platine rev B1 bestücken (Bestückungsplan, vier Stufen), mit dem Multimeter prüfen, Tests mit `revb_test`, Flug-Firmware und Bordzündung |
 | [cad/mass_stand2b.md](cad/mass_stand2b.md) | Massenbudget *Kartonaut 1*: Masse, Schwerpunkt, Hebelarm, Trägheit, Teileliste |
 | [docs/Gewicht_und_Landung_2026-10-23.md](docs/Gewicht_und_Landung_2026-10-23.md) | Gewichtshebel bis 593 g, Gewinne, Landestudie mit unseren Massen |
 | [docs/Physik_Review_2026-10-23.md](docs/Physik_Review_2026-10-23.md) | Physik-Durchsicht der Simulation, Landebrennen, Drossel |

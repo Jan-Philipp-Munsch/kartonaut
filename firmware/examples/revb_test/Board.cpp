@@ -5,8 +5,8 @@
 namespace board {
 
 BusRevB    bus;
-static ICM42688 icm(bus);
-ImuDriver& imu = icm;
+static LSM6DSV16X lsm(bus);
+ImuDriver& imu = lsm;
 BMP390     baro(bus, rb::Cs::BARO);
 BMP390     baro2(bus, rb::Cs::BARO2);
 INA239     ina(bus, rb::INA_SHUNT_OHM, rb::INA_MAX_CURRENT_A);

@@ -230,7 +230,7 @@ den USA), Balancer-Verlängerung (JST-XH 3 hast du), Crimpzange, JST-Sortiment, 
 
 | ✓ | Teil | Hinweis |
 |---|---|---|
-| ☐ | **Mainboard rev B1, bestückt, 2 Stück** | JLCPCB, nach dem Design (läuft in der Platinen-Session) |
+| ☐ | **Mainboard rev B1, bestückt, 2 Stück** | JLCPCB (bestellt 26.10., in Fertigung); die 42 Handlöt-Teile, die Prüfung mit dem Multimeter und die Tests stehen in **Teil II** (`docs/Platine_revB1_Bestueckung_Pruefung.md`, im selben PDF) |
 
 ### 3.3 Drucken (neu)
 

@@ -3,7 +3,7 @@
 #   native      Firmware-Tests ohne Hardware (pio test -e native, firmware/test/test_native/)
 #   simulation  Tests des Python-Pakets tvcsim
 #   pins        Pinbelegung der Firmware (BoardRevB.h) gegen die Schaltung (circuit.py)
-#   tischtest   Parser-Tests von tools/bench_test.py und Host-Tests der Kalibrierbibliothek (g++)
+#   tischtest   Parser-Tests von tools/bench_test.py, Host-Tests der Kalibrierbibliothek und des IMU-Kerns (g++)
 #   ground      Laptop-Werkzeug tools/ground (Protokoll, MAC, gleiche Testvektoren wie die Firmware)
 #   bridge      Funkbrücke tools/ground/bridge_pico (Raspberry Pi Pico, arduino-pico) bauen
 name: CI
@@ -120,6 +120,8 @@ jobs:
           /tmp/test_calstore
           g++ -std=c++17 -Wall -Wextra -I firmware/examples/revb_test firmware/test/host/test_nmea.cpp -o /tmp/test_nmea
           /tmp/test_nmea
+          g++ -std=c++17 -Wall -Wextra -I firmware/lib/mainboard_revb firmware/test/host/test_lsm6dsv16x.cpp -o /tmp/test_lsm6dsv16x
+          /tmp/test_lsm6dsv16x
 
   ground:
     name: Laptop-Werkzeug (pytest)

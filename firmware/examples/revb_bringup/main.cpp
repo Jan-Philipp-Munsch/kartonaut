@@ -7,7 +7,7 @@
 //
 //   1. Analogmux: GND-Kanal, beide Akkus, ARM, Durchgang Pyro 1–4
 //   2. IMU (Treiber ICM-42688-P): WHO_AM_I, Konfiguration, Beschleunigung ≈ 1 g in Ruhe;
-//      die Platine rev B1 trägt seit 23.10. einen LSM6DSV16X (WHO_AM_I 0x70), Treiber folgt
+//      die Platine rev B1 trägt seit 23.10. einen LSM6DSV16X (WHO_AM_I 0x70), Treiber seit 28.10. eingehängt
 //   3. BMP390 (und BMP390 #2, falls bestückt): Chip-ID, Druck plausibel
 //   4. INA239: Hersteller- und Geräte-ID, Bus-Spannung ≈ 2S-Akku
 //   5. LoRa E22: Konfigurationsmodus, Parameter lesen (Kanal, Adresse)
@@ -24,7 +24,7 @@
 #include "BoardRevB.h"
 #include "BusRevB.h"
 #include "Imu.h"
-#include "ICM42688.h"
+#include "LSM6DSV16X.h"
 #include "BMP390.h"
 #include "INA239.h"
 #include "I2cRevB.h"
@@ -35,8 +35,8 @@
 using namespace revb;
 
 static BusRevB    bus;
-static ICM42688   icm(bus);
-static ImuDriver& imu = icm;
+static LSM6DSV16X lsm(bus);
+static ImuDriver& imu = lsm;
 static BMP390     baro(bus, Cs::BARO);
 static BMP390     baro2(bus, Cs::BARO2);
 static INA239     ina(bus, INA_SHUNT_OHM, INA_MAX_CURRENT_A);

@@ -10,7 +10,7 @@ stehen in `Versuche_revB1.md`.
 
 | Teil | Ort | Aufgabe |
 |---|---|---|
-| Treiber | `lib/mainboard_revb/` | `Imu.h` (schmale IMU-Schnittstelle), `ICM42688` (mit Werksselbsttest), `BMP390`, `INA239`, neu `LIS3MDL`, `SHT40`, `ADXL375` (nur erkennen), `I2cRevB.h` |
+| Treiber | `lib/mainboard_revb/` | `Imu.h` (schmale IMU-Schnittstelle), **`LSM6DSV16X`** (seit 28.10.2026, Selbsttest nach AN5763; Kern ohne Arduino in `Lsm6dsv16xCore.h`), `ICM42688` (alter Treiber, bleibt), `BMP390` (erkennt auch BMP388), `INA239`, `LIS3MDL`, `SHT40`, `ADXL375` (nur erkennen), `I2cRevB.h` |
 | Kalibrierung | `lib/calstore/` | `CalData.h` (Block mit Version und CRC-32), `CalStore` (EEPROM-Emulat), `EllipsoidFit.h`, `AxisFit.h` |
 | Testkonsole | `examples/revb_test/` | PlatformIO-Umgebung `revb_test`: Befehlsmenü über USB-Serial, feste Ausgabezeilen (`Proto.h`) |
 | Inbetriebnahme | `examples/revb_bringup/` | Selbsttest aller Bausteine beim Start (jetzt auch LIS3MDL, SHT40, ADXL375), danach Messwerte |
@@ -82,13 +82,15 @@ ASK <text> / WAIT <text> / CONFIRM <text>   Rückfrage (Zahl / Enter,n,q / JA)
 INFO <text>, # <text>, READY
 ```
 
-## 5. Was eine andere IMU bräuchte
+## 5. IMU-Treiber
 
 `ImuDriver` (`lib/mainboard_revb/Imu.h`) hat `begin`, `whoAmI`, `dataReady`, `read`, `selfTest`,
-`name`, `expectedWhoAmI`, `sampleRateHz`. Ein LSM6DSV16X-Treiber leitet davon ab und wird in
-`examples/revb_test/Board.cpp` und `examples/revb_bringup/main.cpp` an einer Stelle eingehängt;
-Konsole, Kalibrierung und Bericht bleiben unverändert. Der Treiber ist nicht geschrieben (laut
-Auftrag erst nach Entscheidung).
+`name`, `expectedWhoAmI`, `sampleRateHz`. Seit dem 28.10.2026 ist der **LSM6DSV16X** (die IMU der
+Platine rev B1, E12) in `examples/revb_test/Board.cpp`, `examples/revb_bringup/main.cpp` und
+`src/Sensors_revb.cpp` eingehängt: WHO_AM_I 0x70, 960 Hz, ±2000 °/s, ±16 g, Selbsttest nach ST AN5763.
+Konsole, Kalibrierung und Bericht blieben unverändert. Der ICM-42688-Treiber bleibt in der Bibliothek,
+wird aber nirgends mehr benutzt. Die Registerwerte sind aus dem Datenblatt, am Gerät noch nicht geprüft
+(`test/host/test_lsm6dsv16x.cpp` prüft Codes und Umrechnungen auf dem PC).
 
 ## 6. Ohne Hardware geprüft, auf der Platine zu prüfen
 
@@ -108,8 +110,8 @@ Geprüft ohne Hardware:
 
 Erst auf der Platine prüfbar:
 
-- Werksselbsttest des ICM-42688-P (Ablauf nach dem TDK-Referenztreiber, die Grenzwerte 50–150 %
-  des Werkswerts sind aus der Dokumentation, nicht gemessen), Selbsttest des LIS3MDL (AN4602).
+- Selbsttest des LSM6DSV16X (Ablauf nach ST AN5763, Grenzen 20–80 °/s und 50–1700 mg aus dem
+  Datenblatt, nicht gemessen), Selbsttest des LIS3MDL (AN4602).
 - Watchdog-Abschaltung (`wdEnd`, RTWDOG mit UPDATE-Bit) und Neustarterkennung über SRC_SRSR.
 - LoRa-Ping: Antwort `PONG` und RSSI-Byte hängen von der Bodenstation und der Moduleinstellung
   (REG3 Bit 7) ab.
@@ -128,7 +130,7 @@ Erst auf der Platine prüfbar:
 4. **Flug-Firmware**: `src/` lädt den Kalibrierblock, nutzt ihn aber noch nicht (Breakout-Sensorpfad
    mit `Config.h`-Konstanten). Die Zuweisung gehört in den rev-B-Sensorpfad auf `firmware/flight-core`
    (`Sensors_revb.cpp`), wenn der zusammengeführt wird. Soll ich das dort anschließen?
-5. **IMU-Wechsel** auf den LSM6DSV16X: Schnittstelle ist vorbereitet, Treiber wartet auf die Entscheidung.
+5. ~~**IMU-Wechsel** auf den LSM6DSV16X: Schnittstelle ist vorbereitet, Treiber wartet auf die Entscheidung.~~ (Treiber seit 28.10.2026, §5)
 6. **CI-Pinabgleich**: läuft weiter gegen `circuit.py` auf `main` (alter Stand, Warnung). Soll der
    Job auf `claude/rev-b1` zeigen, bis die Hardware zusammengeführt ist?
 7. **Keine Pin-Abweichungen** zwischen `BoardRevB.h` und `circuit.py` (rev B1) gefunden.

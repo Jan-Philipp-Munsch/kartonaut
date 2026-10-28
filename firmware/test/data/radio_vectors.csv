@@ -1,0 +1,16 @@
+# Funk-Testvektoren (Plan Bordzuendung 27.10.2026 §6), gemeinsam fuer test/test_native/test_radio_vectors.cpp
+# und tools/ground/test_kartonaut_radio.py. Schluessel 00 01 .. 0f, Raketen-ID 1. Spalten: Name, Rahmen in Hex.
+cmd_arm,a55a250907e79e5c977995262d983b
+cmd_launch,a55a260908db6b996d478d56abcdc3
+cmd_heartbeat,a55a270109d26d
+cmd_abort,a55a23010a7181
+cmd_ping,a55a20010b00c8
+ack_ping,a55a100b200b0001785634125f0000c3dd
+ack_arm,a55a100b25070009bebafeca7f00009224
+ack_launch,a55a100b2608000a000000007f88136ce4
+ack_safe,a55a1004240c010cf1e7
+evt_ignition,a55a0207d20400000a0b134807
+ign,a55a04110a00320082003200781e001b3c0f500002b174
+tlm_armed,a55a0110090be110f4ff0300fc062d00ffc8a0211c1a
+bridge_config,a55a70005615
+bridge_ack,a55a710a00000000640317830000ea9e

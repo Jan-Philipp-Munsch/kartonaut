@@ -9,6 +9,8 @@ void run_tests_statememory();
 void run_tests_controllaw();
 void run_tests_landing();
 void run_tests_throttle();
+void run_tests_launch();
+void run_tests_radio_vectors();
 
 int main() {
   run_tests_attitude();
@@ -19,5 +21,7 @@ int main() {
   run_tests_controllaw();
   run_tests_landing();
   run_tests_throttle();
+  run_tests_launch();
+  run_tests_radio_vectors();
   return minitest::summary();
 }

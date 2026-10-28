@@ -5,7 +5,7 @@
 #include "BoardRevB.h"
 #include "BusRevB.h"
 #include "Imu.h"
-#include "ICM42688.h"
+#include "LSM6DSV16X.h"
 #include "BMP390.h"
 #include "INA239.h"
 #include "LIS3MDL.h"
@@ -19,7 +19,7 @@ namespace rb = revb;
 namespace board {
 
 extern BusRevB    bus;
-extern ImuDriver& imu;          // ICM-42688-P; ein zweiter Treiber wird hier eingehängt
+extern ImuDriver& imu;          // LSM6DSV16X (E12); ein anderer Treiber wird hier eingehängt
 extern BMP390     baro;
 extern BMP390     baro2;
 extern INA239     ina;

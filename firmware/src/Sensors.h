@@ -48,3 +48,9 @@ bool Sensors_calibrateStep(const SensorSample& s);   // true = fertig
 bool Sensors_calibrated();
 void Sensors_getBias(Vec3& gyro_bias_dps, float& ground_p_pa);
 void Sensors_setBias(const Vec3& gyro_bias_dps, float ground_p_pa);   // aus dem Zustandsspeicher
+
+// Schnelle Einzelmessungen für den Startpuls (Plan Bordzündung §4), außerhalb von Sensors_read() und
+// nie zwischen select() und deselect(). Rev B über die Analogmux (tau 2,5 ms am Teiler), in Volt am
+// Eingang des Teilers; Breakout: 0 (kein ARM, keine Durchgangsmessung).
+float Sensors_readArmV();             // VBAT_ARMED
+float Sensors_readPyroSenseV(int ch); // Drain des Pyro-Kanals ch (0 = Pyro 1)

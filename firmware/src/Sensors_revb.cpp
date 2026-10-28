@@ -1,18 +1,18 @@
 // Sensors_revb.cpp – Rückende für das Mainboard rev B (Umgebung teensy41_revb):
-// ICM-42688-P, BMP390, INA239 an SPI1 über den CS-Decoder, Akkus/ARM/Pyro-Durchgang über
+// LSM6DSV16X, BMP390/BMP388, INA239 an SPI1 über den CS-Decoder, Akkus/ARM/Pyro-Durchgang über
 // die Analogmux (lib/mainboard_revb/). Regeln aus BusRevB.h: kein SPI aus einer ISR, keine
 // Analogmessung zwischen select() und deselect().
 #include "Sensors_common.h"
 #include "BoardRevB.h"
 #include "BusRevB.h"
-#include "ICM42688.h"
+#include "LSM6DSV16X.h"
 #include "BMP390.h"
 #include "INA239.h"
 
 using namespace sensors_common;
 
 static BusRevB  bus;
-static ICM42688 imu(bus);
+static LSM6DSV16X imu(bus);
 static BMP390   baro(bus, revb::Cs::BARO);
 static INA239   ina(bus, revb::INA_SHUNT_OHM, revb::INA_MAX_CURRENT_A);
 static SensorStatus status;
@@ -88,3 +88,6 @@ bool Sensors_calibrateStep(const SensorSample& s) {
 bool Sensors_calibrated() { return cal.done; }
 void Sensors_getBias(Vec3& g, float& p0) { g = cal.gyro_bias_dps; p0 = cal.ground_p_pa; }
 void Sensors_setBias(const Vec3& g, float p0) { cal.gyro_bias_dps = g; cal.ground_p_pa = p0; cal.done = true; cal.running = false; }
+
+float Sensors_readArmV() { return bus.readMuxInputV(revb::Mux::ARM); }
+float Sensors_readPyroSenseV(int ch) { return bus.readMuxInputV(ch == 0 ? revb::Mux::PYRO1 : revb::Mux::PYRO2); }

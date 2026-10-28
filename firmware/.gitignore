@@ -9,3 +9,6 @@
 
 # Berichte von tools/bench_test.py
 test_reports/
+
+# Startschlüssel (Vorlage src/Secrets.example.h)
+src/Secrets.h

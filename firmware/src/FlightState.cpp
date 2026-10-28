@@ -11,6 +11,10 @@ const char* flightStateName(FlightState s) {
     case FlightState::LANDED: return "LANDED";
     case FlightState::ABORT: return "ABORT";
     case FlightState::LANDING_BURN: return "LANDING_BURN";
+    case FlightState::ARMED: return "ARMED";
+    case FlightState::COUNTDOWN: return "COUNTDOWN";
+    case FlightState::IGNITION: return "IGNITION";
+    case FlightState::MISFIRE: return "MISFIRE";
   }
   return "?";
 }
@@ -40,13 +44,33 @@ void FlightStateMachine::restore(FlightState s, uint32_t t_launch_ms, uint32_t t
   transition(s, FlightReason::RESTORED, now_ms);
 }
 
+bool FlightStateMachine::launchDetected(const FlightInputs& in) {
+  if (!held(launch_since_, in.a_norm_ms2 > p_.launch_accel_ms2, in.t_ms, p_.launch_hold_ms)) return false;
+  t_launch_ms_ = in.t_ms - p_.launch_hold_ms;
+  baro_max_m_ = in.baro_alt_m;
+  return true;
+}
+
 bool FlightStateMachine::update(const FlightInputs& in) {
   const uint32_t t = in.t_ms;
   const FlightState before = s_;
 
-  // Abbruch vom Boden gilt überall außer LANDED
+  // Abbruch im Startablauf: ARMED/COUNTDOWN zurück nach SAFE (Motor hat nicht gezündet),
+  // IGNITION nach MISFIRE (Puls aus, Spätzünder möglich), MISFIRE bleibt bis SAFE
+  if (in.cmd == FlightCmd::ABORT && launchSequence()) {
+    if (s_ == FlightState::ARMED || s_ == FlightState::COUNTDOWN) {
+      transition(FlightState::SAFE, FlightReason::CMD, t);
+      return true;
+    }
+    if (s_ == FlightState::IGNITION) {
+      transition(FlightState::MISFIRE, FlightReason::CMD, t);
+      return true;
+    }
+  }
+
+  // Abbruch vom Boden gilt sonst überall außer LANDED
   if (in.cmd == FlightCmd::ABORT && s_ != FlightState::LANDED && s_ != FlightState::ABORT
-      && s_ != FlightState::LANDING_BURN) {
+      && s_ != FlightState::LANDING_BURN && !launchSequence()) {
     landing_fallback_ = p_.landing_mode;      // Abbruch im Landemodus: Fallschirm statt Landebrennen
     transition(FlightState::ABORT, FlightReason::CMD, t);
     return true;
@@ -62,9 +86,54 @@ bool FlightStateMachine::update(const FlightInputs& in) {
 
     case FlightState::PAD_READY:
       if (in.cmd == FlightCmd::SAFE) { transition(FlightState::SAFE, FlightReason::CMD, t); break; }
-      if (held(launch_since_, in.a_norm_ms2 > p_.launch_accel_ms2, t, p_.launch_hold_ms)) {
-        t_launch_ms_ = t - p_.launch_hold_ms;
-        baro_max_m_ = in.baro_alt_m;
+      if (in.cmd == FlightCmd::ARM) {
+        if (in.launch_ready) {
+          t_armed_ms_ = t;
+          transition(FlightState::ARMED, FlightReason::CMD, t);
+        } else {
+          transition(FlightState::PAD_READY, FlightReason::NOT_READY, t);   // Ereignis zur Rückmeldung
+        }
+        break;
+      }
+      if (launchDetected(in)) transition(FlightState::BOOST, FlightReason::ACCEL, t);
+      break;
+
+    case FlightState::ARMED:
+    case FlightState::COUNTDOWN:
+      if (in.cmd == FlightCmd::SAFE) {
+        transition(FlightState::SAFE, FlightReason::CMD, t);
+      } else if (!in.launch_ready) {
+        transition(FlightState::SAFE, FlightReason::PRECOND_LOST, t);
+      } else if (in.heartbeat_age_ms > p_.heartbeat_timeout_ms) {
+        transition(FlightState::SAFE, FlightReason::HEARTBEAT_LOST, t);
+      } else if (s_ == FlightState::ARMED) {
+        if (t - t_armed_ms_ >= p_.arm_timeout_ms) {
+          transition(FlightState::SAFE, FlightReason::ARM_TIMEOUT, t);
+        } else if (in.cmd == FlightCmd::LAUNCH) {
+          t_countdown_ms_ = t;
+          transition(FlightState::COUNTDOWN, FlightReason::CMD, t);
+        }
+      } else if (t - t_countdown_ms_ >= p_.countdown_ms) {
+        t_ign_start_ms_ = t;
+        transition(FlightState::IGNITION, FlightReason::COUNTDOWN_END, t);
+      }
+      break;
+
+    case FlightState::IGNITION:
+      // Vorbedingungen gelten hier nicht mehr: der Durchgang verschwindet, wenn der Anzünder durchbrennt
+      if (launchDetected(in)) {
+        onboard_launch_ = true;
+        transition(FlightState::BOOST, FlightReason::ACCEL, t);
+      } else if (t - t_ign_start_ms_ >= p_.thrust_timeout_ms) {
+        transition(FlightState::MISFIRE, FlightReason::THRUST_TIMEOUT, t);
+      }
+      break;
+
+    case FlightState::MISFIRE:
+      if (in.cmd == FlightCmd::SAFE) {
+        transition(FlightState::SAFE, FlightReason::CMD, t);
+      } else if (launchDetected(in)) {        // Spätzünder: normaler Flug mit Bergung
+        onboard_launch_ = true;
         transition(FlightState::BOOST, FlightReason::ACCEL, t);
       }
       break;

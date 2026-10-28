@@ -14,12 +14,13 @@
 A thrust-vector-controlled (TVC) model rocket with a home-built flight computer, modelled on the
 "Scout F" by [BPS.space](https://bps.space). The motor sits in a two-servo gimbal; a Teensy 4.1 with
 IMU, barometer, power monitor, SD logger and a 433 MHz LoRa link holds the attitude and talks to a
-ground station operated from a phone. The whole system is simulated in a six-degree-of-freedom model
-before it flies. *Kartonaut 1* flies on one TSP E12, holds its attitude during the burn and comes back
-on a parachute pushed out by a CO₂ cartridge. Landing legs, a landing burn on a second motor, a roll
-motor and pyro channels are kept for later flights and already provided for on the board.
+laptop by radio; on the laptop's authenticated launch command it ignites its own motor. The whole system
+is simulated in a six-degree-of-freedom model before it flies. *Kartonaut 1* flies on one TSP E12, holds
+its attitude during the burn and comes back on a parachute pushed out by a CO₂ cartridge. Landing legs, a
+landing burn on a second motor and a roll motor are kept for later flights and already provided for on
+the board.
 
-*Last updated: 27 Oct 2026.*
+*Last updated: 28 Oct 2026.*
 
 <img src="docs/img/bauanleitung/Z1_uebersicht.png" width="260" align="right" alt="Kartonaut 1 in modular construction: overview drawing">
 
@@ -34,10 +35,10 @@ motor and pyro channels are kept for later flights and already provided for on t
 | Power | two batteries: 1S LiPo for the electronics (buck-boost), 2S LemonRC 450 mAh for the servos; FET load switches behind a mechanical switch, both charged inside the rocket |
 | Actuators | push-rod gimbal with 2 × FrSky Xact W5652H directly on 2S (built and fitted into tube A); one servo releases the CO₂ cartridge. No roll motor on the first flight |
 | Recovery | 8 g CO₂ cartridge pushes the nose cone off; 125 cm parachute in tube C |
-| Control | attitude as a quaternion from the gyro, PID on pitch/yaw → torque → gimbal angle via `M = l · T · sin δ`; 100 Hz; roll uncontrolled. Flight state machine `SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED` with watchdog and state memory |
+| Control | attitude as a quaternion from the gyro, PID on pitch/yaw → torque → gimbal angle via `M = l · T · sin δ`; 100 Hz; roll uncontrolled. Flight state machine `SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED` with watchdog and state memory, preceded by the launch sequence `ARMED → COUNTDOWN → IGNITION` |
 | Simulation | Python 6DOF: at 705 g one E12 carries the rocket to about 74 m (no drag); Kp 2 / Ki 1 / Kd 0.45 from a Bayesian optimisation keep the tilt below 2.5° without hitting the gimbal stop |
-| Ground system | **Since 27 Oct: on-board motor ignition** through pyro channel 1, triggered by an authenticated radio command (ARM/LAUNCH with HMAC, countdown, heartbeat) from a laptop through a radio bridge made of a Raspberry Pi Pico and an E22 USB radio ([plan](docs/Plan_Bordzuendung_2026-10-27.md)); launch stand 600 × 600 mm on three adjustable legs. The ESP32 station with its firing line stays documented as a later option |
-| Status | gimbal, tube A and tube B built; board ordered and in production, hand-solder parts from DigiKey on the way; flight and bench-test firmware written and tested without hardware; **no flight yet** |
+| Ground system | **Since 27 Oct: on-board motor ignition** through pyro channel 1, triggered by an authenticated radio command (ARM/LAUNCH with an HMAC over a one-time random number, 5 s countdown, heartbeat) from a laptop through a radio bridge made of a Raspberry Pi Pico and an E22 ([`tools/ground/`](tools/ground/README.md)) ([plan](docs/Plan_Bordzuendung_2026-10-27.md)); launch stand 600 × 600 mm on three adjustable legs. The ESP32 station with its firing line stays documented as a later option |
+| Status | gimbal, tube A and tube B built; board ordered and in production, hand-solder parts from DigiKey on the way; flight and bench-test firmware including on-board ignition written and tested without hardware; **no flight yet** |
 
 ## Project status
 
@@ -53,13 +54,18 @@ motor and pyro channels are kept for later flights and already provided for on t
 - **Ground station** (concept, safety concept, circuit, BOM, ESP32-S3 firmware with web UI) and **launch stand**; launch stand and **TVC test rig** moved onto the built rocket on 27 Oct and checked in CAD (guides at 45°/135°/250°, no igniter box any more; test-rig printed parts as STL); interfaces rocket/pad/station/phone defined; budget plan to the first flight.
 - CI on GitHub Actions: every PlatformIO environment, simulation tests, native and host tests, pin check against the board.
 
+**Waiting for review and merge**
+
+- **On-board motor start** ([PR #8](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/8), branch `claude/bold-gauss-ar9lia`, implemented per [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md)): states ARMED, COUNTDOWN, IGNITION, MISFIRE; ARM and LAUNCH with HMAC-SHA256 over a TRNG random number that is valid only once; heartbeat, preconditions shown in plain words on the laptop, servo self-test; launch pulse on pyro 1 (ends on thrust, when the igniter burns through, or after 300 ms), continuity measured in a short gap, IGN frame with timestamps and voltage sag; laptop tool [`tools/ground/`](tools/ground/README.md) with the radio bridge firmware (Pico + E22, [`bridge_pico/`](tools/ground/bridge_pico/README.md)); 66 native tests (24 new) and 23 Python tests with shared test vectors. Not run on hardware.
+- **Assembling and testing board rev B1** (same PR): [part II of the build manual](docs/Platine_revB1_Bestueckung_Pruefung.md) with a placement plan of the 42 hand-soldered parts in four stages, multimeter checks after each stage, test sequence V01–V12 with `revb_test`, flight firmware and on-board ignition with a dummy load; combined [PDF](docs/bauanleitung/Bauanleitung_Kartonaut1.pdf). Plus the **LSM6DSV16X driver** (the board's IMU) behind `Imu.h`, wired into the test console, bring-up and flight firmware, core with a host test in CI.
+
 **Next**
 
 1. Order only three E22-400T22S from AliExpress (two boards, one ground station; €28.72 including import charges, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); a Raspberry Pi Pico for the radio bridge (on hand or Berrybase), print its enclosure with the dipole (`cad/groundbridge.py`); test the existing batteries (2S and 1S fit the bays), check whether epoxy is on hand (Teensy pin headers, switches and a u-blox NEO-6M GPS are on hand); print the state 2d parts (GPS holder for the NEO-6M is in, sled 58 instead of 64 g) and weigh them. The board arrives around 4–6 Nov, then solder in the hand-solder parts.
-2. Firmware: **on-board ignition with the authenticated launch protocol and a laptop script** per [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md) (cloud session), LSM6DSV16X driver behind `Imu.h`, CO₂ release from the state machine, calibration data into the rev B sensor path.
+2. Firmware: CO₂ release from the state machine, calibration data into the rev B sensor path; measurement gap also for the recovery pulses (PROJECT.md finding 24).
 3. Build the rocket after the manual: print and weigh the parts, weigh the rocket, balance the centre of gravity, put mass, lever arm and the new gains into `Config.h`.
 4. Bench test of rev B1 with `revb_test`, then ground tests: servo-to-gimbal ratio (E01/E02), CO₂ ejection three times (also cold), TVC test rig with the propeller motor, radio range, launch sequence with a dummy load instead of the igniter, then an igniter without motor (burn-through time, polyfuse F1).
-5. Build the launch stand (about €68); route the igniter lead past the gimbal. Build the test rig: measure the motor-tube bore and the BR2814, print the parts from `cad/export/testrig/`, balance the rocket with the drive.
+5. Build the launch stand (about €68); route the igniter lead past the gimbal ([build manual §2.6](docs/Bauanleitung_Kartonaut1.md)), fit an arming screw switch rated ≥ 5 A, flash the radio bridge and set it up with `launch.py --config`, create the key with `launch.py --new-key`. Build the test rig: measure the motor-tube bore and the BR2814, print the parts from `cad/export/testrig/`, balance the rocket with the drive.
 6. *Kartonaut 1*: controlled ascent on one motor, parachute recovery.
 
 Work packages, findings and changelog are in [PROJECT.md](PROJECT.md), the build log in
@@ -195,16 +201,24 @@ The firmware matches it: [`firmware/lib/mainboard_revb/`](firmware/README.md) ho
 and drivers; `check_board_pins.py` compares the pins with `circuit.py`, also in CI. Rev A and the
 reasoning behind the sled layout are kept in [`rev_a_2026-10-15.md`](hardware/mainboard/rev_a_2026-10-15.md).
 
-## Ground station and launch stand
+## Motor start, ground station and launch stand
 
 <img src="docs/img/cad/landingpad.png" width="300" align="right" alt="Launch stand with Kartonaut 1">
 
-The **ground station** ([groundstation/](groundstation/README.md)) ignites the motor over a 15 m line,
-receives the LoRa telemetry and shows both in the phone's browser through its own Wi-Fi access point.
-The station decides, the phone displays: arming only works with the key and the ARM switch on the box,
-the ignition path runs through a relay and a MOSFET, the launch interlock checks igniter continuity,
-fresh telemetry and the flight state `PAD_READY`; a heartbeat from the phone aborts the countdown on
-connection loss. Budget version from modules about €80 ([circuit](groundstation/Schaltung.md)).
+**On-board motor start (since 27 Oct 2026):** the rocket ignites its own motor through pyro channel 1. At
+the pad the main switch, the igniter and then the arming switch are set by hand; then everyone walks away
+and the laptop with the radio bridge (Raspberry Pi Pico and E22) takes over ([`tools/ground/launch.py`](tools/ground/README.md)):
+`PAD_READY` (the gimbal servos test themselves), `ARM` and `LAUNCH` (only after typing `START`). ARM and
+LAUNCH carry an HMAC over a random number from the rocket that is valid only once; another radio or a
+recorded command cannot fire. The rocket checks its preconditions (arming voltage, igniter continuity,
+batteries, stillness and tilt, sensors and logging, servo test, key) before ARM and continuously until
+ignition; if the laptop's heartbeat is missing for more than 1 s it goes back to SAFE, and `ABORT` (space
+bar) always works. The launch pulse ends on thrust, when the igniter burns through, or after 300 ms at the
+latest; an `IGN` frame then reports the timestamps and the voltage sag. Checklist:
+[build manual §6.1](docs/Bauanleitung_Kartonaut1.md), firmware: [firmware/README.md](firmware/README.md).
+
+The **ESP32 ground station** ([groundstation/](groundstation/README.md)) with a 15 m firing line, key,
+relay and phone UI is designed, but no longer needed for *Kartonaut 1* and stays as a later option.
 
 The **launch stand** ([`cad/landingpad.py`](cad/README.md)) is a 600 × 600 mm plywood plate with a hole
 for the jet, three individually adjustable M10 legs (up to 23° ground slope) and three removable guides
@@ -221,8 +235,8 @@ brushless motor (Racerstar BR2814, 1000 KV, 11-inch propeller, 4S LiPo) sits in 
 the rocket motor. The drive is bought, the rig is designed around the built rocket in
 [`cad/testrig.py`](cad/README.md) (pivot 200 mm above the nozzle, clamp collar with windows for the hatches, drive in the
 built motor tube); the five printed parts are STL files in `cad/export/testrig/`. Added
-to that: the CO₂ ejection test, radio range with two E22 modules and the interlock test from the phone
-down to a lamp on the firing line. Experiments are prepared as ready-to-run procedures in
+to that: the CO₂ ejection test, radio range with two E22 modules and the launch sequence from the laptop
+to a dummy load on pyro 1, then an igniter without a motor. Experiments are prepared as ready-to-run procedures in
 [`docs/experiments/`](docs/experiments/README.md), bench procedures for the board in
 [`firmware/Versuche_revB1.md`](firmware/Versuche_revB1.md).
 
@@ -243,7 +257,7 @@ reset.
 cd firmware
 pio run                            # flight firmware, breakout setup
 pio run -e teensy41_revb           # flight firmware for mainboard rev B1
-pio test -e native                 # 42 tests without hardware
+pio test -e native                 # 66 tests without hardware
 pio run -e revb_test -t upload     # bench-test console for rev B1
 python tools/bench_test.py         # drive the console from the PC, report as Markdown + JSON
 python tools/check_board_pins.py   # firmware pins against circuit.py
@@ -252,6 +266,8 @@ python tools/check_board_pins.py   # firmware pins against circuit.py
 The bench test step by step is in [`firmware/Tischtest_revB1.md`](firmware/Tischtest_revB1.md). Pins,
 gains, thresholds and switches live in [`firmware/src/Config.h`](firmware/src/Config.h); the controllers
 stay off there until the test rig clears them, and the landing burn is disabled (`RECOVERY_MODE = CHUTE`).
+The launch key lives in `firmware/src/Secrets.h` (not in the repository, template `Secrets.example.h`);
+without it the firmware refuses ARM.
 
 ## Repository layout
 
@@ -262,12 +278,13 @@ firmware/               flight firmware (PlatformIO, Teensy 4.1)              ->
   lib/calstore/         calibration data with CRC, ellipsoid fit, axis mapping
   examples/             revb_test, revb_bringup, servo_ident and small test sketches
   test/                 native tests (pio test -e native) and host tests
-groundstation/          ground station: concept, circuit, ESP32-S3 firmware   -> groundstation/README.md
+tools/ground/           laptop tool and radio bridge (Pico + E22)             -> tools/ground/README.md
+groundstation/          ground station (later option): concept, circuit, ESP32-S3 firmware -> groundstation/README.md
 simulation/             6DOF simulation in Python, package tvcsim             -> simulation/README.md
 hardware/mainboard/     mainboard: specification, decisions, KiCad from code, fab files, datasheet, reviews, order
 cad/                    parametric CAD, modular construction, launch stand, test rig, mass models -> cad/README.md
 docs/                   build manual, experiments, design guide, build log, plans, budget, reviews, images
-.github/workflows/      CI: PlatformIO environments, simulation, native and host tests, pin check
+.github/workflows/      CI: PlatformIO environments, simulation, native and host tests, pin check, laptop tool
 PROJECT.md              project file: key data, work packages, findings, changelog
 ```
 
@@ -282,7 +299,8 @@ repository; their content is ported here.
 |---|---|
 | [PROJECT.md](PROJECT.md) | key data, work packages with status, findings, next steps, changelog |
 | [docs/Baustellen_2026-10-26.md](docs/Baustellen_2026-10-26.md) | open work by strand (board, repo, firmware, mechanics, simulation, ground systems) with a suggested order up to the first flight |
-| [docs/Bauanleitung_Kartonaut1.md](docs/Bauanleitung_Kartonaut1.md) | build manual: modules, parts list, build steps, maintenance, cable plan ([PDF](docs/bauanleitung/Bauanleitung_Kartonaut1.pdf), [drawings](docs/bauanleitung/Zeichnungen_Kartonaut1.pdf), [1:1 templates](docs/bauanleitung/Bohrschablonen_1zu1.pdf)) |
+| [docs/Bauanleitung_Kartonaut1.md](docs/Bauanleitung_Kartonaut1.md) | build manual part I: modules, parts list, build steps, maintenance, cable plan ([PDF with part II](docs/bauanleitung/Bauanleitung_Kartonaut1.pdf), [drawings](docs/bauanleitung/Zeichnungen_Kartonaut1.pdf), [1:1 templates](docs/bauanleitung/Bohrschablonen_1zu1.pdf)) |
+| [docs/Platine_revB1_Bestueckung_Pruefung.md](docs/Platine_revB1_Bestueckung_Pruefung.md) | build manual part II: assembling board rev B1 (placement plan, four stages), multimeter checks, tests with `revb_test`, flight firmware and on-board ignition (German) |
 | [cad/mass_stand2b.md](cad/mass_stand2b.md) | mass budget *Kartonaut 1*: mass, CG, lever arm, inertia, parts list |
 | [docs/Gewicht_und_Landung_2026-10-23.md](docs/Gewicht_und_Landung_2026-10-23.md) | weight levers to 593 g, gains, landing study with our masses |
 | [docs/Physik_Review_2026-10-23.md](docs/Physik_Review_2026-10-23.md) | physics review of the simulation, landing burn, throttle |
@@ -290,13 +308,15 @@ repository; their content is ported here.
 | [docs/Plan_2026-10-22.md](docs/Plan_2026-10-22.md) | plan to the first flight with milestones |
 | [docs/Budget_2026-10-22.md](docs/Budget_2026-10-22.md) | budget to the first flight |
 | [docs/BUILD.md](docs/BUILD.md) | as-built: parts, mechanics, wiring, tests, build log |
-| [docs/Schnittstellen_Bodensystem_2026-10-22.md](docs/Schnittstellen_Bodensystem_2026-10-22.md) | interfaces rocket/pad, firing line, radio, phone |
+| [docs/Plan_Bordzuendung_2026-10-27.md](docs/Plan_Bordzuendung_2026-10-27.md) | on-board motor start: risks, radio protocol, state machine, tests, implementation |
+| [docs/Schnittstellen_Bodensystem_2026-10-22.md](docs/Schnittstellen_Bodensystem_2026-10-22.md) | interfaces rocket/pad, radio (with ARM/LAUNCH since 27 Oct), firing line and phone (later option) |
+| [tools/ground/README.md](tools/ground/README.md) | laptop tool: launch, telemetry, key; radio bridge Pico + E22 |
 | [hardware/mainboard/README.md](hardware/mainboard/README.md) | mainboard specification |
 | [hardware/mainboard/review_brief_2026-10-23.md](hardware/mainboard/review_brief_2026-10-23.md) | rev B1 for the reviewer, with [review guide](hardware/mainboard/REVIEW_ANLEITUNG_revB1.md) and [shopping list](hardware/mainboard/EINKAUFSLISTE_revB1.md); [review package of 2026-10-26](hardware/mainboard/REVIEW_PAKET_2026-10-26.md) with checks run, reading order and decisions before ordering; [JLCPCB test quote](hardware/mainboard/Angebot_JLCPCB_2026-10-23.md); [JLCPCB order 2026-10-26](hardware/mainboard/Bestellung_JLCPCB_2026-10-26.md) (configuration, what JLCPCB assembles, what is hand-soldered); [procurement 2026-10-26](hardware/mainboard/Beschaffung_2026-10-26.md) (hand-soldered parts with article numbers and stock; DigiKey order 102484398 and JLCPCB order W2026102623077325 placed on 2026-10-26; §6b prepares the self-assembly option with a second DigiKey list); [final check of 2026-10-26](hardware/mainboard/Abschlusspruefung_2026-10-26.md) of the fab files against the spec and the JLCPCB limits; [review assessment](hardware/mainboard/Review_Bewertung_2026-10-26.md): the ten review questions answered with measured copper widths, pin-by-pin wiring check; points B1–B3 applied to the layout on 2026-10-26, fab files regenerated |
 | [hardware/mainboard/Komponenten_2026-10-22.md](hardware/mainboard/Komponenten_2026-10-22.md) | decisions, parts by rail and interface, pin budget |
 | [hardware/mainboard/ORDER.md](hardware/mainboard/ORDER.md) | order plan: gates, JLCPCB parameters, mating connectors, costs |
 | [docs/DesignGuide_Mainboard_revB.md](docs/DesignGuide_Mainboard_revB.md) | design with figures ([PDF](docs/DesignGuide_Mainboard_revB.pdf)) |
-| [groundstation/README.md](groundstation/README.md) | ground station: concept, safety, launch-site procedure, firmware, BOM |
+| [groundstation/README.md](groundstation/README.md) | ground station (later option): concept, safety, launch-site procedure, firmware, BOM |
 | [firmware/README.md](firmware/README.md) | firmware modules, flight sequence, telemetry, tests, rev B library |
 | [firmware/Tischtest_revB1.md](firmware/Tischtest_revB1.md) | bench test of rev B1 |
 | [simulation/README.md](simulation/README.md) | model, coordinates, assumptions, vehicle sets, results |

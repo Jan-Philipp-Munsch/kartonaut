@@ -6,9 +6,14 @@
 //   3. Kalman-Filter für Höhe und Vertikalgeschwindigkeit
 //   4. Flugzustandsautomat (FlightState.h) mit Kommandos vom Boden oder von USB
 //   5. Regler Pitch/Yaw (nur in BOOST) und Roll, Servos und H-Brücke
-//   6. Pyro (Pyro.h): nur in APOGEE/DESCENT mit ARM und Durchgang
+//   6. Pyro (Pyro.h): nur in APOGEE/DESCENT mit ARM und Durchgang; Startpuls nur in IGNITION
 //   7. Telemetrie 10 Hz (Telemetry.h) über Serial8, Ereignisse sofort
 //   8. Log-Frame auf die SD-Karte, Zustandsspeicher, Watchdog füttern
+//
+// Motorstart an Bord (docs/Plan_Bordzuendung_2026-10-27.md): ARM und LAUNCH kommen per Funk mit MAC
+// (LaunchAuth.h), die Vorbedingungen und Anzeigen stehen in LaunchControl.h, der Startpuls in Pyro.h.
+// Während des Pulses misst loop() VBAT_ARMED außerhalb des Takts mit 1 kHz und den Durchgang je Takt
+// in einer Messlücke; nach IGNITION geht einmal der IGN-Rahmen raus.
 //
 // Nach einem Watchdog-Neustart im Flug nimmt die Firmware den Zustand aus dem
 // Zustandsspeicher wieder auf (StateStore.h), statt in SAFE auf dem Pad zu beginnen.
@@ -31,6 +36,10 @@
 #include "LandingBurn.h"
 #include "ThrustCurveE12.h"
 #include "ThrottleLaw.h"
+#include "LaunchAuth.h"
+#include "LaunchControl.h"
+#include "Sha256.h"
+#include "E22Config.h"
 
 HardwareSerial& radio = Serial8;   // HC-12 heute, E22-400T22S auf rev B (transparenter Modus)
 
@@ -42,10 +51,11 @@ static FlightStateMachine fsm(FlightParams{
     FS_LAUNCH_ACCEL_MS2, FS_BURNOUT_AXIAL_MS2, FS_APOGEE_VZ_MS, FS_APOGEE_BARO_DROP_M, FS_LANDED_VZ_MS, FS_LANDED_ALT_M,
     FS_LAUNCH_HOLD_MS, FS_BURNOUT_HOLD_MS, FS_BURN_MAX_MS, FS_APOGEE_EARLIEST_MS, FS_APOGEE_HOLD_MS,
     FS_APOGEE_FALLBACK_MS, FS_DESCENT_AFTER_MS, FS_LANDED_HOLD_MS, FS_FLIGHT_MAX_MS,
-    RECOVERY_MODE == RecoveryMode::LANDING_BURN, LANDING_BURN_MAX_MS});
+    RECOVERY_MODE == RecoveryMode::LANDING_BURN, LANDING_BURN_MAX_MS,
+    ARM_TIMEOUT_S * 1000, LAUNCH_COUNTDOWN_S * 1000, HEARTBEAT_TIMEOUT_MS, LAUNCH_THRUST_TIMEOUT_MS});
 static PyroLogic pyro(PyroParams{{PYRO_PULSE_MS, RECOVERY_MODE == RecoveryMode::LANDING_BURN ? PYRO_IGNITER_PULSE_MS : PYRO_PULSE_MS},
                                  PYRO_MIN_FLIGHT_MS, PYRO_BACKUP_DELAY_MS, PYRO_RETRY_DELAY_MS, PYRO_MAX_FIRES,
-                                 RECOVERY_MODE == RecoveryMode::CHUTE});
+                                 RECOVERY_MODE == RecoveryMode::CHUTE, LAUNCH_PULSE_MAX_MS});
 static LandingPlanner landing(LandingParams{LANDING_MASS_KG, LANDING_FUEL_KG, LANDING_CD_A_M2, LANDING_RHO,
                                             LANDING_IGNITER_DELAY_S, 1.0f / LOOP_HZ, LANDING_MIN_SPEED_MS,
                                             LANDING_THRUST_SCALE},
@@ -58,6 +68,29 @@ static ThrottleLaw throttle(ThrottleLawParams{THROTTLE_F_MIN, THROTTLE_H_RESERVE
                             thrustcurve::E12_T_S, thrustcurve::E12_F_N, thrustcurve::E12_N);
 static float throttle_u = 0.0f;
 static tlm::Parser radioParser;
+
+// Motorstart an Bord
+constexpr int PIN_LAUNCH = (LAUNCH_CH == 0) ? PIN_PYRO1 : PIN_PYRO2;
+static LaunchAuth auth(LAUNCH_KEY, ROCKET_ID);
+static LaunchPreconditions preconds(PrecondParams{LAUNCH_MIN_VBAT1_V, LAUNCH_MIN_VBAT2_V, LAUNCH_STILL_DPS,
+                                                  LAUNCH_STILL_HOLD_MS, LAUNCH_MAX_TILT_DEG});
+static ServoSelfTest servoTest(SERVO_TEST_DEG, SERVO_TEST_STEP_MS, SERVO_TEST_MIN_A);
+static IgnitionRecorder ign;
+static bool     launch_fire = false;          // Sollzustand des Startkanals
+static bool     gap_cont = false;             // Durchgang aus der letzten Messlücke
+static uint32_t last_cmd_ms = 0;              // letztes Kommando vom Boden (Heartbeat)
+static uint32_t state_since_ms = 0;           // Eintritt in den aktuellen Zustand
+static uint32_t last_arm_sample_us = 0;
+static float    arm_loop_min_V = 1e9f;        // kleinste VBAT_ARMED der schnellen Messung in diesem Takt
+static LaunchSignal last_signal;
+static FlightState pending_before = FlightState::SAFE;
+
+// Log-Frames laufen in SAFE und PAD_READY durch einen Ringpuffer (Verzögerung LOG_PRE_ARM_MS): fällt ein
+// Frame hinten heraus, wird er mit der Pad-Rate geschrieben oder verworfen. Ab ARMED (und im Flug) wird
+// der Puffer mit LOG_RING_DRAIN_PER_LOOP Frames je Takt geleert; so stehen die 2 s vor ARMED mit voller
+// Rate im Log und die Zeitmarken bleiben in Reihenfolge.
+struct RingFrame { SDFrame f; uint32_t ts_us; uint32_t loop; };
+static LogRing<RingFrame, size_t(LOG_PRE_ARM_MS * LOOP_HZ / 1000)> logRing;
 
 static SensorSample sample;
 static float a_norm_filt = G_MS2;
@@ -82,6 +115,97 @@ static uint8_t  flags = 0;
 static inline uint32_t clock_ms() { return millis() + clock_offset_ms; }
 static inline uint32_t flight_ms(uint32_t t) { return fsm.launchTime() ? t - fsm.launchTime() : t; }
 
+// ======= Zufallszahlen (TRNG des i.MX RT1062) für die nonce =======
+// Der TRNG liefert 512 bit je Lauf (ENT0..15); das Lesen von ENT15 startet den nächsten Lauf.
+// trngPoll() holt fertige Worte ohne zu warten in einen Vorrat, trngNext() nimmt daraus.
+static uint32_t trng_pool[16];
+static int      trng_n = 0;
+
+static void trngBegin() {
+  CCM_CCGR6 |= CCM_CCGR6_TRNG(CCM_CCGR_ON);
+  TRNG_MCTL = TRNG_MCTL_RST_DEF | TRNG_MCTL_PRGM;   // Programmiermodus, Standardwerte
+  TRNG_MCTL = TRNG_MCTL_SAMP_MODE(2);               // Laufmodus, von-Neumann-Entzerrung
+  (void)TRNG_ENT15;                                 // ersten Lauf starten
+}
+
+static void trngPoll() {
+  if (trng_n > 0) return;
+  if (TRNG_MCTL & TRNG_MCTL_ERR) { trngBegin(); return; }
+  if (!(TRNG_MCTL & TRNG_MCTL_ENT_VAL)) return;
+  volatile uint32_t* ent = &TRNG_ENT0;
+  for (int i = 0; i < 16; ++i) trng_pool[i] = ent[i];   // ENT15 zuletzt: nächster Lauf
+  trng_n = 16;
+}
+
+static uint32_t trngNext() {
+  const uint32_t t0 = millis();
+  while (trng_n == 0 && millis() - t0 < 20) trngPoll();
+  if (trng_n > 0) return trng_pool[--trng_n];
+  // Rückfall (TRNG nicht bereit): Zähler und Zeit mischen, nie zweimal derselbe Wert
+  static uint32_t ctr = 0;
+  uint8_t buf[12], h[32];
+  const uint32_t a = ARM_DWT_CYCCNT, b = micros(), c = ++ctr;
+  memcpy(buf, &a, 4); memcpy(buf + 4, &b, 4); memcpy(buf + 8, &c, 4);
+  sha256(buf, sizeof buf, h);
+  uint32_t r; memcpy(&r, h, 4);
+  Serial.println("WARNUNG: TRNG nicht bereit, nonce aus Zeitgeber");
+  return r;
+}
+
+// ======= E22 (rev B): Register beim Start prüfen, nur bei Abweichung schreiben =======
+// Ab Werk steht das Modul auf 2,4 kbit/s; Rakete und Funkbrücke am Laptop (tools/ground/bridge_pico,
+// launch.py --config) müssen dieselben Werte aus Config.h haben. Konfiguration: M0 = 0, M1 = 1, 9600 Bd; Lesen C1 00 09, Schreiben C0 00 09.
+#ifdef BOARD_REVB
+static bool e22WaitAux(uint32_t timeout_ms) {
+  const uint32_t t0 = millis();
+  while (!digitalRead(PIN_RADIO_AUX)) {
+    if (millis() - t0 > timeout_ms) return false;
+    delay(1);
+  }
+  return true;
+}
+
+static void e22Mode(bool config) {
+  digitalWrite(PIN_RADIO_M0, LOW);
+  digitalWrite(PIN_RADIO_M1, config ? HIGH : LOW);
+  delay(10);
+  e22WaitAux(500);
+  delay(10);
+}
+
+static bool e22Reply(uint8_t* buf, size_t n, uint32_t timeout_ms) {
+  size_t got = 0;
+  const uint32_t t0 = millis();
+  while (got < n && millis() - t0 < timeout_ms) {
+    if (radio.available()) buf[got++] = (uint8_t)radio.read();
+  }
+  return got == n;
+}
+
+static void e22Configure() {
+  pinMode(PIN_RADIO_M0, OUTPUT); pinMode(PIN_RADIO_M1, OUTPUT); pinMode(PIN_RADIO_AUX, INPUT);
+  e22Mode(true);
+  while (radio.available()) radio.read();
+  uint8_t want[e22::REG_COUNT];
+  e22::wantedRegs(want, false);
+  const uint8_t rd[3] = {0xC1, 0x00, e22::REG_COUNT};
+  radio.write(rd, sizeof rd);
+  uint8_t rep[3 + e22::REG_COUNT];
+  bool ok = e22Reply(rep, sizeof rep, 300) && rep[0] == 0xC1;
+  if (ok && memcmp(rep + 3, want, e22::REG_COUNT) != 0) {
+    uint8_t wr[3 + e22::REG_COUNT] = {0xC0, 0x00, e22::REG_COUNT};
+    memcpy(wr + 3, want, e22::REG_COUNT);
+    while (radio.available()) radio.read();
+    radio.write(wr, sizeof wr);
+    ok = e22Reply(rep, sizeof rep, 500) && rep[0] == 0xC1 && memcmp(rep + 3, want, e22::REG_COUNT) == 0;
+    Serial.printf("E22: Register %s\n", ok ? "neu geschrieben" : "FEHLER beim Schreiben");
+  } else {
+    Serial.printf("E22: %s\n", ok ? "Register stimmen" : "keine Antwort im Konfigurationsmodus");
+  }
+  e22Mode(false);                                   // transparent
+}
+#endif
+
 // ======= Telemetrie =======
 static void sendFrame(uint8_t type, const void* payload, size_t n) {
   uint8_t buf[tlm::MAX_PAYLOAD + tlm::OVERHEAD];
@@ -99,6 +223,22 @@ static void sendEvent(const FlightEvent& e) {
 static void sendAck(uint8_t cmd, uint8_t seq, uint8_t result) {
   tlm::AckPayload p{cmd, seq, result, (uint8_t)fsm.state()};
   sendFrame(tlm::ACK, &p, sizeof p);
+}
+
+// ACK auf PING, ARM und LAUNCH: mit nonce, Vorbedingungen und Countdown
+static void sendAckAuth(uint8_t cmd, uint8_t seq, uint8_t result) {
+  const uint32_t left = fsm.countdownLeftMs(clock_ms());
+  tlm::AckAuthPayload p{cmd, seq, result, (uint8_t)fsm.state(), auth.nonce(), preconds.mask(),
+                        (uint16_t)(left > 65535 ? 65535 : left)};
+  sendFrame(tlm::ACK, &p, sizeof p);
+}
+
+static void sendIgnition() {
+  const tlm::IgnPayload p = ign.payload();
+  sendFrame(tlm::IGN, &p, sizeof p);
+  Serial.printf("IGN: an %u ms, Durchgang weg %u ms, Schub %u ms, aus %u ms, Grund %u; ARM %u -> %u mV "
+                "(%u Messungen), 1S min %u mV\n", p.t_pulse_on_ms, p.t_cont_lost_ms, p.t_thrust_ms, p.t_pulse_off_ms,
+                p.end_reason, p.arm_before_mv, p.arm_min_mv, p.arm_samples, p.vbat1_min_mv);
 }
 
 static void sendTelemetry(uint32_t t) {
@@ -120,20 +260,49 @@ static void sendTelemetry(uint32_t t) {
   sendFrame(tlm::TLM, &p, sizeof p);
 }
 
-static void handleCommand(uint8_t type, uint8_t seq) {
+static void queueCommand(FlightCmd cmd, uint8_t type, uint8_t seq) {
+  if (pending_cmd == FlightCmd::ABORT && cmd != FlightCmd::ABORT) {   // Abbruch hat Vorrang
+    sendAck(type, seq, tlm::ACK_REFUSED);
+    return;
+  }
+  pending_cmd = cmd; pending_cmd_type = type; pending_cmd_seq = seq; pending_ack = true;
+}
+
+static void handleCommand(uint8_t type, const uint8_t* payload, size_t len) {
+  const uint8_t seq = len ? payload[0] : 0;
   switch (type) {
     case tlm::CMD_PING:
-      sendAck(type, seq, tlm::ACK_OK);
+      // in PAD_READY trägt die Antwort die nonce A für ARM (in ARMED die nonce B für LAUNCH)
+      if (fsm.state() == FlightState::PAD_READY && !auth.hasNonce()) auth.renew(trngNext());
+      sendAckAuth(type, seq, tlm::ACK_OK);
       break;
+    case tlm::CMD_HEARTBEAT:
+      break;                                          // nur Lebenszeichen (last_cmd_ms), kein ACK
+    case tlm::CMD_ARM:
+    case tlm::CMD_LAUNCH: {
+      const bool arm = type == tlm::CMD_ARM;
+      if (len < sizeof(tlm::CmdAuthPayload)
+          || fsm.state() != (arm ? FlightState::PAD_READY : FlightState::ARMED)) {
+        sendAckAuth(type, seq, tlm::ACK_REFUSED);
+        break;
+      }
+      const bool ok = auth.verify(type, seq, payload + 1);   // nonce ist jetzt verbraucht
+      // neue nonce: nach ARM die nonce B für LAUNCH (bei Ablehnung die nächste A);
+      // nach falschem LAUNCH eine neue B, nach gültigem LAUNCH keine mehr
+      if (arm || !ok) auth.renew(trngNext());
+      if (!ok) { sendAckAuth(type, seq, tlm::ACK_AUTH); break; }
+      queueCommand(arm ? FlightCmd::ARM : FlightCmd::LAUNCH, type, seq);
+      break;
+    }
     case tlm::CMD_CALIBRATE:
       if (fsm.state() == FlightState::SAFE || fsm.state() == FlightState::PAD_READY) {
         Sensors_calibrateStart(); calibrating = true;
         sendAck(type, seq, tlm::ACK_OK);
       } else sendAck(type, seq, tlm::ACK_REFUSED);
       break;
-    case tlm::CMD_PAD_READY: pending_cmd = FlightCmd::PAD_READY; pending_cmd_type = type; pending_cmd_seq = seq; pending_ack = true; break;
-    case tlm::CMD_ABORT:     pending_cmd = FlightCmd::ABORT;     pending_cmd_type = type; pending_cmd_seq = seq; pending_ack = true; break;
-    case tlm::CMD_SAFE:      pending_cmd = FlightCmd::SAFE;      pending_cmd_type = type; pending_cmd_seq = seq; pending_ack = true; break;
+    case tlm::CMD_PAD_READY: queueCommand(FlightCmd::PAD_READY, type, seq); break;
+    case tlm::CMD_ABORT:     queueCommand(FlightCmd::ABORT, type, seq); break;
+    case tlm::CMD_SAFE:      queueCommand(FlightCmd::SAFE, type, seq); break;
     default:
       sendAck(type, seq, tlm::ACK_UNKNOWN);
   }
@@ -142,18 +311,20 @@ static void handleCommand(uint8_t type, uint8_t seq) {
 static void pollRadio() {
   while (radio.available()) {
     if (radioParser.feed((uint8_t)radio.read())) {
-      const uint8_t seq = radioParser.length() ? radioParser.payload()[0] : 0;
-      handleCommand(radioParser.type(), seq);
+      if (radioParser.type() >= tlm::CMD_PING && radioParser.type() <= tlm::CMD_HEARTBEAT)
+        last_cmd_ms = clock_ms();                                        // jedes Kommando ist ein Lebenszeichen
+      handleCommand(radioParser.type(), radioParser.payload(), radioParser.length());
     }
   }
   // Tischtest ohne Bodenstation: Einzelbuchstaben auf USB-Serial
   while (Serial.available()) {
     const char c = (char)Serial.read();
     switch (c) {
-      case 'c': handleCommand(tlm::CMD_CALIBRATE, 0); break;
-      case 'r': handleCommand(tlm::CMD_PAD_READY, 0); break;
-      case 'a': handleCommand(tlm::CMD_ABORT, 0); break;
-      case 's': handleCommand(tlm::CMD_SAFE, 0); break;
+      // ARM und LAUNCH gibt es hier bewusst nicht: nur per Funk mit MAC (tools/ground/launch.py)
+      case 'c': handleCommand(tlm::CMD_CALIBRATE, nullptr, 0); break;
+      case 'r': handleCommand(tlm::CMD_PAD_READY, nullptr, 0); break;
+      case 'a': handleCommand(tlm::CMD_ABORT, nullptr, 0); break;
+      case 's': handleCommand(tlm::CMD_SAFE, nullptr, 0); break;
       case '?':
         Serial.printf("Zustand %s, kalibriert %d, IMU %d Baro %d Power %d, Reset: %s%s, Watchdog %s\n",
                       flightStateName(fsm.state()), (int)Sensors_calibrated(), (int)Sensors_status().imu_ok,
@@ -163,6 +334,9 @@ static void pollRadio() {
                       "ARM %d Durchgang %d/%d, Akkus %.2f/%.2f V\n",
                       tilt_x_deg, tilt_y_deg, attitude.tiltTotalDeg(), roll_deg, alt_m, vz_ms, sample.a_norm,
                       (int)sample.armed, (int)sample.continuity[0], (int)sample.continuity[1], sample.vbat1_V, sample.vbat2_V);
+        Serial.printf("Start: Vorbedingungen 0x%02X von 0x%02X, Schluessel %s, Servotest %s (Spitze %.2f A)\n",
+                      preconds.mask(), tlm::PRE_ALL, LAUNCH_ENABLED ? "da" : "FEHLT",
+                      servoTest.passed() ? "ok" : (servoTest.running() ? "laeuft" : "offen"), servoTest.peakCurrent());
         break;
       default: break;
     }
@@ -191,10 +365,13 @@ static void saveState(uint32_t t) {
 static bool tryRestore() {
   SavedState s;
   if (!StateStore_restore(s)) return false;
-  const FlightState st = (FlightState)s.state;
+  FlightState st = (FlightState)s.state;
+  // Neustart während IGNITION: der Puls ist aus, der Motor kann noch zünden -> MISFIRE (Starterkennung an).
+  // ARMED/COUNTDOWN werden nicht fortgesetzt: frischer Start in SAFE, neues ARM nötig.
+  if (st == FlightState::IGNITION) st = FlightState::MISFIRE;
   const bool in_flight = st == FlightState::BOOST || st == FlightState::COAST || st == FlightState::APOGEE
                          || st == FlightState::DESCENT || (st == FlightState::ABORT && s.t_launch_ms != 0);
-  if (!in_flight && st != FlightState::PAD_READY) return false;
+  if (!in_flight && st != FlightState::PAD_READY && st != FlightState::MISFIRE) return false;
   // Zeitachse fortsetzen: der Neustart kostete etwa Watchdog-Zeit plus Bootzeit
   clock_offset_ms = s.uptime_ms + WDT_TIMEOUT_MS + 300;
   Sensors_setBias(Vec3(s.gyro_bias_dps[0], s.gyro_bias_dps[1], s.gyro_bias_dps[2]), s.ground_p_pa);
@@ -220,6 +397,10 @@ static void indicateState(FlightState s) {
     case FlightState::DESCENT:   Indicate_color(40, 0, 40); break;
     case FlightState::LANDED:    Indicate_color(0, 40, 20); break;
     case FlightState::ABORT:     Indicate_color(60, 0, 0); break;
+    case FlightState::ARMED:
+    case FlightState::COUNTDOWN: Indicate_color(60, 0, 0); break;   // blinkt über launchSignal()
+    case FlightState::IGNITION:  Indicate_color(60, 60, 60); break;
+    case FlightState::MISFIRE:   Indicate_color(60, 20, 0); break;
   }
 }
 
@@ -250,14 +431,16 @@ void setup(){
   Control_setup();
   Sensors_setup();
 
-#ifdef BOARD_REVB
-  pinMode(PIN_RADIO_M0, OUTPUT); digitalWrite(PIN_RADIO_M0, LOW);   // E22 transparent
-  pinMode(PIN_RADIO_M1, OUTPUT); digitalWrite(PIN_RADIO_M1, LOW);
-#endif
   radio.begin(RADIO_BAUD);
+#ifdef BOARD_REVB
+  e22Configure();                                   // danach M0 = M1 = 0, transparent
+#endif
 
   pinMode(PIN_PYRO1, OUTPUT); digitalWrite(PIN_PYRO1, LOW);
   if (PIN_PYRO2 >= 0) { pinMode(PIN_PYRO2, OUTPUT); digitalWrite(PIN_PYRO2, LOW); }
+  trngBegin();
+  if (LAUNCH_ENABLED && !launch_auth::keyUsable(LAUNCH_KEY))
+    Serial.println("WARNUNG: Secrets.h enthaelt nur Nullen, ARM wird verweigert");
 
   kal.setDt(1.0f / LOOP_HZ, KALMAN_SIGMA_ACC_MS2);
   kal.setMeasStd(KALMAN_MEAS_STD_M);
@@ -293,8 +476,70 @@ void setup(){
   LoopTimer_init(loopTimer);
 }
 
+// Zustandswechsel: Startablauf vorbereiten und aufräumen
+static void onStateChange(FlightState from, FlightState to, uint32_t t) {
+  state_since_ms = t;
+  if (to == FlightState::PAD_READY) {
+    servoTest.start(t);                       // Vorbedingung 6
+    auth.renew(trngNext());                   // nonce A für ARM
+  }
+  if (to == FlightState::SAFE) {
+    servoTest.reset();
+    auth.discard();
+  }
+  if (to == FlightState::ARMED) {
+    pyro.resetLaunch();                       // neuer Startablauf (z. B. nach MISFIRE mit neuem Anzünder)
+    if (LOG_DATA && !SDLogger_isRecording()) SDLogger_start();
+  }
+  if (from == FlightState::ARMED && to != FlightState::ARMED) auth.discard();   // nonce B gilt nur in ARMED
+  if (to == FlightState::IGNITION) {
+    ign.begin(t, Sensors_readArmV());
+    last_arm_sample_us = 0;
+  }
+}
+
+// Log-Frame durch den Ringpuffer (siehe logRing)
+static void logRouted(const SDFrame& fr) {
+  const RingFrame rf{fr, micros(), loops};
+  const bool rec = SDLogger_isRecording();
+  if (fsm.state() == FlightState::SAFE || fsm.state() == FlightState::PAD_READY) {
+    RingFrame old;
+    if (logRing.size() == logRing.capacity() && logRing.pop(old) && rec && old.loop % LOG_PAD_EVERY_N_LOOPS == 0) {
+      SDLogger_logFrameAt(old.f, old.ts_us, LoopTimer_slack_us(loopTimer));
+      log_frames++;
+    }
+    logRing.push(rf);
+    return;
+  }
+  if (logRing.empty()) {
+    if (rec && (loops % LOG_EVERY_N_LOOPS) == 0) {
+      SDLogger_logFrameAt(fr, rf.ts_us, LoopTimer_slack_us(loopTimer));
+      log_frames++;
+    }
+    return;
+  }
+  logRing.push(rf);                           // hinten anstellen, damit die Zeitmarken steigen
+  RingFrame old;
+  for (uint32_t k = 0; k < LOG_RING_DRAIN_PER_LOOP && logRing.pop(old); ++k) {
+    if (!rec) continue;
+    SDLogger_logFrameAt(old.f, old.ts_us, LoopTimer_slack_us(loopTimer));
+    log_frames++;
+  }
+}
+
 void loop(){
   pollRadio();
+  trngPoll();
+  // Startpuls: VBAT_ARMED mit LAUNCH_ARM_SAMPLE_US abtasten, auch zwischen den Takten
+  if (launch_fire) {
+    const uint32_t now = micros();
+    if (now - last_arm_sample_us >= LAUNCH_ARM_SAMPLE_US) {
+      last_arm_sample_us = now;
+      const float v = Sensors_readArmV();
+      ign.armSample(v);
+      if (v < arm_loop_min_V) arm_loop_min_V = v;
+    }
+  }
   if (!LoopTimer_tick(loopTimer)) return;
   if (WDT_ENABLED) Watchdog_feed();
   const uint32_t t0 = micros();
@@ -346,6 +591,20 @@ void loop(){
   in.ignite_now = (fsm.state() == FlightState::DESCENT && RECOVERY_MODE == RecoveryMode::LANDING_BURN
                    && !fsm.landingFallback())
                   ? (THROTTLE_ENABLED ? throttle.shouldIgnite(alt_m, vz_ms) : landing.shouldIgnite(alt_m, vz_ms)) : false;
+  // Motorstart: Vorbedingungen (ARM und laufend in ARMED/COUNTDOWN), Lebenszeichen vom Boden
+  PrecondInputs pi;
+  pi.t_ms = t;
+  pi.armed = sample.armed;
+  pi.continuity = sample.continuity[LAUNCH_CH] && sample.pyro_fitted[LAUNCH_CH] && PIN_LAUNCH >= 0;
+  pi.vbat1_V = sample.vbat1_V; pi.vbat2_V = sample.vbat2_V;
+  pi.omega_max_dps = fmaxf(fabsf(sample.omega_dps.x), fmaxf(fabsf(sample.omega_dps.y), fabsf(sample.omega_dps.z)));
+  pi.tilt_deg = attitude.tiltTotalDeg();
+  pi.sensors_ok = Sensors_status().ok(); pi.calibrated = in.calibrated; pi.logging = SDLogger_isRecording();
+  pi.servo_test_ok = servoTest.passed();
+  pi.launch_enabled = LAUNCH_ENABLED && launch_auth::keyUsable(LAUNCH_KEY);
+  preconds.update(pi);
+  in.launch_ready = preconds.allOk();
+  in.heartbeat_age_ms = last_cmd_ms == 0 ? 0xFFFFFFFF : (t >= last_cmd_ms ? t - last_cmd_ms : 0);
   in.cmd = pending_cmd;
   pending_cmd = FlightCmd::NONE;
   const FlightState before = fsm.state();
@@ -358,11 +617,23 @@ void loop(){
       if (LOG_DATA && !SDLogger_isRecording()) SDLogger_start();
     }
   }
+  if (fsm.state() != before) onStateChange(before, fsm.state(), t);
   if (pending_ack) {
-    const bool ok = (pending_cmd_type == tlm::CMD_PAD_READY) ? fsm.state() == FlightState::PAD_READY
-                  : (pending_cmd_type == tlm::CMD_ABORT)     ? fsm.state() == FlightState::ABORT
-                  :                                            fsm.state() == FlightState::SAFE;
-    sendAck(pending_cmd_type, pending_cmd_seq, ok ? tlm::ACK_OK : tlm::ACK_REFUSED);
+    const FlightState st = fsm.state();
+    bool ok;
+    switch (pending_cmd_type) {
+      case tlm::CMD_PAD_READY: ok = st == FlightState::PAD_READY; break;
+      case tlm::CMD_ARM:       ok = st == FlightState::ARMED; break;
+      case tlm::CMD_LAUNCH:    ok = st == FlightState::COUNTDOWN; break;
+      case tlm::CMD_ABORT:     // im Startablauf heißt Abbruch SAFE (vor der Zündung) bzw. MISFIRE
+        ok = st == FlightState::ABORT || st == FlightState::MISFIRE
+             || (st == FlightState::SAFE && (before == FlightState::ARMED || before == FlightState::COUNTDOWN));
+        break;
+      default:                 ok = st == FlightState::SAFE; break;
+    }
+    const uint8_t res = ok ? tlm::ACK_OK : tlm::ACK_REFUSED;
+    if (pending_cmd_type == tlm::CMD_ARM || pending_cmd_type == tlm::CMD_LAUNCH) sendAckAuth(pending_cmd_type, pending_cmd_seq, res);
+    else sendAck(pending_cmd_type, pending_cmd_seq, res);
     pending_ack = false;
   }
 
@@ -372,7 +643,13 @@ void loop(){
   } else {
     py = PyOutput{};
     py.yaw_servo_deg = SERVO_YAW_OFFSET; py.pitch_servo_deg = SERVO_PITCH_OFFSET;
-    Servos_center();
+    const ServoTestOutput so = servoTest.update(t, sample.current_A);   // Selbsttest in PAD_READY
+    if (so.active) {
+      py.yaw_servo_deg += so.yaw_off_deg; py.pitch_servo_deg += so.pitch_off_deg;
+      Apply_servos_deg(py.yaw_servo_deg, py.pitch_servo_deg);
+    } else {
+      Servos_center();
+    }
   }
   if (ROLL_CONTROL_ACTIVE && (fsm.state() == FlightState::BOOST || fsm.state() == FlightState::COAST)) {
     roll = Control_updateRoll(roll_deg, sample.omega_dps.z, dt);
@@ -391,23 +668,74 @@ void loop(){
   Throttle_set(throttle_u);
 
   // --- 6. Pyro ---
+  const PyroGates gates = pyroGates(fsm, RECOVERY_MODE == RecoveryMode::CHUTE, LAUNCH_CH, PYRO_CH_CHUTE, PYRO_CH_IGNITER);
   PyroInputs pin;
   pin.t_ms = t; pin.t_launch_ms = fsm.launchTime();
-  pin.allowed[PYRO_CH_CHUTE] = fsm.pyroAllowed();
-  pin.allowed[PYRO_CH_IGNITER] = (RECOVERY_MODE == RecoveryMode::CHUTE) ? fsm.pyroAllowed() : fsm.igniterAllowed();
+  pin.allowed[0] = gates.recovery[0]; pin.allowed[1] = gates.recovery[1];
   pin.armed = sample.armed;
   pin.continuity[0] = sample.continuity[0]; pin.continuity[1] = sample.continuity[1];
   pin.fitted[0] = sample.pyro_fitted[0] && PIN_PYRO1 >= 0;
   pin.fitted[1] = sample.pyro_fitted[1] && PIN_PYRO2 >= 0;
   pyro.update(pin, pyro_fire);
-  digitalWrite(PIN_PYRO1, pyro_fire[0] ? HIGH : LOW);
-  if (PIN_PYRO2 >= 0) digitalWrite(PIN_PYRO2, pyro_fire[1] ? HIGH : LOW);
+
+  // Startpuls: während er läuft, je Takt eine Messlücke (FET aus, Drain lesen, FET an)
+  bool gap_valid = false;
+  if (launch_fire && PIN_LAUNCH >= 0) {
+    const float pre = Sensors_readPyroSenseV(LAUNCH_CH);
+    digitalWrite(PIN_LAUNCH, LOW);
+    delayMicroseconds(LAUNCH_GAP_US);
+    const float gap = Sensors_readPyroSenseV(LAUNCH_CH);
+    digitalWrite(PIN_LAUNCH, HIGH);
+    const float arm = Sensors_readArmV();
+    ign.armSample(arm);
+    if (arm < arm_loop_min_V) arm_loop_min_V = arm;
+    gap_cont = gapContinuity(pre, gap, arm, (float)LAUNCH_GAP_US, PYRO_SENSE_TAU_US, PYRO_GAP_RATIO);
+    gap_valid = true;
+    if (!gap_cont) ign.contLost(t);
+  }
+  LaunchPulseInputs li;
+  li.t_ms = t;
+  li.allowed = gates.launch;
+  li.armed = sample.armed;
+  li.continuity = gap_valid ? gap_cont : (sample.continuity[LAUNCH_CH] && sample.pyro_fitted[LAUNCH_CH] && PIN_LAUNCH >= 0);
+  li.continuity_valid = gap_valid || !launch_fire;
+  li.thrust = sample.a_norm > FS_LAUNCH_ACCEL_MS2;
+  const bool was_firing = launch_fire;
+  launch_fire = pyro.updateLaunch(li);
+  if (ign.active()) {
+    if (launch_fire && !was_firing) { ign.pulseOn(t); last_arm_sample_us = 0; }
+    if (!launch_fire && was_firing) ign.pulseOff(t, pyro.launchEndReason());
+    if (pyro.launchEndReason() == tlm::IGN_END_REFUSED) ign.refused();
+    if (launch_fire) ign.vbat1Sample(sample.vbat1_V);
+    if (li.thrust) ign.thrust(t);
+  }
+  const bool out0 = pyro_fire[0] || (LAUNCH_CH == 0 && launch_fire);
+  const bool out1 = pyro_fire[1] || (LAUNCH_CH == 1 && launch_fire);
+  digitalWrite(PIN_PYRO1, out0 ? HIGH : LOW);
+  if (PIN_PYRO2 >= 0) digitalWrite(PIN_PYRO2, out1 ? HIGH : LOW);
+  // IGN-Rahmen einmal, sobald IGNITION verlassen und der Puls aus ist
+  if (ign.active() && !fsm.launchAllowed() && !launch_fire) { sendIgnition(); ign.end(); }
+
+  // Summer und LED im Startablauf (ARMED, COUNTDOWN, MISFIRE)
+  const LaunchSignal sig = launchSignal(fsm.state(), t - state_since_ms, fsm.countdownLeftMs(t));
+  if (sig.active) {
+    digitalWrite(PIN_BEEPER, (sig.beep && !SILENT) ? HIGH : LOW);
+    if (!last_signal.active || sig.led_on != last_signal.led_on) {
+      if (!sig.led_on) Indicate_color(0, 0, 0);
+      else if (fsm.state() == FlightState::MISFIRE) Indicate_color(60, 20, 0);
+      else Indicate_color(60, 0, 0);
+    }
+  } else if (last_signal.active) {
+    digitalWrite(PIN_BEEPER, LOW);
+    indicateState(fsm.state());
+  }
+  last_signal = sig;
 
   // --- 7. Telemetrie 10 Hz ---
   if (t - last_tlm_ms >= TLM_PERIOD_MS) { last_tlm_ms = t; sendTelemetry(t); }
 
   // --- 8. Log, Zustandsspeicher, Landung ---
-  if (LOG_DATA && SDLogger_isRecording() && (loops % LOG_EVERY_N_LOOPS) == 0) {
+  if (LOG_DATA) {
     SDFrame fr;
     fr.kalman_alt_m = alt_m; fr.kalman_vz_ms = vz_ms; fr.baro_alt_m = sample.baro_alt_m;
     fr.a_nav_x_ms2 = a_nav.x; fr.a_nav_y_ms2 = a_nav.y; fr.a_nav_z_ms2 = a_nav.z;
@@ -421,16 +749,19 @@ void loop(){
     const uint32_t fds = flight_ms(t) / 100;
     fr.raw_i16[0] = (int16_t)(fds > 32767 ? 32767 : fds);
     fr.raw_i16[1] = flags;
-    fr.raw_i16[2] = pyro.fires(0) | (pyro.fires(1) << 4) | (pyro_fire[0] << 8) | (pyro_fire[1] << 9);
+    fr.raw_i16[2] = pyro.fires(0) | (pyro.fires(1) << 4) | (pyro_fire[0] << 8) | (pyro_fire[1] << 9)
+                  | (launch_fire << 10) | (gap_cont << 11) | (li.thrust << 12);
+    fr.load_V = arm_loop_min_V < 1e8f ? arm_loop_min_V : sample.arm_V;   // VBAT_ARMED
     fr.raw_i16[3] = tlm::clamp_i16(sample.a_body.z * 100.f);
     fr.raw_i16[4] = tlm::clamp_i16(py.yaw_tvc_deg * 100.f);
     fr.raw_i16[5] = tlm::clamp_i16(py.pitch_tvc_deg * 100.f);
     fr.raw_i16[6] = (int16_t)reset_cause;
     fr.raw_i16[7] = (int16_t)(throttle_u * 1000.0f);
-    SDLogger_logFrame(fr, LoopTimer_slack_us(loopTimer));
-    log_frames++;
+    logRouted(fr);
   }
-  if ((fsm.inFlight() || fsm.state() == FlightState::PAD_READY) && (loops % STATE_SAVE_EVERY_N_LOOPS) == 0) {
+  arm_loop_min_V = 1e9f;
+  if ((fsm.inFlight() || fsm.state() == FlightState::PAD_READY || fsm.launchSequence())
+      && (loops % STATE_SAVE_EVERY_N_LOOPS) == 0) {
     saveState(t);
   }
   if (fsm.state() == FlightState::LANDED && !log_closed) {
@@ -438,9 +769,10 @@ void loop(){
     StateStore_clear();
     if (LOG_DATA && SDLogger_isRecording()) SDLogger_stop();
   }
-  // Tischtest: nach N Frames stoppen und genau einmal als CSV exportieren
+  // Tischtest: nach N Frames stoppen und genau einmal als CSV exportieren (nie auf dem Pad oder im Startablauf,
+  // Logging ist dort Vorbedingung für ARM)
   if (LOG_DATA && LOG_STOP_AFTER_FRAMES > 0 && !log_exported && log_frames >= LOG_STOP_AFTER_FRAMES
-      && !fsm.inFlight()) {
+      && !fsm.inFlight() && !fsm.launchSequence() && fsm.state() != FlightState::PAD_READY) {
     SDLogger_stop();
     const SDExportResult res = SDLogger_exportLatestCSVx(true);
     if (res.ok) Serial.printf("Export: %s  Zeilen=%lu  Bytes=%llu\n", res.csv_name, (unsigned long)res.rows,

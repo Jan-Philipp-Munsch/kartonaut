@@ -49,7 +49,9 @@ struct SDFrame {
   float a_norm_ms2;        // |spezifische Kraft|
 
   // 8 rohe i16-Kanäle (1:1): 0 Flugzeit in 0,1 s, 1 Flags (tlm::Flag), 2 Pyro-Zündungen,
-  // 3 axiale spezifische Kraft ×100, 4 Kardan Yaw ×100, 5 Kardan Pitch ×100, 6 Reset-Ursache, 7 frei
+  // 3 axiale spezifische Kraft ×100, 4 Kardan Yaw ×100, 5 Kardan Pitch ×100, 6 Reset-Ursache, 7 Drossel ×1000.
+  // Kanal 2 ab 27.10.2026 zusätzlich: Bit 10 Startpuls an, Bit 11 Durchgang in der Messlücke, Bit 12 Schub
+  // erkannt. load_V trägt seitdem VBAT_ARMED (kleinster Wert der schnellen Messung im Takt).
   int16_t raw_i16[8];
 
   SDFrame()
@@ -66,6 +68,10 @@ struct SDFrame {
 // Log-Frame schreiben (RAM-seitig packen & page-buffern).
 // slack_us = verbleibende µs bis zur Loop-Deadline (0 ⇒ kein Sync im Flug).
 bool SDLogger_logFrame(const SDFrame& f, uint32_t slack_us);
+
+// Dasselbe mit eigener Zeitmarke (micros() beim Entstehen des Frames), für den Ringpuffer vor ARMED.
+// Die Zeitmarken im Log müssen steigen.
+bool SDLogger_logFrameAt(const SDFrame& f, uint32_t ts_us, uint32_t slack_us);
 
 // Wrapper für alte Aufrufe ohne Slack (übernimmt slack_us=0)
 bool SDLogger_logFrame(const SDFrame& f);

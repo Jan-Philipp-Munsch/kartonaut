@@ -333,6 +333,13 @@ def build():
                    "Brücke mit Flussmittel und Litze entfernen"],
                   ["3V3 gegen GND", "U12 Pin 16 gegen TP GND", "kein Piepen", "Brücke an U12/U13 (Pin 16 = 3V3, Pin 8 = GND)"],
                   ["FB1", "beide Pads von FB1", "Durchgang (< 1 Ω)", "Lötstelle"]]),
+            note("<b>Vor den Buchsenleisten: LoRa-Pads vorverzinnen.</b> Die rechte Padreihe von U10 (E22, Pins 1–8 und "
+                 "11–13) endet 0,2 mm vor dem Lötring der linken Teensy-Leiste; die Modulkante liegt nur 0,7 mm vor dem "
+                 "Leistenkörper. Nach dem Einlöten der Leisten kommt keine Lötspitze mehr hinein. Deshalb jetzt diese 11 Pads "
+                 "dünn verzinnen (kleiner Hügel, flach). Später das Modul mit Flussmittel auflegen, die Außenseite mit dem "
+                 "Kolben löten und die Innenseite mit Heißluft (≈ 320 °C, wenig Luft, Leiste mit Kaptonband abdecken) "
+                 "nachschmelzen. Angeschlossen sind dort nur NRST (Pin 1) und GND; alle Signale und 3V3_RF liegen außen. "
+                 "Ist das Modul schon da, U10 am besten <b>vor</b> den Buchsenleisten einlöten."),
             P("Teensy-Sockel A1", "h2"),
             P("Beide Buchsenleisten 1×24 auf die Stifte des Teensy stecken, den Teensy samt Leisten einsetzen und die Leisten "
               "von unten verlöten, dabei den Teensy <b>nicht</b> mitlöten. Lage: <b>USB-Buchse zeigt nach oben</b> (zur "
@@ -370,6 +377,9 @@ def build():
         5: [P("Diese Teile sind noch unterwegs. Die Platine läuft ohne sie: Ohne <b>U6</b> fehlt nur die Strommessung "
               "VSERVO, ohne <b>J11</b> der GPS-Stecker (Litzen gingen auch direkt), ohne <b>U10</b> der Funk. Die "
               "Testfirmware meldet sie als nicht bestückt, bis du sie in der Bestückungsliste einschaltest (Kapitel 7)."),
+            note("<b>U10 bei schon eingelöteten Teensy-Leisten:</b> Außenseite (3V3_RF, M0, M1, RXD, TXD, AUX, GND) mit dem "
+                 "Kolben, Innenseite zur Leiste nur über die vorverzinnten Pads mit Heißluft; notfalls bleibt NRST (Pin 1) "
+                 "offen, der Funk geht trotzdem (die Firmware setzt das Modul dann nicht hart zurück)."),
             *bullets(["<b>U6 INA239</b> (VSSOP-10, 0,5 mm Raster): wie TSSOP schlepplöten. Pin 1 (Punkt) oben links. "
                       "Danach Nachbarpins mit dem Piepser prüfen; Pin 6 (3V3) darf nicht an Pin 7 (GND) hängen.",
                       "<b>J11</b>: Haltelaschen zuerst. Pin 1 = 3V3_RF, 2 = GND, 3 = TX vom GPS, 4 = RX zum GPS.",

@@ -46,6 +46,17 @@ public:
   virtual bool dataReady() = 0;
   virtual void read(ImuSample& s) = 0;
 
+  // Mittel über alle Sätze seit dem letzten Aufruf (Flug-Loop, 250 Hz bei 960 Hz IMU-Rate):
+  // glättet und unterdrückt Aliasing, ohne den Loop zu bremsen. Rückgabe = Zahl der
+  // gemittelten Gyro-Sätze, 0 = nichts Neues (s unverändert). Ohne FIFO: ein Satz.
+  virtual int readAveraged(ImuSample& s) {
+    if (!dataReady()) return 0;
+    read(s);
+    return 1;
+  }
+  // Zahl der FIFO-Überläufe seit dem Start (Diagnose im Log); ohne FIFO 0
+  virtual uint32_t fifoOverruns() const { return 0; }
+
   // Werksselbsttest (Chip in Ruhe). Konfiguriert den Chip um und ruft
   // danach begin(); die Flugkonfiguration steht anschließend wieder.
   virtual bool selfTest(ImuSelfTest& r) = 0;

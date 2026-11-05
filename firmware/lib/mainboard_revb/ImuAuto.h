@@ -32,6 +32,8 @@ public:
   uint8_t whoAmI() override { detect(); return act_->whoAmI(); }
   bool    dataReady() override { return act_->dataReady(); }
   void    read(ImuSample& s) override { act_->read(s); }
+  int     readAveraged(ImuSample& s) override { return act_->readAveraged(s); }
+  uint32_t fifoOverruns() const override { return act_->fifoOverruns(); }
   bool    selfTest(ImuSelfTest& r) override { return act_->selfTest(r); }
 
 private:

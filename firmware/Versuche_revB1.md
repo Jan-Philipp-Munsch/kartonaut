@@ -399,7 +399,7 @@ Multimeter-Bereich. Das Multimeter danach aus dem Strombereich nehmen.
 
 **Grenzen**: Verstärkung bei einem Strompunkt (0,34 A); Servo- und Motorströme liegen bei 1–3 A, die
 Linearität des Shunts ist dort besser als 1 %, die Eigenerwärmung des 1-W-Shunts bei 3 A (0,18 W)
-unkritisch. Die Mittelung über 50 ms macht den INA239 für den 100-Hz-Regler unbrauchbar, er dient Telemetrie und Log.
+unkritisch. Die Mittelung über 50 ms macht den INA239 für den 250-Hz-Regler unbrauchbar, er dient Telemetrie und Log.
 
 ---
 
@@ -638,8 +638,10 @@ status
 ```
 
 **Was gemessen wird**: `sd`: 1 MiB in 4-KiB-Blöcken schreiben (Zeit je Block), lesen und vergleichen,
-Datei löschen. `timing`: 300 Durchläufe mit 100 Hz, je Durchlauf IMU, Baro, drei Mux-Kanäle,
-Magnetometer, INA239 alle 10 Durchläufe; Mittel, Maximum, Überläufe. `watchdog`: 2-s-Watchdog 3 s
+Datei löschen. `timing`: 750 Durchläufe mit 250 Hz (wie die Flug-Firmware seit 05.11.2026), je Durchlauf
+IMU als FIFO-Mittel, Baro, drei Mux-Kanäle, Magnetometer, INA239 alle 10 Durchläufe (alles im selben
+Durchlauf, ungünstigster Fall); Mittel, Maximum (Soll < 2 ms), Überläufe. `mem`: PSRAM-Größe mit 1-MB-
+Mustertest und QSPI-Flash unter dem Teensy. `watchdog`: 2-s-Watchdog 3 s
 bedient, dann abgeschaltet, 2,5 s unbedient. `watchdog fire`: 1 s, nicht bedient → Neustart, Banner
 meldet die Ursache. `led`, `buzzer`, `cam` mit Rückfrage.
 

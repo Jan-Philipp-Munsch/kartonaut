@@ -3,6 +3,7 @@
 #include "Watchdog.h"
 #include "Nmea.h"
 #include <SD.h>
+#include <LittleFS.h>
 #include <math.h>
 
 using namespace board;
@@ -574,16 +575,18 @@ Res testSd() {
 
 // ---------------------------------------------------------------- Loop-Timing
 Res testTiming() {
-  // 100-Hz-Schleife wie im Flug: IMU, Baro, Mux (3 Kanäle), Magnetometer, INA alle 100 ms
-  constexpr uint32_t period_us = 10000;
-  const int loops = 300;
+  // 250-Hz-Schleife wie im Flug (seit 05.11.2026): IMU als FIFO-Mittel, Baro, Mux (3 Kanäle),
+  // Magnetometer, INA alle 100 ms. Im Flug sind Mux, Mag und INA auf verschiedene Loops verteilt,
+  // hier liegen sie absichtlich im selben Loop (ungünstigster Fall).
+  constexpr uint32_t period_us = 4000;
+  const int loops = 750;
   uint32_t t_max = 0, t_sum = 0, overruns = 0;
   uint32_t next = micros() + period_us;
   ImuSample s; float p, t; MagSample m;
   for (int k = 0; k < loops; ++k) {
     while (int32_t(micros() - next) < 0) {}
     const uint32_t t0 = micros();
-    if (st.imu && imu.dataReady()) imu.read(s);
+    if (st.imu) imu.readAveraged(s);
     if (st.baro) baro.read(p, t);
     (void)vbat1(); (void)vbat2(); (void)armV();
     if (st.mag) mag.read(m);
@@ -595,7 +598,7 @@ Res testTiming() {
     next += period_us;
   }
   const bool ok = overruns == 0 && t_max < period_us / 2;
-  proto::test("timing_loop", ok, "%d Durchläufe bei 100 Hz: Mittel %lu us, Maximum %lu us, Überläufe %lu",
+  proto::test("timing_loop", ok, "%d Durchläufe bei 250 Hz: Mittel %lu us, Maximum %lu us, Überläufe %lu",
               loops, (unsigned long)(t_sum / loops), (unsigned long)t_max, (unsigned long)overruns);
   return ok ? Res::OK : Res::FEHL;
 }
@@ -616,4 +619,55 @@ Res testWatchdog(bool fire) {
   delay(2500);   // wäre er noch scharf, käme hier der Neustart
   proto::test("watchdog_feed", true, "2-s-Watchdog 3 s lang bedient, kein Neustart; danach abgeschaltet und 2,5 s ohne Bedienung überstanden");
   return Res::OK;
+}
+
+// ---------------------------------------------------------------- Speicher unter dem Teensy
+// Auf die Rückseite des Teensy 4.1 passen zwei SOIC-8-Chips an FlexSPI2: PSRAM (APS6404L, 8 MB)
+// und/oder QSPI-Flash (W25Q128, 16 MB). Der Teensy-Kern erkennt PSRAM beim Start
+// (external_psram_size = 0, 8 oder 16); Flash meldet sich über JEDEC (LittleFS_QSPIFlash).
+// 16 MB PSRAM heißt: zwei PSRAM-Chips, dann ist kein Platz für Flash.
+extern "C" uint8_t external_psram_size;
+
+Res testMem() {
+  Res r = Res::OK;
+  const unsigned mb = external_psram_size;
+  if (mb == 0) {
+    proto::test("psram", Res::NICHT, "kein PSRAM erkannt (Lötfeld 1 leer oder Chip nicht angelötet)");
+  } else {
+    // 1 MB Muster schreiben und zurücklesen, Geschwindigkeit messen
+    const size_t n = 1024 * 1024 / 4;
+    uint32_t* buf = (uint32_t*)extmem_malloc(n * 4);
+    const bool in_psram = buf && ((uint32_t)buf >> 28) == 7;
+    if (!in_psram) {
+      if (buf) extmem_free(buf);
+      proto::test("psram", Res::FEHL, "%u MB gemeldet, aber kein Speicher im PSRAM-Bereich zu bekommen", mb);
+      r = Res::FEHL;
+    } else {
+      const uint32_t t0 = micros();
+      for (size_t i = 0; i < n; ++i) buf[i] = i * 2654435761u ^ 0xA5A5A5A5u;
+      arm_dcache_flush_delete(buf, n * 4);
+      const uint32_t t1 = micros();
+      size_t bad = 0;
+      for (size_t i = 0; i < n; ++i) if (buf[i] != (i * 2654435761u ^ 0xA5A5A5A5u)) ++bad;
+      const uint32_t t2 = micros();
+      extmem_free(buf);
+      const bool ok = bad == 0;
+      proto::test("psram", ok, "%u MB (%s), 1 MB Muster %s, Schreiben %.0f MB/s, Lesen %.0f MB/s", mb,
+                  mb == 16 ? "zwei Chips" : "ein Chip", ok ? "fehlerfrei" : "FEHLER",
+                  1.0e6 / 1048576.0 * n * 4 / (t1 - t0 + 1), 1.0e6 / 1048576.0 * n * 4 / (t2 - t1 + 1));
+      if (!ok) r = Res::FEHL;
+    }
+  }
+  if (mb == 16) {
+    proto::test("qspi_flash", Res::NICHT, "kein Platz: beide Lötfelder tragen PSRAM");
+  } else {
+    static LittleFS_QSPIFlash qf;
+    if (qf.begin()) {
+      proto::test("qspi_flash", Res::OK, "%s erkannt, %lu KB (LittleFS)", qf.getMediaName(),
+                  (unsigned long)(qf.totalSize() / 1024));
+    } else {
+      proto::test("qspi_flash", Res::NICHT, "kein QSPI-Flash an Lötfeld %u", mb ? 2u : 1u);
+    }
+  }
+  return r == Res::OK ? Res::OK : r;
 }

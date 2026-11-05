@@ -44,7 +44,7 @@ Maximum 33 N) ist ein anderer Motor und kommt nur zum Vergleich in die Python-Si
 
 | Teil | Stück | Stand | Quelle |
 |---|---|---|---|
-| Teensy 4.1 | 1 | mit Buchsenleisten? `[?]` | `platformio.ini` |
+| Teensy 4.1 | 1 | mit Stiftleisten; **zwei SOIC-8-Chips auf der Rückseite gelötet** (Jan, 05.11.2026). Welche (PSRAM APS6404L 8 MB, QSPI-Flash W25Q128 16 MB oder zweimal PSRAM) steht auf den Chips; sonst `revb_test` → `mem` (§3a). Plan war ein W25Q128 (`hardware/mainboard/README.md`); die Flug-Firmware nutzt PSRAM als Log-Puffer, falls vorhanden | `platformio.ini`, Jan |
 | ICM-20948 Breakout (SparkFun oder Clone) `[?]` | 1 | an Wire, 0x68/0x69 | `Sensors.cpp` |
 | BMP280 Breakout | 1 | 0x76 | `Sensors.cpp` |
 | INA219 Breakout | 1 | 0x40, 0,1-Ω-Shunt | `Sensors.cpp` |
@@ -144,6 +144,22 @@ Abweichungen hier eintragen.
 
 Servo- und Motorversorgung: `[?]` (direkt aus dem LiPo, UBEC, Buck-Modul?). Hauptschalter: `[?]`.
 
+## 3a. Mainboard rev B1 as-built
+
+Platine von JLCPCB bestückt geliefert (Auftrag W2026102623077325, 106 Teile, Liste in
+`hardware/mainboard/Bestellung_JLCPCB_2026-10-26.md` §2.1). Handlöten ab 06.11.2026 nach
+`hardware/mainboard/LOETANLEITUNG_revB1.pdf`. Hier eintragen, was tatsächlich drauf ist.
+
+| Punkt | Stand | Datum, Quelle |
+|---|---|---|
+| Speicher unter dem Teensy | 2 Chips; `mem`: PSRAM `[?]` MB, QSPI-Flash `[?]` | Jan, 05.11.2026 |
+| R15 (130 k, FB-Teiler 5-V-Wandler) | DigiKey-Teil erst mit 2. Sendung (ab 9.11.); Ersatz aus Bestand? `[?]` Wert gemessen `[?]` | Beschaffung §6b |
+| U6 INA239, J11 GH-4 | kommen mit der 2. DigiKey-Sendung; bis dahin unbestückt (`fit ina off`) | 05.11.2026 |
+| U10 LoRa E22 | Modul noch nicht da (AliExpress). **Achtung:** rechte Padreihe (Pins 1–8, 11–13: NRST und GND) liegt 0,2 mm vor dem Lötring der linken Teensy-Leiste, Modulkante 0,7 mm vor dem Leistenkörper; vor dem Einlöten der Leisten vorverzinnen, später Heißluft (Lötanleitung Stufe 3/6). Antenne an die IPEX-Buchse über Pigtail, ANT-Pad bleibt offen (`docs/Bauanleitung_LoRa_Antenne.md`) | Layout, 05.11.2026 |
+| Teensy-Buchsenleisten A1 | gelötet `[?]`, LoRa-Pads vorher verzinnt `[?]` | |
+| Stufen 1–6 der Lötanleitung | `[?]` je Stufe mit Messwerten (5V_SYS, 3V3_RF, 3V3_EXP, VBAT_PROT, VSERVO, Ströme) | |
+| Kalibrierung (`cal ...`, `cal save`) | `[?]` gyro, acc, mag, axes, baro | |
+
 ## 4. Software-Stand auf dem Gerät
 
 | Datum | Commit auf dem Teensy | Umgebung | Config-Schalter |
@@ -182,6 +198,7 @@ Ein Eintrag je Arbeitssitzung am Gerät. Rekonstruiert, soweit möglich; ab jetz
 | 2026-10-20 | Firmware-Aufräumrunde, Veröffentlichung (am Rechner, nicht geflasht) | – | flashen und am Gerät prüfen |
 | 2026-10-21 | Planungsrunde, diese Datei angelegt; Servos FrSky W5652H bestellt. Rev B spezifiziert, Design Guide und Bestellplan, Simulation nach Python, Blender-Inventur und parametrisches CAD mit Massenmodell (alles am Rechner) | `docs/img/cad/` (Renders) | Inventar am Gerät prüfen, Fotos; Teile wiegen (Spitze, Kuppler, Rohr, Motor, Kardan-Drucke); Rohr-Innen- und Kuppler-Außenmaß messen |
 | 2026-10-22 | **Kardan gebaut:** Schubstangen-Kardan mit 2 × W5652H in Rohr A 125 mm, Kardanschrauben 4 × M3 bei 44 mm, Servofenster ca. 20 × 20 ab 60 mm, Hebel 15 mm, Stangen Ø 2 mm; Rohr B 176 mm mit vier Löchern bei 44 mm; Kuppler halbiert (75 mm), gesteckt. Entscheidungen: kein Rollmotor, CO₂-Ausstoß, Schraubschalter, Schirm in Rohr C. Am Rechner: Bauanleitung Stand 2b, Bodenstation, Startrampe, Firmware rev B, Massenbudget 723 g | Fotos vom Kardan (Jan, 22.10.) `[?]` | Druckteile drucken und wiegen, Bestellliste §3.1 der Bauanleitung, Servofenster-Winkel am Rohr nachsehen (O1), Servo-Umrechnung messen (Befund 13), CO₂-Modul konstruieren |
+| 2026-11-05 | Platine rev B1 geliefert; zwei Chips (PSRAM/Flash) auf die Teensy-Rückseite gelötet. DigiKey: 1. Sendung da, INA239, GH-4, 130 k in der 2. Sendung. Am Rechner: Lötanleitung (PDF), Testfirmware für LSM6DSV16X und Bestückungsliste, Flug-Firmware auf 250 Hz mit FIFO-Mittelung, Mahony am Boden, Kalman neu abgestimmt, Log über PSRAM-Ringpuffer | – | `mem` ausführen und §3a eintragen; Löten ab 06.11. |
 
 ## 7. Regeln
 

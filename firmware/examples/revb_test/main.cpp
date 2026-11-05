@@ -34,7 +34,7 @@ using namespace board;
 
 static void help() {
   proto::comment("Befehle (q bricht laufende Messungen ab):");
-  proto::comment("  all            alle Prüfungen ohne Bewegung: mux imu baro mag sht adxl ina timing");
+  proto::comment("  all            alle Prüfungen ohne Bewegung: mux imu baro mag sht adxl ina timing mem");
   proto::comment("  all full       dazu led buzzer cam servo 1..4 motor lora gps sd (mit Rückfragen)");
   proto::comment("  mux | imu | baro | mag | sht | adxl | ina | ina load");
   proto::comment("  led | buzzer | cam");
@@ -42,6 +42,7 @@ static void help() {
   proto::comment("  motor          zwei kurze Pulse, nFAULT");
   proto::comment("  pyro <1..4> [ms]   NUR mit Lämpchen, fragt CONFIRM, höchstens 1000 ms");
   proto::comment("  lora | gps | sd | timing | watchdog | watchdog fire (Neustart!)");
+  proto::comment("  mem            PSRAM und QSPI-Flash unter dem Teensy erkennen und prüfen");
   proto::comment("  cal gyro [s] | cal acc | cal mag [s] | cal axes | cal baro [s]");
   proto::comment("  cal adc [kanal] | cal ina | cal servo <1..4>");
   proto::comment("  cal show | cal save | cal load | cal defaults | cal erase");
@@ -101,6 +102,7 @@ static Res runAll(bool full) {
   r = proto::worst(r, testAdxl());
   r = proto::worst(r, testIna());
   r = proto::worst(r, testTiming());
+  r = proto::worst(r, testMem());
   if (!full) return r;
   r = proto::worst(r, testLeds());
   r = proto::worst(r, testBuzzer());
@@ -154,6 +156,7 @@ static void execute(char* line) {
   else if (!strcmp(a0, "gps"))     r = testGps();
   else if (!strcmp(a0, "sd"))      r = testSd();
   else if (!strcmp(a0, "timing"))  r = testTiming();
+  else if (!strcmp(a0, "mem"))     r = testMem();
   else if (!strcmp(a0, "watchdog")) r = testWatchdog(a1 && !strcmp(a1, "fire"));
   else if (!strcmp(a0, "tvc")) {
     // Rest der Zeile hinter dem Unterbefehl, aus der unzerlegten Kopie (center/window/note brauchen mehrere Wörter)

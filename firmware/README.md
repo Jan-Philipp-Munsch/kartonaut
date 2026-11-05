@@ -24,13 +24,14 @@ pio run -e i2c_scanner -t upload   # einen Test-Sketch flashen
 
 | Datei | Aufgabe | ohne Hardware testbar |
 |---|---|---|
-| `src/main.cpp` | `setup()` und die 100-Hz-Schleife: Sensoren, Kalibrierung, Lage, Kalman, Zustandsautomat, Regler, Pyro, Telemetrie, Log, Zustandsspeicher, Watchdog | – |
+| `src/main.cpp` | `setup()` und die 250-Hz-Schleife: Sensoren, Kalibrierung, Lage, Kalman, Zustandsautomat, Regler, Pyro, Telemetrie, Log, Zustandsspeicher, Watchdog | – |
 | `src/Config.h` | Alle Pins (je Board), physikalischen Parameter, Reglergewinne, Schwellen des Automaten, Pyro, Telemetrie, Watchdog, Schalter | – |
 | `src/Sensors.h` | Schnittstelle: `SensorSample` (spezifische Kraft, Drehrate im Körpersystem, Druck, Höhe, Akkus, ARM, Durchgang), Kalibrierung | – |
 | `src/Sensors_breakout.cpp` | Rückende Breakouts: ICM-20948 roh ohne DMP (±4 g, ±2000 °/s, DLPF 50 Hz), BMP280, INA219. Kein ARM, kein Durchgang: Pyro gesperrt. | – |
-| `src/Sensors_revb.cpp` | Rückende Mainboard rev B: IMU nach WHO_AM_I (LSM6DSV16X auf rev B1, sonst ICM-42688-P), BMP390, INA239 an SPI1, Akkus/ARM/Durchgang über die Mux (`lib/mainboard_revb/`) | – |
-| `src/Attitude.*` | Lage als Gyro-Quaternion, Init aus der Beschleunigung auf dem Pad, Oben-Vektor, Kippwinkel in Servoachsen, Rollwinkel | ✅ |
-| `src/KalmanZ.*` | 2-Zustands-Kalman (Höhe, Vertikalgeschwindigkeit) mit Beschleunigung als Eingang und Barometer als Messung | – |
+| `src/Sensors_revb.cpp` | Rückende Mainboard rev B: IMU nach WHO_AM_I (LSM6DSV16X auf rev B1, sonst ICM-42688-P) als Mittel über den FIFO (~3,8 Sätze je Loop), BMP390/388 mit 50 Hz, INA239 mit 10 Hz an SPI1, Magnetometer LIS3MDL mit 62,5 Hz an I²C, Akkus/ARM/Durchgang über die Mux mit 20 Hz, versetzt verteilt; Achsen, Accel und Hard-/Soft-Iron aus der Kalibrierung (`g_cal`); Kerbfilter auf der Drehrate (`GYRO_NOTCH_HZ`) | – |
+| `src/Attitude.*` | Lage als Gyro-Quaternion, Init aus der Beschleunigung auf dem Pad, Oben-Vektor, Kippwinkel in Servoachsen, Rollwinkel; `MahonyAid`: Stützung am Boden mit Beschleunigung und Magnetometer (Kurs), lernt den Gyro-Nullpunkt | ✅ |
+| `src/Filters.h` | Biquad (Notch, Tiefpass), Tiefpass 1. Ordnung mit Zeitkonstante | ✅ |
+| `src/KalmanZ.*` | 2-Zustands-Kalman (Höhe, Vertikalgeschwindigkeit): Vorhersage mit der Beschleunigung jeden Loop, Barometer nur bei neuem Wert, Ausreißertor (`KALMAN_GATE_SIGMA`) | – |
 | `src/FlightState.*` | Flugzustandsautomat SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED, ABORT; Ereignisse mit Zeitstempel | ✅ |
 | `src/ControlLaw.*` | Reglergleichungen Pitch/Yaw (PID, Moment → TVC-Winkel → Servo-Grad, Fenster) und Roll; identisch zu `tvcsim` | ✅ (SIL) |
 | `src/Control.*` | Servos als 16-Bit-PWM mit `SERVO_FRAME_HZ`, H-Brücke, Fallschirm-Servo | – |
@@ -40,7 +41,7 @@ pio run -e i2c_scanner -t upload   # einen Test-Sketch flashen
 | `src/Telemetry.*`, `src/Crc16.h` | Funkprotokoll (Rahmen, TLM/EVT/ACK, Kommandos, Parser, CRC-16/CCITT) | ✅ |
 | `src/StateMemory.*`, `src/StateStore.*` | Zustandsspeicher (Magic + CRC) und seine Ablage in DMAMEM für den Neustart im Flug | ✅ / – |
 | `src/Watchdog.*` | RTWDOG mit `WDT_TIMEOUT_MS`, Reset-Ursache | – |
-| `src/SDLogger.*` | Binär-Logger mit Vorallokation, Seitenpuffer, slack-bewusstem Flush/Sync, TMP-Recovery und CSV-Export | – |
+| `src/SDLogger.*`, `src/LogRing.h` | Flug-Log: Ringpuffer im PSRAM (6 MB; ohne PSRAM 384 KB RAM2), SD-Karte nur in SAFE und ab DESCENT in der freien Zeit des Loops, Vorallokation 64 MB, TMP-Recovery, CSV-Export | ✅ (Ring) |
 | `src/Timing.*` | Nicht blockierender Loop-Takt auf `micros()`, gemessenes dt, Slack bis zur Deadline, Overrun-Warnung | – |
 | `src/Indicators.*` | WS2812B und Summer: Start, Zustandsfarbe, Warnung | – |
 | `src/MathTypes.h` | `Vec3`, `Quaternion`, Vektorrotation (ohne Arduino) | ✅ |
@@ -49,12 +50,16 @@ pio run -e i2c_scanner -t upload   # einen Test-Sketch flashen
 
 1. **Einschalten → SAFE.** Die Firmware misst 4 s den Gyro-Nullpunkt und den Bodendruck
    (Rakete ruhig halten; Bewegung über 2 °/s startet die Messung neu) und initialisiert die
-   Lage aus der Schwerkraft. Blau.
+   Lage aus der Schwerkraft. Danach stützt `MahonyAid` die Lage, solange die Rakete ruht
+   (Beschleunigung ≈ 1 g, Drehrate < 5 °/s): die Schwerkraft hält die Kippwinkel, das
+   kalibrierte Magnetometer den Kurs, der I-Anteil lernt den Rest-Nullpunkt. So driftet die
+   Lage auch bei langer Wartezeit auf der Rampe nicht weg. Blau.
 2. **Kommando PAD_READY** (Bodenstation oder `r` auf USB) → **PAD_READY**, nur wenn kalibriert
    und IMU und Barometer da sind. Log beginnt. Grün. `CALIBRATE` (`c`) wiederholt die
    Nullpunkte, `SAFE` (`s`) geht zurück.
 3. **Start** erkannt bei |a| > 2 g für 50 ms → **BOOST**: Pitch/Yaw-Regler aktiv (wenn
-   `PY_CONTROL_ACTIVE`). Weiß.
+   `PY_CONTROL_ACTIVE`). Ab hier nur noch Gyro (plus dem am Boden gelernten Nullpunkt): unter
+   Schub misst der Beschleunigungssensor den Schub, nicht die Schwere. Weiß.
 4. **Brennschluss**: axiale spezifische Kraft unter 3 m/s² für 100 ms, Rückfall 4,5 s →
    **COAST**: Servos auf Mitte, Rollregler weiter.
 5. **Apogäum**: Kalman-vz < −0,5 m/s und Barometer 1 m unter seinem Maximum, beides 200 ms,
@@ -132,7 +137,10 @@ eigener Rahmen, sobald es ein Modul gibt.
 | `RECOVERY_MODE` | `CHUTE` (Ausstoßladung in APOGEE, Kanal 2 Reserve) oder `LANDING_BURN` (Kanal 2 = Anzünder des zweiten Motors, `LANDING_*`-Parameter) |
 | `THROTTLE_ENABLED`, `THROTTLE_F_MIN`, `THROTTLE_*` | Schubdrossel im Landebrennen (dritter Servokanal, Kennlinie aus E05) |
 | `PY_CONTROL_ACTIVE`, `ROLL_CONTROL_ACTIVE` | Regler freigeben. Ohne Freigabe bleiben die Servos auf Mitte und der Motor aus. |
-| `LOG_DATA`, `LOG_EVERY_N_LOOPS`, `LOG_STOP_AFTER_FRAMES` | SD-Log an; jeden N-ten Takt; nach N Frames stoppen und einmal als CSV exportieren (Tischtest, 0 = nie). |
+| `LOG_DATA`, `LOG_DIV_GROUND/FLIGHT/DESCENT`, `LOG_STOP_AFTER_FRAMES` | Log an; Rate je Abschnitt (25 Hz am Boden, 250 Hz von PAD_READY bis APOGEE, 50 Hz ab DESCENT); nach N Sätzen stoppen und als CSV exportieren (0 = nie, sonst USB `x`). |
+| `GYRO_NOTCH_HZ`, `GYRO_NOTCH_Q` | Kerbfilter auf der Drehrate, 0 = aus; einschalten, wenn das Log eine Vibrationslinie zeigt |
+| `MAHONY_*` | Stützung der Lage am Boden (Gewinne, Ruhe-Schwellen, Magnetometer ja/nein) |
+| `KALMAN_*` | Barometer-Rauschen (0,5 m), Prozessrauschen, Ausreißertor |
 | `WDT_ENABLED`, `WDT_TIMEOUT_MS` | Watchdog |
 | `PLOT_KALMAN`, `PLOT_ROLL`, `PLOT_PY`, `PLOT_ELECTRICS`, `PLOT_STATE` | Teleplot-Zeilen (`>Name:Wert`) auf USB-Serial |
 | `LOOP_WARNING`, `VERBOSE` | Overrun-Meldungen, Kalibrierausgaben |
@@ -141,32 +149,40 @@ eigener Rahmen, sobald es ein Modul gibt.
 
 ## Log-Format
 
-Ein Record pro Durchlauf, 88 Byte, little-endian:
+Ein Datensatz je geloggtem Loop, 136 Byte, little-endian (Format 2 seit 05.11.2026; Format 1 mit
+88 Byte und 40 Kanälen gilt für ältere Dateien):
 
 ```
-uint32  ts_us           micros() beim Schreiben
-uint16  write_us_prev   Dauer des vorigen physischen Writes
-uint16  _pad
-int16   v[40]           skalierte Kanäle, siehe mapFrameToI16() in SDLogger.cpp
+uint32  ts_us     micros() beim Ablegen im Ringpuffer
+uint16  format    2
+uint16  nch       belegte Kanäle (56)
+int16   v[64]     skalierte Kanäle, Namen und Faktoren in LOG_CH (SDLogger.cpp)
 ```
 
-| Kanal | Inhalt | Skalierung |
-|---|---|---|
-| 0–2 | Kalman-Höhe, Kalman-vz, Baro-Höhe | ×100 |
-| 3–5 | a_nav x/y/z [m/s²] | ×100 |
-| 6–8 | Drehrate x/y/z [°/s] | ×100 |
-| 9–10 | Roll-Winkel, Roll-Rate | ×100 |
-| 11–12 | Servo Yaw, Pitch [°] (seit 22.10.2026 nicht mehr auf ganze Grad gerundet) | ×100 |
-| 13–14 | Roll-PWM (0..4095), Roll-Richtung | ×1, ×1000 |
-| 15–19 | Bus-V, Last-V, Strom mA, Leistung mW, INA-Overflow | ×1000, ×1000, ×1, ×1, ×1 |
-| 20–24 | Flugzustand (Zahl), Kippwinkel x, Kippwinkel y, 1S-Spannung, \|a\| | ×100 |
-| 25–32 | Flugzeit in 0,1 s, Flags (`tlm::Flag`), Pyro (Zündungen Kanal 1 Bits 0–3, Kanal 2 Bits 4–7, Puls aktiv Bits 8/9), axiale spezifische Kraft ×100, Kardan Yaw ×100, Kardan Pitch ×100, Reset-Ursache, frei | 1:1 |
-| 33–39 | frei | 0 |
+Kanäle (Wert = int16 / Faktor): Kalman-Höhe, -vz, Baro-Höhe, Kalman-Innovation (×100); Druck relativ
+zum Boden in Pa (×1); Baro- und IMU-Temperatur (×100); spezifische Kraft im Körpersystem x/y/z,
+a_nav x/y/z, \|a\| (×100); Drehrate für Lage und Regler x/y/z (×100) und vor dem Notch (×10, bis
+±3270 °/s); Magnetfeld x/y/z in gauss (×5000); Quaternion w/x/y/z (×10000); Kippwinkel x/y, Roll
+(×100); gelernter Gyro-Nullpunkt x/y/z (×1000); Servo Yaw/Pitch und Kardan Yaw/Pitch in Grad (×100);
+Roll-PWM, Roll-Richtung, Drossel (×1000); 1S, 2S, ARM in V (×100), Strom in A (×1000); Zustand, Flags,
+Pyro-Bits, Reset-Ursache, Flugzeit in 0,1 s, Sensor-Bits (1 IMU neu, 2 Baro neu, 4 Mag neu, 8 Mag
+kalibriert, 16 Kalman-Update, 32 Stützung aktiv, 64 mit Magnetometer); gemittelte IMU-Sätze, Dauer
+des vorigen Loops in µs, dt in µs, verworfene Sätze, Pufferfüllung in %, FIFO-Überläufe.
 
-Die Datei wird als `LOGxxxxx.TMP` mit 8 MB Vorallokation geschrieben und beim Stop auf die
+Die Datei wird als `LOGxxxxx.TMP` mit 64 MB Vorallokation geschrieben und beim Stop auf die
 genutzte Länge gekürzt und in `.BIN` umbenannt. Liegengebliebene `.TMP` (Stromausfall)
-repariert `SDLogger_setup()` beim nächsten Start. `SDLogger_exportLatestCSVx(true)` schreibt
-die jüngste `.BIN` als `.CSV` mit physikalischen Einheiten daneben.
+repariert `SDLogger_setup()` beim nächsten Start. `SDLogger_exportLatestCSVx(true)` (USB `x`)
+schreibt die jüngste `.BIN` als `.CSV` mit Spaltennamen und physikalischen Einheiten daneben.
+
+**Wann auf die Karte geschrieben wird:** SD-Karten brauchen gelegentlich 10–100 ms für einen
+Schreibzugriff. Deshalb landet jeder Datensatz zuerst im Ringpuffer (PSRAM, Kopie < 1 µs). Von
+PAD_READY bis APOGEE fasst der Loop die Karte nie an; am Pad überschreibt der Puffer die ältesten
+Sätze (Vorlauf), ab dem Start verwirft er höchstens neue, falls er je voll würde (6 MB reichen bei
+250 Hz für ~3 min). In SAFE und ab DESCENT schreibt `SDLogger_service()` den Rückstand in der freien
+Zeit bis zur nächsten Loop-Deadline, in Häppchen von ~2 KB, und speichert alle 0,5 s endgültig.
+Bei LANDED wird geschlossen, sobald der Puffer leer ist. Fällt beim Aufprall der Strom weg, fehlen
+höchstens die letzten Zehntelsekunden. `?` auf USB zeigt Pufferstand, Verluste und die längsten
+Schreibzeiten.
 
 ## Test-Sketches (`examples/`)
 

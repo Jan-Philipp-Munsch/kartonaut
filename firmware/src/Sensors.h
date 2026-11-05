@@ -17,10 +17,17 @@ struct SensorSample {
   Vec3  omega_dps;          // Drehrate [°/s], Körpersystem, nullpunktkorrigiert
   float a_norm = G_MS2;     // |a_body|
   bool  imu_fresh = false;  // neuer IMU-Satz in diesem Takt
+  uint8_t imu_n = 0;        // Zahl der gemittelten IMU-Sätze (rev B: FIFO, ~3,8 bei 250 Hz)
+  uint32_t imu_fifo_ovr = 0; // FIFO-Überläufe seit dem Start (Loop stand zu lange)
+  Vec3  omega_raw_dps;      // Drehrate vor Notch, nach Nullpunkt (Log)
+  Vec3  mag_body;           // Magnetfeld [gauss], Körpersystem; kalibriert, wenn mag_cal
+  bool  mag_fresh = false;
+  bool  mag_cal = false;    // Hard-/Soft-Iron und Achsen aus der Kalibrierung: taugt für die Lage
   float p_pa = 0;           // Druck
   float baro_alt_m = 0;     // Höhe über dem Bodendruck
   bool  baro_fresh = false;
-  float temp_c = 0;
+  float temp_c = 0;         // IMU
+  float baro_temp_c = 0;
   float vbat1_V = 0;        // 1S (rev B), sonst 0
   float vbat2_V = 0;        // 2S (rev B: Mux; Breakout: INA219-Bus)
   float current_A = 0;      // 2S-Pfad
@@ -31,7 +38,7 @@ struct SensorSample {
 };
 
 struct SensorStatus {
-  bool imu_ok = false, baro_ok = false, power_ok = false;
+  bool imu_ok = false, baro_ok = false, power_ok = false, mag_ok = false;
   bool ok() const { return imu_ok && baro_ok; }
 };
 

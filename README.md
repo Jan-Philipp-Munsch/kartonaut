@@ -34,7 +34,7 @@ motor and pyro channels are kept for later flights and already provided for on t
 | Power | two batteries: 1S LiPo for the electronics (buck-boost), 2S LemonRC 450 mAh for the servos; FET load switches behind a mechanical switch, both charged inside the rocket |
 | Actuators | push-rod gimbal with 2 × FrSky Xact W5652H directly on 2S (built and fitted into tube A); one servo releases the CO₂ cartridge. No roll motor on the first flight |
 | Recovery | 8 g CO₂ cartridge pushes the nose cone off; 125 cm parachute in tube C |
-| Control | attitude as a quaternion from the gyro, PID on pitch/yaw → torque → gimbal angle via `M = l · T · sin δ`; 100 Hz; roll uncontrolled. Flight state machine `SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED` with watchdog and state memory |
+| Control | attitude as a quaternion from the gyro, PID on pitch/yaw → torque → gimbal angle via `M = l · T · sin δ`; 250 Hz with IMU samples averaged over its FIFO; on the ground gravity and the magnetometer aid the attitude (Mahony), in flight gyro only; roll uncontrolled. Flight state machine `SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED` with watchdog and state memory |
 | Simulation | Python 6DOF: at 705 g one E12 carries the rocket to about 74 m (no drag); Kp 2 / Ki 1 / Kd 0.45 from a Bayesian optimisation keep the tilt below 2.5° without hitting the gimbal stop |
 | Ground system | **Since 27 Oct: on-board motor ignition** through pyro channel 1, triggered by an authenticated radio command (ARM/LAUNCH with HMAC, countdown, heartbeat) from a laptop through a radio bridge made of a Raspberry Pi Pico and an E22 USB radio ([plan](docs/Plan_Bordzuendung_2026-10-27.md)); launch stand 600 × 600 mm on three adjustable legs. The ESP32 station with its firing line stays documented as a later option |
 | Status | gimbal, tube A and tube B built; board delivered, hand soldering starts on 6 Nov following the [soldering and measurement guide](hardware/mainboard/LOETANLEITUNG_revB1.pdf) (German); flight and bench-test firmware written and tested without hardware; **no flight yet** |
@@ -45,19 +45,21 @@ motor and pyro channels are kept for later flights and already provided for on t
 
 - Concept, mass and power budget; airframe parts, parachute, motors, CO₂ cartridges and the test-rig drive bought; push-rod gimbal with the W5652H built.
 - **Build manual for *Kartonaut 1*** in modular construction with drawings, 1:1 drilling templates, parts list, build steps, maintenance and cable plan; mass budget state 2d (705 g).
-- **6DOF simulation**: MATLAB/Simulink model ported to Python with a 1:1 copy of the flight controller; physics review (drag, ground contact, propellant model), Bayesian gain tuning, landing-burn and throttle studies; 45 tests.
+- **6DOF simulation**: MATLAB/Simulink model ported to Python with a 1:1 copy of the flight controller; physics review (drag, ground contact, propellant model), Bayesian gain tuning, landing-burn and throttle studies; since 5 Nov a 250 Hz control rate with gimbal reaction torque (no feedback problem, gains unchanged, a 30 Hz D-term low-pass halves the command activity); 52 tests.
 - **Flight firmware**: gyro quaternion, flight state machine, pyro logic, telemetry protocol with CRC, watchdog with state memory, sensor backends for breakouts and rev B, landing burn and throttle law (disabled for the first flight); 42 native tests including software-in-the-loop against the simulation.
 - **Bench-test firmware for rev B1**: driver for the fitted **LSM6DSV16X** IMU (chosen by WHO_AM_I, self-test), a fitted-parts list (`fit`), unfitted parts report `NICHT_ERKANNT` instead of `FEHL`; drivers for LIS3MDL, SHT40, ADXL375, test console `revb_test`, guided calibration stored with CRC, `bench_test.py` on the PC, experiment procedures E01, E02, E05 and twelve bench procedures.
 - **Mainboard rev B1**: review points and decisions E1–E12 worked in, fully routed (DRC 0 errors, 0 open), Gerber/BOM/CPL for JLCPCB, review guide and shopping list.
 - **Mainboard rev B1 ordered** (26/27 Oct): JLCPCB order W2026102623077325 with 5 boards, 2 of them assembled (106 parts); placement preview checked part by part and released, in production since 27 Oct, expected to finish on 2 Nov, then DHL Express (duties prepaid). DigiKey order 102484398 (40 lines for hand soldering, buzzer included): first shipment delivered; INA239 and JST-GH-4 are allocated, 130 k (R15) on backorder until 9 Nov, all three come with the second shipment (as of 5 Nov). See [`Bestellung_JLCPCB_2026-10-26.md`](hardware/mainboard/Bestellung_JLCPCB_2026-10-26.md) and [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md).
 - **Ground station** (concept, safety concept, circuit, BOM, ESP32-S3 firmware with web UI) and **launch stand**; launch stand and **TVC test rig** moved onto the built rocket on 27 Oct and checked in CAD (guides at 45°/135°/250°, no igniter box any more; test-rig printed parts as STL); interfaces rocket/pad/station/phone defined; budget plan to the first flight.
+- **[LoRa antenna build guide](docs/Bauanleitung_LoRa_Antenne.md)** (5 Nov, German): 165 mm quarter-wave radiator (433.125 MHz) on the E22's IPEX socket through a 3–5 cm pigtail, running down the wall of tube B; crosses no separation joint, points away from the GPS, vertically polarised like the ground dipole. The ANT pad sits under the Teensy board and stays open.
+- **Flight firmware at 250 Hz** (5 Nov): IMU averaged over its FIFO (anti-aliasing, ~2 ms delay), notch filter prepared, 30 Hz D-term low-pass, 100 °/s gimbal slew limit; attitude aided on the ground by gravity and magnetometer, learning the gyro offset; Kalman uses the barometer only on fresh samples, with an outlier gate and 0.5 m instead of 30 m noise; 56-channel log through a ring buffer in PSRAM, no SD access between PAD_READY and APOGEE. New bench command `mem` detects PSRAM and flash under the Teensy.
 - **[Soldering and measurement guide](hardware/mainboard/LOETANLEITUNG_revB1.pdf)** (5 Nov, German): every hand-soldered part in six stages with part number, position, pad 1 and pictures drawn from the board file, multimeter checks with target values after each stage, then the functional test with `revb_test` (script `kicad/make_loetanleitung.py`).
 - CI on GitHub Actions: every PlatformIO environment, simulation tests, native and host tests, pin check against the board.
 
 **Next**
 
-1. Order only three E22-400T22S from AliExpress (two boards, one ground station; €28.72 including import charges, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); a Raspberry Pi Pico for the radio bridge (on hand or Berrybase), print its enclosure with the dipole (`cad/groundbridge.py`); test the existing batteries (2S and 1S fit the bays), check whether epoxy is on hand (Teensy pin headers, switches and a u-blox NEO-6M GPS are on hand); print the state 2d parts (GPS holder for the NEO-6M is in, sled 58 instead of 64 g) and weigh them. The board is here: solder the hand-soldered parts following the [soldering and measurement guide](hardware/mainboard/LOETANLEITUNG_revB1.pdf); **R15 (130 k) only comes with the second DigiKey shipment and is required for the 5 V rail**, use a 130 k from stock until then. Solder INA239, GPS socket and LoRa later.
-2. Firmware: **on-board ignition with the authenticated launch protocol and a laptop script** per [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md) (cloud session), confirm the LSM6DSV16X driver on the board (data rate, ranges, self-test limits), CO₂ release from the state machine, calibration data into the rev B sensor path.
+1. Order only three E22-400T22S from AliExpress (two boards, one ground station; €28.72 including import charges, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); a Raspberry Pi Pico for the radio bridge (on hand or Berrybase), print its enclosure with the dipole (`cad/groundbridge.py`); test the existing batteries (2S and 1S fit the bays), check whether epoxy is on hand (Teensy pin headers, switches and a u-blox NEO-6M GPS are on hand); print the state 2d parts (GPS holder for the NEO-6M is in, sled 58 instead of 64 g) and weigh them. The board is here: solder the hand-soldered parts following the [soldering and measurement guide](hardware/mainboard/LOETANLEITUNG_revB1.pdf); **R15 (130 k) only comes with the second DigiKey shipment and is required for the 5 V rail**, use a 130 k from stock until then. Solder INA239, GPS socket and LoRa later; pre-tin the LoRa pads facing the Teensy socket before soldering the socket. **Order two IPEX pigtails** (antenna, [build guide](docs/Bauanleitung_LoRa_Antenne.md) §10); open: transmit power (factory 22 dBm exceeds the 10 mW limit) and channel 0x17 close to the band edge.
+2. Firmware: **on-board ignition with the authenticated launch protocol and a laptop script** per [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md) (cloud session), confirm the LSM6DSV16X driver with FIFO on the board (data rate, ranges, self-test limits, `imu_n` ≈ 3.8), run `mem` (which chips sit under the Teensy), check loop time and log write times with `?`, CO₂ release from the state machine, calibration data into the rev B sensor path.
 3. Build the rocket after the manual: print and weigh the parts, weigh the rocket, balance the centre of gravity, put mass, lever arm and the new gains into `Config.h`.
 4. Bench test of rev B1 with `revb_test`, then ground tests: servo-to-gimbal ratio (E01/E02), CO₂ ejection three times (also cold), TVC test rig with the propeller motor, radio range, launch sequence with a dummy load instead of the igniter, then an igniter without motor (burn-through time, polyfuse F1).
 5. Build the launch stand (about €68); route the igniter lead past the gimbal. Build the test rig: measure the motor-tube bore and the BR2814, print the parts from `cad/export/testrig/`, balance the rocket with the drive.
@@ -237,16 +239,18 @@ down to a lamp on the firing line. Experiments are prepared as ready-to-run proc
 ## Firmware
 
 PlatformIO project for the Teensy 4.1 in [`firmware/`](firmware/README.md). The main loop runs at a
-fixed 100 Hz: read the sensors, integrate the attitude quaternion from the gyro, estimate the altitude
-with a two-state Kalman filter, step the flight state machine, control pitch and yaw through the gimbal,
-send telemetry, log one frame per pass to SD. A watchdog with state memory resumes the flight after a
-reset.
+fixed 250 Hz (equal to the servo pulse rate): read the IMU as the average of its FIFO, integrate the attitude
+quaternion from the gyro (aided by gravity and the magnetometer on the ground), estimate the altitude with a
+two-state Kalman filter, step the flight state machine, control pitch and yaw through the gimbal, send
+telemetry, put one record per pass into a ring buffer in PSRAM. The firmware writes to the SD card only on
+the ground and from descent on, so a slow card access never holds up the control loop. A watchdog with
+state memory resumes the flight after a reset.
 
 ```bash
 cd firmware
 pio run                            # flight firmware, breakout setup
 pio run -e teensy41_revb           # flight firmware for mainboard rev B1
-pio test -e native                 # 42 tests without hardware
+pio test -e native                 # tests without hardware (attitude, filters, log buffer, control, ...)
 pio run -e revb_test -t upload     # bench-test console for rev B1
 python tools/bench_test.py         # drive the console from the PC, report as Markdown + JSON
 python tools/check_board_pins.py   # firmware pins against circuit.py
@@ -285,6 +289,7 @@ repository; their content is ported here.
 |---|---|
 | [PROJECT.md](PROJECT.md) | key data, work packages with status, findings, next steps, changelog |
 | [docs/Baustellen_2026-10-26.md](docs/Baustellen_2026-10-26.md) | open work by strand (board, repo, firmware, mechanics, simulation, ground systems) with a suggested order up to the first flight |
+| [docs/Bauanleitung_LoRa_Antenne.md](docs/Bauanleitung_LoRa_Antenne.md) | LoRa antenna in the rocket (German): 165 mm quarter-wave radiator fed from the E22's IPEX socket through a short pigtail, routed down the wall of tube B, clearances, checks, range test, link budget |
 | [docs/Bauanleitung_Kartonaut1.md](docs/Bauanleitung_Kartonaut1.md) | build manual: modules, parts list, build steps, maintenance, cable plan ([PDF](docs/bauanleitung/Bauanleitung_Kartonaut1.pdf), [drawings](docs/bauanleitung/Zeichnungen_Kartonaut1.pdf), [1:1 templates](docs/bauanleitung/Bohrschablonen_1zu1.pdf)) |
 | [cad/mass_stand2b.md](cad/mass_stand2b.md) | mass budget *Kartonaut 1*: mass, CG, lever arm, inertia, parts list |
 | [docs/Gewicht_und_Landung_2026-10-23.md](docs/Gewicht_und_Landung_2026-10-23.md) | weight levers to 593 g, gains, landing study with our masses |

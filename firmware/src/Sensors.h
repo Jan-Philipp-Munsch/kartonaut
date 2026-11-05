@@ -4,7 +4,7 @@
 // Zwei Rückenden, ausgewählt über die PlatformIO-Umgebung:
 //   Sensors_breakout.cpp  Breakout-Aufbau: ICM-20948 roh (ohne DMP), BMP280, INA219 an I2C.
 //                         Kein ARM, kein Durchgang: armed = false, Pyro damit gesperrt.
-//   Sensors_revb.cpp      Mainboard rev B: ICM-42688-P, BMP390, INA239 an SPI1, ARM, Pyro-
+//   Sensors_revb.cpp      Mainboard rev B: LSM6DSV16X/ICM-42688-P, BMP390, INA239 an SPI1, ARM, Pyro-
 //                         Durchgang und beide Akkuspannungen über die Mux (lib/mainboard_revb/).
 // Beide liefern je Takt dieselbe Struktur: spezifische Kraft und Drehrate im Körpersystem
 // (x, y quer, z Rollachse; Chip->Körper über IMU_AXIS_MAP/SIGN in Config.h), Druck und

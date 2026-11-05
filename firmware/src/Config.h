@@ -22,7 +22,7 @@ constexpr float MASS_KG      = 0.761f;  // Start, voller E12, Rohr 700 mm, ohne 
 constexpr float MOMENT_ARM_M = 0.242f;  // Kardanpunkt–Schwerpunkt (voll: 0,372 m)
 
 // ===== IMU =====
-// Breakout: ICM-20948 roh (ohne DMP), ±4 g und ±2000 °/s. Rev B: ICM-42688-P an SPI1.
+// Breakout: ICM-20948 roh (ohne DMP), ±4 g und ±2000 °/s. Rev B: LSM6DSV16X an SPI1 (ältere Platinen ICM-42688-P, ImuAuto wählt nach WHO_AM_I).
 constexpr float ACC_RANGE_G      = 4.0f;    // E12: 3,2 g bei 0,9 kg; F35 bräuchte ±8 g
 constexpr bool  GYRO_FILT        = false;   // IIR-Glättung der Drehrate ein/aus
 constexpr float GYRO_FILT_ALPHA  = 0.25f;   // 0..1, höher = weniger Glättung

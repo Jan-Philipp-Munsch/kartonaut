@@ -20,7 +20,7 @@ Brennens die Lage und kommt am Fallschirm zurück, den eine CO₂-Kartusche auss
 Landebrennen mit zweitem Motor, Rollmotor und Pyro-Kanäle bleiben späteren Flügen vorbehalten und sind
 auf der Platine schon vorgesehen.
 
-*Stand: 27.10.2026.*
+*Stand: 05.11.2026.*
 
 <img src="docs/img/bauanleitung/Z1_uebersicht.png" width="260" align="right" alt="Kartonaut 1 in Modulbauweise: Übersichtszeichnung">
 
@@ -31,14 +31,14 @@ auf der Platine schon vorgesehen.
 | Rumpf | Klima-Papprohr Ø 75 mm (innen 72,6 mm) in drei Modulen: Rohr A 125 mm (Kardan), Rohr B 176 mm (Avionik), Rohr C 195 mm (Bergung); zwei halbe Kuppler, Klima-Kunststoffspitze; 731 mm lang. Alle radialen Schrauben M3 |
 | Motor | TSP E12-0, 24 mm, 39 Ns, 12 N mittlerer Schub, 28 N Spitze, 3,5 s Brenndauer, ohne Ausstoßladung; vier vorhanden |
 | Startmasse | **704 g** im Massenbudget ([`cad/mass_stand2b.md`](cad/mass_stand2b.md), Druckteile Stand 2d), Schwerpunkt 260 mm über der Düse, Hebelarm Kardan–Schwerpunkt 190 mm, Schub-Gewicht 1,7; Ziel unter 750 g erreicht. Noch nichts gewogen |
-| Flugcomputer | Teensy 4.1 auf Mainboard **rev B1** (KiCad aus Code, fertig geroutet, DRC 0 Fehler; bei JLCPCB in Fertigung, Lieferung um den 4.–6.11.): IMU LSM6DSV16X, Barometer BMP388 (BMP390 bei JLCPCB nicht lieferbar, pinkompatibel), Strommonitor INA239, alle an SPI1 hinter einem CS-Decoder; Magnetometer LIS3MDL und SHT40 an I²C; LoRa E22-400T22S, microSD, vier Pyro-Kanäle (zwei bestückt), Stapelstecker |
+| Flugcomputer | Teensy 4.1 auf Mainboard **rev B1** (KiCad aus Code, fertig geroutet, DRC 0 Fehler; bestückt von JLCPCB geliefert, Handlötteile ab 6.11.): IMU LSM6DSV16X, Barometer BMP388 (BMP390 bei JLCPCB nicht lieferbar, pinkompatibel), Strommonitor INA239, alle an SPI1 hinter einem CS-Decoder; Magnetometer LIS3MDL und SHT40 an I²C; LoRa E22-400T22S, microSD, vier Pyro-Kanäle (zwei bestückt), Stapelstecker |
 | Versorgung | zwei Akkus: 1S-LiPo für die Elektronik (Buck-Boost), 2S LemonRC 450 mAh für die Servos; FET-Lastschalter hinter einem mechanischen Schalter, beide in der Rakete ladbar |
 | Aktorik | Schubstangen-Kardan mit 2 × FrSky Xact W5652H direkt an 2S (gebaut und in Rohr A eingepasst); ein Servo löst die CO₂-Kartusche aus. Kein Rollmotor beim Erstflug |
 | Bergung | 8-g-CO₂-Kartusche drückt die Spitze ab; Fallschirm 125 cm in Rohr C |
 | Regelung | Lage als Quaternion aus dem Gyro, PID auf Nick/Gier → Moment → Kardanwinkel über `M = l · T · sin δ`; 100 Hz; Rollen ungeregelt. Flugzustandsautomat `SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED` mit Watchdog und Zustandsspeicher |
 | Simulation | Python-6DOF: mit 705 g trägt eine E12 die Rakete auf etwa 74 m (ohne Luftwiderstand); Kp 2 / Ki 1 / Kd 0,45 aus einer Bayes-Optimierung halten die Neigung unter 2,5°, ohne dass der Kardan anschlägt |
 | Bodensystem | **Seit 27.10.: Motorzündung an Bord** über Pyro-Kanal 1, ausgelöst per gesichertem Funkbefehl (ARM/LAUNCH mit HMAC, Countdown, Heartbeat) vom Laptop über eine Funkbrücke aus Raspberry Pi Pico und E22 ([Plan](docs/Plan_Bordzuendung_2026-10-27.md)); Startrampe 600 × 600 mm auf drei verstellbaren Beinen. Die ESP32-Station mit Zündleitung bleibt als späterer Ausbau dokumentiert |
-| Stand | Kardan, Rohr A und Rohr B gebaut; Platine bestellt und in Fertigung, Selbstlöt-Teile von DigiKey unterwegs; Flug- und Tischtest-Firmware geschrieben und ohne Hardware getestet; **noch kein Flug** |
+| Stand | Kardan, Rohr A und Rohr B gebaut; Platine geliefert, Handlöten beginnt am 6.11. nach der [Löt- und Messanleitung](hardware/mainboard/LOETANLEITUNG_revB1.pdf); Flug- und Tischtest-Firmware geschrieben und ohne Hardware getestet; **noch kein Flug** |
 
 ## Projektstand
 
@@ -48,16 +48,17 @@ auf der Platine schon vorgesehen.
 - **Bauanleitung *Kartonaut 1*** in Modulbauweise mit Zeichnungen, Bohrschablonen 1:1, Stückliste, Bauschritten, Wartung und Kabelplan; Massenbudget Stand 2d (705 g).
 - **6DOF-Simulation**: MATLAB/Simulink-Modell nach Python portiert, mit 1:1-Kopie des Flugreglers; Physik-Durchsicht (Luftwiderstand, Bodenkontakt, Treibstoffmodell), Reglergewinne per Bayes-Optimierung, Studien zu Landebrennen und Schubdrossel; 45 Tests.
 - **Flug-Firmware**: Gyro-Quaternion, Zustandsautomat, Pyro-Logik, Telemetrieprotokoll mit CRC, Watchdog mit Zustandsspeicher, Sensor-Backends für Breakouts und rev B, Landebrennen und Drosselregler (für den Erstflug abgeschaltet); 42 native Tests inkl. Software-in-the-Loop gegen die Simulation.
-- **Tischtest-Firmware rev B1**: Treiber für LIS3MDL, SHT40, ADXL375, IMU-Selbsttest, Testkonsole `revb_test`, geführte Kalibrierung mit CRC, `bench_test.py` am PC, Versuche E01, E02, E05 und zwölf Tischversuche.
+- **Tischtest-Firmware rev B1**: Treiber für die bestückte IMU **LSM6DSV16X** (Wahl nach WHO_AM_I, Selbsttest), Bestückungsliste (`fit`), nicht bestückte Teile melden `NICHT_ERKANNT` statt `FEHL`; Treiber für LIS3MDL, SHT40, ADXL375, Testkonsole `revb_test`, geführte Kalibrierung mit CRC, `bench_test.py` am PC, Versuche E01, E02, E05 und zwölf Tischversuche.
 - **Mainboard rev B1**: Review-Punkte und Entscheidungen E1–E12 eingearbeitet, fertig geroutet (DRC 0 Fehler, 0 offen), Gerber/BOM/CPL für JLCPCB, Prüfanleitung und Einkaufsliste.
-- **Mainboard rev B1 bestellt** (26./27.10.): JLCPCB-Auftrag W2026102623077325 mit 5 Platinen und 2 bestückten (106 Teile); Platzierungsbild Teil für Teil geprüft und freigegeben, seit 27.10. in Fertigung, voraussichtlich fertig am 2.11., dann DHL Express (Zoll bezahlt). DigiKey-Auftrag 102484398 (40 Positionen zum Selberlöten, mit Summer): erste Lieferung am 26.10. verschickt, INA239, JST-GH-4 und 130 k im Rückstand. Siehe [`Bestellung_JLCPCB_2026-10-26.md`](hardware/mainboard/Bestellung_JLCPCB_2026-10-26.md) und [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md).
+- **Mainboard rev B1 bestellt** (26./27.10.): JLCPCB-Auftrag W2026102623077325 mit 5 Platinen und 2 bestückten (106 Teile); Platzierungsbild Teil für Teil geprüft und freigegeben, seit 27.10. in Fertigung, voraussichtlich fertig am 2.11., dann DHL Express (Zoll bezahlt). DigiKey-Auftrag 102484398 (40 Positionen zum Selberlöten, mit Summer): erste Lieferung zugestellt; INA239 und JST-GH-4 liegen reserviert, 130 k (R15) im Rückstand bis 9.11., alle drei kommen mit der zweiten Sendung (Stand 05.11.). Siehe [`Bestellung_JLCPCB_2026-10-26.md`](hardware/mainboard/Bestellung_JLCPCB_2026-10-26.md) und [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md).
 - **Bodenstation** (Konzept, Sicherheitskonzept, Schaltung, Stückliste, ESP32-S3-Firmware mit Weboberfläche) und **Startrampe**; Startrampe und **TVC-Prüfstand** am 27.10. auf die gebaute Rakete umgestellt und im CAD geprüft (Stützen 45°/135°/250°, kein Zündkasten mehr; Prüfstand-Druckteile als STL); Schnittstellen Rakete/Rampe/Station/Handy festgelegt; Budgetplan bis zum Erstflug.
+- **[Löt- und Messanleitung](hardware/mainboard/LOETANLEITUNG_revB1.pdf)** (05.11.): alle Handlötteile in sechs Stufen mit Teilenummer, Lage, Pad 1 und Bildern aus der Platinendatei, nach jeder Stufe Multimeter-Messungen mit Sollwerten, dann der Funktionstest mit `revb_test` (Skript `kicad/make_loetanleitung.py`).
 - CI auf GitHub Actions: alle PlatformIO-Umgebungen, Simulationstests, native und Host-Tests, Pin-Abgleich gegen die Platine.
 
 **Als Nächstes**
 
-1. Bei AliExpress nur drei E22-400T22S bestellen (zwei Platinen, eins Bodenstation; 28,72 € mit Einfuhrabgaben, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); Raspberry Pi Pico für die Funkbrücke (Bestand oder Berrybase), ihr Gehäuse mit Dipol drucken (`cad/groundbridge.py`); vorhandene Akkus prüfen (2S und 1S passen in die Fächer), nachsehen, ob Epoxid da ist (Teensy-Stiftleisten, Schalter und GPS u-blox NEO-6M sind vorhanden); Druckteile Stand 2d drucken (GPS-Halter für den NEO-6M ist eingebaut, Schlitten 58 statt 64 g) und wiegen. Platine kommt um den 4.–6.11., dann Selbstlöt-Teile einlöten.
-2. Firmware: **Bordzündung mit gesichertem Startprotokoll und Laptop-Skript** nach [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md) (Cloud-Session), Treiber LSM6DSV16X hinter `Imu.h`, CO₂-Auslösung aus dem Zustandsautomaten, Kalibrierwerte in den rev-B-Sensorpfad.
+1. Bei AliExpress nur drei E22-400T22S bestellen (zwei Platinen, eins Bodenstation; 28,72 € mit Einfuhrabgaben, [`Beschaffung_2026-10-26.md`](hardware/mainboard/Beschaffung_2026-10-26.md) §6c); Raspberry Pi Pico für die Funkbrücke (Bestand oder Berrybase), ihr Gehäuse mit Dipol drucken (`cad/groundbridge.py`); vorhandene Akkus prüfen (2S und 1S passen in die Fächer), nachsehen, ob Epoxid da ist (Teensy-Stiftleisten, Schalter und GPS u-blox NEO-6M sind vorhanden); Druckteile Stand 2d drucken (GPS-Halter für den NEO-6M ist eingebaut, Schlitten 58 statt 64 g) und wiegen. Platine ist da: Handlötteile nach der [Löt- und Messanleitung](hardware/mainboard/LOETANLEITUNG_revB1.pdf) einlöten; **R15 (130 k) kommt erst mit der zweiten DigiKey-Sendung und ist Pflicht für die 5-V-Schiene**, bis dahin einen 130 k aus dem Bestand nehmen. INA239, GPS-Buchse und LoRa später nachlöten.
+2. Firmware: **Bordzündung mit gesichertem Startprotokoll und Laptop-Skript** nach [`Plan_Bordzuendung_2026-10-27.md`](docs/Plan_Bordzuendung_2026-10-27.md) (Cloud-Session), LSM6DSV16X-Treiber auf der Platine bestätigen (Datenrate, Messbereiche, Selbsttest-Grenzen), CO₂-Auslösung aus dem Zustandsautomaten, Kalibrierwerte in den rev-B-Sensorpfad.
 3. Rakete nach der Anleitung bauen: Teile drucken und wiegen, Rakete wiegen, Schwerpunkt auspendeln, Masse, Hebelarm und die neuen Gewinne in `Config.h`.
 4. Tischtest rev B1 mit `revb_test`, dann Bodentests: Servo-Kardan-Verhältnis (E01/E02), CO₂-Ausstoß dreimal (auch kalt), TVC-Prüfstand mit Propellermotor, Funkreichweite, Startablauf mit Ersatzlast statt Anzünder, dann Anzünder ohne Motor (Durchbrennzeit, Polyfuse F1).
 5. Startrampe bauen (etwa 68 €); Anzünderleitung am Kardan vorbei verlegen. Prüfstand bauen: Motorrohr-Bohrung und BR2814 nachmessen, Druckteile aus `cad/export/testrig/` drucken, Rakete mit Antrieb auswiegen.
@@ -191,6 +192,8 @@ sind sie in rev B1 eingeflossen:
 - **Alle Servos direkt an 2S**, kein 5-V-Wandler.
 - **Platz für spätere Flüge**: vier Pyro-Kanäle, vierter Servostecker, ADXL375 (±200 g) als Footprint,
   Stapelstecker `J_STACK`.
+
+Die [Löt- und Messanleitung](hardware/mainboard/LOETANLEITUNG_revB1.pdf) führt durch das Einlöten der Handlötteile und die Messungen dazwischen.
 
 Die Firmware passt dazu: [`firmware/lib/mainboard_revb/`](firmware/README.md) enthält Pins, Decoder, Mux
 und Treiber; `check_board_pins.py` vergleicht die Pins mit `circuit.py`, auch in der CI. Rev A und die

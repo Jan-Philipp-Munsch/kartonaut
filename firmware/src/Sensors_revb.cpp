@@ -1,18 +1,18 @@
 // Sensors_revb.cpp – Rückende für das Mainboard rev B (Umgebung teensy41_revb):
-// ICM-42688-P, BMP390, INA239 an SPI1 über den CS-Decoder, Akkus/ARM/Pyro-Durchgang über
+// IMU (LSM6DSV16X auf rev B1, ICM-42688-P auf älteren Platinen, Wahl nach WHO_AM_I), BMP390, INA239 an SPI1 über den CS-Decoder, Akkus/ARM/Pyro-Durchgang über
 // die Analogmux (lib/mainboard_revb/). Regeln aus BusRevB.h: kein SPI aus einer ISR, keine
 // Analogmessung zwischen select() und deselect().
 #include "Sensors_common.h"
 #include "BoardRevB.h"
 #include "BusRevB.h"
-#include "ICM42688.h"
+#include "ImuAuto.h"
 #include "BMP390.h"
 #include "INA239.h"
 
 using namespace sensors_common;
 
 static BusRevB  bus;
-static ICM42688 imu(bus);
+static ImuAuto  imu(bus);
 static BMP390   baro(bus, revb::Cs::BARO);
 static INA239   ina(bus, revb::INA_SHUNT_OHM, revb::INA_MAX_CURRENT_A);
 static SensorStatus status;

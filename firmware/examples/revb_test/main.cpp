@@ -1,9 +1,14 @@
 // revb_test – Testkonsole und Kalibrierung des Mainboards rev B1
 //
 // Befehlsmenü über USB-Serial (115200 Bd). Jede Prüfung meldet eine Zeile
-// "TEST <name> OK|FEHL|SKIP <detail>", jeder Kalibrierwert "CAL <name> <werte>",
+// "TEST <name> OK|FEHL|SKIP|NICHT_ERKANNT <detail>", jeder Kalibrierwert "CAL <name> <werte>",
 // jeder Befehl endet mit "END <befehl> <ergebnis>" (Format: Proto.h).
 // tools/bench_test.py stößt die Befehle nacheinander an und schreibt den Bericht.
+//
+// Bestückung: was auf der Platine fehlt (Standard: INA239, LoRa, GPS, Baro 2, ADXL375), steht in
+// der Bestückungsliste (lib/mainboard_revb/FitRevB.h) auf "aus" und meldet
+// "TEST <name> NICHT_ERKANNT nicht bestückt oder keine Antwort ..." statt FEHL. Umschalten zur
+// Laufzeit mit "fit <teil> on|off" (nur RAM, nach dem Neustart wieder der Standard).
 //
 // Versorgung: VIN des Teensy ist vom USB getrennt. Ohne 1S (J_BAT1 plus JP1
 // oder Schalter an J_SW) läuft nichts; ohne 2S (XT30 plus JP2 oder Schalter)
@@ -41,11 +46,44 @@ static void help() {
   proto::comment("  cal adc [kanal] | cal ina | cal servo <1..4>");
   proto::comment("  cal show | cal save | cal load | cal defaults | cal erase");
   proto::comment("  tvc ...        Versuch E02 Servo -> Kardan (tvc help)");
+  proto::comment("  fit            Bestückungsliste zeigen; nicht bestückte Teile melden NICHT_ERKANNT statt FEHL");
+  proto::comment("  fit <teil> on|off | fit all on|off | fit default   (teil: imu baro baro2 ina mag sht adxl lora gps)");
   proto::comment("  status | help");
 }
 
+static void showFit() {
+  char buf[160];
+  size_t n = 0;
+  for (int i = 0; i < rb::Fit::COUNT; ++i)
+    n += snprintf(buf + n, sizeof buf - n, "%s%s %s", i ? ", " : "", rb::Fit::name(i), fit.at(i) ? "an" : "aus");
+  proto::info("bestückt: %s", buf);
+}
+
+// fit | fit <teil> on|off | fit all on|off | fit default
+static Res fitCommand(const char* a1, const char* a2) {
+  if (a1 && !strcmp(a1, "default")) {
+    fit = rb::Fit{};
+  } else if (a1) {
+    const bool on = a2 && (!strcmp(a2, "on") || !strcmp(a2, "an") || !strcmp(a2, "1"));
+    const bool off = a2 && (!strcmp(a2, "off") || !strcmp(a2, "aus") || !strcmp(a2, "0"));
+    if (!on && !off) { proto::info("fit %s: on oder off fehlt (fit <teil> on|off)", a1); return Res::FEHL; }
+    if (!strcmp(a1, "all")) {
+      for (int i = 0; i < rb::Fit::COUNT; ++i) fit.at(i) = on;
+    } else {
+      bool* f = fit.find(a1);
+      if (!f) { proto::info("fit: unbekanntes Teil %s (imu baro baro2 ina mag sht adxl lora gps)", a1); return Res::FEHL; }
+      *f = on;
+    }
+  }
+  beginParts();          // Status neu, LoRa-Pins passend in Ruhe
+  showFit();
+  return Res::OK;
+}
+
 static void status() {
-  proto::info("Bausteine: IMU %d Baro %d Baro2 %d INA %d Mag %d SHT %d ADXL %d", st.imu, st.baro, st.baro2, st.ina, st.mag, st.sht, st.adxl);
+  showFit();
+  proto::info("Bausteine: IMU %d Baro %d Baro2 %d INA %d Mag %d SHT %d ADXL %d (IMU-Treiber %s)", st.imu, st.baro, st.baro2, st.ina,
+              st.mag, st.sht, st.adxl, imu.name());
   proto::info("1S %.2f V, 2S %.2f V, ARM %.2f V, nFAULT %s, Kalibrierung %s, gültig 0x%02lX",
               vbat1(), vbat2(), armV(), digitalRead(rb::PIN_MOT_FAULT) ? "hoch" : "TIEF", cal::checkName(calib_check), (unsigned long)calib.valid);
 }
@@ -90,6 +128,7 @@ static void execute(char* line) {
   else if (!strcmp(a0, "tvc") && a1 && !strcmp(a1, "help")) { tvcHelp(); return; }
   else if (!strcmp(a0, "status"))  { status(); return; }
   else if (!strcmp(a0, "all"))     r = runAll(a1 && !strcmp(a1, "full"));
+  else if (!strcmp(a0, "fit"))     r = fitCommand(a1, a2);
   else if (!strcmp(a0, "mux"))     r = testMux();
   else if (!strcmp(a0, "imu"))     r = testImu();
   else if (!strcmp(a0, "baro"))    r = testBaro();

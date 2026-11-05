@@ -292,6 +292,13 @@ Bestellhistorie; Erstattung aufs JLCPCB-Guthaben), Platine neu bestellen (gleich
 | DigiKey 102484398 | erste Sendung am 26.10. verschickt (DHL Express International) | Rückstand: INA239 ×3 (U6), BM04B-GHS ×3 (J11), 130 k ×3 (R15); am 26.10. angekündigt für 2.11. bzw. 9.11. |
 | AliExpress | Korb mit 10 Positionen, 60,02 €, **noch nicht bestellt** (§6c) | Choice-Teile etwa 7–12 Tage |
 
+**Stand 05.11.2026 (Bestellseite bei DigiKey):** Die erste Sendung (DHL 4268813161) ist zugestellt. Offen sind noch
+drei Positionen: INA239 ×3 und BM04B-GHS ×3 mit Rückstand 0, also bei DigiKey auf Lager und reserviert, aber noch nicht
+verschickt; 130 k (RC0603FR-07130KL) ×3 weiter im Rückstand, Versand geschätzt am 09.11.2026. Wegen „Zwei Lieferungen“
+kommen alle drei zusammen mit der zweiten Sendung. **R15 (130 k) ist der untere FB-Widerstand des 5-V-Wandlers U2 und
+wird von JLCPCB nicht bestückt:** Ohne ihn läuft die Platine nicht. Bis zur Lieferung einen 130 k (1 %) aus dem Bestand
+nehmen, siehe `LOETANLEITUNG_revB1.pdf`.
+
 Im DigiKey-Auftrag stecken auch der Summer AI-1223-TWT-5V-R ×2 (BZ1, Position 40), 680 k als Panasonic
 ERJ-3EKF6803V ×10 (ohne Rückstand) und B3B-XH-A ×10 statt S3B-XH-A für J5/J6 (stehend statt liegend, kein Rückstand).
 Noch nirgends bestellt: Flugakkus (2S 450 mAh XT30, 1S für das Fach 50 × 30 × 7), Epoxid, Teile der Zündbox.

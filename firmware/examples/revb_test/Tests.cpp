@@ -7,6 +7,15 @@
 
 using namespace board;
 
+// ---------------------------------------------------------------- Bestückungsliste
+// Teil laut Bestückungsliste (FitRevB.h, Befehl "fit") nicht bestückt: eine Zeile NICHT_ERKANNT,
+// kein Fehler, der Lauf geht weiter. answers = der Baustein antwortet trotzdem (nur Hinweis).
+static Res notFitted(const char* test, const char* part, bool answers = false) {
+  proto::test(test, Res::NICHT, "nicht bestückt oder keine Antwort (Bestückungsliste: fit %s off)%s", part,
+              answers ? ", antwortet aber: mit 'fit on' prüfen" : "");
+  return Res::NICHT;
+}
+
 // ---------------------------------------------------------------- Analogmux
 Res testMux() {
   Res r = Res::OK;
@@ -50,9 +59,11 @@ Res testMux() {
 // ---------------------------------------------------------------- IMU
 Res testImu() {
   Res r = Res::OK;
-  const uint8_t id = imu.whoAmI();
-  proto::test("imu_whoami", id == imu.expectedWhoAmI(), "0x%02X soll 0x%02X (%s)", id, imu.expectedWhoAmI(), imu.name());
-  if (id != imu.expectedWhoAmI()) return Res::FEHL;
+  const uint8_t id = imu.whoAmI();     // wählt nebenbei den Treiber (ImuAuto: 0x70 LSM6DSV16X, 0x47 ICM-42688-P)
+  if (!fit.imu) { st.imu = false; return notFitted("imu_whoami", "imu", id == imu.expectedWhoAmI()); }
+  proto::test("imu_whoami", id == imu.expectedWhoAmI(), "0x%02X soll 0x%02X (%s)%s", id, imu.expectedWhoAmI(), imu.name(),
+              id == imu.expectedWhoAmI() ? "" : ", keine Antwort");
+  if (id != imu.expectedWhoAmI()) { st.imu = false; return Res::FEHL; }
   st.imu = imu.begin();
   proto::test("imu_config", st.imu, "Flugkonfiguration zurückgelesen");
   if (!st.imu) return Res::FEHL;
@@ -87,23 +98,37 @@ Res testImu() {
 
   ImuSelfTest stt;
   imu.selfTest(stt);
-  proto::test("imu_selftest_gyro", stt.gyro_ok, "Antwort %.0f %.0f %.0f dps, Verhältnis %.2f %.2f %.2f, Offset %.1f %.1f %.1f",
-              stt.gyro_resp_dps[0], stt.gyro_resp_dps[1], stt.gyro_resp_dps[2],
-              stt.gyro_ratio[0], stt.gyro_ratio[1], stt.gyro_ratio[2],
-              stt.gyro_offset_dps[0], stt.gyro_offset_dps[1], stt.gyro_offset_dps[2]);
-  proto::test("imu_selftest_acc", stt.acc_ok, "Antwort %.3f %.3f %.3f g, Verhältnis %.2f %.2f %.2f",
-              stt.acc_resp_g[0], stt.acc_resp_g[1], stt.acc_resp_g[2], stt.acc_ratio[0], stt.acc_ratio[1], stt.acc_ratio[2]);
+  // ICM-42688-P: Verhältnis zum Werkswert; LSM6DSV16X: kein Werkswert, feste Grenzen aus dem Datenblatt
+  if (stt.gyro_max_dps > 0)
+    proto::test("imu_selftest_gyro", stt.gyro_ok, "Antwort %.0f %.0f %.0f dps, Grenzen %.0f..%.0f, Offset %.1f %.1f %.1f",
+                stt.gyro_resp_dps[0], stt.gyro_resp_dps[1], stt.gyro_resp_dps[2], stt.gyro_min_dps, stt.gyro_max_dps,
+                stt.gyro_offset_dps[0], stt.gyro_offset_dps[1], stt.gyro_offset_dps[2]);
+  else
+    proto::test("imu_selftest_gyro", stt.gyro_ok, "Antwort %.0f %.0f %.0f dps, Verhältnis %.2f %.2f %.2f, Offset %.1f %.1f %.1f",
+                stt.gyro_resp_dps[0], stt.gyro_resp_dps[1], stt.gyro_resp_dps[2],
+                stt.gyro_ratio[0], stt.gyro_ratio[1], stt.gyro_ratio[2],
+                stt.gyro_offset_dps[0], stt.gyro_offset_dps[1], stt.gyro_offset_dps[2]);
+  if (stt.acc_max_g > 0)
+    proto::test("imu_selftest_acc", stt.acc_ok, "Antwort %.3f %.3f %.3f g, Grenzen %.3f..%.3f",
+                stt.acc_resp_g[0], stt.acc_resp_g[1], stt.acc_resp_g[2], stt.acc_min_g, stt.acc_max_g);
+  else
+    proto::test("imu_selftest_acc", stt.acc_ok, "Antwort %.3f %.3f %.3f g, Verhältnis %.2f %.2f %.2f",
+                stt.acc_resp_g[0], stt.acc_resp_g[1], stt.acc_resp_g[2], stt.acc_ratio[0], stt.acc_ratio[1], stt.acc_ratio[2]);
   if (!stt.ok) r = Res::FEHL;
   st.imu = imu.begin();
   return r;
 }
 
 // ---------------------------------------------------------------- Barometer
-static Res testOneBaro(BMP390& b, const char* name, bool fitted, bool& ok_flag) {
+static Res testOneBaro(BMP390& b, const char* name, const char* part, bool fitted, bool& ok_flag) {
   ok_flag = b.begin();
+  if (!fitted) {
+    const bool answers = ok_flag;
+    ok_flag = false;
+    return notFitted(name, part, answers);
+  }
   if (!ok_flag) {
-    if (!fitted) { proto::test(name, Res::SKIP, "nicht bestückt (DNP), Chip-ID 0x%02X", b.chipId()); return Res::SKIP; }
-    proto::test(name, Res::FEHL, "keine Antwort, Chip-ID 0x%02X", b.chipId());
+    proto::test(name, Res::FEHL, "keine Antwort, Chip-ID 0x%02X (nicht bestückt? dann 'fit %s off')", b.chipId(), part);
     return Res::FEHL;
   }
   float p = 0, t = 0;
@@ -116,16 +141,18 @@ static Res testOneBaro(BMP390& b, const char* name, bool fitted, bool& ok_flag) 
 }
 
 Res testBaro() {
-  const Res a = testOneBaro(baro, "baro1", true, st.baro);
-  const Res b = testOneBaro(baro2, "baro2", rb::BARO2_FITTED, st.baro2);
+  const Res a = testOneBaro(baro, "baro1", "baro", fit.baro, st.baro);
+  const Res b = testOneBaro(baro2, "baro2", "baro2", fit.baro2, st.baro2);
   return proto::worst(a, b);
 }
 
 // ---------------------------------------------------------------- Magnetometer
 Res testMag() {
   const uint8_t id = mag.whoAmI();
-  proto::test("mag_whoami", id == LIS3MDL::WHO_AM_I_VALUE, "0x%02X soll 0x3D (LIS3MDL, 0x%02X)", id, rb::I2C_ADDR_LIS3MDL);
-  if (id != LIS3MDL::WHO_AM_I_VALUE) return Res::FEHL;
+  if (!fit.mag) { st.mag = false; return notFitted("mag_whoami", "mag", id == LIS3MDL::WHO_AM_I_VALUE); }
+  proto::test("mag_whoami", id == LIS3MDL::WHO_AM_I_VALUE, "0x%02X soll 0x3D (LIS3MDL, 0x%02X)%s", id, rb::I2C_ADDR_LIS3MDL,
+              id == LIS3MDL::WHO_AM_I_VALUE ? "" : ", keine Antwort");
+  if (id != LIS3MDL::WHO_AM_I_VALUE) { st.mag = false; return Res::FEHL; }
   st.mag = mag.begin();
   proto::test("mag_config", st.mag, "80 Hz, +-4 gauss, UHP");
   if (!st.mag) return Res::FEHL;
@@ -158,6 +185,7 @@ Res testMag() {
 // ---------------------------------------------------------------- SHT40
 Res testSht() {
   st.sht = sht.begin();
+  if (!fit.sht) { const bool answers = st.sht; st.sht = false; return notFitted("sht_serial", "sht", answers); }
   proto::test("sht_serial", st.sht, "Seriennummer %08lX (0x%02X)", (unsigned long)sht.serial(), rb::I2C_ADDR_SHT40);
   if (!st.sht) return Res::FEHL;
   ShtSample s;
@@ -169,10 +197,11 @@ Res testSht() {
 
 // ---------------------------------------------------------------- ADXL375 (DNP)
 Res testAdxl() {
-  if (!adxl.present()) {
-    proto::test("adxl_present", rb::ADXL375_FITTED ? Res::FEHL : Res::SKIP, "kein ACK auf 0x%02X%s", rb::I2C_ADDR_ADXL375,
-                rb::ADXL375_FITTED ? "" : ", nicht bestückt (DNP)");
-    return rb::ADXL375_FITTED ? Res::FEHL : Res::SKIP;
+  const bool ack = adxl.present();
+  if (!fit.adxl) { st.adxl = false; return notFitted("adxl_present", "adxl", ack); }
+  if (!ack) {
+    proto::test("adxl_present", Res::FEHL, "kein ACK auf 0x%02X (nicht bestückt? dann 'fit adxl off')", rb::I2C_ADDR_ADXL375);
+    return Res::FEHL;
   }
   const uint8_t id = adxl.devId();
   proto::test("adxl_present", id == ADXL375::DEVID_VALUE, "DEVID 0x%02X soll 0xE5", id);
@@ -190,8 +219,9 @@ Res testAdxl() {
 Res testIna() {
   const uint16_t man = ina.manufacturerId(), dev = ina.deviceId();
   const bool id_ok = man == INA239::MANUFACTURER_TI && (dev >> 4) == INA239::DEVICE_ID_INA239;
-  proto::test("ina_id", id_ok, "Hersteller 0x%04X Gerät 0x%04X", man, dev);
-  if (!id_ok) return Res::FEHL;
+  if (!fit.ina) { st.ina = false; return notFitted("ina_id", "ina", id_ok); }
+  proto::test("ina_id", id_ok, "Hersteller 0x%04X Gerät 0x%04X%s", man, dev, id_ok ? "" : ", keine Antwort (nicht bestückt? dann 'fit ina off')");
+  if (!id_ok) { st.ina = false; return Res::FEHL; }
   st.ina = ina.begin();
   proto::test("ina_config", st.ina, "ADC_CONFIG zurückgelesen");
   if (!st.ina) return Res::FEHL;
@@ -209,6 +239,7 @@ Res testIna() {
 }
 
 Res testInaLoad() {
+  if (!fit.ina) return notFitted("ina_load", "ina");
   if (!st.ina && !(st.ina = ina.begin())) { proto::test("ina_load", Res::FEHL, "INA239 antwortet nicht"); return Res::FEHL; }
   if (!have2S()) { proto::test("ina_load", Res::SKIP, "2S nicht versorgt"); return Res::SKIP; }
   if (proto::wait("Last an VSERVO anschließen (z. B. 10 Ohm / 5 W zwischen + und - einer Servobuchse), dann Enter") != 1) {
@@ -385,7 +416,17 @@ static long loraUartBaud(uint8_t reg0) {
   return b[reg0 >> 5];
 }
 
+static Res loraRun();
+
 Res testLora() {
+  // Ohne Modul nichts treiben: M0/M1/AUX bleiben im Ruhezustand (FitRevB.h), Serial8 bleibt aus
+  if (!fit.lora) { rb::loraPinsIdle(false); return notFitted("lora_aux", "lora"); }
+  const Res r = loraRun();
+  rb::loraPinsIdle(true);              // M0 = M1 = 0 (Normalbetrieb)
+  return r;
+}
+
+static Res loraRun() {
   Res r = Res::OK;
   // Modus 2 (Konfiguration): M1 = 1, M0 = 0; UART fest 9600 8N1
   digitalWrite(rb::PIN_LORA_M0, LOW);  pinMode(rb::PIN_LORA_M0, OUTPUT);
@@ -393,7 +434,7 @@ Res testLora() {
   Serial8.begin(9600);
   delay(50);
   const bool aux = loraWaitAux(1000);
-  proto::test("lora_aux", aux, "AUX %s", aux ? "hoch (bereit)" : "bleibt tief");
+  proto::test("lora_aux", aux, "AUX %s", aux ? "hoch (bereit)" : "bleibt tief (nicht bestückt? dann 'fit lora off')");
   if (!aux) r = Res::FEHL;
 
   while (Serial8.available()) Serial8.read();
@@ -453,6 +494,7 @@ Res testLora() {
 
 // ---------------------------------------------------------------- GPS
 Res testGps() {
+  if (!fit.gps) return notFitted("gps_nmea", "gps");
   NmeaState s;
   long found = 0;
   for (long baud : {38400L, 9600L}) {
@@ -475,7 +517,7 @@ Res testGps() {
     if (s.sentences > 2) { found = baud; break; }
   }
   if (!found) {
-    proto::test("gps_nmea", Res::FEHL, "keine NMEA-Sätze bei 38400/9600 Bd (Modul angesteckt, 3V3_RF?)%s",
+    proto::test("gps_nmea", Res::FEHL, "keine NMEA-Sätze bei 38400/9600 Bd (Modul angesteckt, 3V3_RF? sonst 'fit gps off')%s",
                 s.bad_checksum ? ", Prüfsummenfehler" : "");
     proto::test("gps_fix", Res::SKIP, "ohne NMEA");
     return Res::FEHL;

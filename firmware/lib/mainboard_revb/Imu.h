@@ -1,11 +1,11 @@
 #pragma once
 // Imu.h – schmale Schnittstelle der Flug-IMU
 //
-// Zur Diskussion steht der Wechsel vom ICM-42688-P auf den LSM6DSV16X
-// (gleiches Gehäuse LGA-14). Alles außerhalb des Treibers spricht deshalb
-// nur diese Schnittstelle: begin, whoAmI, dataReady, read, selfTest. Ein
-// zweiter Treiber leitet von ImuDriver ab und wird in der Umgebung
-// ausgetauscht, der Rest (Selbsttest, Kalibrierung, Flug) bleibt.
+// rev B1 trägt seit 23.10.2026 den LSM6DSV16X (LSM6DSV16X.h); der Treiber für
+// den ICM-42688-P (ICM42688.h, gleiches Gehäuse LGA-14) bleibt für ältere
+// Platinen. Alles außerhalb des Treibers spricht nur diese Schnittstelle:
+// begin, whoAmI, dataReady, read, selfTest. ImuAuto.h wählt den Treiber
+// beim Start nach WHO_AM_I; Selbsttest, Kalibrierung und Flug bleiben gleich.
 //
 // Werte in Chip-Achsen. Die Zuordnung zum Raketenkörper kommt aus der
 // Kalibrierung (CalData::imu_axis_map/sign), nicht aus dem Treiber.
@@ -26,6 +26,9 @@ struct ImuSelfTest {
   float gyro_ratio[3]    = {0, 0, 0};   // Antwort / Werkswert (0 = kein Werkswert)
   float acc_ratio[3]     = {0, 0, 0};
   float gyro_offset_dps[3] = {0, 0, 0}; // Nullpunkt in Ruhe während des Tests
+  // Feste Grenzen für |Antwort|, wenn der Chip keinen Werkswert hat (LSM6DSV16X); 0 = nicht benutzt
+  float gyro_min_dps = 0, gyro_max_dps = 0;
+  float acc_min_g = 0, acc_max_g = 0;
 };
 
 class ImuDriver {

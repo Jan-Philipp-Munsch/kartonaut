@@ -8,6 +8,12 @@ using namespace board;
 
 static const char* AXIS[3] = {"x", "y", "z"};
 
+// Baustein laut Bestückungsliste nicht bestückt (FitRevB.h, "fit"): kein Fehler, nichts gespeichert
+static Res calNotFitted(const char* name, const char* part) {
+  proto::test(name, Res::NICHT, "nicht bestückt oder keine Antwort (Bestückungsliste: fit %s off)", part);
+  return Res::NICHT;
+}
+
 // Mittelwert der IMU über ms Millisekunden; false bei Bewegung (> max_dps Spanne) oder Abbruch
 static bool imuAverage(uint32_t ms, float acc[3], float gyr[3], float& temp, float max_dps, float* std_dps = nullptr) {
   double sa[3] = {0, 0, 0}, sg[3] = {0, 0, 0}, sg2[3] = {0, 0, 0}, st_ = 0;
@@ -39,6 +45,7 @@ static bool imuAverage(uint32_t ms, float acc[3], float gyr[3], float& temp, flo
 }
 
 Res calGyro(float seconds) {
+  if (!fit.imu) return calNotFitted("cal_gyro", "imu");
   if (!st.imu) { proto::test("cal_gyro", Res::FEHL, "IMU nicht bereit"); return Res::FEHL; }
   seconds = constrain(seconds, 2.0f, 120.0f);
   proto::info("Gyro-Nullpunkt: Platine %.0f s ruhig liegen lassen (q bricht ab)", seconds);
@@ -65,6 +72,7 @@ Res calGyro(float seconds) {
 // Sechs Lagen: Offset = (max + min) / 2, Skalierung = 2 g / (max - min) je Chip-Achse.
 // Die Lagen müssen nur jede Achse einmal nach oben und einmal nach unten bringen.
 Res calAcc() {
+  if (!fit.imu) return calNotFitted("cal_acc", "imu");
   if (!st.imu) { proto::test("cal_acc", Res::FEHL, "IMU nicht bereit"); return Res::FEHL; }
   static const char* POS[6] = {
     "Platine flach, Bestückseite (Teensy) nach oben",
@@ -110,6 +118,7 @@ Res calAcc() {
 static cal::EllipsoidFit ellipsoid;   // 14 KB, deshalb statisch
 
 Res calMag(float seconds) {
+  if (!fit.mag) return calNotFitted("cal_mag", "mag");
   if (!st.mag) { proto::test("cal_mag", Res::FEHL, "Magnetometer nicht bereit"); return Res::FEHL; }
   seconds = constrain(seconds, 10.0f, 180.0f);
   if (proto::wait("Magnetometer: Platine %.0f s langsam um alle Achsen drehen (alle Richtungen, auch über Kopf). Enter zum Start", seconds) != 1) {
@@ -160,6 +169,7 @@ static bool dominantAxis(const float a[3], int8_t& axis, int8_t& sign) {
 }
 
 Res calAxes() {
+  if (!fit.imu) return calNotFitted("cal_axes", "imu");
   if (!st.imu) { proto::test("cal_axes", Res::FEHL, "IMU nicht bereit"); return Res::FEHL; }
   int8_t map[3], sign[3];
   float acc[3], gyr[3], temp;
@@ -221,6 +231,7 @@ Res calAxes() {
 }
 
 Res calBaro(float seconds) {
+  if (!fit.baro) return calNotFitted("cal_baro", "baro");
   if (!st.baro) { proto::test("cal_baro", Res::FEHL, "Barometer nicht bereit"); return Res::FEHL; }
   seconds = constrain(seconds, 5.0f, 120.0f);
   proto::info("Bodenreferenz: %.0f s, kein Luftzug", seconds);
@@ -276,6 +287,7 @@ Res calAdc(int channel) {
 }
 
 Res calIna() {
+  if (!fit.ina) return calNotFitted("cal_ina", "ina");
   if (!st.ina) { proto::test("cal_ina", Res::FEHL, "INA239 nicht bereit"); return Res::FEHL; }
   if (!have2S()) { proto::test("cal_ina", Res::SKIP, "2S nicht versorgt"); return Res::SKIP; }
   if (proto::wait("INA239 Offset: keine Last an VSERVO (Servos, Motor abgesteckt), Enter") != 1) { proto::test("cal_ina", Res::SKIP, "abgebrochen"); return Res::SKIP; }

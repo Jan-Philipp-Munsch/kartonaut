@@ -28,7 +28,7 @@ pio run -e i2c_scanner -t upload   # einen Test-Sketch flashen
 | `src/Config.h` | Alle Pins (je Board), physikalischen Parameter, Reglergewinne, Schwellen des Automaten, Pyro, Telemetrie, Watchdog, Schalter | – |
 | `src/Sensors.h` | Schnittstelle: `SensorSample` (spezifische Kraft, Drehrate im Körpersystem, Druck, Höhe, Akkus, ARM, Durchgang), Kalibrierung | – |
 | `src/Sensors_breakout.cpp` | Rückende Breakouts: ICM-20948 roh ohne DMP (±4 g, ±2000 °/s, DLPF 50 Hz), BMP280, INA219. Kein ARM, kein Durchgang: Pyro gesperrt. | – |
-| `src/Sensors_revb.cpp` | Rückende Mainboard rev B: ICM-42688-P, BMP390, INA239 an SPI1, Akkus/ARM/Durchgang über die Mux (`lib/mainboard_revb/`) | – |
+| `src/Sensors_revb.cpp` | Rückende Mainboard rev B: IMU nach WHO_AM_I (LSM6DSV16X auf rev B1, sonst ICM-42688-P), BMP390, INA239 an SPI1, Akkus/ARM/Durchgang über die Mux (`lib/mainboard_revb/`) | – |
 | `src/Attitude.*` | Lage als Gyro-Quaternion, Init aus der Beschleunigung auf dem Pad, Oben-Vektor, Kippwinkel in Servoachsen, Rollwinkel | ✅ |
 | `src/KalmanZ.*` | 2-Zustands-Kalman (Höhe, Vertikalgeschwindigkeit) mit Beschleunigung als Eingang und Barometer als Messung | – |
 | `src/FlightState.*` | Flugzustandsautomat SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED, ABORT; Ereignisse mit Zeitstempel | ✅ |
@@ -180,24 +180,28 @@ nutzen also dieselben Pins aus `Config.h`.
 | `i2c_scanner` | Listet alle I²C-Adressen auf Wire. Erwartet 0x40, 0x68/0x69 und 0x76. |
 | `pyro_mosfet_test` | Warnblinken, dann ein 1-s-Puls auf `PIN_PYRO1` (23). Nur mit Lämpchen oder Widerstand als Last. |
 | `servo_ident` | **Experiment E01** (`docs/experiments/E01_servo_ident.md`): fährt je TVC-Achse Treppe, Sprünge, Wechselsprünge und zwei Chirps auf den Servo und loggt mit 500 Hz Kommando, Drehrate und Beschleunigung einer ICM-20948 auf dem Motorrohr als CSV über USB. Befehle `?`, `Y`, `P`, `B`, `S`, `A`, `C`, `W`, `F`, `M`, `Z`, `V`, `N`. Aufnahme: `tools/capture_serial.py`, Auswertung: `simulation/scripts/ident_servo.py`. |
-| `revb_bringup` | Inbetriebnahme des Mainboards rev B1: sichere Ausgänge, dann Mux (Akkus, ARM, Pyro-Durchgang), IMU, BMP390 (×2), INA239, LoRa-Parameter, GPS, LIS3MDL, SHT40, ADXL375; je Baustein OK/FEHL, danach Messwerte im Sekundentakt. Nutzt `lib/mainboard_revb/`, nicht `Config.h`. |
-| `revb_test` | Testkonsole und Kalibrierung rev B1: Befehlsmenü über USB-Serial, je Funktion ein Befehl mit `TEST <name> OK/FEHL/SKIP`, geführte Kalibrierung mit `CAL`-Zeilen, Ablage im EEPROM-Emulat. Ablauf in `Tischtest_revB1.md`, PC-Seite `tools/bench_test.py`. `tvc ...` fährt Versuch E02 (Servo → Kardan, `docs/experiments/E02_TVC_Charakterisierung_revB1.md`, Aufnahme `tools/capture_tvc.py`). |
+| `revb_bringup` | Inbetriebnahme des Mainboards rev B1: sichere Ausgänge, dann Mux (Akkus, ARM, Pyro-Durchgang), IMU (LSM6DSV16X oder ICM-42688-P nach WHO_AM_I), BMP390/BMP388 (×2), INA239, LoRa-Parameter, GPS, LIS3MDL, SHT40, ADXL375; je Baustein `[ OK ]`/`[FEHL]`, laut Bestückungsliste (`FitRevB.h`) fehlende Teile `[ -- ]` ohne Fehler; danach Messwerte im Sekundentakt. Nutzt `lib/mainboard_revb/`, nicht `Config.h`. |
+| `revb_test` | Testkonsole und Kalibrierung rev B1: Befehlsmenü über USB-Serial, je Funktion ein Befehl mit `TEST <name> OK/FEHL/SKIP/NICHT_ERKANNT` (`NICHT_ERKANNT` = laut Bestückungsliste nicht bestückt, umschaltbar mit `fit <teil> on/off`), geführte Kalibrierung mit `CAL`-Zeilen, Ablage im EEPROM-Emulat. Ablauf in `Tischtest_revB1.md`, PC-Seite `tools/bench_test.py`. `tvc ...` fährt Versuch E02 (Servo → Kardan, `docs/experiments/E02_TVC_Charakterisierung_revB1.md`, Aufnahme `tools/capture_tvc.py`). |
 
 Die früheren Monolith-Sketches und kopierten Bibliotheksbeispiele (`sketches/` bis Commit
 `3b152c9`) sind entfernt; sie stehen in der Git-Historie.
 
-## Mainboard rev B1 (vorbereitet, Platine noch nicht gefertigt)
+## Mainboard rev B1 (von JLCPCB bestückt, Stand 05.11.2026)
 
 `lib/mainboard_revb/` enthält Pinbelegung und Treiber für die Platine (Stand `circuit.py` auf
-`claude/rev-b1`). Die Flug-Firmware in `src/` bindet die Treiber noch nicht ein; PlatformIO baut die
-Bibliothek nur in Umgebungen, die sie benutzen (`revb_bringup`, `revb_test`).
+`claude/rev-b1`, seit dem Merge auf `main`). Die Flug-Firmware nutzt sie in der Umgebung `teensy41_revb`
+(`src/Sensors_revb.cpp`); PlatformIO baut die Bibliothek nur in Umgebungen, die sie benutzen
+(`revb_bringup`, `revb_test`, `teensy41_revb`).
 
 | Datei | Aufgabe |
 |---|---|
 | `BoardRevB.h` | Teensy-Pins, Chip-Selects (74HC138, `revb::Cs`), Analogkanäle (74HC4051, `revb::Mux`), I²C-Adressen, Teiler und Shunt |
 | `BusRevB.*` | SPI1 auf 26/27/39, Chip-Select über den Decoder, Analogmessung über die Mux |
-| `Imu.h` | Schmale IMU-Schnittstelle (`begin`, `whoAmI`, `dataReady`, `read`, `selfTest`); ein zweiter Treiber (LSM6DSV16X) käme ohne Umbau des Rests dazu |
-| `ICM42688.*` | IMU über SPI, ±2000 °/s, ±16 g, 1 kHz, INT1 Daten bereit, Werksselbsttest. **Offen:** die Platine rev B1 trägt seit 23.10. einen LSM6DSV16X (E12, WHO_AM_I 0x70, gleiche Pins); der Treiber hinter `Imu.h` ist noch zu schreiben |
+| `Imu.h` | Schmale IMU-Schnittstelle (`begin`, `whoAmI`, `dataReady`, `read`, `selfTest`) |
+| `LSM6DSV16X.*` | IMU von rev B1 (U4, WHO_AM_I 0x70) über SPI Modus 3: ±2000 °/s, ±16 g, 960 Hz High-Performance, BDU, INT1 Gyro-Daten bereit, Temperatur, Selbsttest nach AN5763 mit festen Grenzen (kein Werkswert). Auf der Platine zu bestätigen: Kommentare `PRUEFEN` |
+| `ICM42688.*` | IMU älterer Platinen über SPI, ±2000 °/s, ±16 g, 1 kHz, INT1 Daten bereit, Werksselbsttest |
+| `ImuAuto.h` | wählt beim Start nach WHO_AM_I zwischen LSM6DSV16X und ICM-42688-P; die Programme halten nur `ImuDriver&` |
+| `FitRevB.h` | Bestückungsliste: Standard INA239, LoRa, GPS, Baro 2, ADXL375 aus. Ändern mit `-DREVB_FIT_INA239=1` usw. oder in `revb_test` mit `fit`. Ruhezustand der LoRa-Pins ohne Modul (`loraPinsIdle`) |
 | `BMP390.*` | Barometer über SPI, Bosch-Kompensation, erkennt auch den BMP388 |
 | `INA239.*` | Strom und Spannung im 2S-Pfad über SPI |
 | `I2cRevB.h`, `LIS3MDL.*`, `SHT40.*`, `ADXL375.*` | I²C an Wire (18/19): Magnetometer 0x1E mit Selbsttest, Feuchte/Temperatur 0x44, ±200 g 0x53 (DNP, nur erkennen) |
@@ -214,8 +218,8 @@ in Chip-Achsen; die Drehung ins Körpersystem wird eingetragen, wenn die Platzie
 Solange sich die Platine ändert, vor dem Flashen die Pins gegen die Schaltung prüfen:
 
 ```bash
-python firmware/tools/check_board_pins.py            # circuit.py auf diesem Branch
-python firmware/tools/check_board_pins.py <circuit.py von claude/rev-b1>
+python firmware/tools/check_board_pins.py            # circuit.py auf diesem Branch (main hat den Decoder)
+python firmware/tools/check_board_pins.py <anderer/pfad/circuit.py>
 ```
 
 Tischtest am PC (Versorgung, Flashen, Befehle, Bericht): `python tools/bench_test.py`, Ablauf und

@@ -5,23 +5,27 @@
 //   READY                          Konsole bereit, wartet auf Befehle
 //   # <text>                       Kommentar für Menschen (Menü, Hinweise)
 //   INFO <text>                    Zwischenwert oder Hinweis, nicht bewertet
-//   TEST <name> OK|FEHL|SKIP <detail>
+//   TEST <name> OK|FEHL|SKIP|NICHT_ERKANNT <detail>
 //   CAL <name> <wert> [<wert> ...]  Kalibrierwert(e), Leerzeichen-getrennt, Punkt als Dezimalzeichen
 //   ASK <text>                     Firmware wartet auf eine Zahl (leere Zeile = abbrechen)
 //   WAIT <text>                    Firmware wartet auf Enter/"j" (weiter), "n" (nein), "q" (abbrechen)
 //   CONFIRM <text>                 Firmware wartet auf das Wort JA (alles andere = abbrechen)
-//   END <befehl> OK|FEHL|SKIP      Befehl beendet, Gesamtergebnis
+//   END <befehl> OK|FEHL|SKIP|NICHT_ERKANNT   Befehl beendet, Gesamtergebnis
+//
+// NICHT_ERKANNT: der Baustein steht in der Bestückungsliste auf "aus" (FitRevB.h, Befehl
+// "fit"), er gilt als nicht bestückt und wird nicht als Fehler gewertet. Ein bestücktes Teil,
+// das nicht antwortet, ist FEHL. SKIP heißt "Voraussetzung fehlt" (2S, ARM, abgebrochen).
 //
 // Namen sind ASCII ohne Leerzeichen. Alles, was nicht so beginnt, ist
 // freier Text und wird vom Werkzeug nur protokolliert.
 #include <Arduino.h>
 
-enum class Res : uint8_t { OK, FEHL, SKIP };
+enum class Res : uint8_t { OK, FEHL, SKIP, NICHT };   // NICHT = "NICHT_ERKANNT"
 
 namespace proto {
 
 const char* name(Res r);
-Res worst(Res a, Res b);       // FEHL schlägt SKIP schlägt OK
+Res worst(Res a, Res b);       // FEHL schlägt SKIP schlägt NICHT_ERKANNT schlägt OK
 
 void ready();
 void comment(const char* fmt, ...);

@@ -65,7 +65,9 @@ static void mahony_pulls_tilt_to_accel() {
   MahonyAid aid;
   const float t = 8.0f * 3.14159265f / 180.0f;
   const Vec3 acc(0, sinf(t) * 9.81f, cosf(t) * 9.81f);
-  for (int i = 0; i < 2500; ++i) a.update(aid.apply(a, Vec3(), acc, nullptr, true, 0.004f), 0.004f);   // 10 s
+  // 100 s: der I-Anteil hält einen Teil des Anfangssprungs zunächst für einen Gyro-Fehler und baut ihn
+  // mit der langsamen Polstelle (~20 s) ab; nach 10 s stünden noch 8,28°.
+  for (int i = 0; i < 25000; ++i) a.update(aid.apply(a, Vec3(), acc, nullptr, true, 0.004f), 0.004f);
   CHECK_NEAR(a.tiltTotalDeg(), 8.0, 0.05);
 }
 
@@ -88,7 +90,7 @@ static void mahony_mag_only_turns_heading() {
   // Feld mit Inklination 65°, Nord liegt 40° neben der Körper-x-Achse
   const float inc = 65.0f * 3.14159265f / 180.0f, hd = 40.0f * 3.14159265f / 180.0f;
   const Vec3 m(cosf(inc) * cosf(hd), -cosf(inc) * sinf(hd), -sinf(inc));
-  for (int i = 0; i < 5000; ++i) a.update(aid.apply(a, Vec3(), Vec3(0, 0, 9.81f), &m, true, 0.004f), 0.004f);
+  for (int i = 0; i < 25000; ++i) a.update(aid.apply(a, Vec3(), Vec3(0, 0, 9.81f), &m, true, 0.004f), 0.004f);   // 100 s, s. o.
   CHECK(a.tiltTotalDeg() < 0.05);
   CHECK_NEAR(fabs(a.rollDeg()), 40.0, 0.5);
 }

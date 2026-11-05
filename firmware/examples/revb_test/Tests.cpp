@@ -3,7 +3,7 @@
 #include "Watchdog.h"
 #include "Nmea.h"
 #include <SD.h>
-#include <LittleFS.h>
+#include "QspiFlash.h"
 #include <math.h>
 
 using namespace board;
@@ -661,10 +661,14 @@ Res testMem() {
   if (mb == 16) {
     proto::test("qspi_flash", Res::NICHT, "kein Platz: beide Lötfelder tragen PSRAM");
   } else {
-    static LittleFS_QSPIFlash qf;
+    // Roh über JEDEC, nicht über LittleFS: LittleFS_QSPIFlash::begin() formatiert einen fremden
+    // Inhalt und würde den Flugschreiber (FlashLog) löschen.
+    static QspiFlash qf;
     if (qf.begin()) {
-      proto::test("qspi_flash", Res::OK, "%s erkannt, %lu KB (LittleFS)", qf.getMediaName(),
-                  (unsigned long)(qf.totalSize() / 1024));
+      uint32_t magic = 0;
+      qf.read(0, &magic, 4);
+      proto::test("qspi_flash", Res::OK, "JEDEC %06lX, %lu KB%s", (unsigned long)qf.jedec(),
+                  (unsigned long)(qf.size() / 1024), magic == 0x314C464Bu ? ", Flugschreiber-Daten vorhanden" : "");
     } else {
       proto::test("qspi_flash", Res::NICHT, "kein QSPI-Flash an Lötfeld %u", mb ? 2u : 1u);
     }

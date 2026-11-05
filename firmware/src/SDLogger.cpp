@@ -249,14 +249,36 @@ uint32_t SDLogger_queued() { return ring.count(); }
 
 void SDLogger_setOverwrite(bool on) { ring.setOverwrite(on); }
 
-bool SDLogger_logFrame(const SDFrame& f) {
-  if (!ring.ready()) return false;
-  Record r;
+void SDLogger_pack(const SDFrame& f, void* out) {
+  Record& r = *(Record*)out;
   r.ts_us  = micros();
   r.format = FORMAT;
   r.nch    = L_NUM;
   for (size_t i = 0; i < NCH; ++i) r.v[i] = i < L_NUM ? q(f.v[i], LOG_CH[i].scale) : 0;
+}
+
+size_t SDLogger_recordBytes() { return REC_BYTES; }
+
+bool SDLogger_logFrame(const SDFrame& f) {
+  if (!ring.ready()) return false;
+  Record r;
+  SDLogger_pack(f, &r);
   return ring.push(&r);
+}
+
+bool SDLogger_writeBlobFile(size_t (*next)(void* buf, size_t max), char name_out[16]) {
+  if (!ensureSdBegun()) return false;
+  int num;
+  if (!nextFreeNumber(&num)) return false;
+  snprintf(name_out, 16, "LOG%05d.BIN", num);
+  FsFile wf;
+  if (!wf.open(name_out, O_RDWR | O_CREAT | O_TRUNC)) return false;
+  static uint8_t buf[4096];
+  bool ok = true;
+  for (size_t n; ok && (n = next(buf, sizeof buf)) > 0;) ok = wf.write(buf, n) == n;
+  wf.sync();
+  wf.close();
+  return ok;
 }
 
 void SDLogger_service(uint32_t deadline_us, bool sd_allowed) {

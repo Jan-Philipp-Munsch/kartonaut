@@ -11,7 +11,8 @@
 //   6. Pyro (Pyro.h): nur in APOGEE/DESCENT mit ARM und Durchgang
 //   7. Telemetrie 10 Hz (Telemetry.h) über Serial8, Ereignisse sofort
 //   8. Log-Satz in den Ringpuffer (PSRAM); auf die SD-Karte nur in SAFE und ab DESCENT, und nur
-//      in der freien Zeit bis zur nächsten Deadline (SDLogger.h); Zustandsspeicher, Watchdog
+//      in der freien Zeit bis zur nächsten Deadline (SDLogger.h); dazu in den Flash-Flugschreiber
+//      (FlashLog.h, ab PAD_READY, übersteht Stromausfall und verlorene SD-Karte); Zustandsspeicher, Watchdog
 //
 // Nach einem Watchdog-Neustart im Flug nimmt die Firmware den Zustand aus dem
 // Zustandsspeicher wieder auf (StateStore.h), statt in SAFE auf dem Pad zu beginnen.
@@ -35,6 +36,7 @@
 #include "ThrustCurveE12.h"
 #include "ThrottleLaw.h"
 #include "Filters.h"
+#include "FlashLog.h"
 
 HardwareSerial& radio = Serial8;   // HC-12 heute, E22-400T22S auf rev B (transparenter Modus)
 
@@ -161,6 +163,9 @@ static void pollRadio() {
       case 'r': handleCommand(tlm::CMD_PAD_READY, 0); break;
       case 'a': handleCommand(tlm::CMD_ABORT, 0); break;
       case 's': handleCommand(tlm::CMD_SAFE, 0); break;
+      case 'f':                          // Flugschreiber aus dem Flash auf die SD-Karte kopieren (nur am Boden)
+        if (!fsm.inFlight()) FlashLog_copyToSd();
+        break;
       case 'x':                          // Tischtest: Log schließen und als CSV exportieren (nur am Boden)
         if (LOG_DATA && !fsm.inFlight()) {
           SDLogger_stop();
@@ -188,6 +193,13 @@ static void pollRadio() {
                         (unsigned long)ls.written, (unsigned long)ls.write_us_max, (unsigned long)ls.sync_us_max,
                         (unsigned long)last_loop_us, (unsigned)sample.imu_n,
                         mahony.integral_dps.x, mahony.integral_dps.y, mahony.integral_dps.z);
+          FlashLogStats fs; FlashLog_getStats(fs);
+          Serial.printf("Flugschreiber: %s (JEDEC %06lX, %lu MB), Sitzung %d, geschrieben %lu KB, geloescht bis %lu KB, "
+                        "Warteschlange %lu (max %lu) Seiten, verloren %lu Saetze%s\n",
+                        fs.present ? "Flash da" : "kein Flash", (unsigned long)fs.jedec, (unsigned long)(fs.size >> 20),
+                        (int)fs.session, (unsigned long)(fs.write_pos >> 10), (unsigned long)(fs.erased_to >> 10),
+                        (unsigned long)fs.queued_pages, (unsigned long)fs.max_queued, (unsigned long)fs.dropped_records,
+                        fs.old_flight_pending ? ", ALTER FLUG NICHT KOPIERT ('f')" : "");
         }
         break;
       default: break;
@@ -308,6 +320,9 @@ void setup(){
     Sensors_calibrateStart();           // Nullpunkte gleich nach dem Einschalten (Rakete ruhig)
     calibrating = true;
   }
+  // Flugschreiber: nach einem Neustart im Flug weiterschreiben, sonst alten Flug zur SD kopieren und
+  // den Bereich im Hintergrund löschen. Vor dem Watchdog: die Kopie darf einige Sekunden dauern.
+  if (LOG_DATA) FlashLog_setup(restored);
   Serial.printf("Kartonaut Flug-Firmware, Board %s, Reset: %s, IMU %s, Baro %s\n",
 #ifdef BOARD_REVB
                 "rev B",
@@ -407,7 +422,9 @@ void loop(){
       StateStore_clear();
       Control_resetPY(); Control_resetRoll();
       if (LOG_DATA && !SDLogger_isRecording()) SDLogger_start();
+      if (LOG_DATA) FlashLog_startSession();
     }
+    if (fsm.state() == FlightState::SAFE && !fsm.launchTime()) FlashLog_abortSession();   // zurück ohne Start
   }
   if (pending_ack) {
     const bool ok = (pending_cmd_type == tlm::CMD_PAD_READY) ? fsm.state() == FlightState::PAD_READY
@@ -496,11 +513,14 @@ void loop(){
     v[L_RING_PCT] = ls.capacity ? 100.f * ls.queued / ls.capacity : 0.f;
     v[L_FIFO_OVR] = sample.imu_fifo_ovr & 0x7FFF;
     SDLogger_logFrame(fr);
+    if (fs_now != FlightState::PAD_READY || (loops % 10) == 0) FlashLog_log(fr);   // am Pad 25 Hz, sonst wie das Log
     log_frames++;
   }
   if ((fsm.inFlight() || fsm.state() == FlightState::PAD_READY) && (loops % STATE_SAVE_EVERY_N_LOOPS) == 0) {
     saveState(t);
   }
+  static bool flash_closed = false;
+  if (fsm.state() == FlightState::LANDED && !flash_closed) { flash_closed = true; FlashLog_finish(); }
   if (fsm.state() == FlightState::LANDED && !log_closed) {
     // erst schließen, wenn der Puffer leer ist (das Nachschreiben läuft in der freien Zeit, unten)
     StateStore_clear();
@@ -550,6 +570,8 @@ void loop(){
   }
 
   // --- 9. SD-Karte: nur am Boden und ab DESCENT, nur in der freien Zeit bis zur nächsten Deadline ---
+  // Flugschreiber jeden Loop: höchstens eine Seite programmieren (µs, wartet nie); löschen nur am Boden
+  if (LOG_DATA) FlashLog_service(ground || fs_now == FlightState::PAD_READY || fs_now == FlightState::LANDED);
   if (LOG_DATA) SDLogger_service(loopTimer.next_us - 200, ground || descent);
 
   last_loop_us = micros() - t0;

@@ -41,6 +41,7 @@ pio run -e i2c_scanner -t upload   # einen Test-Sketch flashen
 | `src/Telemetry.*`, `src/Crc16.h` | Funkprotokoll (Rahmen, TLM/EVT/ACK, Kommandos, Parser, CRC-16/CCITT) | ✅ |
 | `src/StateMemory.*`, `src/StateStore.*` | Zustandsspeicher (Magic + CRC) und seine Ablage in DMAMEM für den Neustart im Flug | ✅ / – |
 | `src/Watchdog.*` | RTWDOG mit `WDT_TIMEOUT_MS`, Reset-Ursache | – |
+| `src/FlashLog.*`, `lib/qspiflash/` | Flugschreiber im QSPI-Flash unter dem Teensy (W25Q128, 16 MB): roher, nicht blockierender Treiber (eine Seite je Loop, wartet nie), Sitzung ab PAD_READY, Kopie zur SD beim nächsten Start | – |
 | `src/SDLogger.*`, `src/LogRing.h` | Flug-Log: Ringpuffer im PSRAM (6 MB; ohne PSRAM 384 KB RAM2), SD-Karte nur in SAFE und ab DESCENT in der freien Zeit des Loops, Vorallokation 64 MB, TMP-Recovery, CSV-Export | ✅ (Ring) |
 | `src/Timing.*` | Nicht blockierender Loop-Takt auf `micros()`, gemessenes dt, Slack bis zur Deadline, Overrun-Warnung | – |
 | `src/Indicators.*` | WS2812B und Summer: Start, Zustandsfarbe, Warnung | – |
@@ -183,6 +184,16 @@ Zeit bis zur nächsten Loop-Deadline, in Häppchen von ~2 KB, und speichert alle
 Bei LANDED wird geschlossen, sobald der Puffer leer ist. Fällt beim Aufprall der Strom weg, fehlen
 höchstens die letzten Zehntelsekunden. `?` auf USB zeigt Pufferstand, Verluste und die längsten
 Schreibzeiten.
+
+**Flugschreiber im Flash** (`FlashLog.h`): Dieselben Datensätze gehen ab PAD_READY zusätzlich in den
+W25Q128 unter dem Teensy (am Pad 25 Hz, BOOST bis APOGEE 250 Hz, ab DESCENT 50 Hz; 16 MB reichen bei
+250 Hz für ~8 min). Der Loop gibt höchstens einen Seiten-Programmierbefehl je Takt ab und wartet nie auf
+den Chip; beim Aufprall fehlt höchstens die angefangene Seite, und die Daten überleben auch eine
+herausgeflogene SD-Karte. Beim nächsten Einschalten kopiert die Firmware einen noch nicht kopierten Flug
+als `LOGxxxxx.BIN` auf die Karte (Bruchstücke nach einem Neustart im Flug werden dabei übersprungen) und
+löscht den benutzten Bereich im Hintergrund, nur am Boden. Ohne SD-Karte bleibt der alte Flug stehen und
+der Flugschreiber bleibt aus, bis `f` auf USB ihn kopiert. `?` zeigt den Stand. Achtung: `LittleFS_QSPIFlash`
+nicht auf diesem Teensy starten, sein `begin()` formatiert den Flash.
 
 ## Test-Sketches (`examples/`)
 

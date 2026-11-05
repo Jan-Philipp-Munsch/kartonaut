@@ -52,6 +52,12 @@ uint32_t SDLogger_queued();     // Sätze im Puffer, noch nicht auf der Karte
 
 // Datensatz in den Ringpuffer (nie ein SD-Zugriff)
 bool SDLogger_logFrame(const SDFrame& f);
+// Datensatz im Dateiformat packen (für den Flash-Flugschreiber, FlashLog.h); out hat SDLogger_recordBytes()
+void SDLogger_pack(const SDFrame& f, void* out);
+size_t SDLogger_recordBytes();
+// Fremde Daten (Flash-Flugschreiber) als neue LOGxxxxx.BIN auf die Karte schreiben, blockierend (am Boden).
+// next füllt buf mit bis zu max Byte und gibt die Zahl zurück, 0 = fertig. name_out bekommt den Dateinamen.
+bool SDLogger_writeBlobFile(size_t (*next)(void* buf, size_t max), char name_out[16]);
 
 // Rückstand auf die Karte schreiben, solange bis deadline_us Zeit ist (micros()-Basis) und
 // sd_allowed gilt. Ohne Erlaubnis: nichts.

@@ -44,7 +44,7 @@ Maximum 33 N) ist ein anderer Motor und kommt nur zum Vergleich in die Python-Si
 
 | Teil | Stück | Stand | Quelle |
 |---|---|---|---|
-| Teensy 4.1 | 1 | mit Stiftleisten; **zwei SOIC-8-Chips auf der Rückseite gelötet** (Jan, 05.11.2026). Welche (PSRAM APS6404L 8 MB, QSPI-Flash W25Q128 16 MB oder zweimal PSRAM) steht auf den Chips; sonst `revb_test` → `mem` (§3a). Plan war ein W25Q128 (`hardware/mainboard/README.md`); die Flug-Firmware nutzt PSRAM als Log-Puffer, falls vorhanden | `platformio.ini`, Jan |
+| Teensy 4.1 | 1 | mit Stiftleisten; **zwei SOIC-8-Chips auf der Rückseite gelötet** (Jan, 05.11.2026). Gekauft bei Berrybase (Bestellung 883226, 26.05.2025): 2 × PSRAM `TEN-PSRAM` (8 MB je Chip) und 1 × Flash `TEN-FL8MB` (128 Mbit = 16 MB). Aufdruck (Jan, 05.11.2026): einer „Winbond“ (= Flash W25Q128, 16 MB), einer „…Memory“ (= PSRAM, vermutlich AP Memory APS6404L, 8 MB). Aufgelötet ist also **PSRAM + Flash**; ein PSRAM-Chip übrig. Bestätigung mit `revb_test` → `mem` (§3a). Nutzung: PSRAM als Log-Puffer, Flash als Flugschreiber (`firmware/src/FlashLog.h`). Plan war ein W25Q128 (`hardware/mainboard/README.md`) | `platformio.ini`, Jan |
 | ICM-20948 Breakout (SparkFun oder Clone) `[?]` | 1 | an Wire, 0x68/0x69 | `Sensors.cpp` |
 | BMP280 Breakout | 1 | 0x76 | `Sensors.cpp` |
 | INA219 Breakout | 1 | 0x40, 0,1-Ω-Shunt | `Sensors.cpp` |
@@ -152,7 +152,7 @@ Platine von JLCPCB bestückt geliefert (Auftrag W2026102623077325, 106 Teile, Li
 
 | Punkt | Stand | Datum, Quelle |
 |---|---|---|
-| Speicher unter dem Teensy | 2 Chips; `mem`: PSRAM `[?]` MB, QSPI-Flash `[?]` | Jan, 05.11.2026 |
+| Speicher unter dem Teensy | PSRAM 8 MB („Memory“) + Flash W25Q128 16 MB („Winbond“), Berrybase 883226; `mem` soll zeigen: PSRAM 8 MB, QSPI-Flash erkannt. Ergebnis `[?]` | Jan, 05.11.2026 (Aufdruck) |
 | R15 (130 k, FB-Teiler 5-V-Wandler) | DigiKey-Teil erst mit 2. Sendung (ab 9.11.); Ersatz aus Bestand? `[?]` Wert gemessen `[?]` | Beschaffung §6b |
 | U6 INA239, J11 GH-4 | kommen mit der 2. DigiKey-Sendung; bis dahin unbestückt (`fit ina off`) | 05.11.2026 |
 | U10 LoRa E22 | Modul noch nicht da (AliExpress). **Achtung:** rechte Padreihe (Pins 1–8, 11–13: NRST und GND) liegt 0,2 mm vor dem Lötring der linken Teensy-Leiste, Modulkante 0,7 mm vor dem Leistenkörper; vor dem Einlöten der Leisten vorverzinnen, später Heißluft (Lötanleitung Stufe 3/6). Antenne an die IPEX-Buchse über Pigtail, ANT-Pad bleibt offen (`docs/Bauanleitung_LoRa_Antenne.md`) | Layout, 05.11.2026 |

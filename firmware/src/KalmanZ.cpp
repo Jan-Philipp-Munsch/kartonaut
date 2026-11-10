@@ -34,20 +34,33 @@ void KalmanZ::setPDiag(float pz_var, float pv_var){
         0,      pv_var };
 }
 
-void KalmanZ::step(float accel_z, float z_meas, float& z_est, float& vz_est){
-  // Predict
+void KalmanZ::predict(float accel_z){
   BLA::Matrix<1,1> Acc = {accel_z};
   S = F*S + G*Acc;
   P = F*P*~F + Q;
+}
 
-  // Update
-  auto L = H*P*~H + R;          // 1x1
+bool KalmanZ::update(float z_meas, float gate_sigma, uint8_t max_rejects){
+  auto L = H*P*~H + R;          // 1x1, Varianz der Innovation
+  const float innov = z_meas - (H*S)(0,0);
+  last_innov = innov;
+  // Ausreißer (Druckstoß beim Zünden oder Ausstoß, Böe am Druckausgleichsloch) verwerfen,
+  // aber nie dauerhaft: nach max_rejects Ablehnungen in Folge wird wieder gemessen
+  if (gate_sigma > 0.f && innov * innov > gate_sigma * gate_sigma * L(0,0) && rejects < max_rejects) {
+    rejects++;
+    return false;
+  }
+  rejects = 0;
   auto K = P*~H*Inverse(L);     // 2x1
   BLA::Matrix<1,1> M = {z_meas};
   S = S + K*(M - H*S);
   P = (BLA::Matrix<2,2>{1,0,0,1} - K*H)*P;
+  return true;
+}
 
+void KalmanZ::step(float accel_z, float z_meas, float& z_est, float& vz_est){
+  predict(accel_z);
+  update(z_meas, 0.f, 0);
   z_est  = S(0,0);
   vz_est = S(1,0);
 }
-

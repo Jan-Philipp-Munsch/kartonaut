@@ -59,7 +59,46 @@ static void small_rate_first_order_branch() {
   CHECK_NEAR(tx, 1e-4, 1e-5);
 }
 
+// Mahony am Boden: Schätzung steht aufrecht, die Rakete aber 8° schief -> die Stützung zieht nach
+static void mahony_pulls_tilt_to_accel() {
+  Attitude a; a.initFromAccel(Vec3(0, 0, 9.81f));
+  MahonyAid aid;
+  const float t = 8.0f * 3.14159265f / 180.0f;
+  const Vec3 acc(0, sinf(t) * 9.81f, cosf(t) * 9.81f);
+  // 100 s: der I-Anteil hält einen Teil des Anfangssprungs zunächst für einen Gyro-Fehler und baut ihn
+  // mit der langsamen Polstelle (~20 s) ab; nach 10 s stünden noch 8,28°.
+  for (int i = 0; i < 25000; ++i) a.update(aid.apply(a, Vec3(), acc, nullptr, true, 0.004f), 0.004f);
+  CHECK_NEAR(a.tiltTotalDeg(), 8.0, 0.05);
+}
+
+// Ein Gyro-Restfehler von 0,5 °/s um x wird am Boden gelernt und im Flug (ohne Stützung) abgezogen
+static void mahony_learns_gyro_bias() {
+  Attitude a; a.initFromAccel(Vec3(0, 0, 9.81f));
+  MahonyAid aid;
+  const Vec3 up(0, 0, 9.81f), bias(0.5f, 0, 0);
+  for (int i = 0; i < 25000; ++i) a.update(aid.apply(a, bias, up, nullptr, true, 0.004f), 0.004f);   // 100 s
+  CHECK_NEAR(aid.integral_dps.x, -0.5, 0.02);
+  Attitude f = a;
+  for (int i = 0; i < 2500; ++i) f.update(aid.apply(f, bias, Vec3(0, 0, 30.f), nullptr, false, 0.004f), 0.004f);
+  CHECK(f.tiltTotalDeg() < 0.2);            // 10 s Flug ohne Stützung: kaum Drift
+}
+
+// Das Magnetometer dreht nur den Kurs, nicht die Kippwinkel
+static void mahony_mag_only_turns_heading() {
+  Attitude a; a.initFromAccel(Vec3(0, 0, 9.81f));
+  MahonyAid aid;
+  // Feld mit Inklination 65°, Nord liegt 40° neben der Körper-x-Achse
+  const float inc = 65.0f * 3.14159265f / 180.0f, hd = 40.0f * 3.14159265f / 180.0f;
+  const Vec3 m(cosf(inc) * cosf(hd), -cosf(inc) * sinf(hd), -sinf(inc));
+  for (int i = 0; i < 25000; ++i) a.update(aid.apply(a, Vec3(), Vec3(0, 0, 9.81f), &m, true, 0.004f), 0.004f);   // 100 s, s. o.
+  CHECK(a.tiltTotalDeg() < 0.05);
+  CHECK_NEAR(fabs(a.rollDeg()), 40.0, 0.5);
+}
+
 void run_tests_attitude() {
+  RUN_TEST(mahony_pulls_tilt_to_accel);
+  RUN_TEST(mahony_learns_gyro_bias);
+  RUN_TEST(mahony_mag_only_turns_heading);
   RUN_TEST(rotation_about_x_matches_integration);
   RUN_TEST(rotation_about_y_matches_integration);
   RUN_TEST(roll_does_not_leak_into_tilt);

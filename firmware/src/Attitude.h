@@ -38,4 +38,28 @@ struct Attitude {
   Vec3 accelNav(const Vec3& a_body, float g_ms2) const {
     return rotateVector(q, a_body) - Vec3(0, 0, g_ms2);
   }
+
+  // Fehlervektoren für die Stützung (Körpersystem, rad, Mahony 2008): e = gemessen × geschätzt.
+  // accError: Oben-Richtung aus der spezifischen Kraft, gilt nur in Ruhe (|a| ≈ g).
+  // magError: Kurs aus dem Magnetfeld, nur die Komponente um die Oben-Achse, damit das
+  //           Magnetometer die Kippwinkel nicht verbiegt (Inklination, Störfelder).
+  Vec3 accError(const Vec3& a_body) const;
+  Vec3 magError(const Vec3& m_body) const;
+};
+
+// Mahony-Stützung der Gyro-Lage. Am Boden (SAFE/PAD_READY, Rakete in Ruhe) ziehen Beschleunigung
+// und Magnetometer die Lage nach, der I-Anteil lernt den Rest-Nullpunkt des Gyros. Im Flug
+// (aid = false) misst der Beschleunigungssensor Schub statt Schwere, und das Magnetometer sitzt
+// zwischen Servo- und Motorströmen: dann nur Gyro, mit dem am Boden gelernten Nullpunkt.
+struct MahonyAid {
+  float kp_acc = 1.0f;    // 1/s: Lagefehler halbiert sich in ~0,7 s
+  float kp_mag = 0.5f;    // 1/s
+  float ki     = 0.05f;   // 1/s²
+  float max_int_dps = 2.0f;   // Grenze des gelernten Nullpunkts
+  Vec3  integral_dps;     // wird zur Drehrate addiert
+
+  void reset() { integral_dps = Vec3(); }
+  // Korrigierte Drehrate für Attitude::update. m_body = nullptr: ohne Magnetometer.
+  Vec3 apply(const Attitude& att, const Vec3& omega_dps, const Vec3& a_body, const Vec3* m_body,
+             bool aid, float dt_s);
 };

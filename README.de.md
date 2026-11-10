@@ -63,8 +63,10 @@ von Hand löten, dann der Tischtest.</td>
 
 **Als Nächstes**
 
-1. Platine von Hand fertig löten und mit `revb_test` prüfen (Leistungsmessung und ein Widerstand kommen
-   mit der zweiten DigiKey-Sendung).
+1. Platine von Hand fertig löten und mit `revb_test` prüfen, nach der
+   [Löt- und Messanleitung](hardware/mainboard/LOETANLEITUNG_revB1.pdf) (Leistungsmessung und ein Widerstand
+   kommen mit der zweiten DigiKey-Sendung); zwei IPEX-Pigtails für die
+   [LoRa-Antenne](docs/Bauanleitung_LoRa_Antenne.md) besorgen.
 2. Teile drucken und wiegen, Rakete zusammenbauen, Schwerpunkt austarieren.
 3. Bodentests: Übersetzung Servo–Kardan, CO₂-Ausstoß, TVC-Prüfstand mit Propellermotor, Funkreichweite.
 4. ***Kartonaut 1*: geregelter Aufstieg mit einem Motor, Bergung am Fallschirm.**

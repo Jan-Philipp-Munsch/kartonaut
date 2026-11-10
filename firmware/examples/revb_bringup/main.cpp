@@ -6,15 +6,20 @@
 // einzeln und meldet das Ergebnis auf USB-Serial (115200 Bd):
 //
 //   1. Analogmux: GND-Kanal, beide Akkus, ARM, Durchgang Pyro 1–4
-//   2. IMU (Treiber ICM-42688-P): WHO_AM_I, Konfiguration, Beschleunigung ≈ 1 g in Ruhe;
-//      die Platine rev B1 trägt seit 23.10. einen LSM6DSV16X (WHO_AM_I 0x70), Treiber folgt
-//   3. BMP390 (und BMP390 #2, falls bestückt): Chip-ID, Druck plausibel
+//   2. IMU: Treiber nach WHO_AM_I (LSM6DSV16X 0x70 auf rev B1, ICM-42688-P 0x47 auf älteren
+//      Platinen), Konfiguration, Beschleunigung ≈ 1 g in Ruhe
+//   3. BMP390/BMP388 (und #2, falls bestückt): Chip-ID, Druck plausibel
 //   4. INA239: Hersteller- und Geräte-ID, Bus-Spannung ≈ 2S-Akku
 //   5. LoRa E22: Konfigurationsmodus, Parameter lesen (Kanal, Adresse)
 //   6. GPS an Serial1: kommen NMEA-Zeilen an (38400 oder 9600 Bd)?
 //   7. Magnetometer LIS3MDL (I²C 0x1E): WHO_AM_I, Feld plausibel
 //   8. SHT40 (I²C 0x44): Seriennummer, Temperatur und Feuchte
 //   9. ADXL375 (I²C 0x53, DNP): nur erkennen
+//
+// Bestückung: was laut lib/mainboard_revb/FitRevB.h nicht bestückt ist (Standard: INA239, LoRa,
+// GPS, Baro 2, ADXL375), meldet "[ -- ] ... nicht bestückt oder keine Antwort" statt [FEHL] und
+// zählt nicht zum Ergebnis; LoRa-Pins bleiben dann in Ruhe. Ändern beim Bauen, z. B.
+// build_flags = ${env.build_flags} -DREVB_FIT_INA239=1 (revb_test kann es zur Laufzeit: "fit").
 //
 // Danach laufen die Messwerte im Sekundentakt. Pyro-Kanäle werden nicht
 // gezündet; dafür gibt es examples/revb_test ("pyro <n>" mit Lämpchen).
@@ -24,7 +29,8 @@
 #include "BoardRevB.h"
 #include "BusRevB.h"
 #include "Imu.h"
-#include "ICM42688.h"
+#include "ImuAuto.h"
+#include "FitRevB.h"
 #include "BMP390.h"
 #include "INA239.h"
 #include "I2cRevB.h"
@@ -35,8 +41,9 @@
 using namespace revb;
 
 static BusRevB    bus;
-static ICM42688   icm(bus);
-static ImuDriver& imu = icm;
+static ImuAuto    imu_auto(bus);
+static ImuDriver& imu = imu_auto;
+static const Fit  fit;                         // Bestückungsliste (FitRevB.h)
 static BMP390     baro(bus, Cs::BARO);
 static BMP390     baro2(bus, Cs::BARO2);
 static INA239     ina(bus, INA_SHUNT_OHM, INA_MAX_CURRENT_A);
@@ -59,12 +66,18 @@ static void safeOutputs() {
   digitalWrite(PIN_CAM_TRIG, LOW);    pinMode(PIN_CAM_TRIG, OUTPUT);
   pinMode(PIN_MOT_FAULT, INPUT_PULLUP);
   pinMode(PIN_IMU_INT, INPUT);
-  pinMode(PIN_LORA_NRST, INPUT);      // Open-Drain: loslassen = Pull-up hält hoch
-  pinMode(PIN_LORA_AUX, INPUT);
+  loraPinsIdle(fit.lora);             // M0/M1/AUX/NRST in Ruhe, ohne Modul nichts treiben
 }
 
 static void report(const char* what, bool ok, const char* detail = "") {
   Serial.printf("  [%s] %-28s %s\n", ok ? " OK " : "FEHL", what, detail);
+}
+
+// Teil laut Bestückungsliste nicht bestückt: eigene Marke, kein Fehler
+static void reportNotFitted(const char* what, const char* macro) {
+  char buf[96];
+  snprintf(buf, sizeof buf, "nicht bestückt oder keine Antwort (%s=0)", macro);
+  Serial.printf("  [ -- ] %-28s %s\n", what, buf);
 }
 
 static void checkMux() {
@@ -100,9 +113,10 @@ static void checkMux() {
 }
 
 static void checkImu() {
+  const uint8_t id = imu.whoAmI();               // wählt den Treiber
   Serial.printf("\n2. IMU %s (CS Y0)\n", imu.name());
   char buf[64];
-  const uint8_t id = imu.whoAmI();
+  if (!fit.imu) { reportNotFitted("IMU", "REVB_FIT_IMU"); return; }
   snprintf(buf, sizeof buf, "0x%02X (soll 0x%02X)", id, imu.expectedWhoAmI());
   report("WHO_AM_I", id == imu.expectedWhoAmI(), buf);
   ok_imu = imu.begin();
@@ -115,12 +129,12 @@ static void checkImu() {
   report("Ruhe ≈ 1 g", fabsf(a - 9.81f) < 0.8f, buf);
 }
 
-static bool checkBaro(BMP390& b, const char* name, bool fitted) {
+static bool checkBaro(BMP390& b, const char* name, bool fitted, const char* macro) {
   char buf[64];
+  if (!fitted) { reportNotFitted(name, macro); return false; }
   const bool ok = b.begin();
   snprintf(buf, sizeof buf, "Chip-ID 0x%02X%s", b.chipId(),
            b.chipId() == BMP390::CHIP_ID_BMP388 ? " (BMP388)" : "");
-  if (!ok && !fitted) { report(name, true, "nicht bestückt (DNP)"); return false; }
   report(name, ok, buf);
   if (!ok) return false;
   float p = 0, t = 0;
@@ -134,6 +148,7 @@ static bool checkBaro(BMP390& b, const char* name, bool fitted) {
 static void checkIna() {
   Serial.println("\n4. Strommonitor INA239 (CS Y3)");
   char buf[64];
+  if (!fit.ina) { reportNotFitted("INA239", "REVB_FIT_INA239"); return; }
   const uint16_t man = ina.manufacturerId(), dev = ina.deviceId();
   snprintf(buf, sizeof buf, "0x%04X / 0x%04X", man, dev);
   report("Hersteller / Gerät", man == INA239::MANUFACTURER_TI && (dev >> 4) == INA239::DEVICE_ID_INA239, buf);
@@ -158,6 +173,7 @@ static bool waitAux(uint32_t timeout_ms) {
 static void checkLora() {
   Serial.println("\n5. LoRa E22-400T22S (Serial8)");
   char buf[80];
+  if (!fit.lora) { reportNotFitted("E22", "REVB_FIT_LORA"); return; }   // Pins bleiben in Ruhe
   // Modus 2 (Konfiguration): M1 = 1, M0 = 0; UART dann fest 9600 8N1
   digitalWrite(PIN_LORA_M0, LOW);  pinMode(PIN_LORA_M0, OUTPUT);
   digitalWrite(PIN_LORA_M1, HIGH); pinMode(PIN_LORA_M1, OUTPUT);
@@ -185,10 +201,12 @@ static void checkLora() {
 
   digitalWrite(PIN_LORA_M1, LOW);              // zurück in Modus 0 (transparent)
   waitAux(1000);
+  loraPinsIdle(true);
 }
 
 static void checkGps() {
   Serial.println("\n6. GPS (Serial1, Modul in der Spitze, optional)");
+  if (!fit.gps) { reportNotFitted("NMEA", "REVB_FIT_GPS"); return; }
   for (long baud : {38400L, 9600L}) {
     Serial1.begin(baud);
     while (Serial1.available()) Serial1.read();
@@ -210,6 +228,7 @@ static void checkGps() {
 static void checkMag() {
   Serial.println("\n7. Magnetometer LIS3MDL (I2C 0x1E)");
   char buf[64];
+  if (!fit.mag) { reportNotFitted("LIS3MDL", "REVB_FIT_MAG"); return; }
   const uint8_t id = mag.whoAmI();
   snprintf(buf, sizeof buf, "0x%02X (soll 0x3D)", id);
   report("WHO_AM_I", id == LIS3MDL::WHO_AM_I_VALUE, buf);
@@ -228,6 +247,7 @@ static void checkMag() {
 static void checkSht() {
   Serial.println("\n8. Feuchte/Temperatur SHT40 (I2C 0x44)");
   char buf[64];
+  if (!fit.sht) { reportNotFitted("SHT40", "REVB_FIT_SHT"); return; }
   ok_sht = sht.begin();
   snprintf(buf, sizeof buf, "Seriennummer %08lX", (unsigned long)sht.serial());
   report("Seriennummer", ok_sht, buf);
@@ -241,7 +261,8 @@ static void checkSht() {
 static void checkAdxl() {
   Serial.println("\n9. Hochbeschleunigung ADXL375 (I2C 0x53)");
   char buf[64];
-  if (!adxl.present()) { report("ADXL375", !ADXL375_FITTED, ADXL375_FITTED ? "kein ACK" : "nicht bestückt (DNP)"); return; }
+  if (!fit.adxl) { reportNotFitted("ADXL375", "REVB_FIT_ADXL"); return; }
+  if (!adxl.present()) { report("ADXL375", false, "kein ACK"); return; }
   const uint8_t id = adxl.devId();
   snprintf(buf, sizeof buf, "DEVID 0x%02X (soll 0xE5)", id);
   report("ADXL375", id == ADXL375::DEVID_VALUE, buf);
@@ -263,9 +284,9 @@ void setup() {
 
   checkMux();
   checkImu();
-  Serial.println("\n3. Barometer BMP390 (CS Y1, Y2)");
-  ok_baro  = checkBaro(baro,  "BMP390 #1", true);
-  ok_baro2 = checkBaro(baro2, "BMP390 #2", false);
+  Serial.println("\n3. Barometer BMP390/BMP388 (CS Y1, Y2)");
+  ok_baro  = checkBaro(baro,  "BMP390 #1", fit.baro, "REVB_FIT_BARO");
+  ok_baro2 = checkBaro(baro2, "BMP390 #2", fit.baro2, "REVB_FIT_BARO2");
   checkIna();
   checkLora();
   checkGps();
@@ -273,7 +294,9 @@ void setup() {
   checkSht();
   checkAdxl();
 
-  const bool all = ok_imu && ok_baro && ok_ina && ok_mag && ok_sht;
+  // nur bestückte Teile zählen (FitRevB.h)
+  const bool all = (ok_imu || !fit.imu) && (ok_baro || !fit.baro) && (ok_ina || !fit.ina) && (ok_mag || !fit.mag) &&
+                   (ok_sht || !fit.sht);
   fill_solid(leds, LED_COUNT_ONBOARD, all ? CRGB(0, 60, 0) : CRGB(60, 0, 0));
   FastLED.show();
   digitalWrite(PIN_BUZZER, HIGH); delay(all ? 80 : 600); digitalWrite(PIN_BUZZER, LOW);

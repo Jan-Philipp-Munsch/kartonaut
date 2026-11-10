@@ -13,7 +13,7 @@ laufen ohne Installation aus dem Ordner `simulation/`; alternativ `pip install -
 
 ```bash
 cd simulation
-python -m pytest tests                      # 21 Tests
+python -m pytest tests                      # 52 Tests
 python scripts/fit_servo.py                 # Servo-Fit gegen die Messung -> out/servo_fit.png
 python scripts/run_nominal.py               # Nominallauf -> out/nominal_*.png
 python scripts/run_nominal.py --controller firmware --vehicle preload --static-error-y 1
@@ -26,6 +26,7 @@ python scripts/export_firmware_vectors.py   # Testvektoren für firmware/test/da
 python scripts/landing_study.py             # Landebrennen mit der E12 nach Masse -> out/landing_study.png
 python scripts/export_landing_firmware.py   # E12-Kurve und Prüfvektoren des Landeplaners für die Firmware
 python scripts/throttle_study.py            # Landebrennen mit Schubdrossel: Masse × f_min, Monte-Carlo
+python scripts/rate_study.py                # 100 gegen 250 Hz, Kardan-Reaktionsmoment, D-Tiefpass, Slew
 ```
 
 Alle Ausgaben landen in `simulation/out/` (per `.gitignore` ausgeschlossen). Ein Lauf über
@@ -43,6 +44,11 @@ Wichtige Schalter von `run_nominal.py` (gelten auch für Monte-Carlo und Tuning)
 | `--accel rdd\|specific_force` | was der Beschleunigungssensor misst (Simulink: `rdd`) |
 | `--fuel signalbuilder\|impulse` | Treibstoffmodell |
 | `--no-noise`, `--static-error-y`, `--static-error-z`, `--mis-y`, `--mis-z` | Störungen |
+| `--rate-hz 250\|100` | Regeltakt (Vorgabe 250 Hz wie die Firmware ab 11/2026; 100 = Simulink und alte Firmware) |
+| `--imu-average auto\|on\|off` | Gyro/Accel als Mittel über den Takt (auto: an ab 200 Hz) |
+| `--gimbal-inertia 5e-4` | Reaktionsmoment des Kardans an (wirksames Trägheitsmoment, kg m²) |
+| `--servo-model sg90\|w5652h`, `--servo-rate` | Servomodell (SG90-Fit oder W5652H-Annahme), Ratengrenze in Servo-Grad/s |
+| `--fw-d-lpf`, `--fw-slew` | Firmware: Tiefpass im D-Anteil (Hz), Ratenbegrenzung des Servokommandos (Servo-Grad/s) |
 
 ## Aufbau
 
@@ -58,7 +64,7 @@ simulation/
              sensors.py    Avionics-Block (Rauschen auf q, w, rdd)
              estimator.py  Estimator-Block (T_est = |rdd_n| m)
              controller.py SimulinkController (PID + Moments2Commands), FirmwareController (Control.cpp)
-             sim.py        Lauf: Regelschleife alle 10 ms, dazwischen RK4 mit 1 ms, Quaternion normiert
+             sim.py        Lauf: Regelschleife alle 4 ms (250 Hz), dazwischen RK4 mit 1 ms, Quaternion normiert
              montecarlo.py Port von TVC6DOF.m
              tuning.py     Port von pid_tuner.m
              plots.py      Höhe/Lage/Servo, 3D-Trajektorien, Servo-Fit
@@ -67,8 +73,109 @@ simulation/
              ident_servo.py (Experiment E01, Modul tvcsim/ident.py),
              export_firmware_vectors.py (Software-in-the-Loop-Vektoren für die Firmware-Tests),
              landing_study.py, export_landing_firmware.py (Landebrennen, tvcsim/landing.py),
-             throttle_study.py (Schubdrossel, tvcsim/throttle.py)
+             throttle_study.py (Schubdrossel, tvcsim/throttle.py),
+             rate_study.py (Regeltakt, Reaktionsmoment, D-Tiefpass, Slew)
 ```
+
+## Regeltakt 250 Hz und Reaktionsmoment des Kardans (seit 05.11.2026)
+
+Die Firmware rechnet ab November 2026 mit **250 Hz** (Servo-PWM 250 Hz, Gyro und Beschleunigung als Mittel der
+FIFO-Werte über den 4-ms-Takt, Barometer 50 Hz). Die Simulation folgt:
+
+- `ControlParams.dt` ist jetzt **0,004 s** (`tvcsim.params.DT_CONTROL`). `SimParams.at_rate(100)` stellt
+  0,01 s und Momentanwerte ein und rechnet die alten Zahlen bitgenau nach (geprüft gegen den Stand vor der
+  Änderung, mit `A_NORM_ALPHA = 0,1`); alle Skripte mit `run_nominal`-Schaltern haben `--rate-hz`, ebenso
+  `export_firmware_vectors.py` und `export_landing_firmware.py` (Vorgabe 250 Hz). Die RK4-Schrittweite bleibt
+  ~1 ms (`SimParams.substeps = None` → `dt / 1 ms` Teilschritte).
+- `NoiseParams.imu_average` (Vorgabe an): ω und a sind das Mittel über `[t_k − dt, t_k]` (Trapez über die
+  Teilschritte), also 2 ms Gruppenlaufzeit bei 250 Hz. Das Rauschen bleibt 0,4 °/s je Takt.
+- Der zweite Motor (`MotorParams.secondburn`) und der I-Reset des Simulink-Reglers liegen fest bei 7,3 s
+  (Schritte zu 10 ms), unabhängig vom Regeltakt.
+- `FirmwareController` wie `main.cpp`/`ControlLaw.cpp` ab 11/2026: |a|-Tiefpass zeitbasiert
+  (`A_NORM_TAU_S = 0,095 s`, `y += (x − y) dt/(τ + dt)`; `A_NORM_ALPHA` = alter fester Faktor je Takt),
+  I-Anteil auf ±`PY_INT_LIMIT` = 500 Grad·s begrenzt. Neu und optional: `D_LPF_HZ` (PT1 auf ω nur im
+  D-Anteil) und `SERVO_SLEW_DPS` (Ratenbegrenzung des Servokommandos hinter dem Fenster).
+- **Reaktionsmoment** (`VehicleParams.gimbal_inertia`, Vorgabe 0 = aus wie Simulink): beschleunigt der Servo den
+  Kardan, dreht der Rumpf mit `−I_g θ̈` um dieselbe Querachse dagegen, und der Gyro sieht das. Wirksames
+  Trägheitsmoment für Stand 2b `GIMBAL_INERTIA_STAND2B = 5e-4 kg m²` (bewegt: Motor 64 g, Adapter, Motorrohr,
+  Innenrahmen; I um den Kardanpunkt 1,0e-4 plus Kopplung m·d·l = 4,1e-4, weil der Kardanschwerpunkt 28 mm unter
+  dem Drehpunkt liegt), 2,4 % des Quer-Trägheitsmoments. Der Rotor des Servos selbst ist mit < 5 % davon
+  vernachlässigt. Test `test_gimbal_reaction_conserves_angular_momentum` prüft die Drehimpulsbilanz.
+- **Servo**: `ServoParams.rate_limit_dps` (Servo-Grad/s, 0 = aus) und `ServoParams.w5652h()`: Annahme für die
+  W5652H am 2S, bis E01 misst: Verzögerung 25 ms als aperiodisches PT2 (ζ = 1, ωn = 80 rad/s, gleiche mittlere
+  Verzögerung wie ein PT1 25 ms, aber endliche Beschleunigung), Totzeit 4 ms, 0,06 s/60° = 1000 Servo-Grad/s.
+
+**Ergebnis** (`scripts/rate_study.py`, Stand 2b aus `levers`, Firmware-Regler **Kp 2 / Ki 1 / Kd 0,45**, wahre
+Masse und Hebelarm, Servo-Umrechnung 6, ein Motor, Rauschen, statischer Fehler 1°/0,6°, Brennphase 0,05…3,55 s;
+Kommandorate = Servo-Grad/s des Kommandos, Kardanrate = wirkliche Kardanbewegung in TVC-Grad/s; je Zelle
+100 Hz / 250 Hz):
+
+| Fall (SG90-Fit, ohne Reaktionsmoment) | Kipp max | Anschlag | Kommandorate p99 | Kommandorate RMS | Kommando RMS (Servo-Grad) | Kardanrate max |
+|---|---|---|---|---|---|---|
+| 705 g, Seeds 0..3, Totzeit 30/50 ms | 2,35…2,48° / 2,37…2,52° | 0 / 0 % | 270…430 / 690…800 | 65…87 / 172…182 | 2,5…3,1 / 2,6…3,1 | 15…18 / 15…17 °/s |
+| P1 672 g | 2,46° / 2,48° | 0 / 0 % | 304 / 721 | 69 / 190 | 2,7 / 2,7 | 17 / 18 °/s |
+| P2 631 g | 2,38° / 2,39° | 0 / 0 % | 275 / 782 | 75 / 204 | 2,9 / 2,8 | 19 / 20 °/s |
+| P3 593 g | 2,59° / 2,50° | **6** / 0 % | 472 / 880 | 214 / 283 | 9,3 / 6,4 | 78 / 40 °/s |
+| statischer Fehler 2°/2° | 7,57° / 7,71° | 0 / 0 % | 312 / 692 | 110 / 226 | 5,8 / 5,8 | 34 / 34 °/s |
+| Schwerpunkt 3 mm seitlich | 7,26° / 7,38° | 0 / 0 % | 347 / 690 | 103 / 216 | 4,2 / 4,2 | 37 / 36 °/s |
+
+250 Hz regelt so gut wie 100 Hz (Kipp ±0,1°), beim leichtesten Paket P3 besser (kein Anschlag mehr). Die
+Kommandorate steigt um das 2,5-Fache, weil das Gyro-Rauschen (0,4 °/s je Takt, im Modell unabhängig vom Takt)
+2,5-mal so oft durch den D-Anteil geht; die wirkliche Kardanbewegung ändert sich nicht. **Die Gewinne müssen für
+250 Hz nicht geändert werden.**
+
+250 Hz, Mittel über die vier Robustheitsfälle (W5652H-Totzeit 4 bzw. 24 ms):
+
+| Fall | Kipp max | Kommandorate p99 / RMS (Servo-Grad/s) | Kardanrate max |
+|---|---|---|---|
+| SG90, I_g 0 / 5e-4 / 1,5e-3 | 2,52 / 2,50 / 2,48° | 748…754 / 177 | 16 °/s |
+| W5652H, I_g 0 / 5e-4 / 1,5e-3 | 2,50 / 2,49 / 2,49° | 755 / 176 | 27 °/s |
+| W5652H, I_g 5e-3 (10-fach) | 2,52° | 799 / 223 | 36 °/s |
+| W5652H, 0,10 s/60° (600 Servo-Grad/s) | 2,49° | 755 / 176 | 27 °/s |
+| W5652H, Kd 0,30 / 0,60 | 3,14 / 2,12° | 506 / 994 | 27 °/s |
+| W5652H, **D-Tiefpass 30 Hz** | 2,48° | **327 / 89** | 27 °/s |
+| W5652H, D-Tiefpass 15 Hz | 2,45° | 189 / 65 | 27 °/s |
+| W5652H, Slew 600 / 300 Servo-Grad/s | 2,49 / 2,49° | 600 / 300 | 27 °/s |
+
+Linear (offener Kreis mit diskretem Regler, Halteglied, IMU-Mittelung, Totzeit, Servo, Rumpf; 705 g):
+
+| Fall | Durchtritt | Phasenreserve | Amplitudenreserve (T = 10 N / 3 N) |
+|---|---|---|---|
+| 100 Hz, SG90-Fit 30 ms | 13 rad/s | 18° | 2,9 dB (bei 19 rad/s) |
+| 250 Hz, SG90-Fit 30 ms | 13 rad/s | 19° | 3,2 dB |
+| 250 Hz, SG90-Fit 50 ms, I_g 5e-4 | 12…13 rad/s | 6…10° | 1,1 / 2,3 dB |
+| 250 Hz, W5652H, I_g 0 | 13 rad/s | 47° | 14,6 dB (bei 49 rad/s) |
+| 250 Hz, W5652H, I_g 5e-4 | 11…12 rad/s | 47° | 23 / 13,4 dB (bei 267 rad/s) |
+| 250 Hz, W5652H, I_g 1,5e-3 (3-fach) | 10…11 rad/s | 47° | 14,4 / **3,8 dB** (bei 267 rad/s) |
+| … dazu D-Tiefpass 30 Hz | 10…11 rad/s | 45° | 16,2 / 5,6 dB |
+| 250 Hz, W5652H, I_g 5e-4, Kd 0,60 | 14…15 rad/s | 49…51° | 21 / 11 dB |
+
+**Lesart:**
+
+- **Reaktionsmoment (Jans Frage):** Die Strecke wird `I s² φ = −(l T + I_g s²) δ`: ein Nullstellenpaar bei
+  `ω_z = √(l T / I_g)`, 97 rad/s (15 Hz) bei 25 N, 62 rad/s bei 10 N, 34 rad/s (5 Hz) bei 3 N im Abbrand. Darüber
+  dreht der Kardan den Rumpf stärker als der Schub, mit umgekehrtem Vorzeichen; der Gyro sieht das als direkte
+  Kopplung `ω = −(I_g/I) θ̇_Kardan`. Mit 5e-4 kg m² bleibt die Schleife dort weit unter 1 (13 dB Reserve im
+  Abbrand), im Flug ändert sich der Kippwinkel um < 0,05°, auch das Zehnfache bleibt stabil. Eng wird es erst mit
+  dreifachem I_g bei wenig Schub (3,8 dB bei 42 Hz); ein D-Tiefpass um 30 Hz holt davon 2 dB zurück. Unter 0,5 N
+  stellt die Firmware die Servos ohnehin auf Mitte. Eine Rückkopplungsschleife entsteht nicht, solange der
+  D-Anteil oberhalb von ~40 Hz nicht weiter durchgreift.
+- **Engpass ist der Servo, nicht der Takt:** Mit dem SG90-Fit (30 ms Totzeit, 5,8 Hz) hat Kp 2 / Ki 1 / Kd 0,45
+  nur 18° Phasenreserve und 3 dB Amplitudenreserve, bei 50 ms fast keine; 100 → 250 Hz bringt 1°. Mit der
+  W5652H-Annahme sind es 47° und 15 dB. E01 an den W5652H ist deshalb wichtiger als jede Gewinnänderung.
+- **Ratenbegrenzung des Servos** greift nie: der Kardan bewegt sich in allen Fällen mit höchstens 15…40 TVC-Grad/s
+  (90…240 Servo-Grad/s bei Gain 6), die W5652H können 600…1000 Servo-Grad/s.
+- Kd 0,60 senkt den Kippwinkel um 0,4°, braucht aber 30 % mehr Stellaktivität und verliert Reserve bei wenig
+  Schub; Kd 0,30 ist schlechter. Kein Grund, die Bayes-Gewinne für 250 Hz zu ändern.
+
+**Empfehlung für die Firmware (250 Hz):** Gewinne bleiben **Kp 2 / Ki 1 / Kd 0,45**. **D-Tiefpass 30 Hz**
+(PT1 auf ω nur im D-Anteil; bei 250 Hz Faktor `1 − exp(−2π·30·0,004)` = 0,53, gleichwertig `lowpassStep` mit
+τ = 5,3 ms): halbiert die Kommandoaktivität und kostet 2° Phase. **Slew-Begrenzung 100 TVC-Grad/s** (bei Gain 6:
+600 Servo-Grad/s, 2,4 Servo-Grad je 4-ms-Takt) als Schutz gegen Sprünge (Moduswechsel, Ausreißer im Gyro), nicht
+für die Stabilität nötig: sie liegt beim Zwei- bis Sechsfachen dessen, was der Regler braucht, und unter der
+Servo-Grenze. `A_NORM_TAU_S` 0,095 s wie umgesetzt. Nach E01 (W5652H-Totzeit und Bandbreite) die Tabellen mit
+`--servo-model` bzw. neuen `ServoParams` neu rechnen.
+
 
 ## Landebrennen und Luftwiderstand (seit 23.10.2026)
 
@@ -100,7 +207,7 @@ Die `hamilton`-Funktion des Blocks ist mit `r` zuerst hingeschrieben, ergibt abe
 Produkt `q ⊗ r`; die Tests prüfen das gegen `scipy.spatial.transform.Rotation`.
 
 **Schub**: Lookup auf der E12-Kurve (TSP E12, 39 Ns), zweiter Motor um `secondburn = 730`
-Schritte zu `dt = 0,01 s`, also 7,3 s, verzögert (im Modell `Clock -> Delay -> Lookup`), Summe.
+Schritte zu 0,01 s (`MotorParams.secondburn_dt`, unabhängig vom Regeltakt), also 7,3 s, verzögert (im Modell `Clock -> Delay -> Lookup`), Summe.
 Die F35-Kurve liegt daneben und ist unbenutzt.
 
 **Avionics** (`chart_76`, `chart_83`): ZOH mit `dt`; Quaternion mit zufälliger Kleinstdrehung
@@ -122,8 +229,9 @@ Für y ist der statische Fehler `static_error_y · (1 für t<2, 0 für 2..7, 1 f
 und wird abgezogen, für z konstant `+static_error_z`. Der Gain 6 kompensiert den DC-Gain von
 `tf5` (Servo-Soll in Grad zu Kardan in Grad, etwa 1/6). ±5° Sättigung sind also ±5° TVC.
 
-**Integration**: feste Regelschritte `dt = 0,01 s` (ZOH). Dazwischen RK4 mit `substeps = 10`,
-also 1 ms, Quaternion nach jedem Teilschritt normiert. Simulink rechnet mit ode45
+**Integration**: feste Regelschritte `dt = 0,01 s` (ZOH) im Simulink-Modell; die Vorgabe ist seit 05.11.2026
+`dt = 0,004 s` (250 Hz, siehe oben), `SimParams.at_rate(100)` rechnet wie Simulink. Dazwischen RK4 mit ~1 ms
+(`substeps` 10 bei 100 Hz, 4 bei 250 Hz), Quaternion nach jedem Teilschritt normiert. Simulink rechnet mit ode45
 (variabler Schritt, RelTol 1e-3); Unterschiede daraus sind klein gegen die Modellannahmen.
 
 **Monte-Carlo** (`TVC6DOF.m`): 100 Läufe à 7 s, `x_mc = x_n + randn * x_v` mit den
@@ -420,8 +528,10 @@ entspricht in Gipfelhöhe (48 m gegen 45 m) und Streuung dem MATLAB-Bild `Images
 
 - `tf5` aus MATLAB exportieren und mit dem Fit vergleichen; erst dann ist der Widerspruch
   zum Tuner-Ergebnis entschieden.
-- Neue Servos (W5652H) vermessen und `ServoParams` aktualisieren; Ratenbegrenzung des Servos
-  ins Modell nehmen, falls die Messung sie bestätigt.
+- Neue Servos (W5652H) vermessen und `ServoParams` aktualisieren (bis dahin `ServoParams.w5652h()` als
+  Annahme); die Ratenbegrenzung ist seit 05.11.2026 im Modell (`rate_limit_dps`), der Wert kommt aus E01.
+- Gyro-Rauschen des LSM6DSV16X einsetzen (Modell: 0,4 °/s je Takt aus Simulink); die Kommandoraten der
+  250-Hz-Tabellen sind damit eher zu hoch.
 - Servo-Grad je TVC-Grad (6 oder 23) und die Polung beider Achsen am Tisch messen.
 - Das CAD-Massenmodell (981 g) bestätigt: mit 0,9..1,0 kg trägt die E12 die Rakete nur knapp
   (Gipfel 9..10 m). Masse senken oder F35 rechnen (`--vehicle cad`, Schubkurve `MotorParams(curve="F35")`;

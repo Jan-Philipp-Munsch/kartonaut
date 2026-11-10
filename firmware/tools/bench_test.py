@@ -3,8 +3,13 @@
 
 Treibt die Testkonsole `revb_test` (examples/revb_test) über USB-Serial: stößt die Befehle
 nacheinander an, beantwortet Rückfragen (WAIT/ASK/CONFIRM) über die Tastatur, wertet die
-Zeilen `TEST <name> OK|FEHL|SKIP <detail>` und `CAL <name> <werte>` aus und schreibt den
-Bericht als Markdown und JSON nach firmware/test_reports/.
+Zeilen `TEST <name> OK|FEHL|SKIP|NICHT_ERKANNT <detail>` und `CAL <name> <werte>` aus und
+schreibt den Bericht als Markdown und JSON nach firmware/test_reports/.
+
+NICHT_ERKANNT: der Baustein steht in der Bestückungsliste der Firmware auf "aus"
+(lib/mainboard_revb/FitRevB.h; Standard: INA239, LoRa, GPS, Baro 2, ADXL375). Das ist kein
+Fehler. Mit --fit "ina=on,lora=on" schickt das Werkzeug vor der Befehlsfolge "fit ina on" usw.,
+dann ist ein fehlendes Teil wieder FEHL.
 
 Ablauf (jede Stufe einzeln abschaltbar):
 
@@ -15,6 +20,7 @@ Ablauf (jede Stufe einzeln abschaltbar):
        --full        all full                (LEDs, Summer, Kamera, Servos, Motor, LoRa, GPS, SD, mit Rückfragen)
        --cal         cal gyro, cal baro, cal acc, cal mag, cal axes, cal adc, cal ina, cal save
        --commands    eigene Folge, Komma-getrennt, z. B. "mux,imu,cal gyro 20,cal save"
+     --fit         Bestückungsliste vorher ändern, z. B. "ina=on" oder "baro=off,lora=on"
      Pyro wird nie automatisch angestoßen (nur --commands "pyro 1", mit Lämpchen).
   4. Bericht.
 
@@ -31,6 +37,7 @@ und INA239 "SKIP".
     python tools/bench_test.py --skip-rails --full   # alles inklusive Aktoren
     python tools/bench_test.py --skip-rails --cal    # Kalibrierung, am Ende "cal save"
     python tools/bench_test.py --commands "imu,cal gyro 20,cal show" --port COM7
+    python tools/bench_test.py --skip-rails --fit "ina=on"   # INA239 nachbestückt
     python -m pytest tools/test_bench_test.py        # Parser ohne Hardware
 """
 import argparse
@@ -70,14 +77,16 @@ PLAN_FULL = ["all full"]
 PLAN_CAL = ["cal gyro 10", "cal baro 20", "cal acc", "cal mag 40", "cal axes", "cal adc", "cal ina", "cal show", "cal save"]
 # Zeitlimit je Befehl in Sekunden (ohne Rückfragen); Rückfragen setzen die Uhr zurück
 TIMEOUTS = {"all": 60, "all full": 120, "cal mag": 240, "cal gyro": 150, "cal baro": 150, "cal axes": 60,
-            "gps": 20, "sd": 60, "lora": 15, "imu": 20, "timing": 20, "watchdog": 10}
+            "gps": 20, "sd": 60, "lora": 15, "imu": 20, "timing": 20, "watchdog": 10, "fit": 10}
 DEFAULT_TIMEOUT = 30
 
 # ---------------------------------------------------------------- Protokoll der Testkonsole (Proto.h)
-RESULTS = ("OK", "FEHL", "SKIP")
-TEST_RE = re.compile(r"^TEST (\S+) (OK|FEHL|SKIP)(?: (.*))?$")
+NICHT = "NICHT_ERKANNT"        # laut Bestückungsliste nicht bestückt, kein Fehler
+RESULTS = ("OK", "FEHL", "SKIP", NICHT)
+TEST_RE = re.compile(r"^TEST (\S+) (OK|FEHL|SKIP|NICHT_ERKANNT)(?: (.*))?$")
 CAL_RE = re.compile(r"^CAL (\S+)(?: (.*))?$")
-END_RE = re.compile(r"^END (.+?) (OK|FEHL|SKIP)$")
+END_RE = re.compile(r"^END (.+?) (OK|FEHL|SKIP|NICHT_ERKANNT)$")
+FIT_PARTS = ("imu", "baro", "baro2", "ina", "mag", "sht", "adxl", "lora", "gps")
 PROMPT_RE = re.compile(r"^(ASK|WAIT|CONFIRM) (.*)$")
 INFO_RE = re.compile(r"^INFO (.*)$")
 
@@ -162,11 +171,17 @@ class Session:
     def skipped(self):
         return [t for t in self.tests if t["result"] == "SKIP"]
 
+    def not_fitted(self):
+        return [t for t in self.tests if t["result"] == NICHT]
+
     def overall(self):
+        """FEHL schlägt SKIP schlägt NICHT_ERKANNT schlägt OK (wie proto::worst in der Firmware)."""
         if any(t["result"] == "FEHL" for t in self.tests) or any(e["result"] == "FEHL" for e in self.ends):
             return "FEHL"
         if any(t["result"] == "SKIP" for t in self.tests):
             return "SKIP"
+        if any(t["result"] == NICHT for t in self.tests):
+            return NICHT
         return "OK" if self.tests else "LEER"
 
 
@@ -307,7 +322,7 @@ def check_rails(have_2s, ask=ask_float):
 
 
 # ---------------------------------------------------------------- alter Ablauf: revb_bringup
-RESULT_RE = re.compile(r"\[( OK |FEHL)\]\s+(.+?)\s{2,}(.*)$")
+RESULT_RE = re.compile(r"\[( OK |FEHL| -- )\]\s+(.+?)\s{2,}(.*)$")
 LIVE_RE = {
     "acc": re.compile(r"a=\[\s*([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\]"),
     "gyro": re.compile(r"w=\[\s*([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\]"),
@@ -319,11 +334,16 @@ LIVE_RE = {
 
 
 def parse_bringup_line(line, section=""):
-    """[ OK ]/[FEHL]-Zeile von revb_bringup -> dict oder None."""
+    """[ OK ]/[FEHL]/[ -- ]-Zeile von revb_bringup -> dict oder None.
+
+    [ -- ] = laut Bestückungsliste nicht bestückt: ok (kein Fehler), result NICHT_ERKANNT.
+    """
     m = RESULT_RE.search(line)
     if not m:
         return None
-    return {"section": section, "what": m.group(2).strip(), "ok": m.group(1) == " OK ", "detail": m.group(3).strip()}
+    result = {" OK ": "OK", "FEHL": "FEHL", " -- ": NICHT}[m.group(1)]
+    return {"section": section, "what": m.group(2).strip(), "ok": result != "FEHL", "result": result,
+            "detail": m.group(3).strip()}
 
 
 def read_selftest(ser, timeout_s=30.0):
@@ -423,10 +443,11 @@ def report_markdown(session, rails, stamp, notes=()):
     if rails:
         md += rails_markdown(rails)
     md += [f"## Prüfungen: **{session.overall()}**", "",
-           f"{len(session.tests)} Prüfungen, {len(session.failed())} FEHL, {len(session.skipped())} SKIP", "",
+           f"{len(session.tests)} Prüfungen, {len(session.failed())} FEHL, {len(session.skipped())} SKIP, "
+           f"{len(session.not_fitted())} nicht bestückt", "",
            "| Befehl | Prüfung | Ergebnis | Detail |", "|---|---|---|---|"]
     for t in session.tests:
-        res = {"OK": "ok", "FEHL": "**FEHL**", "SKIP": "übersprungen"}[t["result"]]
+        res = {"OK": "ok", "FEHL": "**FEHL**", "SKIP": "übersprungen", NICHT: "nicht bestückt"}[t["result"]]
         md.append(f"| {t['cmd'] or ''} | {t['name']} | {res} | {t['detail']} |")
     md.append("")
     if session.cals:
@@ -464,7 +485,8 @@ def write_bringup_report(outdir, rails, checks, overall, st, notes, lines):
     md += ["## Selbsttest", "", f"Gesamt: **{'ok' if overall else 'FEHLER'}**", "",
            "| Abschnitt | Prüfung | | Detail |", "|---|---|---|---|"]
     for c in checks:
-        md.append(f"| {c['section']} | {c['what']} | {'ok' if c['ok'] else '**FEHLER**'} | {c['detail']} |")
+        mark = {"OK": "ok", "FEHL": "**FEHLER**", NICHT: "nicht bestückt"}[c.get("result", "OK" if c["ok"] else "FEHL")]
+        md.append(f"| {c['section']} | {c['what']} | {mark} | {c['detail']} |")
     md += ["", "## Ruhemessung", ""]
     for k, v in st.items():
         md.append(f"- {k}: {', '.join(f'{x:.4f}' for x in v) if isinstance(v, list) else f'{v:.4f}'}")
@@ -473,6 +495,23 @@ def write_bringup_report(outdir, rails, checks, overall, st, notes, lines):
     path = outdir / f"bench_{stamp}.md"
     path.write_text("\n".join(md) + "\n", encoding="utf-8")
     return path
+
+
+def fit_commands(spec):
+    """--fit "ina=on,lora=off" -> ["fit ina on", "fit lora off"]; "default" -> ["fit default"]."""
+    out = []
+    for item in (s.strip() for s in (spec or "").split(",")):
+        if not item:
+            continue
+        if item == "default":
+            out.append("fit default")
+            continue
+        part, sep, state = item.partition("=")
+        part, state = part.strip().lower(), state.strip().lower()
+        if not sep or (part not in FIT_PARTS and part != "all") or state not in ("on", "off"):
+            raise ValueError(f"--fit: '{item}' (Form teil=on|off, teil: {' '.join(FIT_PARTS)} all)")
+        out.append(f"fit {part} {state}")
+    return out
 
 
 # ---------------------------------------------------------------- Hauptablauf
@@ -511,11 +550,17 @@ def main():
     ap.add_argument("--full", action="store_true", help="'all full': auch LEDs, Summer, Kamera, Servos, Motor, LoRa, GPS, SD")
     ap.add_argument("--cal", action="store_true", help="Kalibrierfolge anhängen (endet mit 'cal save')")
     ap.add_argument("--commands", help="eigene Befehlsfolge, Komma-getrennt (ersetzt --full/--cal)")
+    ap.add_argument("--fit", help="Bestückungsliste vorher ändern, z. B. 'ina=on' oder 'baro=off,lora=on' "
+                                  f"(Teile: {' '.join(FIT_PARTS)} all; 'default' = Standard der Firmware)")
     ap.add_argument("--bringup", action="store_true", help="alter Ablauf: revb_bringup mitlesen und Ruhemessung")
     ap.add_argument("--seconds", type=float, default=30.0, help="Dauer der Ruhemessung (--bringup)")
     ap.add_argument("--out", type=Path, default=FIRMWARE_DIR / "test_reports")
     a = ap.parse_args()
 
+    try:
+        fit_cmds = fit_commands(a.fit)
+    except ValueError as e:
+        sys.exit(str(e))
     if serial is None:
         sys.exit("pyserial fehlt: pip install pyserial")
 
@@ -551,14 +596,18 @@ def main():
         commands = list(PLAN_FULL if a.full else PLAN_ALL)
         if a.cal:
             commands += PLAN_CAL
+    commands = fit_cmds + commands
     session, path = run_console(find_port(a.port), commands, ConsoleIO(), a.out, rails)
-    print(f"\nErgebnis: {session.overall()}, {len(session.tests)} Prüfungen, {len(session.failed())} FEHL, {len(session.skipped())} SKIP")
+    print(f"\nErgebnis: {session.overall()}, {len(session.tests)} Prüfungen, {len(session.failed())} FEHL, "
+          f"{len(session.skipped())} SKIP, {len(session.not_fitted())} nicht bestückt")
     for t in session.failed():
         print(f"  ! {t['name']}: {t['detail']}")
+    for t in session.not_fitted():
+        print(f"  - {t['name']}: nicht bestückt (Bestückungsliste)")
     if a.no_2s:
         print("  (2S nicht versorgt: SKIP bei Servos, Motor, Pyro, INA239 ist erwartet)")
     print(f"Bericht: {path}")
-    sys.exit(0 if session.overall() in ("OK", "SKIP") else 1)
+    sys.exit(0 if session.overall() in ("OK", "SKIP", NICHT) else 1)
 
 
 if __name__ == "__main__":

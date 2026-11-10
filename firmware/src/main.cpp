@@ -1,14 +1,18 @@
 // main.cpp – Flug-Firmware des Teensy-4.1-Flugcomputers (Kartonaut)
 //
-// Ablauf pro Takt (LOOP_HZ, siehe Config.h):
-//   1. Sensoren lesen (Sensors.h, Rückende je Board), auf dem Pad kalibrieren
-//   2. Lage als Gyro-Quaternion fortschreiben (Attitude.h), Kippwinkel in Servoachsen
-//   3. Kalman-Filter für Höhe und Vertikalgeschwindigkeit
+// Ablauf pro Takt (LOOP_HZ = 250 Hz, siehe Config.h):
+//   1. Sensoren lesen (Sensors.h, Rückende je Board; IMU als Mittel über den FIFO), auf dem Pad kalibrieren
+//   2. Lage als Gyro-Quaternion fortschreiben (Attitude.h); am Boden mit Beschleunigung und
+//      Magnetometer gestützt (MahonyAid), im Flug nur Gyro mit dem am Boden gelernten Nullpunkt
+//   3. Kalman-Filter für Höhe und Vertikalgeschwindigkeit: Vorhersage jeden Takt, Barometer nur
+//      bei neuem Wert (50 Hz), Ausreißer verworfen
 //   4. Flugzustandsautomat (FlightState.h) mit Kommandos vom Boden oder von USB
 //   5. Regler Pitch/Yaw (nur in BOOST) und Roll, Servos und H-Brücke
 //   6. Pyro (Pyro.h): nur in APOGEE/DESCENT mit ARM und Durchgang
 //   7. Telemetrie 10 Hz (Telemetry.h) über Serial8, Ereignisse sofort
-//   8. Log-Frame auf die SD-Karte, Zustandsspeicher, Watchdog füttern
+//   8. Log-Satz in den Ringpuffer (PSRAM); auf die SD-Karte nur in SAFE und ab DESCENT, und nur
+//      in der freien Zeit bis zur nächsten Deadline (SDLogger.h); dazu in den Flash-Flugschreiber
+//      (FlashLog.h, ab PAD_READY, übersteht Stromausfall und verlorene SD-Karte); Zustandsspeicher, Watchdog
 //
 // Nach einem Watchdog-Neustart im Flug nimmt die Firmware den Zustand aus dem
 // Zustandsspeicher wieder auf (StateStore.h), statt in SAFE auf dem Pad zu beginnen.
@@ -31,12 +35,15 @@
 #include "LandingBurn.h"
 #include "ThrustCurveE12.h"
 #include "ThrottleLaw.h"
+#include "Filters.h"
+#include "FlashLog.h"
 
 HardwareSerial& radio = Serial8;   // HC-12 heute, E22-400T22S auf rev B (transparenter Modus)
 
 // ======= Zustand =======
 static LoopTimer loopTimer;
 static Attitude  attitude;
+static MahonyAid mahony;
 static KalmanZ   kal;
 static FlightStateMachine fsm(FlightParams{
     FS_LAUNCH_ACCEL_MS2, FS_BURNOUT_AXIAL_MS2, FS_APOGEE_VZ_MS, FS_APOGEE_BARO_DROP_M, FS_LANDED_VZ_MS, FS_LANDED_ALT_M,
@@ -76,6 +83,8 @@ static bool     pending_ack = false;
 static uint8_t  tlm_seq = 0;
 static uint32_t last_tlm_ms = 0;
 static uint32_t loops = 0, log_frames = 0;
+static uint32_t last_loop_us = 0;
+static uint8_t  sensor_bits = 0;
 static bool     log_exported = false, log_closed = false;
 static uint8_t  flags = 0;
 
@@ -154,6 +163,17 @@ static void pollRadio() {
       case 'r': handleCommand(tlm::CMD_PAD_READY, 0); break;
       case 'a': handleCommand(tlm::CMD_ABORT, 0); break;
       case 's': handleCommand(tlm::CMD_SAFE, 0); break;
+      case 'f':                          // Flugschreiber aus dem Flash auf die SD-Karte kopieren (nur am Boden)
+        if (!fsm.inFlight()) FlashLog_copyToSd();
+        break;
+      case 'x':                          // Tischtest: Log schließen und als CSV exportieren (nur am Boden)
+        if (LOG_DATA && !fsm.inFlight()) {
+          SDLogger_stop();
+          const SDExportResult res = SDLogger_exportLatestCSVx(true);
+          if (res.ok) Serial.printf("Export: %s  Zeilen=%lu\n", res.csv_name, (unsigned long)res.rows);
+          else Serial.println("Export fehlgeschlagen.");
+        }
+        break;
       case '?':
         Serial.printf("Zustand %s, kalibriert %d, IMU %d Baro %d Power %d, Reset: %s%s, Watchdog %s\n",
                       flightStateName(fsm.state()), (int)Sensors_calibrated(), (int)Sensors_status().imu_ok,
@@ -163,6 +183,24 @@ static void pollRadio() {
                       "ARM %d Durchgang %d/%d, Akkus %.2f/%.2f V\n",
                       tilt_x_deg, tilt_y_deg, attitude.tiltTotalDeg(), roll_deg, alt_m, vz_ms, sample.a_norm,
                       (int)sample.armed, (int)sample.continuity[0], (int)sample.continuity[1], sample.vbat1_V, sample.vbat2_V);
+        {
+          SDLogStats ls; SDLogger_getStats(ls);
+          Serial.printf("Log: %s, Puffer %lu/%lu Saetze (max %lu), verworfen %lu, ueberschrieben %lu, "
+                        "geschrieben %lu, Schreiben max %lu us, Sync max %lu us; Loop %lu us, IMU-Saetze %u, "
+                        "Mahony-Nullpunkt %.3f %.3f %.3f Grad/s\n",
+                        SDLogger_isRecording() ? "laeuft" : "aus", (unsigned long)ls.queued, (unsigned long)ls.capacity,
+                        (unsigned long)ls.max_queued, (unsigned long)ls.dropped, (unsigned long)ls.overwritten,
+                        (unsigned long)ls.written, (unsigned long)ls.write_us_max, (unsigned long)ls.sync_us_max,
+                        (unsigned long)last_loop_us, (unsigned)sample.imu_n,
+                        mahony.integral_dps.x, mahony.integral_dps.y, mahony.integral_dps.z);
+          FlashLogStats fs; FlashLog_getStats(fs);
+          Serial.printf("Flugschreiber: %s (JEDEC %06lX, %lu MB), Sitzung %d, geschrieben %lu KB, geloescht bis %lu KB, "
+                        "Warteschlange %lu (max %lu) Seiten, verloren %lu Saetze%s\n",
+                        fs.present ? "Flash da" : "kein Flash", (unsigned long)fs.jedec, (unsigned long)(fs.size >> 20),
+                        (int)fs.session, (unsigned long)(fs.write_pos >> 10), (unsigned long)(fs.erased_to >> 10),
+                        (unsigned long)fs.queued_pages, (unsigned long)fs.max_queued, (unsigned long)fs.dropped_records,
+                        fs.old_flight_pending ? ", ALTER FLUG NICHT KOPIERT ('f')" : "");
+        }
         break;
       default: break;
     }
@@ -259,6 +297,7 @@ void setup(){
   pinMode(PIN_PYRO1, OUTPUT); digitalWrite(PIN_PYRO1, LOW);
   if (PIN_PYRO2 >= 0) { pinMode(PIN_PYRO2, OUTPUT); digitalWrite(PIN_PYRO2, LOW); }
 
+  mahony.kp_acc = MAHONY_KP_ACC; mahony.kp_mag = MAHONY_KP_MAG; mahony.ki = MAHONY_KI;
   kal.setDt(1.0f / LOOP_HZ, KALMAN_SIGMA_ACC_MS2);
   kal.setMeasStd(KALMAN_MEAS_STD_M);
   kal.setState(0.f, 0.f);
@@ -267,7 +306,10 @@ void setup(){
   if (LOG_DATA) {
     SDLogger_setup();
     SDLogger_start();
-    SDLogger_setTimingGuard(1.5f, 3000, 6000);
+    SDLogStats ls; SDLogger_getStats(ls);
+    Serial.printf("Log: PSRAM %u MB, Ringpuffer %lu KB im %s, SD %s\n", (unsigned)ls.psram_mb,
+                  (unsigned long)(ls.ring_bytes / 1024), ls.in_psram ? "PSRAM" : "RAM2",
+                  SDLogger_isRecording() ? "bereit" : "FEHLT");
   }
 
   if (reset_cause == ResetCause::WATCHDOG && tryRestore()) {
@@ -278,6 +320,9 @@ void setup(){
     Sensors_calibrateStart();           // Nullpunkte gleich nach dem Einschalten (Rakete ruhig)
     calibrating = true;
   }
+  // Flugschreiber: nach einem Neustart im Flug weiterschreiben, sonst alten Flug zur SD kopieren und
+  // den Bereich im Hintergrund löschen. Vor dem Watchdog: die Kopie darf einige Sekunden dauern.
+  if (LOG_DATA) FlashLog_setup(restored);
   Serial.printf("Kartonaut Flug-Firmware, Board %s, Reset: %s, IMU %s, Baro %s\n",
 #ifdef BOARD_REVB
                 "rev B",
@@ -307,6 +352,7 @@ void loop(){
   if (calibrating && Sensors_calibrateStep(sample)) {
     calibrating = false;
     attitude.initFromAccel(sample.a_body);
+    mahony.reset();
     kal.setState(0.f, 0.f);
     kal.setPDiag(KALMAN_INIT_PZ_VAR, KALMAN_INIT_PV_VAR);
     Control_resetPY(); Control_resetRoll();
@@ -315,16 +361,36 @@ void loop(){
                   gb.x, gb.y, gb.z, p0, attitude.tiltTotalDeg());
   }
 
-  // --- 2. Lage aus dem Gyro ---
-  if (attitude.initialized && sample.imu_fresh) attitude.update(sample.omega_dps, dt);
+  // --- 2. Lage: Gyro, am Boden gestützt ---
+  // Stützung nur in SAFE/PAD_READY, nach der Kalibrierung und in Ruhe (|a| ≈ g, kaum Drehung). Ab dem
+  // Start nur Gyro plus der am Boden gelernte Nullpunkt (mahony.integral_dps).
+  const FlightState st_now = fsm.state();
+  const bool at_rest = fabsf(sample.a_norm - G_MS2) < MAHONY_ACC_TOL * G_MS2 && norm(sample.omega_dps) < MAHONY_RATE_MAX_DPS;
+  const bool aid = (st_now == FlightState::SAFE || st_now == FlightState::PAD_READY) && !calibrating
+                   && Sensors_calibrated() && at_rest;
+  const bool use_mag = aid && MAHONY_USE_MAG && Sensors_status().mag_ok && sample.mag_cal;
+  const Vec3 omega_ctrl = sample.omega_dps + mahony.integral_dps;      // auch für den D-Anteil des Reglers
+  if (attitude.initialized && sample.imu_fresh) {
+    attitude.update(mahony.apply(attitude, sample.omega_dps, sample.a_body, use_mag ? &sample.mag_body : nullptr,
+                                 aid, dt), dt);
+  }
   attitude.tiltDeg(tilt_x_deg, tilt_y_deg);
   roll_deg = attitude.rollDeg();
-  a_norm_filt += (sample.a_norm - a_norm_filt) * A_NORM_ALPHA;
+  // D-Anteil: Drehrate durch einen Tiefpass 1. Ordnung (PY_D_LPF_HZ); die Lage nutzt die ungefilterte
+  static Vec3 omega_d;
+  // Faktor 1 − exp(−2π·f·dt) wie in tvcsim (D_LPF_HZ), bei 30 Hz und 4 ms: 0,53
+  const float k_d = PY_D_LPF_HZ > 0.f ? 1.0f - expf(-2.0f * 3.14159265f * PY_D_LPF_HZ * dt) : 1.0f;
+  omega_d += (omega_ctrl - omega_d) * k_d;
+  a_norm_filt = lowpassStep(a_norm_filt, sample.a_norm, A_NORM_TAU_S, dt);
 
   // --- 3. Höhe und Vertikalgeschwindigkeit ---
   const Vec3 a_nav = attitude.initialized ? attitude.accelNav(sample.a_body, G_MS2) : Vec3();
   kal.setDt(dt, KALMAN_SIGMA_ACC_MS2);
-  kal.step(a_nav.z, sample.baro_alt_m, alt_m, vz_ms);
+  kal.predict(a_nav.z);
+  const bool kal_upd = sample.baro_fresh && kal.update(sample.baro_alt_m, KALMAN_GATE_SIGMA, KALMAN_MAX_REJECTS);
+  alt_m = kal.z(); vz_ms = kal.vz();
+  sensor_bits = (sample.imu_fresh ? 1 : 0) | (sample.baro_fresh ? 2 : 0) | (sample.mag_fresh ? 4 : 0)
+              | (sample.mag_cal ? 8 : 0) | (kal_upd ? 16 : 0) | (aid ? 32 : 0) | (use_mag ? 64 : 0);
 
   // --- 4. Flugzustand ---
   flags = (sample.armed ? tlm::FLAG_ARMED : 0) | (sample.continuity[0] ? tlm::FLAG_CONT1 : 0)
@@ -356,7 +422,9 @@ void loop(){
       StateStore_clear();
       Control_resetPY(); Control_resetRoll();
       if (LOG_DATA && !SDLogger_isRecording()) SDLogger_start();
+      if (LOG_DATA) FlashLog_startSession();
     }
+    if (fsm.state() == FlightState::SAFE && !fsm.launchTime()) FlashLog_abortSession();   // zurück ohne Start
   }
   if (pending_ack) {
     const bool ok = (pending_cmd_type == tlm::CMD_PAD_READY) ? fsm.state() == FlightState::PAD_READY
@@ -368,16 +436,16 @@ void loop(){
 
   // --- 5. Regler ---
   if (PY_CONTROL_ACTIVE && fsm.controlActive()) {
-    py = Control_updatePY(tilt_x_deg, tilt_y_deg, sample.omega_dps, dt, a_norm_filt);
+    py = Control_updatePY(tilt_x_deg, tilt_y_deg, omega_d, dt, a_norm_filt);
   } else {
     py = PyOutput{};
     py.yaw_servo_deg = SERVO_YAW_OFFSET; py.pitch_servo_deg = SERVO_PITCH_OFFSET;
     Servos_center();
   }
   if (ROLL_CONTROL_ACTIVE && (fsm.state() == FlightState::BOOST || fsm.state() == FlightState::COAST)) {
-    roll = Control_updateRoll(roll_deg, sample.omega_dps.z, dt);
+    roll = Control_updateRoll(roll_deg, omega_ctrl.z, dt);
   } else {
-    roll = RollOutput{}; roll.angle_deg = roll_deg; roll.rate_dps = sample.omega_dps.z;
+    roll = RollOutput{}; roll.angle_deg = roll_deg; roll.rate_dps = omega_ctrl.z;
     Motor_coast();
   }
 
@@ -407,36 +475,59 @@ void loop(){
   if (t - last_tlm_ms >= TLM_PERIOD_MS) { last_tlm_ms = t; sendTelemetry(t); }
 
   // --- 8. Log, Zustandsspeicher, Landung ---
-  if (LOG_DATA && SDLogger_isRecording() && (loops % LOG_EVERY_N_LOOPS) == 0) {
+  // Rate und SD-Erlaubnis je Flugabschnitt (Config.h, SDLogger.h): von PAD_READY bis APOGEE nur in den
+  // Ringpuffer, Vorlauf am Pad im Überschreibmodus, ab dem Start nichts mehr überschreiben.
+  const FlightState fs_now = fsm.state();
+  const bool descent = fs_now == FlightState::DESCENT || fs_now == FlightState::LANDED
+                       || (fs_now == FlightState::ABORT && !fsm.launchTime());
+  const bool ground = fs_now == FlightState::SAFE || (fs_now == FlightState::ABORT && !fsm.launchTime());
+  const uint32_t log_div = ground ? LOG_DIV_GROUND : (descent ? LOG_DIV_DESCENT : LOG_DIV_FLIGHT);
+  SDLogger_setOverwrite(fs_now == FlightState::PAD_READY || ground);
+  if (LOG_DATA && (loops % log_div) == 0) {
+    SDLogStats ls; SDLogger_getStats(ls);
     SDFrame fr;
-    fr.kalman_alt_m = alt_m; fr.kalman_vz_ms = vz_ms; fr.baro_alt_m = sample.baro_alt_m;
-    fr.a_nav_x_ms2 = a_nav.x; fr.a_nav_y_ms2 = a_nav.y; fr.a_nav_z_ms2 = a_nav.z;
-    fr.omega_x_dps = sample.omega_dps.x; fr.omega_y_dps = sample.omega_dps.y; fr.omega_z_dps = sample.omega_dps.z;
-    fr.roll_angle_deg = roll_deg; fr.roll_rate_dps = sample.omega_dps.z;
-    fr.yaw_deg = py.yaw_servo_deg; fr.pitch_deg = py.pitch_servo_deg;
-    fr.roll_pwm = roll.pwm; fr.roll_dir = roll.dir;
-    fr.bus_V = sample.vbat2_V; fr.current_mA = sample.current_A * 1000.f;
-    fr.state_id = (float)fsm.state(); fr.tilt_x_deg = tilt_x_deg; fr.tilt_y_deg = tilt_y_deg;
-    fr.vbat1_V = sample.vbat1_V; fr.a_norm_ms2 = sample.a_norm;
+    float* v = fr.v;
+    v[L_KAL_ALT] = alt_m; v[L_KAL_VZ] = vz_ms; v[L_BARO_ALT] = sample.baro_alt_m; v[L_KAL_INNOV] = kal.last_innov;
+    { Vec3 gb; float p0; Sensors_getBias(gb, p0); v[L_P_REL] = sample.p_pa - p0; }
+    v[L_BARO_T] = sample.baro_temp_c; v[L_IMU_T] = sample.temp_c;
+    v[L_ACC_X] = sample.a_body.x; v[L_ACC_Y] = sample.a_body.y; v[L_ACC_Z] = sample.a_body.z;
+    v[L_ANAV_X] = a_nav.x; v[L_ANAV_Y] = a_nav.y; v[L_ANAV_Z] = a_nav.z; v[L_A_NORM] = sample.a_norm;
+    v[L_W_X] = omega_ctrl.x; v[L_W_Y] = omega_ctrl.y; v[L_W_Z] = omega_ctrl.z;
+    v[L_WRAW_X] = sample.omega_raw_dps.x; v[L_WRAW_Y] = sample.omega_raw_dps.y; v[L_WRAW_Z] = sample.omega_raw_dps.z;
+    v[L_MAG_X] = sample.mag_body.x; v[L_MAG_Y] = sample.mag_body.y; v[L_MAG_Z] = sample.mag_body.z;
+    v[L_Q_W] = attitude.q.w; v[L_Q_X] = attitude.q.x; v[L_Q_Y] = attitude.q.y; v[L_Q_Z] = attitude.q.z;
+    v[L_TILT_X] = tilt_x_deg; v[L_TILT_Y] = tilt_y_deg; v[L_ROLL] = roll_deg;
+    v[L_MINT_X] = mahony.integral_dps.x; v[L_MINT_Y] = mahony.integral_dps.y; v[L_MINT_Z] = mahony.integral_dps.z;
+    v[L_SERVO_YAW] = py.yaw_servo_deg; v[L_SERVO_PITCH] = py.pitch_servo_deg;
+    v[L_TVC_YAW] = py.yaw_tvc_deg; v[L_TVC_PITCH] = py.pitch_tvc_deg;
+    v[L_ROLL_PWM] = roll.pwm; v[L_ROLL_DIR] = roll.dir; v[L_THROTTLE] = throttle_u;
+    v[L_VBAT1] = sample.vbat1_V; v[L_VBAT2] = sample.vbat2_V; v[L_ARM_V] = sample.arm_V; v[L_CURRENT] = sample.current_A;
+    v[L_STATE] = (float)fs_now; v[L_FLAGS] = flags;
+    v[L_PYRO] = pyro.fires(0) | (pyro.fires(1) << 4) | (pyro_fire[0] << 8) | (pyro_fire[1] << 9);
+    v[L_RESET] = (float)reset_cause;
     const uint32_t fds = flight_ms(t) / 100;
-    fr.raw_i16[0] = (int16_t)(fds > 32767 ? 32767 : fds);
-    fr.raw_i16[1] = flags;
-    fr.raw_i16[2] = pyro.fires(0) | (pyro.fires(1) << 4) | (pyro_fire[0] << 8) | (pyro_fire[1] << 9);
-    fr.raw_i16[3] = tlm::clamp_i16(sample.a_body.z * 100.f);
-    fr.raw_i16[4] = tlm::clamp_i16(py.yaw_tvc_deg * 100.f);
-    fr.raw_i16[5] = tlm::clamp_i16(py.pitch_tvc_deg * 100.f);
-    fr.raw_i16[6] = (int16_t)reset_cause;
-    fr.raw_i16[7] = (int16_t)(throttle_u * 1000.0f);
-    SDLogger_logFrame(fr, LoopTimer_slack_us(loopTimer));
+    v[L_T_FLIGHT] = fds > 32767 ? 32767 : fds;
+    v[L_SENS_BITS] = sensor_bits; v[L_IMU_N] = sample.imu_n;
+    v[L_LOOP_US] = last_loop_us; v[L_DT_US] = dt * 1e6f;
+    v[L_LOG_DROP] = (ls.dropped + ls.overwritten) & 0x7FFF;
+    v[L_RING_PCT] = ls.capacity ? 100.f * ls.queued / ls.capacity : 0.f;
+    v[L_FIFO_OVR] = sample.imu_fifo_ovr & 0x7FFF;
+    SDLogger_logFrame(fr);
+    if (fs_now != FlightState::PAD_READY || (loops % 10) == 0) FlashLog_log(fr);   // am Pad 25 Hz, sonst wie das Log
     log_frames++;
   }
   if ((fsm.inFlight() || fsm.state() == FlightState::PAD_READY) && (loops % STATE_SAVE_EVERY_N_LOOPS) == 0) {
     saveState(t);
   }
+  static bool flash_closed = false;
+  if (fsm.state() == FlightState::LANDED && !flash_closed) { flash_closed = true; FlashLog_finish(); }
   if (fsm.state() == FlightState::LANDED && !log_closed) {
-    log_closed = true;
+    // erst schließen, wenn der Puffer leer ist (das Nachschreiben läuft in der freien Zeit, unten)
     StateStore_clear();
-    if (LOG_DATA && SDLogger_isRecording()) SDLogger_stop();
+    if (!LOG_DATA || !SDLogger_isRecording() || SDLogger_queued() == 0) {
+      log_closed = true;
+      if (LOG_DATA) SDLogger_stop();
+    }
   }
   // Tischtest: nach N Frames stoppen und genau einmal als CSV exportieren
   if (LOG_DATA && LOG_STOP_AFTER_FRAMES > 0 && !log_exported && log_frames >= LOG_STOP_AFTER_FRAMES
@@ -478,5 +569,11 @@ void loop(){
     if (THROTTLE_ENABLED) { Serial.print(">Throttle_u:"); Serial.println(throttle_u, 3); }
   }
 
+  // --- 9. SD-Karte: nur am Boden und ab DESCENT, nur in der freien Zeit bis zur nächsten Deadline ---
+  // Flugschreiber jeden Loop: höchstens eine Seite programmieren (µs, wartet nie); löschen nur am Boden
+  if (LOG_DATA) FlashLog_service(ground || fs_now == FlightState::PAD_READY || fs_now == FlightState::LANDED);
+  if (LOG_DATA) SDLogger_service(loopTimer.next_us - 200, ground || descent);
+
+  last_loop_us = micros() - t0;
   LoopTimer_overrunCheck(t0);
 }

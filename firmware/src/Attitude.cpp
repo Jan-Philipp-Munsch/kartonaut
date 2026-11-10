@@ -50,3 +50,32 @@ float Attitude::rollDeg() const {
   const Vec3 xb = rotateVector(q, Vec3(1, 0, 0));
   return atan2f(xb.y, xb.x) * RAD2DEG;
 }
+
+Vec3 Attitude::accError(const Vec3& a_body) const {
+  return cross(normalized(a_body), upBody());
+}
+
+Vec3 Attitude::magError(const Vec3& m_body) const {
+  // Gemessene Nordrichtung im Navigationssystem; Bezug ist Navigations-x. Als Winkel statt als
+  // Kreuzprodukt, damit die Stützung nicht mit cos²(Inklination) schwächer wird (bei uns ~0,2).
+  const Vec3 h = rotateVector(q, m_body);
+  if (h.x * h.x + h.y * h.y < 1e-12f) return Vec3();
+  const float psi = atan2f(h.y, h.x);                      // Kursfehler [rad]
+  return upBody() * (-psi);                                // Drehung um die Oben-Achse
+}
+
+Vec3 MahonyAid::apply(const Attitude& att, const Vec3& omega_dps, const Vec3& a_body, const Vec3* m_body,
+                      bool aid, float dt_s) {
+  if (!aid) return omega_dps + integral_dps;
+  Vec3 e = att.accError(a_body) * kp_acc;
+  Vec3 ei = att.accError(a_body);
+  if (m_body) {
+    const Vec3 em = att.magError(*m_body);
+    e += em * kp_mag;
+    ei += em;
+  }
+  integral_dps += ei * (ki * dt_s * RAD2DEG);
+  auto clamp = [&](float& v) { v = v > max_int_dps ? max_int_dps : (v < -max_int_dps ? -max_int_dps : v); };
+  clamp(integral_dps.x); clamp(integral_dps.y); clamp(integral_dps.z);
+  return omega_dps + e * RAD2DEG + integral_dps;
+}

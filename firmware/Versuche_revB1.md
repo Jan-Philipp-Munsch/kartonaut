@@ -1,11 +1,11 @@
 # Versuchsanleitungen Mainboard rev B1: Vermessung und Kalibrierung
 
-Stand 2026-10-23. Zwölf Versuche, die am Tisch nacheinander laufen, jeder nach derselben Gliederung
+Stand 2026-11-05 (IMU LSM6DSV16X, Bestückungsliste), zuerst 2026-10-23. Zwölf Versuche, die am Tisch nacheinander laufen, jeder nach derselben Gliederung
 wie E02 (`docs/experiments/E02_TVC_Charakterisierung_revB1.md`): Ziel, Material, Aufbau, Vorbereitung
 an der Konsole, was gefahren und gemessen wird, Läufe und Aufnahme, Auswertung, Protokoll, Grenzen.
 Die Konsole `revb_test` stellt ihre Rückfragen selbst (`WAIT`, `ASK`, `CONFIRM`); die Anleitung sagt,
 was du dabei in der Hand hältst. Zeilenformat und Gesamtablauf: `Tischtest_revB1.md`.
-Steckerbelegungen stammen aus `circuit.py` (Branch `claude/rev-b1`).
+Steckerbelegungen stammen aus `hardware/mainboard/kicad/circuit.py`.
 
 **Aufnahme**: jeder Lauf ist ein Aufruf von `python tools/bench_test.py --skip-rails --commands "..."`
 (oder die Befehle von Hand in `pio device monitor`). Der Bericht liegt danach in
@@ -40,7 +40,12 @@ Allgemeine Regeln:
 - **2S nur, wenn der Versuch es braucht** (V06 bis V09): Netzteil 7,4 V, Strombegrenzung 1 A, für
   Motor und Pyro 3 A. Ohne 2S melden die betroffenen Prüfungen `SKIP`.
 - **Neustart des Teensy**: 1S aus und wieder ein. Über USB geht es nicht.
-- Vor jedem Flashen: `python tools/check_board_pins.py <circuit.py von claude/rev-b1>`.
+- **Bestückungsliste**: was noch fehlt, steht in der Firmware auf „aus“ (`lib/mainboard_revb/FitRevB.h`,
+  Standard: INA239, LoRa, GPS, Baro 2, ADXL375) und meldet `TEST <name> NICHT_ERKANNT nicht bestückt oder
+  keine Antwort (Bestückungsliste: fit <teil> off)`, kein Fehler. Ist das Teil eingelötet: `fit <teil> on`
+  in der Konsole (nur bis zum Neustart) oder `bench_test.py --fit "<teil>=on"`; antwortet es dann nicht,
+  ist es `FEHL`. Teile: `imu baro baro2 ina mag sht adxl lora gps`, `fit` zeigt die Liste.
+- Vor jedem Flashen: `python tools/check_board_pins.py` (prüft gegen `hardware/mainboard/kicad/circuit.py`; seit dem Merge hat `main` den Decoder).
 - `q` in der Konsole bricht eine laufende Messung ab. Nach jedem Befehl stehen Servos ohne Puls,
   der Motortreiber schläft, Pyro ist tief.
 - Kalibrierwerte liegen nach dem Befehl im RAM; erst `cal save` schreibt sie ins EEPROM. Jeder
@@ -159,8 +164,9 @@ bestätigt; zeigt `mux_gnd` nach einem hohen Kanal > 0,05 V, Wartezeit in `BusRe
 
 ## V03 IMU
 
-**Ziel**: Erkennung, Datenrate, Werksselbsttest, Gyro-Nullpunkt mit Temperatur, Beschleunigungs-Offset
-und -Skalierung aus sechs Lagen.
+**Ziel**: Erkennung, Datenrate, Selbsttest, Gyro-Nullpunkt mit Temperatur, Beschleunigungs-Offset
+und -Skalierung aus sechs Lagen. Auf rev B1 sitzt der **LSM6DSV16X** (U4, WHO_AM_I 0x70); die Firmware
+wählt den Treiber nach WHO_AM_I (`ImuAuto.h`), ein ICM-42688-P (0x47) auf älteren Platinen geht weiter.
 
 **Material**: nur 1S. Ebene, feste Unterlage (Tischplatte), Winkel oder Buch als Anschlag, Raumthermometer.
 
@@ -170,12 +176,14 @@ die Platine an den Anschlag stellen, Kanten laut Ansage; Kabel so, dass es in ke
 **Vorbereitung an der Konsole**:
 ```
 imu             Erkennung, Konfiguration, Datenrate, Ruhe, Selbsttest
+status          zeigt "IMU-Treiber LSM6DSV16X"
 cal show        bestehende Werte (gyro_bias_dps, acc_offset_ms2, acc_scale)
 ```
 
-**Was gemessen wird**: `imu`: WHO_AM_I, Flugkonfiguration zurückgelesen, neue Sätze in 500 ms (Soll 1 kHz),
-300 ms Ruhe (|a|, |ω|), Werksselbsttest (Gyro ±250 °/s, Accel ±2 g, 200 Sätze mit und ohne
-Testsignal, Vergleich mit dem Werkswert). `cal gyro <s>`: Mittel und Standardabweichung über die Dauer,
+**Was gemessen wird**: `imu`: WHO_AM_I, Flugkonfiguration zurückgelesen (±2000 °/s, ±16 g, 960 Hz
+High-Performance, BDU, INT1 Gyro-Daten bereit), neue Sätze in 500 ms (Soll 960 Hz), 300 ms Ruhe (|a|, |ω|),
+Selbsttest nach AN5763: Accel ±4 g und Gyro ±2000 °/s bei 60 Hz, je 5 Sätze ohne und mit positivem
+Testsignal (CTRL10), Differenz gegen feste Grenzen (der LSM6DSV16X hat keinen Werkswert). `cal gyro <s>`: Mittel und Standardabweichung über die Dauer,
 Neustart bei > 3 °/s Spanne. `cal acc`: sechs Lagen je 1,5 s, Offset = (max + min)/2, Skalierung =
 2 g / (max − min) je Chip-Achse.
 
@@ -198,24 +206,27 @@ halten, dann Enter; „bewegt, noch einmal“ wiederholt die Lage.
 
 | Zeile | Soll |
 |---|---|
-| `imu_whoami` | 0x47 |
-| `imu_rate` | 900–1100 Hz |
+| `imu_whoami` | 0x70 (LSM6DSV16X); 0x47 nur bei ICM-42688-P |
+| `imu_rate` | 864–1056 Hz (Soll 960 Hz ± 10 %) |
 | `imu_rest` | \|a\| 9,0–10,6 m/s², \|ω\| < 5 °/s |
-| `imu_selftest_gyro` | Verhältnis 0,5–1,5 je Achse, Offset < 20 °/s |
-| `imu_selftest_acc` | Verhältnis 0,5–1,5 je Achse |
+| `imu_selftest_gyro` | \|Antwort\| 150–700 °/s je Achse, Offset < 20 °/s (ICM: Verhältnis 0,5–1,5) |
+| `imu_selftest_acc` | \|Antwort\| 0,050–1,700 g je Achse (ICM: Verhältnis 0,5–1,5) |
 | `cal_gyro` | Nullpunkt je Achse < 2 °/s (typisch < 1), Rauschen < 0,2 °/s |
 | `cal_acc` | Offset je Achse < 0,3 m/s², Skalierung 0,98–1,02 |
 | Lauf 4 gegen 2 | Nullpunktänderung je Grad notieren; > 0,05 °/s je K ist für den Flug relevant |
 
-Selbsttest `FEHL` bei sonst guten Werten: wiederholen, die Platine darf während der 2 s nicht angestoßen
-werden; bleibt es, Chip verdächtig. „Achse nicht nach oben und unten gesehen“: eine Lage war schief
+Selbsttest `FEHL` bei sonst guten Werten: wiederholen, die Platine darf während des Tests (knapp 1 s) nicht
+angestoßen werden; bleibt es, erst die Grenzen und den Ablauf im Datenblatt prüfen (siehe Grenzen), dann
+Lötstellen von U4. `imu_whoami` mit 0x00 oder 0xFF: U4 antwortet nicht (Lötstellen, 3V3_SENS, CS_IMU). „Achse nicht nach oben und unten gesehen“: eine Lage war schief
 oder doppelt.
 
 **Protokoll**: WHO_AM_I, Datenrate, Selbsttestwerte, Nullpunkt mit Temperatur, sechs Lagenwerte (aus den
 `INFO`-Zeilen), Offset und Skalierung, Raumtemperatur.
 
-**Grenzen**: Die Grenzwerte des Selbsttests (50–150 % des Werkswerts) sind aus dem TDK-Referenztreiber,
-nicht an dieser Platine bestätigt. Ein Nullpunkt bei einer Temperatur; der Temperaturgang wird nur
+**Grenzen**: Ablauf und Grenzwerte des LSM6DSV16X-Selbsttests (60 Hz, 100 ms Wartezeit, 5 Sätze,
+Accel 50–1700 mg bei ±4 g, Gyro 150–700 °/s bei ±2000 °/s) sind aus der LSM6DSx-Familie übernommen und im
+Treiber mit `PRUEFEN` markiert: mit DS13510/AN5763 und der ersten Platine bestätigen. Für den ICM-42688-P
+gelten die 50–150 % des Werkswerts aus dem TDK-Referenztreiber. Ein Nullpunkt bei einer Temperatur; der Temperaturgang wird nur
 protokolliert, die Firmware kompensiert ihn noch nicht. Die Skalierung aus sechs Lagen trifft nur die
 Hauptachsen, keine Querempfindlichkeit.
 
@@ -322,8 +333,8 @@ Mittel und Standardabweichung des Drucks, Mitteltemperatur. `sht`: Messung hohe 
 
 | Zeile | Soll |
 |---|---|
-| `baro1` | Chip-ID 0x60 (0x50 = BMP388 als Rückfall), 80–110 kPa, Temperatur ± 3 K zum Raum |
-| `baro2` | `SKIP` (DNP) oder OK, wenn bestückt |
+| `baro1` | Chip-ID 0x50 (auf rev B1 ist ein BMP388 bestückt; 0x60 = BMP390), 80–110 kPa, Temperatur ± 3 K zum Raum. Ohne U5: `fit baro off` → `NICHT_ERKANNT` |
+| `baro2` | `NICHT_ERKANNT` (DNP, `fit baro2 off`) oder OK, wenn bestückt und `fit baro2 on` |
 | `cal_baro` Rauschen | < 3 Pa (≈ 0,25 m); bis 6 Pa übernommen; Lauf 3 gegen 2 zeigt den Luftzug |
 | Lauf 4 gegen 5 | Druckdifferenz 11–13 Pa je Meter |
 | `sht_read` | Temperatur ± 2 K zum Thermometer, Feuchte ± 5 % zum Hygrometer |
@@ -341,6 +352,10 @@ Platine über der Raumtemperatur, der SHT40 am Rand ist näher dran.
 
 **Ziel**: Erkennung, Busspannung gegen die Mux, Strom unter Last, Offset und Verstärkung gegen das Multimeter.
 
+**Bestückung**: U6 ist nachbestellt (ca. 11.11.) und steht in der Bestückungsliste auf „aus“: bis dahin melden
+`ina`, `ina load` und `cal ina` `NICHT_ERKANNT`, kein Fehler. Nach dem Einlöten zuerst `fit ina on`
+(oder `bench_test.py --fit "ina=on" ...`).
+
 **Material**: 1S und 2S (1 A), Multimeter im Strombereich (2 A), Lastwiderstand 22 Ω / 5 W (0,34 A bei
 7,4 V) an einem JST-XH-3-Stecker zwischen Pin 2 (VSERVO) und Pin 3 (GND_PWR), Multimeter in Reihe.
 
@@ -349,6 +364,7 @@ Nichts anderes an VSERVO (keine Servos, kein Motor).
 
 **Vorbereitung an der Konsole**:
 ```
+fit ina on      INA239 eingelötet (sonst NICHT_ERKANNT)
 status          2S da?
 ina             IDs, Konfiguration, Busspannung gegen Mux
 ```
@@ -383,7 +399,7 @@ Multimeter-Bereich. Das Multimeter danach aus dem Strombereich nehmen.
 
 **Grenzen**: Verstärkung bei einem Strompunkt (0,34 A); Servo- und Motorströme liegen bei 1–3 A, die
 Linearität des Shunts ist dort besser als 1 %, die Eigenerwärmung des 1-W-Shunts bei 3 A (0,18 W)
-unkritisch. Die Mittelung über 50 ms macht den INA239 für den 100-Hz-Regler unbrauchbar, er dient Telemetrie und Log.
+unkritisch. Die Mittelung über 50 ms macht den INA239 für den 250-Hz-Regler unbrauchbar, er dient Telemetrie und Log.
 
 ---
 
@@ -521,6 +537,10 @@ an VBAT_PROT < 0,5 V (Min/Max). Sense im Puls hoch: FET schaltet nicht (Gate-Wid
 
 **Ziel**: E22-400T22S erreichen, Konfiguration lesen, Ping zur Bodenstation mit RSSI, Sendestrom.
 
+**Bestückung**: U10 ist noch nicht da und steht in der Bestückungsliste auf „aus“: `lora` meldet
+`NICHT_ERKANNT`, startet Serial8 nicht und lässt M0/M1/AUX im Ruhezustand (Pull-down im Teensy, nichts
+getrieben; NRST losgelassen). Nach dem Einlöten `fit lora on`, dann treibt die Firmware M0 = M1 = 0.
+
 **Material**: 1S (3V3_RF versorgt das Modul). **Antenne an der IPEX-Buchse vor dem ersten Befehl.**
 Bodenstation mit E22 auf demselben Kanal und derselben Luftrate (`kartonaut-ground` oder ein zweiter
 E22 am USB-UART-Adapter im Terminal), Netzteil mit Stromanzeige oder Multimeter in der 1S-Leitung.
@@ -529,6 +549,7 @@ E22 am USB-UART-Adapter im Terminal), Netzteil mit Stromanzeige oder Multimeter 
 
 **Vorbereitung an der Konsole**:
 ```
+fit lora on       E22 eingelötet (sonst NICHT_ERKANNT)
 status            Bausteine
 lora              AUX, Konfiguration, Ping
 ```
@@ -564,6 +585,9 @@ Luftrate, Leistung, RSSI-Byte; Werte gleich der Bodenstation. `lora_ping` OK mit
 ## V11 GPS
 
 **Ziel**: NMEA-Empfang, Baudrate, Fix, Satellitenzahl, Position.
+
+**Bestückung**: J11/J_GPS ist noch nicht bestückt, GPS steht in der Bestückungsliste auf „aus“: `gps` meldet
+`NICHT_ERKANNT` ohne 10 s zu warten. Mit gestecktem Modul `fit gps on`.
 
 **Material**: 1S, GPS-Modul an **J_GPS** (GH: 1 3V3_RF, 2 GND, 3 GPS_TX, 4 GPS_RX), Platz mit Himmelssicht,
 Smartphone mit Karte für den Vergleich.
@@ -614,8 +638,10 @@ status
 ```
 
 **Was gemessen wird**: `sd`: 1 MiB in 4-KiB-Blöcken schreiben (Zeit je Block), lesen und vergleichen,
-Datei löschen. `timing`: 300 Durchläufe mit 100 Hz, je Durchlauf IMU, Baro, drei Mux-Kanäle,
-Magnetometer, INA239 alle 10 Durchläufe; Mittel, Maximum, Überläufe. `watchdog`: 2-s-Watchdog 3 s
+Datei löschen. `timing`: 750 Durchläufe mit 250 Hz (wie die Flug-Firmware seit 05.11.2026), je Durchlauf
+IMU als FIFO-Mittel, Baro, drei Mux-Kanäle, Magnetometer, INA239 alle 10 Durchläufe (alles im selben
+Durchlauf, ungünstigster Fall); Mittel, Maximum (Soll < 2 ms), Überläufe. `mem`: PSRAM-Größe mit 1-MB-
+Mustertest und QSPI-Flash unter dem Teensy. `watchdog`: 2-s-Watchdog 3 s
 bedient, dann abgeschaltet, 2,5 s unbedient. `watchdog fire`: 1 s, nicht bedient → Neustart, Banner
 meldet die Ursache. `led`, `buzzer`, `cam` mit Rückfrage.
 

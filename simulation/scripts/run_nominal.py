@@ -42,7 +42,18 @@ def add_common_args(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--no-ground", action="store_true", help="ohne Boden rechnen (wie Simulink)")
     ap.add_argument("--single-motor", action="store_true", help="nur ein Motor, keine zweite Zuendung")
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--substeps", type=int, default=10)
+    ap.add_argument("--substeps", type=int, default=None, help="RK4-Teilschritte je Takt (Vorgabe: ~1 ms)")
+    ap.add_argument("--rate-hz", type=float, default=250.0,
+                    help="Regeltakt in Hz (Firmware ab 11/2026: 250; 100 = Simulink und alte Firmware)")
+    ap.add_argument("--imu-average", choices=["auto", "on", "off"], default="auto",
+                    help="Gyro/Accel als Mittel ueber den Takt; auto = an ab 200 Hz, bei 100 Hz Momentanwert")
+    ap.add_argument("--gimbal-inertia", type=float, default=0.0,
+                    help="Reaktionsmoment des Kardans: wirksames Traegheitsmoment kg m^2 (Stand 2b: 5e-4; 0 = aus)")
+    ap.add_argument("--servo-model", choices=["sg90", "w5652h"], default="sg90",
+                    help="sg90 = Fit der SG90-Messung (Vorgabe), w5652h = Annahme fuer die neuen Servos")
+    ap.add_argument("--servo-rate", type=float, default=None, help="Stellratengrenze des Servos in Servo-Grad/s")
+    ap.add_argument("--fw-d-lpf", type=float, default=None, help="Firmware: Tiefpass im D-Anteil, Hz")
+    ap.add_argument("--fw-slew", type=float, default=None, help="Firmware: Ratenbegrenzung Servokommando, Servo-Grad/s")
 
 
 VEHICLES = {"nominal": VehicleParams.nominal, "preload": VehicleParams.preload, "cad": VehicleParams.cad,
@@ -55,6 +66,7 @@ def build_params(args) -> SimParams:
     for name in ("static_error_y", "static_error_z", "mis_y", "mis_z"):
         if getattr(args, name) is not None:
             upd[name] = getattr(args, name)
+    upd["gimbal_inertia"] = args.gimbal_inertia
     veh = replace(veh, **upd)
     ctrl = {"nominal": ControlParams(), "tuner": ControlParams.tuner(), "preload": ControlParams.preload()}[args.gains]
     for name in ("kp", "ki", "kd"):
@@ -65,14 +77,21 @@ def build_params(args) -> SimParams:
     if args.fw_ki is not None: fw = replace(fw, PY_KI=args.fw_ki)
     if args.fw_kd is not None: fw = replace(fw, PY_KD=args.fw_kd)
     if args.fw_mass is not None: fw = replace(fw, MASS_KG=args.fw_mass)
+    if args.fw_d_lpf is not None: fw = replace(fw, D_LPF_HZ=args.fw_d_lpf)
+    if args.fw_slew is not None: fw = replace(fw, SERVO_SLEW_DPS=args.fw_slew)
     if args.fw_servo_gain is not None:
         fw = replace(fw, SERVO_YAW_GAIN=-abs(args.fw_servo_gain), SERVO_PITCH_GAIN=abs(args.fw_servo_gain))
-    return SimParams(vehicle=veh, control=ctrl, firmware=fw,
-                     motor=MotorParams(fuel_model=args.fuel, second_motor=not args.single_motor),
-                     servo=ServoParams(servo_deg_per_tvc_deg=args.servo_gain),
-                     noise=NoiseParams(enabled=not args.no_noise, accel_model=args.accel),
-                     controller=args.controller, t_end=args.t_end, seed=args.seed, substeps=args.substeps,
-                     ground=not args.no_ground)
+    servo = (ServoParams.w5652h(servo_deg_per_tvc_deg=args.servo_gain) if args.servo_model == "w5652h"
+             else ServoParams(servo_deg_per_tvc_deg=args.servo_gain))
+    if args.servo_rate is not None:
+        servo = replace(servo, rate_limit_dps=args.servo_rate)
+    p = SimParams(vehicle=veh, control=ctrl, firmware=fw,
+                  motor=MotorParams(fuel_model=args.fuel, second_motor=not args.single_motor),
+                  servo=servo,
+                  noise=NoiseParams(enabled=not args.no_noise, accel_model=args.accel),
+                  controller=args.controller, t_end=args.t_end, seed=args.seed, substeps=args.substeps,
+                  ground=not args.no_ground)
+    return p.at_rate(args.rate_hz, None if args.imu_average == "auto" else args.imu_average == "on")
 
 
 def describe(p: SimParams) -> str:
@@ -82,7 +101,8 @@ def describe(p: SimParams) -> str:
         g = f"Kp={p.firmware.PY_KP:g} Ki={p.firmware.PY_KI:g} Kd={p.firmware.PY_KD:g} (Skala {p.firmware.PY_ERROR_SCALE:g})"
     return (f"Regler {p.controller}, {g}; m_dry={p.vehicle.m_dry:g} kg, I={p.vehicle.Ix:.4g}, l={p.vehicle.l:g} m, "
             f"static_error y/z={p.vehicle.static_error_y:g}/{p.vehicle.static_error_z:g} Grad, "
-            f"Rauschen {'an' if p.noise.enabled else 'aus'}")
+            f"Rauschen {'an' if p.noise.enabled else 'aus'}, Takt {1 / p.control.dt:g} Hz"
+            f"{' (IMU gemittelt)' if p.noise.imu_average else ''}")
 
 
 def main():

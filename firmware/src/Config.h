@@ -13,7 +13,11 @@
 // =====================================================================
 
 // ===== Loop-Takt =====
-constexpr float    LOOP_HZ        = 100.0f;
+// 250 Hz seit 05.11.2026 (vorher 100): gleich der Servo-Pulsrate, jeder Puls bringt einen neuen
+// Sollwert, Totzeit Messung -> Stellbefehl im Mittel ~2 ms statt ~5 ms. Die IMU (960 Hz) wird je
+// Loop über ihren FIFO gemittelt (Sensors_revb.cpp), das verhindert Aliasing ohne trägen Filter.
+// Rechenzeit je Loop auf dem Teensy 4.1 typisch < 0,5 ms; SD-Zugriffe nie in der Flugphase (Logging).
+constexpr float    LOOP_HZ        = 250.0f;
 constexpr uint32_t LOOP_PERIOD_US = uint32_t(1e6f / LOOP_HZ);
 
 // ===== Physik (Erstflug-Konfiguration, cad/mass_properties.md, 22.10.2026) =====
@@ -22,12 +26,23 @@ constexpr float MASS_KG      = 0.761f;  // Start, voller E12, Rohr 700 mm, ohne 
 constexpr float MOMENT_ARM_M = 0.242f;  // Kardanpunkt–Schwerpunkt (voll: 0,372 m)
 
 // ===== IMU =====
-// Breakout: ICM-20948 roh (ohne DMP), ±4 g und ±2000 °/s. Rev B: ICM-42688-P an SPI1.
+// Breakout: ICM-20948 roh (ohne DMP), ±4 g und ±2000 °/s. Rev B: LSM6DSV16X an SPI1 (ältere Platinen ICM-42688-P, ImuAuto wählt nach WHO_AM_I).
 constexpr float ACC_RANGE_G      = 4.0f;    // E12: 3,2 g bei 0,9 kg; F35 bräuchte ±8 g
 constexpr bool  GYRO_FILT        = false;   // IIR-Glättung der Drehrate ein/aus
 constexpr float GYRO_FILT_ALPHA  = 0.25f;   // 0..1, höher = weniger Glättung
-constexpr int   GYRO_CAL_SAMPLES = 400;     // Gyro-Nullpunkt auf dem Pad (bei 100 Hz: 4 s)
+constexpr int   GYRO_CAL_SAMPLES = 1000;    // Gyro-Nullpunkt auf dem Pad (bei 250 Hz: 4 s)
 constexpr float GYRO_CAL_MAX_DPS = 2.0f;    // größer: Rakete wackelt, Kalibrierung ungültig
+// Kerbfilter auf der Drehrate (Filters.h), nur rev B: 0 = aus. Erst einschalten, wenn das Log
+// (Spalten omega_raw_*) eine schmale Vibrationslinie zeigt, z. B. Servo-Brummen oder Motor.
+constexpr float GYRO_NOTCH_HZ    = 0.0f;
+constexpr float GYRO_NOTCH_Q     = 4.0f;    // Breite ≈ f0/Q
+// Stützung der Lage am Boden (Attitude.h, MahonyAid): nur in SAFE/PAD_READY und in Ruhe
+constexpr float MAHONY_KP_ACC    = 1.0f;    // 1/s
+constexpr float MAHONY_KP_MAG    = 0.5f;    // 1/s, nur mit kalibriertem Magnetometer ("cal mag", "cal axes")
+constexpr float MAHONY_KI        = 0.05f;   // 1/s², lernt den Rest-Nullpunkt des Gyros
+constexpr float MAHONY_ACC_TOL   = 0.05f;   // Ruhe: ||a| - g| < Toleranz · g ...
+constexpr float MAHONY_RATE_MAX_DPS = 5.0f; // ... und |ω| darunter
+constexpr bool  MAHONY_USE_MAG   = true;
 // Drehung Chip -> Körpersystem (x, y quer, z Rollachse): Vorzeichen und Achsenreihenfolge.
 // Breakout: Chip-Achsen = Körperachsen (bisheriger Einbau). Rev B: wird mit der Platzierung
 // eingetragen (Plan 22.10., A2).
@@ -106,8 +121,15 @@ constexpr float PY_KI = 0.0f;
 constexpr float PY_KD = 1.0f;
 constexpr float PY_ERROR_SCALE = -100.0f;   // Grad -> Reglereingang
 constexpr float PY_INT_LIMIT   = 500.0f;    // Anti-Windup des I-Anteils [Grad·s]
+// Tiefpass 1. Ordnung nur auf der Drehrate im D-Anteil (Simulation 05.11.2026, scripts/rate_study.py):
+// halbiert die Stellaktivität aus dem Gyro-Rauschen, kostet ~2° Phase, Kippwinkel unverändert.
+constexpr float PY_D_LPF_HZ  = 30.0f;       // 0 = aus
+// Stellratenbegrenzung des Kardans (Schutz gegen Sprünge bei Moduswechsel oder Ausreißern, nicht für
+// die Stabilität): 100 Kardan-Grad/s, das 2-6-fache dessen, was der Regler in der Simulation braucht.
+// In Kardan-Grad, weil SERVO_*_GAIN (6 oder 23, Befund 13) noch offen ist.
+constexpr float PY_SLEW_TVC_DPS = 100.0f;   // 0 = aus
 constexpr float A_NORM_MIN   = 1.0f;        // Schutz gegen Division bei kleiner Beschleunigung [m/s²]
-constexpr float A_NORM_ALPHA = 0.1f;        // Tiefpass für |a|
+constexpr float A_NORM_TAU_S = 0.095f;      // Tiefpass für |a| (entspricht dem alten Faktor 0,1 bei 100 Hz)
 
 // ===== Regler Roll (Schwungrad / Rollmotor) =====
 // TODO Befund 15: Izz ist 0,0006 kg·m² (Erstflug), nicht 0,1; Gewinne vor dem Einsatz prüfen.
@@ -121,8 +143,12 @@ constexpr int   ROLL_PWM_MAX      = 4095;
 constexpr uint32_t ROLL_PWM_FREQ_HZ = 20000;
 
 // ===== Kalman (Höhe, Vertikalgeschwindigkeit) =====
-constexpr float KALMAN_MEAS_STD_M    = 30.0f;   // Baro-Rauschen [m]
-constexpr float KALMAN_SIGMA_ACC_MS2 = 10.0f;   // Prozessrauschen [m/s²]
+// BMP388 mit ×8 und IIR 3: Rauschen ~0,1 m; 0,5 m lässt Platz für Strömung am Druckausgleichsloch.
+// Vorher 30 m: dann folgte die Höhe fast nur der integrierten Beschleunigung (driftet).
+constexpr float KALMAN_MEAS_STD_M    = 0.5f;    // Baro-Rauschen [m]
+constexpr float KALMAN_SIGMA_ACC_MS2 = 2.0f;    // Prozessrauschen: Fehler der vertikalen Beschleunigung [m/s²]
+constexpr float KALMAN_GATE_SIGMA    = 5.0f;    // Innovation darüber = Ausreißer (Druckstoß) ...
+constexpr uint8_t KALMAN_MAX_REJECTS = 25;      // ... höchstens so viele Barometerwerte in Folge (0,5 s)
 constexpr float KALMAN_INIT_PZ_VAR   = 10000.0f;
 constexpr float KALMAN_INIT_PV_VAR   = 10000.0f;
 
@@ -198,14 +224,20 @@ constexpr uint32_t TLM_CMD_TIMEOUT_MS = 1000;   // Kommando-Rahmen älter als da
 
 // ===== Watchdog und Zustandsspeicher =====
 constexpr bool     WDT_ENABLED    = true;
-constexpr uint32_t WDT_TIMEOUT_MS = 250;        // Loop 10 ms; SD-Flush bleibt mit dem Slack darunter
+constexpr uint32_t WDT_TIMEOUT_MS = 250;        // Loop 4 ms; im Flug kein SD-Zugriff (Logging)
 constexpr uint32_t STATE_SAVE_EVERY_N_LOOPS = 1;
 
-// ===== Logging =====
-constexpr bool     LOG_DATA = false;
-constexpr uint32_t LOG_EVERY_N_LOOPS = 1;       // 1 = 100 Hz, 10 = 10 Hz
-// Nach so vielen Frames stoppen und die CSV exportieren (Tischtest). 0 = nie.
-constexpr uint32_t LOG_STOP_AFTER_FRAMES = 1000;
+// ===== Logging (SDLogger.h) =====
+// Jeder Datensatz geht zuerst in einen Ringpuffer im PSRAM (8 MB, ohne PSRAM 384 KB im RAM2).
+// Auf die SD-Karte geschrieben wird nur am Boden (SAFE) und ab DESCENT; von PAD_READY bis APOGEE
+// berührt der Loop die Karte nie, damit ein langsamer Schreibzugriff die Regelung nicht aufhält.
+// Der Rückstand wird ab DESCENT nachgeschrieben, bei LANDED alles.
+constexpr bool     LOG_DATA = true;
+constexpr uint32_t LOG_DIV_GROUND  = 10;        // SAFE: jeder 10. Loop = 25 Hz
+constexpr uint32_t LOG_DIV_FLIGHT  = 1;         // PAD_READY bis APOGEE: 250 Hz
+constexpr uint32_t LOG_DIV_DESCENT = 5;         // DESCENT, LANDED: 50 Hz
+// Nach so vielen Frames stoppen und die CSV exportieren (Tischtest). 0 = nie; sonst USB-Befehl 'x'.
+constexpr uint32_t LOG_STOP_AFTER_FRAMES = 0;
 constexpr bool     LOOP_WARNING = true;         // Overrun auf Serial melden
 
 // ===== Regler-Freigaben =====

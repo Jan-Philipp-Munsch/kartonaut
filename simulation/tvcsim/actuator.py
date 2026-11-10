@@ -9,6 +9,11 @@ Zustand je Achse: ``x = [theta, theta_dot]`` mit
 ``theta_ddot = wn^2 (K u(t - tau) - theta) - 2 zeta wn theta_dot``.
 Der Kommandoverlauf ist stueckweise konstant (ZOH), deshalb reicht fuer die Totzeit ein
 Nachschlagen im Kommandoverlauf.
+
+Mit ``ServoParams.rate_limit_dps > 0`` ist die Stellrate begrenzt: erreicht ``|theta_dot|`` die
+Grenze, beschleunigt das Modell nicht weiter in dieselbe Richtung (``theta_ddot = 0``), und
+``clip_rate`` schneidet nach jedem Integrationsschritt ab. ``deriv`` liefert ``theta_ddot`` mit,
+daraus rechnet ``sim.py`` das Reaktionsmoment des Kardans (``VehicleParams.gimbal_inertia``).
 """
 from __future__ import annotations
 
@@ -48,10 +53,32 @@ class ServoChannel:
             return 0.0
         return self.cmd_hist[min(k, len(self.cmd_hist) - 1)]
 
+    def rate_limit_state(self) -> float:
+        """Ratengrenze in Zustandseinheiten (``x[1]``); inf = keine."""
+        r = self.servo.rate_limit_dps
+        if r <= 0.0:
+            return math.inf
+        g = self.servo.servo_deg_per_tvc_deg
+        return r / (g * g)     # Servo-Grad/s -> Kardan-Grad/s (/g) -> Zustand (/g)
+
     def deriv(self, t: float, x) -> np.ndarray:
         u = self.delayed_input(t)
         wn, zeta, K = self.servo.wn, self.servo.zeta, self.servo.K
-        return np.array([x[1], wn * wn * (K * u - x[0]) - 2.0 * zeta * wn * x[1]])
+        a = wn * wn * (K * u - x[0]) - 2.0 * zeta * wn * x[1]
+        lim = self.rate_limit_state()
+        if abs(x[1]) >= lim and a * x[1] > 0.0:
+            a = 0.0
+        return np.array([x[1], a])
+
+    def clip_rate(self, x) -> np.ndarray:
+        lim = self.rate_limit_state()
+        if math.isinf(lim) or abs(x[1]) <= lim:
+            return x
+        return np.array([x[0], math.copysign(lim, x[1])])
+
+    def rate_dps(self, x) -> float:
+        """Kardanrate in Grad/s."""
+        return self.servo.servo_deg_per_tvc_deg * x[1]
 
     def output(self, x) -> float:
         """Kardanwinkel in Grad nach dem Gain-Block (6 bzw. 23)."""

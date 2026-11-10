@@ -62,8 +62,10 @@ radio, then the bench test.</td>
 
 **Next**
 
-1. Hand-solder the board and bench-test it with `revb_test` (power monitor and one resistor follow
-   with the second DigiKey shipment).
+1. Hand-solder the board and bench-test it with `revb_test`, following the
+   [soldering and measurement guide](hardware/mainboard/LOETANLEITUNG_revB1.pdf) (power monitor and one
+   resistor follow with the second DigiKey shipment); get two IPEX pigtails for the
+   [LoRa antenna](docs/Bauanleitung_LoRa_Antenne.md).
 2. Print and weigh the parts, assemble the rocket, balance the centre of gravity.
 3. Ground tests: servo-to-gimbal ratio, CO₂ ejection, TVC test rig with a propeller motor, radio range.
 4. ***Kartonaut 1*: controlled ascent on one motor, parachute recovery.**

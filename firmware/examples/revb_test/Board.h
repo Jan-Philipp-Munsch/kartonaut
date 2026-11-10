@@ -5,7 +5,8 @@
 #include "BoardRevB.h"
 #include "BusRevB.h"
 #include "Imu.h"
-#include "ICM42688.h"
+#include "ImuAuto.h"
+#include "FitRevB.h"
 #include "BMP390.h"
 #include "INA239.h"
 #include "LIS3MDL.h"
@@ -19,7 +20,7 @@ namespace rb = revb;
 namespace board {
 
 extern BusRevB    bus;
-extern ImuDriver& imu;          // ICM-42688-P; ein zweiter Treiber wird hier eingehängt
+extern ImuDriver& imu;          // ImuAuto: LSM6DSV16X (rev B1) oder ICM-42688-P, nach WHO_AM_I
 extern BMP390     baro;
 extern BMP390     baro2;
 extern INA239     ina;
@@ -34,9 +35,11 @@ struct Status {
   bool imu = false, baro = false, baro2 = false, ina = false, mag = false, sht = false, adxl = false;
 };
 extern Status st;
+extern rb::Fit fit;             // Bestückungsliste (FitRevB.h), zur Laufzeit mit "fit" änderbar
 
 void safeOutputs();             // Pyro tief, DRV8833 schlafend, Servos ohne Puls, alle CS hoch
-void begin();                   // Busse starten, Bausteine erkennen (keine Bewegung, kein Pyro)
+void begin();                   // Busse starten, bestückte Bausteine erkennen (keine Bewegung, kein Pyro)
+void beginParts();              // nur die Bausteine laut fit neu erkennen (st), LoRa-Pins in Ruhe
 
 float vbat1();                  // Spannungen über die Mux, kalibriert (adc_gain)
 float vbat2();

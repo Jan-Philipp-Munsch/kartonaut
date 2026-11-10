@@ -1,15 +1,15 @@
-// SDLogger.cpp – Binär-Logger auf die SD-Karte des Teensy 4.1 (SDIO).
-//
-// Pro Loop ein 88-Byte-Record (Zeitstempel + 40 × int16, feste Skalierung,
-// siehe mapFrameToI16). Die Datei wird vorab alloziert (LOG_BYTES) und als
-// LOGxxxxx.TMP geschrieben; SDLogger_stop() kürzt sie und benennt sie in
-// .BIN um. Beim nächsten Start werden liegengebliebene .TMP repariert.
-// Physische Writes und Syncs passieren nur, wenn die Loop dafür Slack hat.
-// Am Boden exportiert SDLogger_exportLatestCSVx() die Datei als CSV.
+// SDLogger.cpp – Flug-Log mit Ringpuffer im PSRAM, SD-Zugriffe nur außerhalb der Flugphase.
+// Ablauf und Gründe: SDLogger.h. Datensatz: 4 Byte Zeitstempel (micros), 2 Byte Formatversion,
+// 2 Byte Kanalzahl, 64 × int16 mit fester Skalierung je Kanal (Tabelle LOG_CH).
+// Beim nächsten Start werden liegengebliebene .TMP repariert (Ende = erster Satz ohne
+// steigenden Zeitstempel). Am Boden exportiert SDLogger_exportLatestCSVx() die Datei als CSV.
 #include "SDLogger.h"
+#include "LogRing.h"
 #include <SdFat.h>
 #include <ctype.h>
 #include <string.h>
+
+extern "C" uint8_t external_psram_size;   // Teensy-Kern (startup.c): 0, 8 oder 16 MB PSRAM
 
 // ===========================
 // SD-Setup (Teensy 4.1 SDIO)
@@ -19,51 +19,57 @@ static FsFile file;
 static const SdioConfig sdConfig = SdioConfig(FIFO_SDIO);
 
 // ===========================
-// Logger-Parameter
+// Datensatz
 // ===========================
-static const size_t   NUM_I16       = 40;
+static const uint16_t FORMAT = 2;          // 1 = bis 04.11.2026 (88 Byte, 40 Kanäle)
+static const size_t   NCH    = 64;
 
-// Datensatz: 4 + 2 + 2 + 40*2 = 88 B
-struct __attribute__((packed,aligned(4))) Record {
-  uint32_t ts_us;          // absolute micros() beim Schreiben
-  uint16_t write_us_prev;  // Dauer des vorigen phys. Writes (µs)
-  uint16_t _pad;
-  int16_t  v[NUM_I16];     // 40 Werte
+struct __attribute__((packed, aligned(4))) Record {
+  uint32_t ts_us;          // micros() beim Ablegen im Puffer
+  uint16_t format;
+  uint16_t nch;            // belegte Kanäle (L_NUM)
+  int16_t  v[NCH];
 };
-static const size_t REC_BYTES   = sizeof(Record);          // 88 B
+static const size_t REC_BYTES = sizeof(Record);            // 136 B
+static_assert(sizeof(Record) == 136, "Satzgröße");
 
-// Schreibhappen (512 B ~= Sektor)
-static const size_t PAGE        = 512;
+// Kanaltabelle: Name (CSV-Kopf) und Faktor (Wert × Faktor -> int16)
+struct ChDef { const char* name; float scale; };
+static const ChDef LOG_CH[L_NUM] = {
+  {"kalman_alt_m", 100}, {"kalman_vz_ms", 100}, {"baro_alt_m", 100}, {"kalman_innov_m", 100},
+  {"p_rel_pa", 1}, {"baro_temp_c", 100}, {"imu_temp_c", 100},
+  {"acc_x_ms2", 100}, {"acc_y_ms2", 100}, {"acc_z_ms2", 100},
+  {"a_nav_x_ms2", 100}, {"a_nav_y_ms2", 100}, {"a_nav_z_ms2", 100}, {"a_norm_ms2", 100},
+  {"omega_x_dps", 100}, {"omega_y_dps", 100}, {"omega_z_dps", 100},
+  {"omega_raw_x_dps", 10}, {"omega_raw_y_dps", 10}, {"omega_raw_z_dps", 10},
+  {"mag_x_gauss", 5000}, {"mag_y_gauss", 5000}, {"mag_z_gauss", 5000},
+  {"q_w", 10000}, {"q_x", 10000}, {"q_y", 10000}, {"q_z", 10000},
+  {"tilt_x_deg", 100}, {"tilt_y_deg", 100}, {"roll_deg", 100},
+  {"mahony_int_x_dps", 1000}, {"mahony_int_y_dps", 1000}, {"mahony_int_z_dps", 1000},
+  {"servo_yaw_deg", 100}, {"servo_pitch_deg", 100}, {"tvc_yaw_deg", 100}, {"tvc_pitch_deg", 100},
+  {"roll_pwm", 1}, {"roll_dir", 1}, {"throttle_u", 1000},
+  {"vbat1_V", 100}, {"vbat2_V", 100}, {"arm_V", 100}, {"current_A", 1000},
+  {"state", 1}, {"flags", 1}, {"pyro", 1}, {"reset_cause", 1}, {"t_flight_ds", 1}, {"sensor_bits", 1},
+  {"imu_n", 1}, {"loop_us", 1}, {"dt_us", 1}, {"log_dropped", 1}, {"ring_pct", 1}, {"fifo_overruns", 1},
+};
 
-// Voralloziierte Loggröße
-static const uint32_t LOG_BYTES = 8UL * 1024UL * 1024UL;   // 8 MB
+static const uint32_t LOG_BYTES = 64UL * 1024UL * 1024UL;   // vorab belegt, ~8 min bei 250 Hz
+static const size_t   CHUNK_RECS = 15;                      // ~2 KB je Schreibzugriff
+static const uint32_t SYNC_INTERVAL_US = 500000UL;          // endgültig speichern alle 0,5 s
 
-// Aktuelle Dateinamen der laufenden Session
-static char currentTmpName[16]  = "";   // z.B. LOG00023.TMP
-static char currentBinName[16]  = "";   // z.B. LOG00023.BIN
+static char currentTmpName[16] = "";       // z.B. LOG00023.TMP
+static char currentBinName[16] = "";       // z.B. LOG00023.BIN
 
 // ===========================
-// Laufzeit-States
+// Laufzeit
 // ===========================
-static uint8_t  pageBuf[PAGE];
-static size_t   fill           = 0;        // Pufferfüllung
-static bool     logging        = false;
-static uint16_t last_write_us  = 0;        // im nächsten Datensatz gespeichert
-
-// opportunistisches Syncing
-static uint32_t lastSyncUs = 0;
-static uint32_t startUs    = 0;
-static const uint32_t SYNC_INTERVAL_US_LATE  = 2000000UL; // 2 s
-static const uint32_t SYNC_INTERVAL_US_EARLY = 500000UL;  // 0.5 s in den ersten 10 s
-
-// ===========================
-// Timing / Guards (Slack-aware)
-// ===========================
-static SDLogTiming g_tim{};
-static float    g_safety_factor    = 1.5f; // Multiplikator auf Schätzung
-static uint32_t g_min_slack_flush  = 2000; // µs
-static uint32_t g_min_slack_sync   = 4000; // µs
-static const float EMA_ALPHA       = 0.10f;
+static LogRing    ring;
+static uint8_t*   ring_mem = nullptr;
+static SDLogStats st;
+static bool       logging = false;
+static uint32_t   lastSyncUs = 0;
+static uint32_t   write_est_us = 2000;     // Schätzung je Schreibzugriff: steigt sofort, fällt langsam
+static uint32_t   sync_est_us  = 4000;
 
 // ===========================
 // intern: SD/File Helpers
@@ -103,35 +109,6 @@ static bool nextFreeNumber(int* outNum) {
     }
   }
   return false;
-}
-
-static void flushPage() {
-  if (fill == 0) return;
-  uint32_t t0 = micros();
-  int wrote = file.write(pageBuf, fill);
-  uint32_t dt = micros() - t0;
-
-  g_tim.flush_us_last = dt;
-  g_tim.flush_us_avg = (g_tim.flush_us_avg == 0) ? dt
-                     : (uint32_t)((1.0f-EMA_ALPHA)*g_tim.flush_us_avg + EMA_ALPHA*dt);
-  if (dt > g_tim.flush_us_max) g_tim.flush_us_max = dt;
-  else                         g_tim.flush_us_max = (uint32_t)(0.999f * g_tim.flush_us_max);
-
-  (void)wrote; // im Flug keine Serials
-  fill = 0;
-}
-
-static void writeRec(const Record& r) {
-  const uint8_t* p = (const uint8_t*)&r;
-  size_t n = REC_BYTES;
-  while (n) {
-    size_t space = PAGE - fill;
-    size_t chunk = n < space ? n : space;
-    memcpy(pageBuf + fill, p + (REC_BYTES - n), chunk);
-    fill += chunk;
-    n    -= chunk;
-    if (fill == PAGE) flushPage();   // löst ggf. physischen Write aus (gemessen)
-  }
 }
 
 static uint64_t usedLengthForFile(FsFile& rf, bool isTMP) {
@@ -188,10 +165,63 @@ static void autoRecoverTMPtoBIN() {
   dir.close();
 }
 
+// Ringpuffer: PSRAM, wenn bestückt (6 MB, 2 MB bleiben frei), sonst Heap im RAM2
+static void allocRing() {
+  if (ring_mem) return;
+  st.psram_mb = external_psram_size;
+  if (external_psram_size >= 8) {
+    const uint32_t want = 6UL * 1024UL * 1024UL;
+    ring_mem = (uint8_t*)extmem_malloc(want);
+    if (ring_mem) { st.ring_bytes = want; st.in_psram = ((uint32_t)ring_mem >> 28) == 7; }
+  }
+  static const uint32_t FALLBACK[] = {384UL * 1024UL, 192UL * 1024UL, 96UL * 1024UL};
+  for (uint32_t sz : FALLBACK) {
+    if (ring_mem) break;
+    ring_mem = (uint8_t*)malloc(sz);
+    if (ring_mem) { st.ring_bytes = sz; st.in_psram = false; }
+  }
+  ring.attach(ring_mem, st.ring_bytes, REC_BYTES);
+  st.capacity = ring.capacityRecords();
+}
+
+// Bis zu max_recs der ältesten Sätze auf die Karte; false = Schreibfehler (Karte weg)
+static bool writeChunk(size_t max_recs) {
+  const uint8_t* p;
+  const size_t k = ring.peek(&p, max_recs);
+  if (!k) return true;
+  const uint32_t t0 = micros();
+  const size_t n = file.write(p, k * REC_BYTES);
+  const uint32_t dt = micros() - t0;
+  st.write_us_last = dt;
+  if (dt > st.write_us_max) st.write_us_max = dt;
+  write_est_us = dt > write_est_us ? dt : (write_est_us * 15 + dt) / 16;
+  if (n != k * REC_BYTES) return false;
+  ring.consume(k);
+  st.written += k;
+  return true;
+}
+
+static void doSync() {
+  const uint32_t t0 = micros();
+  file.sync();
+  const uint32_t dt = micros() - t0;
+  if (dt > st.sync_us_max) st.sync_us_max = dt;
+  sync_est_us = dt > sync_est_us ? dt : (sync_est_us * 7 + dt) / 8;
+  lastSyncUs = micros();
+}
+
+static inline int16_t q(float x, float s) {
+  long v = lroundf(x * s);
+  if (v >  32767) v =  32767;
+  if (v < -32768) v = -32768;
+  return (int16_t)v;
+}
+
 // ===========================
 // Öffentliches API
 // ===========================
 void SDLogger_setup() {
+  allocRing();
   ensureSdBegun();
   autoRecoverTMPtoBIN();
 }
@@ -202,7 +232,6 @@ bool SDLogger_start() {
 
   int num;
   if (!nextFreeNumber(&num)) return false;
-
   snprintf(currentTmpName, sizeof(currentTmpName), "LOG%05d.TMP", num);
   snprintf(currentBinName, sizeof(currentBinName), "LOG%05d.BIN", num);
 
@@ -210,33 +239,74 @@ bool SDLogger_start() {
   if (!file.preAllocate(LOG_BYTES)) { file.close(); return false; }
   file.sync();
   file.rewind();
-
-  fill          = 0;
-  logging       = true;
-  last_write_us = 0;
-  startUs       = micros();
-  lastSyncUs    = startUs;
-
-  // reset timing stats
-  g_tim = SDLogTiming{};
+  logging    = true;
+  lastSyncUs = micros();
   return true;
+}
+
+bool SDLogger_isRecording() { return logging; }
+uint32_t SDLogger_queued() { return ring.count(); }
+
+void SDLogger_setOverwrite(bool on) { ring.setOverwrite(on); }
+
+void SDLogger_pack(const SDFrame& f, void* out) {
+  Record& r = *(Record*)out;
+  r.ts_us  = micros();
+  r.format = FORMAT;
+  r.nch    = L_NUM;
+  for (size_t i = 0; i < NCH; ++i) r.v[i] = i < L_NUM ? q(f.v[i], LOG_CH[i].scale) : 0;
+}
+
+size_t SDLogger_recordBytes() { return REC_BYTES; }
+
+bool SDLogger_logFrame(const SDFrame& f) {
+  if (!ring.ready()) return false;
+  Record r;
+  SDLogger_pack(f, &r);
+  return ring.push(&r);
+}
+
+bool SDLogger_writeBlobFile(size_t (*next)(void* buf, size_t max), char name_out[16]) {
+  if (!ensureSdBegun()) return false;
+  int num;
+  if (!nextFreeNumber(&num)) return false;
+  snprintf(name_out, 16, "LOG%05d.BIN", num);
+  FsFile wf;
+  if (!wf.open(name_out, O_RDWR | O_CREAT | O_TRUNC)) return false;
+  static uint8_t buf[4096];
+  bool ok = true;
+  for (size_t n; ok && (n = next(buf, sizeof buf)) > 0;) ok = wf.write(buf, n) == n;
+  wf.sync();
+  wf.close();
+  return ok;
+}
+
+void SDLogger_service(uint32_t deadline_us, bool sd_allowed) {
+  if (!logging || !sd_allowed || !file.isOpen()) return;
+  auto slack = [&]() { const int32_t s = (int32_t)(deadline_us - micros()); return s > 0 ? (uint32_t)s : 0u; };
+  // nur schreiben, wenn auch ein Zugriff so lang wie der langsamste geschätzte noch Platz hat
+  while (ring.count() > 0 && slack() > write_est_us + write_est_us / 2 + 300) {
+    if (!writeChunk(CHUNK_RECS)) { logging = false; return; }   // Karte weg: der Puffer behält die Daten
+  }
+  if (micros() - lastSyncUs >= SYNC_INTERVAL_US && slack() > sync_est_us + sync_est_us / 2 + 300) doSync();
+}
+
+void SDLogger_drainAll() {
+  if (!logging || !file.isOpen()) return;
+  while (ring.count() > 0) {
+    if (!writeChunk(64)) { logging = false; return; }
+  }
+  doSync();
 }
 
 void SDLogger_stop() {
   if (!logging) return;
+  SDLogger_drainAll();
   logging = false;
-
-  flushPage();
   if (file.isOpen()) {
     file.truncate(file.curPosition());
-    uint32_t t0 = micros();
     file.sync();
-    uint32_t dt = micros() - t0;
-    g_tim.sync_us_last = dt;
-    if (dt > g_tim.sync_us_max) g_tim.sync_us_max = dt;
-
     file.close();
-
     if (currentTmpName[0]) {
       if (sd.exists(currentBinName)) {
         int num; if (nextFreeNumber(&num)) snprintf(currentBinName, sizeof(currentBinName), "LOG%05d.BIN", num);
@@ -246,141 +316,15 @@ void SDLogger_stop() {
   }
 }
 
-bool SDLogger_isRecording(){ return logging; }
-
-// ===========================
-// Guards / Timing Getter
-// ===========================
-void SDLogger_getTiming(SDLogTiming& out){ out = g_tim; }
-
-void SDLogger_setTimingGuard(float safety_factor,
-                             uint32_t min_slack_flush_us,
-                             uint32_t min_slack_sync_us)
-{
-  if (safety_factor < 1.0f) safety_factor = 1.0f;
-  g_safety_factor   = safety_factor;
-  g_min_slack_flush = min_slack_flush_us;
-  g_min_slack_sync  = min_slack_sync_us;
+void SDLogger_getStats(SDLogStats& out) {
+  st.queued = ring.count(); st.max_queued = ring.maxCount();
+  st.dropped = ring.dropped(); st.overwritten = ring.overwritten();
+  out = st;
 }
 
 // ===========================
-// Quantisierung & Mapping
+// CSV-Export (am Boden)
 // ===========================
-static inline int16_t q_s(float x, float s){
-  long v = lroundf(x * s);
-  if (v >  32767) v =  32767;
-  if (v < -32768) v = -32768;
-  return (int16_t)v;
-}
-static inline int16_t q_u(float x, float s){
-  long v = lroundf(x * s);
-  if (v < 0) v = 0;
-  if (v >  32767) v = 32767;
-  return (int16_t)v;
-}
-
-static void mapFrameToI16(const SDFrame& f, int16_t out[40]){
-  out[0] = q_s(f.kalman_alt_m,   100.0f);
-  out[1] = q_s(f.kalman_vz_ms,   100.0f);
-  out[2] = q_s(f.baro_alt_m,     100.0f);
-  out[3] = q_s(f.a_nav_x_ms2,    100.0f);
-  out[4] = q_s(f.a_nav_y_ms2,    100.0f);
-  out[5] = q_s(f.a_nav_z_ms2,    100.0f);
-
-  out[6] = q_s(f.omega_x_dps,    100.0f);
-  out[7] = q_s(f.omega_y_dps,    100.0f);
-  out[8] = q_s(f.omega_z_dps,    100.0f);
-
-  out[9]  = q_s(f.roll_angle_deg, 100.0f);
-  out[10] = q_s(f.roll_rate_dps,  100.0f);
-  out[11] = q_u(f.yaw_deg,   100.0f);
-  out[12] = q_u(f.pitch_deg, 100.0f);
-  out[13] = q_u((float)f.roll_pwm,    1.0f);
-  out[14] = q_s((float)f.roll_dir, 1000.0f);
-
-  out[15] = q_s(f.bus_V,        1000.0f);
-  out[16] = q_s(f.load_V,       1000.0f);
-  out[17] = q_s(f.current_mA,      1.0f);
-  out[18] = q_s(f.power_mW,        1.0f);
-  out[19] = q_s((float)f.ina_overflow, 1.0f);
-
-  out[20] = q_s(f.state_id, 100.0f);
-  out[21] = q_s(f.tilt_x_deg, 100.0f);
-  out[22] = q_s(f.tilt_y_deg, 100.0f);
-  out[23] = q_s(f.vbat1_V, 100.0f);
-  out[24] = q_s(f.a_norm_ms2, 100.0f);
-
-  for (int i=0;i<8;i++) out[25+i] = f.raw_i16[i];
-
-  for (int i=33;i<40;i++) out[i] = 0;
-}
-
-// ===========================
-// Slack-aware Logging
-// ===========================
-bool SDLogger_logFrame(const SDFrame& f, uint32_t slack_us){
-  if (!logging || !file.isOpen()) return false;
-
-  // 1) Opportunistischer PRE-FLUSH, wenn Puffer Daten hat und Slack groß genug
-  if (fill > 0 && slack_us > 0) {
-    uint32_t est_flush = max(g_tim.flush_us_avg, g_tim.flush_us_max/2);
-    est_flush = (uint32_t)(g_safety_factor * (float)max(est_flush, (uint32_t)500)); // ≥0.5 ms konservativ
-    if (slack_us >= max(est_flush, g_min_slack_flush)) {
-      flushPage();
-    }
-  }
-
-  // 2) Record packen + in Page schreiben
-  Record r;
-  r.ts_us = micros();
-  r.write_us_prev = last_write_us;
-  r._pad = 0;
-  mapFrameToI16(f, r.v);
-
-  uint32_t w0 = micros();
-  writeRec(r);
-  uint32_t w1 = micros();
-  uint32_t wdt = (w1 - w0);
-  last_write_us = (wdt > 0xFFFF) ? 0xFFFF : (uint16_t)wdt;
-
-  // 3) Periodisches SYNC nur bei genügend Slack & Intervall erfüllt
-  uint32_t sinceStart = r.ts_us - startUs;
-  uint32_t interval   = (sinceStart < 10000000UL) ? SYNC_INTERVAL_US_EARLY : SYNC_INTERVAL_US_LATE;
-
-  if (slack_us > 0 && (r.ts_us - lastSyncUs) >= interval) {
-    uint32_t est_sync = max(g_tim.sync_us_avg, g_tim.sync_us_max/2);
-    est_sync = (uint32_t)(g_safety_factor * (float)max(est_sync, (uint32_t)1500)); // ≥1.5 ms konservativ
-    if (slack_us >= max(est_sync, g_min_slack_sync)) {
-      uint32_t t0 = micros();
-      file.sync();
-      uint32_t dt = micros() - t0;
-
-      g_tim.sync_us_last = dt;
-      g_tim.sync_us_avg = (g_tim.sync_us_avg == 0) ? dt
-                           : (uint32_t)((1.0f-EMA_ALPHA)*g_tim.sync_us_avg + EMA_ALPHA*dt);
-      if (dt > g_tim.sync_us_max) g_tim.sync_us_max = dt;
-      else                        g_tim.sync_us_max = (uint32_t)(0.999f * g_tim.sync_us_max);
-
-      lastSyncUs = micros();
-    }
-  }
-
-  return true;
-}
-
-// Wrapper: kein Slack übergeben → kein Sync im Flug
-bool SDLogger_logFrame(const SDFrame& f){
-  return SDLogger_logFrame(f, 0);
-}
-
-// ===========================
-// CSV-Export (am Boden nutzen)
-// ===========================
-
-// Decoder passend zum Mapping (q_s und q_u unterscheiden sich nur im Klemmen)
-static inline float d_s(int16_t v, float s){ return float(v) / s; }
-static inline float d_u(int16_t v, float s){ return d_s(v, s); }
-
 static bool findLatestBIN(char* out, size_t outSz){
   if (!ensureSdBegun()) return false;
   FsFile dir;
@@ -402,145 +346,60 @@ static bool findLatestBIN(char* out, size_t outSz){
   return bestNum >= 0;
 }
 
-SDExportResult SDLogger_exportBINtoCSVx(const char* name, bool scaled){
+SDExportResult SDLogger_exportBINtoCSVx(const char* name, bool scaled) {
   SDExportResult res;
   if (!ensureSdBegun() || !name || !sd.exists(name)) return res;
-
   FsFile rf;
   if (!rf.open(name, O_RDONLY)) return res;
-
-  bool isTMP=false; int dummy=0;
-  isLogPattern(name, &isTMP, &dummy);
-  uint64_t used = usedLengthForFile(rf, isTMP);
+  bool isBin = false; int dummy = 0;
+  isLogPattern(name, &isBin, &dummy);
+  uint64_t used = usedLengthForFile(rf, !isBin);
   rf.rewind();
 
   char csvName[16];
   strncpy(csvName, name, sizeof(csvName));
-  csvName[sizeof(csvName)-1] = 0;
-  size_t L = strlen(csvName);
-  if (L >= 4) { csvName[L-3]='C'; csvName[L-2]='S'; csvName[L-1]='V'; }
-
+  csvName[sizeof(csvName) - 1] = 0;
+  const size_t L = strlen(csvName);
+  if (L >= 4) { csvName[L - 3] = 'C'; csvName[L - 2] = 'S'; csvName[L - 1] = 'V'; }
   FsFile wf;
   if (!wf.open(csvName, O_RDWR | O_CREAT | O_TRUNC)) { rf.close(); return res; }
 
-  const char* hdr =
-    "t_s,write_us_prev,"
-    "kalman_alt_m,kalman_vz_ms,baro_alt_m,"
-    "a_nav_x_ms2,a_nav_y_ms2,a_nav_z_ms2,"
-    "omega_x_dps,omega_y_dps,omega_z_dps,"
-    "roll_angle_deg,roll_rate_dps,yaw_deg,pitch_deg,roll_pwm,roll_dir,"
-    "bus_V,load_V,current_mA,power_mW,ina_overflow,"
-    "state,tilt_x_deg,tilt_y_deg,vbat1_V,a_norm_ms2,"
-    "t_flight_ds,flags,pyro_fires,a_axial_cms2,tvc_yaw_cdeg,tvc_pitch_cdeg,reset_cause,raw_7,"
-    "ch33,ch34,ch35,ch36,ch37,ch38,ch39\n";
-  wf.write(hdr, strlen(hdr));
+  wf.write("t_s", 3);
+  for (size_t i = 0; i < L_NUM; ++i) { wf.write(",", 1); wf.write(LOG_CH[i].name, strlen(LOG_CH[i].name)); }
+  wf.write("\n", 1);
 
   Record r;
-  uint64_t left = used;
-  uint32_t t0 = 0, prev_ts=0;
+  uint32_t t0 = 0, prev_ts = 0;
   bool first = true;
-
-  char line[512];
-  while (left >= REC_BYTES) {
-    int n = rf.read(&r, REC_BYTES);
-    if (n != (int)REC_BYTES) break;
-    left -= REC_BYTES;
-    if (r.ts_us == 0 || (prev_ts && r.ts_us <= prev_ts)) break;
-    if (first){ t0 = r.ts_us; first=false; }
+  char line[1024];
+  while (used >= REC_BYTES) {
+    if (rf.read(&r, REC_BYTES) != (int)REC_BYTES) break;
+    used -= REC_BYTES;
+    if (r.ts_us == 0 || (prev_ts && r.ts_us <= prev_ts) || r.format != FORMAT) break;
+    if (first) { t0 = r.ts_us; first = false; }
     prev_ts = r.ts_us;
-
-    float t_s = (r.ts_us - t0) / 1.0e6f;
-
-    int len = 0;
-    if (scaled){
-      float kalman_alt_m   = d_s(r.v[0], 100.0f);
-      float kalman_vz_ms   = d_s(r.v[1], 100.0f);
-      float baro_alt_m     = d_s(r.v[2], 100.0f);
-      float a_nav_x        = d_s(r.v[3], 100.0f);
-      float a_nav_y        = d_s(r.v[4], 100.0f);
-      float a_nav_z        = d_s(r.v[5], 100.0f);
-      float gx             = d_s(r.v[6], 100.0f);
-      float gy             = d_s(r.v[7], 100.0f);
-      float gz             = d_s(r.v[8], 100.0f);
-      float roll_ang       = d_s(r.v[9], 100.0f);
-      float roll_rate      = d_s(r.v[10],100.0f);
-      float yaw_deg        = d_u(r.v[11],100.0f);
-      float pitch_deg      = d_u(r.v[12],100.0f);
-      float roll_pwm       = d_u(r.v[13],1.0f);
-      int   roll_dir       = (int)lroundf(d_s(r.v[14],1000.0f));
-      float bus_V          = d_s(r.v[15],1000.0f);
-      float load_V         = d_s(r.v[16],1000.0f);
-      float current_mA     = d_s(r.v[17],1.0f);
-      float power_mW       = d_s(r.v[18],1.0f);
-      int   ina_overflow   = (int)r.v[19];
-      float rsv1           = d_s(r.v[20],100.0f);
-      float rsv2           = d_s(r.v[21],100.0f);
-      float rsv3           = d_s(r.v[22],100.0f);
-      float rsv4           = d_s(r.v[23],100.0f);
-      float rsv5           = d_s(r.v[24],100.0f);
-
-      len = snprintf(line, sizeof(line),
-        "%.6f,%u,"
-        "%.3f,%.3f,%.3f,"
-        "%.3f,%.3f,%.3f,"
-        "%.2f,%.2f,%.2f,"
-        "%.2f,%.2f,%.0f,%.0f,%.0f,%d,"
-        "%.3f,%.3f,%.0f,%.0f,%d,"
-        "%.2f,%.2f,%.2f,%.2f,%.2f,"
-        "%d,%d,%d,%d,%d,%d,%d,%d,"
-        "%d,%d,%d,%d,%d,%d,%d\n",
-        t_s, r.write_us_prev,
-        kalman_alt_m, kalman_vz_ms, baro_alt_m,
-        a_nav_x, a_nav_y, a_nav_z,
-        gx, gy, gz,
-        roll_ang, roll_rate, yaw_deg, pitch_deg, roll_pwm, roll_dir,
-        bus_V, load_V, current_mA, power_mW, ina_overflow,
-        rsv1, rsv2, rsv3, rsv4, rsv5,
-        r.v[25], r.v[26], r.v[27], r.v[28], r.v[29], r.v[30], r.v[31], r.v[32],
-        r.v[33], r.v[34], r.v[35], r.v[36], r.v[37], r.v[38], r.v[39]);
-    } else {
-      // exakt 40 Daten (%d) + 2 Kopf (t_s, write_us_prev)
-      len = snprintf(line, sizeof(line),
-        "%.6f,%u,"
-        "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,"
-        "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,"
-        "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,"
-        "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
-        t_s, r.write_us_prev,
-        r.v[0], r.v[1], r.v[2], r.v[3], r.v[4], r.v[5], r.v[6], r.v[7], r.v[8], r.v[9],
-        r.v[10], r.v[11], r.v[12], r.v[13], r.v[14], r.v[15], r.v[16], r.v[17], r.v[18], r.v[19],
-        r.v[20], r.v[21], r.v[22], r.v[23], r.v[24], r.v[25], r.v[26], r.v[27], r.v[28], r.v[29],
-        r.v[30], r.v[31], r.v[32], r.v[33], r.v[34], r.v[35], r.v[36], r.v[37], r.v[38], r.v[39]);
+    int len = snprintf(line, sizeof line, "%.6f", (r.ts_us - t0) / 1.0e6);
+    for (size_t i = 0; i < L_NUM && len < (int)sizeof(line) - 24; ++i) {
+      const float s = LOG_CH[i].scale;
+      len += scaled ? snprintf(line + len, sizeof(line) - len, ",%.*f", s >= 1000 ? 4 : (s >= 10 ? 2 : 0), r.v[i] / s)
+                    : snprintf(line + len, sizeof(line) - len, ",%d", r.v[i]);
     }
-    if (len > 0) {
-      wf.write(line, len);
-      res.rows++;
-    }
+    line[len++] = '\n';
+    wf.write(line, len);
+    res.rows++;
   }
-
   wf.sync();
   res.bytes = wf.curPosition();
   wf.close();
   rf.close();
-
   res.ok = true;
-  static_assert(sizeof(res.csv_name) >= sizeof(csvName), "csv_name zu klein");
   memcpy(res.csv_name, csvName, sizeof(csvName));
   return res;
 }
 
-SDExportResult SDLogger_exportLatestCSVx(bool scaled){
+SDExportResult SDLogger_exportLatestCSVx(bool scaled) {
   SDExportResult res;
   char bin[16];
   if (!findLatestBIN(bin, sizeof(bin))) return res;
   return SDLogger_exportBINtoCSVx(bin, scaled);
-}
-
-bool SDLogger_exportBINtoCSV(const char* binName, bool scaled){
-  SDExportResult r = SDLogger_exportBINtoCSVx(binName, scaled);
-  return r.ok;
-}
-bool SDLogger_exportLatestCSV(bool scaled){
-  SDExportResult r = SDLogger_exportLatestCSVx(scaled);
-  return r.ok;
 }

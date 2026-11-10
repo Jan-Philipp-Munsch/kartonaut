@@ -25,6 +25,32 @@ von Hand löten, dann der Tischtest.</td>
 </tr>
 </table>
 
+## Vom Breakout-Aufbau zur Platine
+
+<img src="docs/img/foto/flugcomputer_breakout.jpg" width="230" align="left" alt="Früherer Flugcomputer: Teensy und Breakout-Boards auf einem gedruckten Ring-Stack mit Steckkabeln">
+
+**Vorher:** Der erste Flugcomputer war ein Teensy 4.1 mit Breakout-Boards auf einem gedruckten
+Ring-Stack, zusammengehalten von Gewindestangen und Steckkabeln. Damit wurden die Kernfunktionen am
+Tisch erprobt: IMU und Gyro-Offsets, Barometer mit Kalman-Höhe, Strommessung, SD-Log mit CSV-Export,
+Funktelemetrie zum Boden, Servoansteuerung und ein Pyrokanal, der einen Testausstoß gezündet hat.
+
+**Jetzt:** Das Mainboard rev B1 trägt dieselben Funktionen auf einer Platine von 54 × 120 mm, mit
+neueren Chips:
+
+- **Keine losen Kabel.** Steckkabel waren das größte Ausfallrisiko im Flug; jetzt ist alles gelötet
+  oder auf verriegelnden JST-Steckern.
+- **IMU genau auf der Rollachse**, alle Flugsensoren auf einem schnellen SPI-Bus statt auf einem
+  gemeinsamen I²C-Bus.
+- **Sichere Versorgung:** mechanischer Hauptschalter mit FET-Lastschaltern, eine Polyfuse je Akku,
+  Leistungsmessung mit Kelvin-Shunt, Laden in der Rakete.
+- **LoRa statt HC-12** für mehr Reichweite, dazu Magnetometer, GPS-Buchse und microSD auf der Platine.
+- **Platz für spätere Flüge:** vier Pyrokanäle, ein vierter Servo, Footprint für einen High-g-Sensor
+  und ein Stapelstecker.
+- **Leichter und kleiner:** Ein gedruckter Schlitten ersetzt den Ring-Stack, das hat die Rakete mit
+  auf 704 g gebracht.
+
+<br clear="left">
+
 ## Auf einen Blick
 
 | | *Kartonaut 1* (Erstflug) |

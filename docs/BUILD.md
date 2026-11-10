@@ -126,6 +126,10 @@ den Stand vom 21.10. (Ring-Stack im Kuppler, Pyro-Kolben), der damit überholt i
 
 ## 3. Elektronik as-built (Breakout-Aufbau)
 
+Foto des Breakout-Aufbaus auf dem Ring-Stack (vor der Umstellung auf rev B1, Jan, 10.11.2026):
+[`docs/img/foto/flugcomputer_breakout.jpg`](img/foto/flugcomputer_breakout.jpg). Das Foto der
+gelieferten Platine rev B1 (5.11.2026): [`docs/img/foto/mainboard_revB1_geliefert.jpg`](img/foto/mainboard_revB1_geliefert.jpg).
+
 Verdrahtung nach `Config.h` (Stand Commit `5a24e78`). Bitte am Gerät gegenprüfen und
 Abweichungen hier eintragen.
 

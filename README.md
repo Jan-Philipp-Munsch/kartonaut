@@ -25,6 +25,29 @@ radio, then the bench test.</td>
 </tr>
 </table>
 
+## From breakout stack to circuit board
+
+<img src="docs/img/foto/flugcomputer_breakout.jpg" width="230" align="left" alt="Earlier flight computer: Teensy and breakout boards on a printed ring stack with jumper wires">
+
+**Before:** the first flight computer was a Teensy 4.1 with breakout boards on a printed ring stack,
+held together by threaded rods and jumper wires. On it the core functions were proven on the bench:
+IMU and gyro offsets, barometer with Kalman altitude, power measurement, SD logging with CSV export,
+radio telemetry to the ground, servo control and a pyro channel that fired a test ejection.
+
+**Now:** the mainboard rev B1 carries the same functions on one 54 × 120 mm board, with newer chips:
+
+- **No loose wires.** Plug-in jumper wires were the biggest failure risk in flight; now everything is
+  soldered or on locking JST connectors.
+- **IMU exactly on the roll axis**, all flight sensors on a fast SPI bus instead of a shared I²C bus.
+- **Safe power:** mechanical main switch with FET load switches, a polyfuse per battery, power monitor
+  with a Kelvin shunt, charging inside the rocket.
+- **LoRa instead of HC-12** for range, plus magnetometer, GPS socket and microSD on board.
+- **Room for later flights:** four pyro channels, a fourth servo, a high-g accelerometer footprint and
+  a stacking connector.
+- **Lighter and smaller:** a printed sled replaces the ring stack, which helped bring the rocket to 704 g.
+
+<br clear="left">
+
 ## At a glance
 
 | | *Kartonaut 1* (first flight) |

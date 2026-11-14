@@ -6,10 +6,13 @@
 //   2. unabhängig davon ist seit dem Start mindestens PYRO_MIN_FLIGHT_MS vergangen,
 //   3. der Schlüsselschalter ist scharf (ARM_SENSE über PYRO_ARM_MIN_V),
 //   4. der Anzünder hat Durchgang.
-// Der Puls dauert PYRO_PULSE_MS und endet früher, sobald der Durchgang verloren geht
-// (Anzünder durchgebrannt). Je Kanal höchstens PYRO_MAX_FIRES Versuche; Kanal 2 ist die
-// Reserve und zündet PYRO_BACKUP_DELAY_MS nach Kanal 1, falls bestückt. Bleibt der Durchgang nach
-// einem Puls bestehen (Anzünder nicht durchgebrannt), folgt nach PYRO_RETRY_DELAY_MS ein zweiter.
+// Der Puls dauert immer PYRO_PULSE_MS (früher nur, wenn ARM fällt oder die Freigabe endet). Während
+// des Pulses sagt die Durchgangsmessung nichts: PYRO_SENSE hängt am Drain des Low-Side-FET und liest
+// bei leitendem FET etwa 0 V. Bis 14.11.2026 beendete "Durchgang weg" den Puls; auf rev B1 brach er
+// sich damit bei der nächsten Mux-Messung selbst ab (4 bis 52 ms statt 80 ms, Befund 25).
+// Je Kanal höchstens PYRO_MAX_FIRES Versuche; Kanal 2 ist die Reserve und zündet
+// PYRO_BACKUP_DELAY_MS nach Kanal 1, falls bestückt. Ist der Durchgang nach einem Puls wieder da
+// (Anzünder nicht durchgebrannt), folgt nach PYRO_RETRY_DELAY_MS ein zweiter.
 // Auf dem Breakout-Aufbau gibt es weder ARM- noch Durchgangsmessung: das Backend meldet
 // armed = false, damit ist Zünden unmöglich (Jan, 22.10.2026).
 // Kein Arduino: die Pins schaltet main.cpp nach dem Ergebnis von update().

@@ -27,7 +27,7 @@ struct FlashLogStats {
   uint32_t jedec = 0, size = 0;
   bool     session = false;      // Sitzung läuft
   uint32_t write_pos = 0;        // nächste freie Adresse
-  uint32_t erased_to = 0;        // bis hier gelöscht
+  uint32_t erased_to = 0;        // bis hier frei (Chipgröße, sobald der benutzte Bereich gelöscht ist)
   uint32_t queued_pages = 0, max_queued = 0, dropped_records = 0;
   bool     old_flight_pending = false;   // alter Flug wartet auf die Kopie zur SD
 };

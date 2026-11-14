@@ -29,6 +29,7 @@
 #include "Calib.h"
 #include "Watchdog.h"
 #include "Tvc.h"
+#include "Stream.h"
 
 using namespace board;
 
@@ -46,6 +47,8 @@ static void help() {
   proto::comment("  cal gyro [s] | cal acc | cal mag [s] | cal axes | cal baro [s]");
   proto::comment("  cal adc [kanal] | cal ina | cal servo <1..4>");
   proto::comment("  cal show | cal save | cal load | cal defaults | cal erase");
+  proto::comment("  cal set <name> <werte>   Feld im RAM setzen (Werte vom PC, z. B. cal set gyro_bias_dps 0.1 -0.2 0.05)");
+  proto::comment("  stream [hz]    Live-Messwerte als D-Zeilen bis q (Format: Stream.h, Oberflaeche: tools/bench_gui)");
   proto::comment("  tvc ...        Versuch E02 Servo -> Kardan (tvc help)");
   proto::comment("  fit            Bestückungsliste zeigen; nicht bestückte Teile melden NICHT_ERKANNT statt FEHL");
   proto::comment("  fit <teil> on|off | fit all on|off | fit default   (teil: imu baro baro2 ina mag sht adxl lora gps)");
@@ -118,7 +121,7 @@ static Res runAll(bool full) {
 // Befehlszeile ausführen; gibt END aus
 static void execute(char* line) {
   if (line[0] == 0) return;
-  char cmdcopy[64];
+  char cmdcopy[200];
   strncpy(cmdcopy, line, sizeof cmdcopy - 1);
   cmdcopy[sizeof cmdcopy - 1] = 0;
   char* a0 = strtok(line, " ");
@@ -158,6 +161,7 @@ static void execute(char* line) {
   else if (!strcmp(a0, "timing"))  r = testTiming();
   else if (!strcmp(a0, "mem"))     r = testMem();
   else if (!strcmp(a0, "watchdog")) r = testWatchdog(a1 && !strcmp(a1, "fire"));
+  else if (!strcmp(a0, "stream"))  r = streamRun(argFloat(a1, 50.0f));
   else if (!strcmp(a0, "tvc")) {
     // Rest der Zeile hinter dem Unterbefehl, aus der unzerlegten Kopie (center/window/note brauchen mehrere Wörter)
     const char* rest = cmdcopy + 3;
@@ -177,6 +181,14 @@ static void execute(char* line) {
     else if (!strcmp(a1, "ina"))      r = calIna();
     else if (!strcmp(a1, "servo"))    r = calServo(argInt(a2, 0) - 1);
     else if (!strcmp(a1, "show"))     { calShow(); return; }
+    else if (!strcmp(a1, "set")) {
+      // Rest der Zeile hinter "cal set", aus der unzerlegten Kopie (bis zu neun Werte)
+      const char* rest = cmdcopy + 3;
+      while (*rest == ' ') ++rest;
+      rest += 3;
+      while (*rest == ' ') ++rest;
+      r = calSet(rest);
+    }
     else if (!strcmp(a1, "save"))     r = calSave();
     else if (!strcmp(a1, "load"))     r = calLoad();
     else if (!strcmp(a1, "defaults")) r = calDefaults();
@@ -215,7 +227,7 @@ void setup() {
 }
 
 void loop() {
-  static char line[96];
+  static char line[200];
   if (!proto::readLine(line, sizeof line, 50)) return;
   if (line[0] == 0) { proto::ready(); return; }
   execute(line);

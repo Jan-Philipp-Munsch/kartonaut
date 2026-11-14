@@ -20,9 +20,11 @@ void PyroLogic::update(const PyroInputs& in, bool fire[2]) {
 
   for (int ch = 0; ch < 2; ++ch) {
     if (firing_[ch]) {
-      // Puls läuft: Ende nach pulse_ms, oder sobald der Durchgang weg ist, oder ARM fällt
+      // Puls läuft: Ende nach pulse_ms, oder wenn ARM fällt oder die Freigabe endet. Der Durchgang
+      // wird während des eigenen Pulses nicht ausgewertet: PYRO_SENSE hängt am Drain des FET und
+      // liest bei leitendem FET etwa 0 V, ob der Anzünder noch ganz ist oder nicht (Befund 25).
       const bool expired = in.t_ms - t_start_[ch] >= p_.pulse_ms[ch];
-      if (expired || !in.continuity[ch] || !in.armed || !in.allowed[ch]) {
+      if (expired || !in.armed || !in.allowed[ch]) {
         firing_[ch] = false;
         t_end_[ch] = in.t_ms;
         done_ch_[ch] = true;

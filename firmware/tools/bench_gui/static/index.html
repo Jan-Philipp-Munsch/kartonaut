@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kartonaut Werkbank</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body data-token="{{TOKEN}}">
+
+<header class="top">
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 26 26" aria-hidden="true"><path d="M13 1.5c3.6 3.2 5.4 7.4 5.4 12.6v4.4H7.6v-4.4C7.6 8.9 9.4 4.7 13 1.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M7.6 15.5 3.5 20v3.5l4.1-2M18.4 15.5l4.1 4.5v3.5l-4.1-2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="13" cy="10.5" r="2" fill="currentColor"/></svg>
+    <div><b>Kartonaut Werkbank</b><small>Mainboard rev B1 · Testkonsole <code>revb_test</code></small></div>
+  </div>
+  <div class="conn">
+    <select id="port" aria-label="Serieller Port"></select>
+    <button id="refresh" title="Ports neu lesen" aria-label="Ports neu lesen">↻</button>
+    <button id="connect" class="primary">Verbinden</button>
+  </div>
+  <div class="pills" id="pills"></div>
+</header>
+
+<div class="busy idle" id="busy">
+  <span class="spinner"></span><span id="busytext"></span><span class="spacer"></span>
+  <button id="abort" class="small">Abbrechen (q)</button>
+</div>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="live" class="active">Live</button>
+  <button data-tab="tests">Prüfungen<span class="badge" id="failbadge" hidden></span></button>
+  <button data-tab="cal">Kalibrierung</button>
+  <button data-tab="act">Aktoren</button>
+  <button data-tab="console">Konsole</button>
+</nav>
+
+<main>
+  <section class="tab active" id="tab-live"></section>
+  <section class="tab" id="tab-tests"></section>
+  <section class="tab" id="tab-cal"></section>
+  <section class="tab" id="tab-act"></section>
+  <section class="tab" id="tab-console"></section>
+</main>
+
+<div class="overlay" id="prompt" hidden></div>
+<div id="toasts"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

@@ -8,7 +8,8 @@
 //      bei neuem Wert (50 Hz), Ausreißer verworfen
 //   4. Flugzustandsautomat (FlightState.h) mit Kommandos vom Boden oder von USB
 //   5. Regler Pitch/Yaw (nur in BOOST) und Roll, Servos und H-Brücke
-//   6. Pyro (Pyro.h): nur in APOGEE/DESCENT mit ARM und Durchgang
+//   6. Pyro (Pyro.h): nur in APOGEE/DESCENT mit ARM und Durchgang; Fallschirm-Servo (ChuteRelease.h):
+//      öffnet in APOGEE/DESCENT und sticht die CO₂-Kapsel an
 //   7. Telemetrie 10 Hz (Telemetry.h) über Serial8, Ereignisse sofort
 //   8. Log-Satz in den Ringpuffer (PSRAM); auf die SD-Karte nur in SAFE und ab DESCENT, und nur
 //      in der freien Zeit bis zur nächsten Deadline (SDLogger.h); dazu in den Flash-Flugschreiber
@@ -26,6 +27,7 @@
 #include "Control.h"
 #include "FlightState.h"
 #include "Pyro.h"
+#include "ChuteRelease.h"
 #include "Telemetry.h"
 #include "Timing.h"
 #include "SDLogger.h"
@@ -53,6 +55,8 @@ static FlightStateMachine fsm(FlightParams{
 static PyroLogic pyro(PyroParams{{PYRO_PULSE_MS, RECOVERY_MODE == RecoveryMode::LANDING_BURN ? PYRO_IGNITER_PULSE_MS : PYRO_PULSE_MS},
                                  PYRO_MIN_FLIGHT_MS, PYRO_BACKUP_DELAY_MS, PYRO_RETRY_DELAY_MS, PYRO_MAX_FIRES,
                                  RECOVERY_MODE == RecoveryMode::CHUTE});
+static ChuteRelease chute(PYRO_MIN_FLIGHT_MS, CHUTE_SERVO_NEEDS_ARM);
+static bool chute_open = false;
 static LandingPlanner landing(LandingParams{LANDING_MASS_KG, LANDING_FUEL_KG, LANDING_CD_A_M2, LANDING_RHO,
                                             LANDING_IGNITER_DELAY_S, 1.0f / LOOP_HZ, LANDING_MIN_SPEED_MS,
                                             LANDING_THRUST_SCALE},
@@ -148,6 +152,19 @@ static void handleCommand(uint8_t type, uint8_t seq) {
   }
 }
 
+// Am Boden und nicht startbereit: hier dürfen blockierende Befehle laufen
+static bool onGround() {
+  const FlightState s = fsm.state();
+  return s == FlightState::SAFE || s == FlightState::LANDED || (s == FlightState::ABORT && !fsm.launchTime());
+}
+
+// Für blockierende Arbeiten am Boden (SD-Export, Flash-Kopie): Watchdog auf 60 s, danach zurück
+static void slowWatchdog(bool slow) {
+  if (!WDT_ENABLED) return;
+  Watchdog_begin(slow ? 60000 : WDT_TIMEOUT_MS);
+  Watchdog_feed();
+}
+
 static void pollRadio() {
   while (radio.available()) {
     if (radioParser.feed((uint8_t)radio.read())) {
@@ -163,16 +180,21 @@ static void pollRadio() {
       case 'r': handleCommand(tlm::CMD_PAD_READY, 0); break;
       case 'a': handleCommand(tlm::CMD_ABORT, 0); break;
       case 's': handleCommand(tlm::CMD_SAFE, 0); break;
-      case 'f':                          // Flugschreiber aus dem Flash auf die SD-Karte kopieren (nur am Boden)
-        if (!fsm.inFlight()) FlashLog_copyToSd();
+      // 'f' und 'x' blockieren für Sekunden. Nur in SAFE, LANDED oder ABORT am Boden (nicht in PAD_READY:
+      // dort ist die Starterkennung scharf), und der Watchdog bekommt so lange ein langes Zeitlimit.
+      case 'f':                          // Flugschreiber aus dem Flash auf die SD-Karte kopieren
+        if (onGround()) { slowWatchdog(true); FlashLog_copyToSd(); slowWatchdog(false); }
+        else Serial.println("'f' nur in SAFE oder LANDED");
         break;
-      case 'x':                          // Tischtest: Log schließen und als CSV exportieren (nur am Boden)
-        if (LOG_DATA && !fsm.inFlight()) {
+      case 'x':                          // Tischtest: Log schließen und als CSV exportieren
+        if (LOG_DATA && onGround()) {
+          slowWatchdog(true);
           SDLogger_stop();
           const SDExportResult res = SDLogger_exportLatestCSVx(true);
+          slowWatchdog(false);
           if (res.ok) Serial.printf("Export: %s  Zeilen=%lu\n", res.csv_name, (unsigned long)res.rows);
           else Serial.println("Export fehlgeschlagen.");
-        }
+        } else if (LOG_DATA) Serial.println("'x' nur in SAFE oder LANDED");
         break;
       case '?':
         Serial.printf("Zustand %s, kalibriert %d, IMU %d Baro %d Power %d, Reset: %s%s, Watchdog %s\n",
@@ -305,11 +327,12 @@ void setup(){
 
   if (LOG_DATA) {
     SDLogger_setup();
+    const uint32_t preroll = SDLogger_setPreroll(uint32_t(LOG_PREROLL_S * LOOP_HZ / LOG_DIV_FLIGHT));
     SDLogger_start();
     SDLogStats ls; SDLogger_getStats(ls);
-    Serial.printf("Log: PSRAM %u MB, Ringpuffer %lu KB im %s, SD %s\n", (unsigned)ls.psram_mb,
-                  (unsigned long)(ls.ring_bytes / 1024), ls.in_psram ? "PSRAM" : "RAM2",
-                  SDLogger_isRecording() ? "bereit" : "FEHLT");
+    Serial.printf("Log: PSRAM %u MB, Ringpuffer %lu KB im %s (%lu Saetze, Vorlauf an der Rampe %lu), SD %s\n",
+                  (unsigned)ls.psram_mb, (unsigned long)(ls.ring_bytes / 1024), ls.in_psram ? "PSRAM" : "RAM2",
+                  (unsigned long)ls.capacity, (unsigned long)preroll, SDLogger_isRecording() ? "bereit" : "FEHLT");
   }
 
   if (reset_cause == ResetCause::WATCHDOG && tryRestore()) {
@@ -396,7 +419,7 @@ void loop(){
   flags = (sample.armed ? tlm::FLAG_ARMED : 0) | (sample.continuity[0] ? tlm::FLAG_CONT1 : 0)
         | (sample.continuity[1] ? tlm::FLAG_CONT2 : 0) | (SDLogger_isRecording() ? tlm::FLAG_LOGGING : 0)
         | (Sensors_calibrated() ? tlm::FLAG_CALIBRATED : 0) | (Sensors_status().ok() ? tlm::FLAG_SENSORS_OK : 0)
-        | (pyro.fires(0) ? tlm::FLAG_PYRO_FIRED : 0) | (restored ? tlm::FLAG_RESTORED : 0);
+        | ((pyro.fires(0) || chute_open) ? tlm::FLAG_PYRO_FIRED : 0) | (restored ? tlm::FLAG_RESTORED : 0);
   FlightInputs in;
   in.t_ms = t;
   in.a_norm_ms2 = sample.a_norm;
@@ -424,7 +447,13 @@ void loop(){
       if (LOG_DATA && !SDLogger_isRecording()) SDLogger_start();
       if (LOG_DATA) FlashLog_startSession();
     }
-    if (fsm.state() == FlightState::SAFE && !fsm.launchTime()) FlashLog_abortSession();   // zurück ohne Start
+    if (fsm.state() == FlightState::SAFE) {
+      // Zurück nach SAFE: der gespeicherte PAD_READY-Zustand darf einen späteren Watchdog-Neustart nicht
+      // überleben, sonst stünde die Rakete danach wieder startbereit da (Befund 28). Servo wieder zu.
+      StateStore_clear();
+      chute.reset();
+      if (!fsm.launchTime()) FlashLog_abortSession();   // zurück ohne Start
+    }
   }
   if (pending_ack) {
     const bool ok = (pending_cmd_type == tlm::CMD_PAD_READY) ? fsm.state() == FlightState::PAD_READY
@@ -471,12 +500,27 @@ void loop(){
   digitalWrite(PIN_PYRO1, pyro_fire[0] ? HIGH : LOW);
   if (PIN_PYRO2 >= 0) digitalWrite(PIN_PYRO2, pyro_fire[1] ? HIGH : LOW);
 
+  // --- 6b. Fallschirm-Servo (CO₂-Kapsel) ---
+  if (CHUTE_SERVO_RELEASE) {
+    ChuteReleaseInputs cin;
+    cin.t_ms = t; cin.t_launch_ms = fsm.launchTime();
+    cin.allowed = fsm.pyroAllowed();
+    cin.armed = sample.armed;
+    const bool open = chute.update(cin);
+    if (open != chute_open) {
+      chute_open = open;
+      Chute_servo_deg(open ? CHUTE_SERVO_OPEN_DEG : CHUTE_SERVO_CLOSED_DEG);
+      Serial.printf("[%lu ms] Fallschirm-Servo %s\n", (unsigned long)t, open ? "OFFEN" : "zu");
+    }
+  }
+
   // --- 7. Telemetrie 10 Hz ---
   if (t - last_tlm_ms >= TLM_PERIOD_MS) { last_tlm_ms = t; sendTelemetry(t); }
 
   // --- 8. Log, Zustandsspeicher, Landung ---
   // Rate und SD-Erlaubnis je Flugabschnitt (Config.h, SDLogger.h): von PAD_READY bis APOGEE nur in den
-  // Ringpuffer, Vorlauf am Pad im Überschreibmodus, ab dem Start nichts mehr überschreiben.
+  // Ringpuffer, Vorlauf am Pad im Überschreibmodus (höchstens LOG_PREROLL_S, damit Platz für den Flug
+  // bleibt), ab dem Start nichts mehr überschreiben.
   const FlightState fs_now = fsm.state();
   const bool descent = fs_now == FlightState::DESCENT || fs_now == FlightState::LANDED
                        || (fs_now == FlightState::ABORT && !fsm.launchTime());
@@ -503,7 +547,7 @@ void loop(){
     v[L_ROLL_PWM] = roll.pwm; v[L_ROLL_DIR] = roll.dir; v[L_THROTTLE] = throttle_u;
     v[L_VBAT1] = sample.vbat1_V; v[L_VBAT2] = sample.vbat2_V; v[L_ARM_V] = sample.arm_V; v[L_CURRENT] = sample.current_A;
     v[L_STATE] = (float)fs_now; v[L_FLAGS] = flags;
-    v[L_PYRO] = pyro.fires(0) | (pyro.fires(1) << 4) | (pyro_fire[0] << 8) | (pyro_fire[1] << 9);
+    v[L_PYRO] = pyro.fires(0) | (pyro.fires(1) << 4) | (pyro_fire[0] << 8) | (pyro_fire[1] << 9) | (chute_open << 10);
     v[L_RESET] = (float)reset_cause;
     const uint32_t fds = flight_ms(t) / 100;
     v[L_T_FLIGHT] = fds > 32767 ? 32767 : fds;

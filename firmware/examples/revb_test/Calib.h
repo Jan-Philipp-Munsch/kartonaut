@@ -11,6 +11,7 @@ Res calBaro(float seconds);
 Res calAdc(int channel);        // 0..7, -1 = alle sinnvollen (VBAT1, VBAT2, ARM)
 Res calIna();
 Res calServo(int i);
+Res calSet(const char* args);   // "<name> <werte...>": Feld im RAM setzen (Werte vom PC), geprüft
 void calShow();
 Res calSave();
 Res calLoad();

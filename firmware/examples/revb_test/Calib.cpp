@@ -359,6 +359,98 @@ Res calServo(int i) {
   return Res::OK;
 }
 
+// ---------------------------------------------------------------- Werte vom PC setzen
+// "cal set <name> <werte...>": ein Feld des Kalibrierblocks im RAM setzen (tools/bench_gui rechnet
+// z. B. den Ellipsoid-Fit am PC und schickt das Ergebnis). Geprüft wird auf Anzahl, endliche Zahlen
+// und dieselben Plausibilitätsgrenzen wie bei den geführten Kalibrierungen; "cal save" speichert.
+static bool inRange(const float* v, int n, float lo, float hi) {
+  for (int i = 0; i < n; ++i) if (!(v[i] >= lo && v[i] <= hi)) return false;
+  return true;
+}
+
+// sechs Werte "map0 map1 map2 sign0 sign1 sign2" -> gültige rechtshändige Achszuordnung?
+static bool parseAxes(const float* v, int8_t map[3], int8_t sign[3]) {
+  bool seen[3] = {false, false, false};
+  for (int i = 0; i < 3; ++i) {
+    const int m = int(v[i]), s = int(v[3 + i]);
+    if (m != v[i] || m < 0 || m > 2 || seen[m] || (s != 1 && s != -1)) return false;
+    seen[m] = true;
+    map[i] = int8_t(m);
+    sign[i] = int8_t(s);
+  }
+  return cal::AxisFit::rightHanded(map, sign);
+}
+
+Res calSet(const char* args) {
+  char buf[200];
+  strncpy(buf, args ? args : "", sizeof buf - 1);
+  buf[sizeof buf - 1] = 0;
+  const char* name = strtok(buf, " ");
+  if (!name) { proto::test("cal_set", Res::FEHL, "Name fehlt (cal set <name> <werte>)"); return Res::FEHL; }
+  float v[9];
+  int n = 0;
+  for (char* t = strtok(nullptr, " "); t; t = strtok(nullptr, " ")) {
+    char* e = nullptr;
+    const float x = strtof(t, &e);
+    if (n >= 9 || e == t || *e != 0 || !isfinite(x)) { proto::test("cal_set", Res::FEHL, "%s: Wert '%s' nicht lesbar oder zu viele Werte", name, t); return Res::FEHL; }
+    v[n++] = x;
+  }
+  const char* err = nullptr;   // nullptr = übernommen
+  cal::CalData& d = calib;
+  if (!strcmp(name, "gyro_bias_dps")) {
+    if (n != 3 || !inRange(v, 3, -10, 10)) err = "3 Werte, |Wert| <= 10 dps";
+    else { for (int i = 0; i < 3; ++i) d.gyro_bias_dps[i] = v[i]; d.valid |= cal::GYRO; }
+  } else if (!strcmp(name, "acc_offset_ms2")) {
+    if (n != 3 || !inRange(v, 3, -3, 3)) err = "3 Werte, |Wert| <= 3 m/s2";
+    else { for (int i = 0; i < 3; ++i) d.acc_offset_ms2[i] = v[i]; d.valid |= cal::ACC; }
+  } else if (!strcmp(name, "acc_scale")) {
+    if (n != 3 || !inRange(v, 3, 0.8f, 1.2f)) err = "3 Werte, 0.8..1.2";
+    else { for (int i = 0; i < 3; ++i) d.acc_scale[i] = v[i]; d.valid |= cal::ACC; }
+  } else if (!strcmp(name, "mag_offset_gauss")) {
+    if (n != 3 || !inRange(v, 3, -4, 4)) err = "3 Werte, |Wert| <= 4 gauss";
+    else { for (int i = 0; i < 3; ++i) d.mag_offset_gauss[i] = v[i]; d.valid |= cal::MAG; }
+  } else if (!strcmp(name, "mag_soft_iron")) {
+    if (n != 9 || !inRange(v, 9, -5, 5) || v[0] < 0.2f || v[4] < 0.2f || v[8] < 0.2f) err = "9 Werte zeilenweise, |Wert| <= 5, Diagonale >= 0.2";
+    else { for (int i = 0; i < 9; ++i) d.mag_soft_iron[i] = v[i]; d.valid |= cal::MAG; }
+  } else if (!strcmp(name, "mag_field_gauss")) {
+    if (n != 1 || !inRange(v, 1, 0.1f, 1.5f)) err = "1 Wert, 0.1..1.5 gauss";
+    else d.mag_field_gauss = v[0];
+  } else if (!strcmp(name, "imu_axis") || !strcmp(name, "mag_axis")) {
+    int8_t map[3], sign[3];
+    if (n != 6 || !parseAxes(v, map, sign)) err = "6 Werte: map0 map1 map2 sign0 sign1 sign2, Permutation von 0 1 2, Vorzeichen +-1, rechtshaendig";
+    else if (name[0] == 'i') { for (int i = 0; i < 3; ++i) { d.imu_axis_map[i] = map[i]; d.imu_axis_sign[i] = sign[i]; } d.valid |= cal::AXES; }
+    else { for (int i = 0; i < 3; ++i) { d.mag_axis_map[i] = map[i]; d.mag_axis_sign[i] = sign[i]; } }
+  } else if (!strcmp(name, "baro_ground_pa")) {
+    if (n != 1 || !inRange(v, 1, 80000, 110000)) err = "1 Wert, 80000..110000 Pa";
+    else { d.baro_ground_pa = v[0]; d.valid |= cal::BARO; }
+  } else if (!strcmp(name, "adc_gain")) {
+    if (n != 2 || v[0] != int(v[0]) || v[0] < 0 || v[0] > 7 || !inRange(v + 1, 1, 0.9f, 1.1f)) err = "<kanal 0..7> <faktor 0.9..1.1>";
+    else { d.adc_gain[int(v[0])] = v[1]; d.valid |= cal::ADC; }
+  } else if (!strcmp(name, "ina_offset_a")) {
+    if (n != 1 || !inRange(v, 1, -0.2f, 0.2f)) err = "1 Wert, |Wert| <= 0.2 A";
+    else { d.ina_offset_a = v[0]; d.valid |= cal::INA; }
+  } else if (!strcmp(name, "ina_gain")) {
+    if (n != 1 || !inRange(v, 1, 0.9f, 1.1f)) err = "1 Wert, 0.9..1.1";
+    else { d.ina_gain = v[0]; d.valid |= cal::INA; }
+  } else if (!strcmp(name, "servo_us")) {
+    int lo = 0, hi = 0;
+    const int ch = n == 4 ? int(v[0]) - 1 : -1;
+    if (ch >= 0 && ch <= 3) servoLimitsUs(ch, lo, hi);
+    if (ch < 0 || ch > 3 || !inRange(v + 1, 3, float(lo), float(hi)) || v[2] > v[1] || v[1] > v[3]) err = "<kanal 1..4> <mitte> <min> <max> in us, min <= mitte <= max, im Fenster aus Config.h";
+    else { d.servo_center_us[ch] = uint16_t(v[1]); d.servo_min_us[ch] = uint16_t(v[2]); d.servo_max_us[ch] = uint16_t(v[3]); d.valid |= cal::SERVO; }
+  } else if (!strcmp(name, "valid")) {
+    if (n != 1 || v[0] != int(v[0]) || v[0] < 0 || v[0] > 255) err = "Bitmaske 0..255 (GYRO 1 ACC 2 MAG 4 AXES 8 BARO 16 ADC 32 INA 64 SERVO 128)";
+    else d.valid = uint32_t(v[0]);
+  } else {
+    proto::test("cal_set", Res::FEHL, "unbekannter Name %s", name);
+    return Res::FEHL;
+  }
+  if (err) { proto::test("cal_set", Res::FEHL, "%s nicht uebernommen: %s", name, err); return Res::FEHL; }
+  proto::cal("valid", "%lu", (unsigned long)d.valid);
+  proto::test("cal_set", Res::OK, "%s im RAM gesetzt (%d Werte), noch nicht gespeichert: cal save", name, n);
+  return Res::OK;
+}
+
 void calShow() {
   const cal::CalData& d = calib;
   proto::info("Kalibrierung: %s, Version %u, gespeichert %lu mal, gültig 0x%02lX (GYRO 1 ACC 2 MAG 4 AXES 8 BARO 10 ADC 20 INA 40 SERVO 80)",

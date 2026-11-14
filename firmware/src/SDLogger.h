@@ -66,6 +66,9 @@ void SDLogger_service(uint32_t deadline_us, bool sd_allowed);
 void SDLogger_drainAll();
 // Puffer voll: true = ältesten Satz verwerfen (Vorlauf am Pad), false = neuen verwerfen (Flug)
 void SDLogger_setOverwrite(bool on);
+// Vorlauf: im Überschreib-Modus höchstens so viele Sätze halten (begrenzt auf ein Fünftel des Puffers,
+// 0 = keine Grenze). Liefert die gesetzte Zahl. Nach SDLogger_setup() aufrufen.
+uint32_t SDLogger_setPreroll(uint32_t max_records);
 
 struct SDLogStats {
   uint32_t ring_bytes = 0;      // Größe des Ringpuffers

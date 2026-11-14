@@ -4,7 +4,7 @@ PlatformIO-Projekt für den Teensy 4.1. Die Firmware liest die Sensoren, schätz
 Höhe, führt den Flugzustandsautomaten, regelt den Schubvektor, zündet die Bergung, funkt
 Telemetrie und loggt jeden Durchlauf auf die SD-Karte. Die Regler sind in `Config.h`
 abgeschaltet, bis der Prüfstand (Experiment E02) sie freigibt. Nichts davon ist bisher am
-Gerät gelaufen; die Logik ist in den nativen Tests geprüft (`pio test -e native`, 42 Tests).
+Gerät gelaufen; die Logik ist in den nativen Tests geprüft (`pio test -e native`, 58 Tests).
 Für *Kartonaut 1* (Modulbauweise Stand 2b/2c) entfällt der Rollmotor; der Rollregler bleibt aus, die Lage
 kommt als Quaternion aus dem Gyro (`Attitude.*`). Masse 0,705 kg und Hebelarm 0,190 m aus
 `cad/mass_stand2b.md` gehören nach dem Wiegen in `Config.h` (`MASS_KG`, `MOMENT_ARM_M`), und mit ihnen
@@ -15,8 +15,8 @@ I-Anteil erst ab der Starterkennung); der Fallschirm-Servo an `J_SERVO3` löst d
 pio run                        # Flug-Firmware für den Breakout-Aufbau bauen
 pio run -e teensy41_revb       # dieselbe Firmware für das Mainboard rev B
 pio run -t upload              # flashen (teensy-cli)
-pio device monitor             # 115200 Bd, Teleplot-kompatibel; ? c r a s als Befehle
-pio test -e native             # 42 Tests ohne Hardware (oder: python tools/run_native_tests.py)
+pio device monitor             # 115200 Bd, Teleplot-kompatibel; ? c r a s als Befehle (x, f nur in SAFE/LANDED)
+pio test -e native             # 58 Tests ohne Hardware (oder: python tools/run_native_tests.py)
 pio run -e i2c_scanner -t upload   # einen Test-Sketch flashen
 ```
 
@@ -35,7 +35,8 @@ pio run -e i2c_scanner -t upload   # einen Test-Sketch flashen
 | `src/FlightState.*` | Flugzustandsautomat SAFE → PAD_READY → BOOST → COAST → APOGEE → DESCENT → LANDED, ABORT; Ereignisse mit Zeitstempel | ✅ |
 | `src/ControlLaw.*` | Reglergleichungen Pitch/Yaw (PID, Moment → TVC-Winkel → Servo-Grad, Fenster) und Roll; identisch zu `tvcsim` | ✅ (SIL) |
 | `src/Control.*` | Servos als 16-Bit-PWM mit `SERVO_FRAME_HZ`, H-Brücke, Fallschirm-Servo | – |
-| `src/Pyro.*` | Zündlogik je Kanal: Zustand, Flugzeit, ARM, Durchgang; Puls, Abbruch bei Durchgangsverlust, Reservekanal (Fallschirm) oder Anzünder des Landemotors | ✅ |
+| `src/Pyro.*` | Zündlogik je Kanal: Zustand, Flugzeit, ARM, Durchgang; Puls in voller Länge (die Durchgangsmessung gilt während der Zündung nicht), Reservekanal (Fallschirm) oder Anzünder des Landemotors | ✅ |
+| `src/ChuteRelease.h` | Fallschirm-Servo an J_SERVO3 (*Kartonaut 1*: sticht die CO₂-Kapsel an): öffnet in APOGEE/DESCENT, frühestens 2 s nach dem Start, bleibt offen bis SAFE | ✅ |
 | `src/LandingBurn.*`, `src/ThrustCurveE12.h` | Zündentscheidung für das Landebrennen: Aufsetzkosten aus einer 1D-Simulation der E12-Kurve mit Bodenkontakt, Zündung im Minimum (Port von `tvcsim.landing`) | ✅ |
 | `src/ThrottleLaw.*` | Schubdrossel (Scout-F-Pads): Zündung mit Reserve, Schubschätzung in der Spitze, zeitbasierte Führung auf Höhe 0 zum Brennschluss, Schubabbruch beim Aufsetzen (Port von `tvcsim.throttle`) | ✅ |
 | `src/Telemetry.*`, `src/Crc16.h` | Funkprotokoll (Rahmen, TLM/EVT/ACK, Kommandos, Parser, CRC-16/CCITT) | ✅ |
@@ -64,9 +65,11 @@ pio run -e i2c_scanner -t upload   # einen Test-Sketch flashen
 4. **Brennschluss**: axiale spezifische Kraft unter 3 m/s² für 100 ms, Rückfall 4,5 s →
    **COAST**: Servos auf Mitte, Rollregler weiter.
 5. **Apogäum**: Kalman-vz < −0,5 m/s und Barometer 1 m unter seinem Maximum, beides 200 ms,
-   frühestens 0,5 s nach Brennschluss, Rückfall 6 s → **APOGEE**: Pyro zündet, wenn ARM und
-   Durchgang da sind und seit dem Start mindestens 2 s vergangen sind (80 ms Puls, Abbruch
-   bei Durchgangsverlust, zweiter Versuch nach 0,5 s, Kanal 2 als Reserve 1,5 s später).
+   frühestens 0,5 s nach Brennschluss, Rückfall 6 s → **APOGEE**: der Fallschirm-Servo öffnet und
+   sticht die CO₂-Kapsel an (`CHUTE_SERVO_RELEASE`, frühestens 2 s nach dem Start, ohne ARM), und
+   Pyro zündet, wenn ARM und Durchgang da sind und seit dem Start mindestens 2 s vergangen sind
+   (80 ms Puls in voller Länge, zweiter Versuch nach 0,5 s, wenn danach wieder Durchgang da ist,
+   Kanal 2 als Reserve 1,5 s später).
    Magenta.
 6. **DESCENT** 1 s nach der Zündung; **LANDED** bei |vz| < 0,5 m/s und Höhe < 5 m für 2 s,
    Rückfall 2 min. Log wird geschlossen, Zustandsspeicher gelöscht.
@@ -106,7 +109,7 @@ Prüfwert `"123456789"` → `0x29B1`), alle Werte little-endian.
 
 | Typ | Richtung | Takt | Nutzlast |
 |---|---|---|---|
-| `TLM 0x01` | Rakete → Boden | 10 Hz | 16 Byte: Zustand, Flags (ARM, Durchgang 1/2, Log, kalibriert, Sensoren ok, Pyro gezündet, wiederaufgenommen), Zeit seit Start in 0,1 s, Höhe in 0,1 m, vz in cm/s, Kippwinkel x/y in 0,5°, Roll in 2°, Kardan Yaw/Pitch in 0,1°, 1S in 0,02 V, 2S in 0,05 V, Folgenummer |
+| `TLM 0x01` | Rakete → Boden | 10 Hz | 16 Byte: Zustand, Flags (ARM, Durchgang 1/2, Log, kalibriert, Sensoren ok, Pyro gezündet oder Fallschirm-Servo offen, wiederaufgenommen), Zeit seit Start in 0,1 s, Höhe in 0,1 m, vz in cm/s, Kippwinkel x/y in 0,5°, Roll in 2°, Kardan Yaw/Pitch in 0,1°, 1S in 0,02 V, 2S in 0,05 V, Folgenummer |
 | `EVT 0x02` | Rakete → Boden | bei Übergang | Zeit (ms), von, nach, Grund |
 | `ACK 0x10` | Rakete → Boden | auf Kommando | Kommandotyp, Folgenummer, Ergebnis (0 ok, 1 abgelehnt, 2 unbekannt), Zustand |
 | `CMD_PING 0x20`, `CMD_CALIBRATE 0x21`, `CMD_PAD_READY 0x22`, `CMD_ABORT 0x23`, `CMD_SAFE 0x24` | Boden → Rakete | | 1 Byte Folgenummer |
@@ -135,6 +138,8 @@ eigener Rahmen, sobald es ein Modul gibt.
 
 | Schalter | Wirkung |
 |---|---|
+| `CHUTE_SERVO_RELEASE`, `CHUTE_SERVO_NEEDS_ARM`, `CHUTE_SERVO_OPEN/CLOSED_DEG` | Fallschirm-Servo in APOGEE öffnen (CO₂-Kapsel); mit `NEEDS_ARM` nur bei scharfem ARM-Schalter (Standard aus: die Bergung soll nicht an einer Spannungsmessung hängen). Winkel sind Platzhalter bis zum gebauten CO₂-Modul. |
+| `LOG_PREROLL_S` | Vorlauf des Logs an der Rampe in Sekunden (10); der Rest des Ringpuffers bleibt frei für den Flug |
 | `RECOVERY_MODE` | `CHUTE` (Ausstoßladung in APOGEE, Kanal 2 Reserve) oder `LANDING_BURN` (Kanal 2 = Anzünder des zweiten Motors, `LANDING_*`-Parameter) |
 | `THROTTLE_ENABLED`, `THROTTLE_F_MIN`, `THROTTLE_*` | Schubdrossel im Landebrennen (dritter Servokanal, Kennlinie aus E05) |
 | `PY_CONTROL_ACTIVE`, `ROLL_CONTROL_ACTIVE` | Regler freigeben. Ohne Freigabe bleiben die Servos auf Mitte und der Motor aus. |
@@ -166,7 +171,7 @@ a_nav x/y/z, \|a\| (×100); Drehrate für Lage und Regler x/y/z (×100) und vor 
 ±3270 °/s); Magnetfeld x/y/z in gauss (×5000); Quaternion w/x/y/z (×10000); Kippwinkel x/y, Roll
 (×100); gelernter Gyro-Nullpunkt x/y/z (×1000); Servo Yaw/Pitch und Kardan Yaw/Pitch in Grad (×100);
 Roll-PWM, Roll-Richtung, Drossel (×1000); 1S, 2S, ARM in V (×100), Strom in A (×1000); Zustand, Flags,
-Pyro-Bits, Reset-Ursache, Flugzeit in 0,1 s, Sensor-Bits (1 IMU neu, 2 Baro neu, 4 Mag neu, 8 Mag
+Pyro-Bits (Bit 10: Fallschirm-Servo offen), Reset-Ursache, Flugzeit in 0,1 s, Sensor-Bits (1 IMU neu, 2 Baro neu, 4 Mag neu, 8 Mag
 kalibriert, 16 Kalman-Update, 32 Stützung aktiv, 64 mit Magnetometer); gemittelte IMU-Sätze, Dauer
 des vorigen Loops in µs, dt in µs, verworfene Sätze, Pufferfüllung in %, FIFO-Überläufe.
 
@@ -177,9 +182,10 @@ schreibt die jüngste `.BIN` als `.CSV` mit Spaltennamen und physikalischen Einh
 
 **Wann auf die Karte geschrieben wird:** SD-Karten brauchen gelegentlich 10–100 ms für einen
 Schreibzugriff. Deshalb landet jeder Datensatz zuerst im Ringpuffer (PSRAM, Kopie < 1 µs). Von
-PAD_READY bis APOGEE fasst der Loop die Karte nie an; am Pad überschreibt der Puffer die ältesten
-Sätze (Vorlauf), ab dem Start verwirft er höchstens neue, falls er je voll würde (6 MB reichen bei
-250 Hz für ~3 min). In SAFE und ab DESCENT schreibt `SDLogger_service()` den Rückstand in der freien
+PAD_READY bis APOGEE fasst der Loop die Karte nie an; am Pad behält der Puffer nur die
+letzten `LOG_PREROLL_S` = 10 s als Vorlauf (ohne PSRAM etwa 2 s) und überschreibt ältere Sätze, ab dem
+Start verwirft er höchstens neue, falls er je voll würde (die übrigen ~5,7 MB reichen bei 250 Hz für
+knapp 3 min). Bis 14.11.2026 lief der Puffer an der Rampe ohne Grenze voll und verwarf danach den Flug. In SAFE und ab DESCENT schreibt `SDLogger_service()` den Rückstand in der freien
 Zeit bis zur nächsten Loop-Deadline, in Häppchen von ~2 KB, und speichert alle 0,5 s endgültig.
 Bei LANDED wird geschlossen, sobald der Puffer leer ist. Fällt beim Aufprall der Strom weg, fehlen
 höchstens die letzten Zehntelsekunden. `?` auf USB zeigt Pufferstand, Verluste und die längsten
@@ -191,8 +197,10 @@ W25Q128 unter dem Teensy (am Pad 25 Hz, BOOST bis APOGEE 250 Hz, ab DESCENT 50 H
 den Chip; beim Aufprall fehlt höchstens die angefangene Seite, und die Daten überleben auch eine
 herausgeflogene SD-Karte. Beim nächsten Einschalten kopiert die Firmware einen noch nicht kopierten Flug
 als `LOGxxxxx.BIN` auf die Karte (Bruchstücke nach einem Neustart im Flug werden dabei übersprungen) und
-löscht den benutzten Bereich im Hintergrund, nur am Boden. Ohne SD-Karte bleibt der alte Flug stehen und
-der Flugschreiber bleibt aus, bis `f` auf USB ihn kopiert. `?` zeigt den Stand. Achtung: `LittleFS_QSPIFlash`
+löscht den benutzten Bereich im Hintergrund, nur am Boden; danach ist der ganze Chip frei. Endete die
+letzte Sitzung ohne Abschluss (Strom weg in PAD_READY oder im Flug), wird der ganze Chip gelöscht, das
+dauert typisch unter einer Minute. Ohne SD-Karte bleibt der alte Flug stehen und
+der Flugschreiber bleibt aus, bis `f` auf USB ihn kopiert (nur in SAFE oder LANDED). `?` zeigt den Stand. Achtung: `LittleFS_QSPIFlash`
 nicht auf diesem Teensy starten, sein `begin()` formatiert den Flash.
 
 ## Test-Sketches (`examples/`)
@@ -208,7 +216,7 @@ nutzen also dieselben Pins aus `Config.h`.
 | `pyro_mosfet_test` | Warnblinken, dann ein 1-s-Puls auf `PIN_PYRO1` (23). Nur mit Lämpchen oder Widerstand als Last. |
 | `servo_ident` | **Experiment E01** (`docs/experiments/E01_servo_ident.md`): fährt je TVC-Achse Treppe, Sprünge, Wechselsprünge und zwei Chirps auf den Servo und loggt mit 500 Hz Kommando, Drehrate und Beschleunigung einer ICM-20948 auf dem Motorrohr als CSV über USB. Befehle `?`, `Y`, `P`, `B`, `S`, `A`, `C`, `W`, `F`, `M`, `Z`, `V`, `N`. Aufnahme: `tools/capture_serial.py`, Auswertung: `simulation/scripts/ident_servo.py`. |
 | `revb_bringup` | Inbetriebnahme des Mainboards rev B1: sichere Ausgänge, dann Mux (Akkus, ARM, Pyro-Durchgang), IMU (LSM6DSV16X oder ICM-42688-P nach WHO_AM_I), BMP390/BMP388 (×2), INA239, LoRa-Parameter, GPS, LIS3MDL, SHT40, ADXL375; je Baustein `[ OK ]`/`[FEHL]`, laut Bestückungsliste (`FitRevB.h`) fehlende Teile `[ -- ]` ohne Fehler; danach Messwerte im Sekundentakt. Nutzt `lib/mainboard_revb/`, nicht `Config.h`. |
-| `revb_test` | Testkonsole und Kalibrierung rev B1: Befehlsmenü über USB-Serial, je Funktion ein Befehl mit `TEST <name> OK/FEHL/SKIP/NICHT_ERKANNT` (`NICHT_ERKANNT` = laut Bestückungsliste nicht bestückt, umschaltbar mit `fit <teil> on/off`), geführte Kalibrierung mit `CAL`-Zeilen, Ablage im EEPROM-Emulat. Ablauf in `Tischtest_revB1.md`, PC-Seite `tools/bench_test.py`. `tvc ...` fährt Versuch E02 (Servo → Kardan, `docs/experiments/E02_TVC_Charakterisierung_revB1.md`, Aufnahme `tools/capture_tvc.py`). |
+| `revb_test` | Testkonsole und Kalibrierung rev B1: Befehlsmenü über USB-Serial, je Funktion ein Befehl mit `TEST <name> OK/FEHL/SKIP/NICHT_ERKANNT` (`NICHT_ERKANNT` = laut Bestückungsliste nicht bestückt, umschaltbar mit `fit <teil> on/off`), geführte Kalibrierung mit `CAL`-Zeilen, Ablage im EEPROM-Emulat. Ablauf in `Tischtest_revB1.md`, PC-Seite `tools/bench_test.py` (Kommandozeile) und die Oberfläche `tools/werkbank.py`. `stream [hz]` gibt Live-Messwerte als `D`-Zeilen aus (`Stream.h`), `cal set <name> <werte>` setzt einen Kalibrierwert vom PC aus. `tvc ...` fährt Versuch E02 (Servo → Kardan, `docs/experiments/E02_TVC_Charakterisierung_revB1.md`, Aufnahme `tools/capture_tvc.py`). |
 
 Die früheren Monolith-Sketches und kopierten Bibliotheksbeispiele (`sketches/` bis Commit
 `3b152c9`) sind entfernt; sie stehen in der Git-Historie.
@@ -236,7 +244,7 @@ Die früheren Monolith-Sketches und kopierten Bibliotheksbeispiele (`sketches/` 
 `lib/calstore/` hält die Kalibrierwerte: `CalData.h` (Block mit Version und CRC-32, reines C++),
 `CalStore.*` (EEPROM-Emulat des Teensy), `EllipsoidFit.h` (Hard-/Soft-Iron), `AxisFit.h`
 (Achszuordnung aus einer Drehung). `src/main.cpp` lädt den Block beim Start und warnt bei
-falscher CRC. Tests ohne Hardware: `test/host/` (g++) und `tools/test_bench_test.py` (pytest).
+falscher CRC. Tests ohne Hardware: `test/host/` (g++), `tools/test_bench_test.py` und `tools/test_bench_gui.py` (pytest).
 
 Decoder und Mux teilen sich die Select-Leitungen. Deshalb: kein SPI aus einer ISR, und keine
 Analogmessung zwischen `select()` und `deselect()` (Details in `BusRevB.h`). Die IMU-Werte kommen
@@ -258,13 +266,14 @@ Befehle in `Tischtest_revB1.md`, Versuchsanleitungen je Messung in `Versuche_rev
 |---|---|
 | `check_board_pins.py` | vergleicht `BoardRevB.h` mit `kicad/circuit.py` |
 | `bench_test.py` | treibt die Testkonsole `revb_test`, wertet `TEST`/`CAL` aus, schreibt Markdown + JSON |
+| `werkbank.py`, `bench_gui/` | **Werkbank**: Oberfläche im Browser für `revb_test` (Live-Verläufe, Prüfungen, geführte Kalibrierung mit Fits am PC, Aktoren, Konsole); `--sim` läuft ohne Hardware. Beschreibung: [`tools/bench_gui/README.md`](tools/bench_gui/README.md) |
 | `capture_tvc.py` | Aufnahme für Versuch E02 (`tvc ...` in `revb_test`) |
 | `capture_serial.py` | schickt dem Sketch `servo_ident` die Befehle und speichert die CSV (`pip install pyserial`) |
 
 ## Tests ohne Hardware (`test/test_native/`)
 
 `pio test -e native` baut die reinen Module (`Attitude`, `FlightState`, `Pyro`, `Telemetry`,
-`ControlLaw`, `StateMemory`, `LandingBurn`) mit dem System-Compiler und lässt 42 Tests laufen; ohne
+`ControlLaw`, `StateMemory`, `LandingBurn`) mit dem System-Compiler und lässt 58 Tests laufen; ohne
 PlatformIO tut `python tools/run_native_tests.py` dasselbe mit g++. Das Testgerüst ist
 `minitest.h` (Ausgabe im Unity-Format, Runner `test/test_custom_runner.py`), damit keine
 Bibliothek aus der Registry nötig ist.
@@ -273,7 +282,8 @@ Bibliothek aus der Registry nötig ist.
 |---|---|
 | `test_attitude.cpp` | Drehung um x/y gegen die Integration, Rollen verschiebt den Kippwinkel in die andere Servoachse, Init aus schiefer Beschleunigung, Normierung |
 | `test_flightstate.cpp` | volle Zustandsfolge auf einem synthetischen Flug und auf dem Flug aus `tvcsim` (`test/data/flight_profile_tvcsim.csv`), kein Start ohne PAD_READY, kurzer Stoß, Zeitrückfälle, Abbruch auf dem Pad und im Flug, Wiederaufnahme |
-| `test_pyro.cpp` | alle vier Bedingungen einzeln, Pulslänge, Abbruch bei Durchgangsverlust, Versuche und Reservekanal, Entschärfen während des Pulses |
+| `test_pyro.cpp` | alle vier Bedingungen einzeln, volle Pulslänge auch wenn die Durchgangsmessung während der Zündung „offen“ liest (rev B1), Versuche und Reservekanal, Entschärfen während des Pulses; Fallschirm-Servo: Bedingungen, bleibt offen, schließt in SAFE |
+| `test_logring.cpp` | Reihenfolge, voll im Flug (neueste verwerfen) und an der Rampe (älteste überschreiben), Vorlaufgrenze lässt Platz für den Flug |
 | `test_telemetry.cpp` | CRC-Prüfwert, Rahmen hin und zurück, Resynchronisation nach Müll und Bitfehler, Längen, Skalierung |
 | `test_statememory.cpp` | Magic und CRC, Zufallsinhalt wird abgelehnt |
 | `test_throttle.cpp` | Drosselkennlinie, Stopphöhen und Kommandofolge gegen Python-Vektoren, Zündung mit Reserve, Phasen des Reglers |

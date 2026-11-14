@@ -66,6 +66,27 @@ uint32_t findEnd() {
 
 uint32_t roundUpBlock(uint32_t a) { return (a + QspiFlash::BLOCK - 1) / QspiFlash::BLOCK * QspiFlash::BLOCK; }
 
+// Stichprobe: ist der Chip ab `from` leer? Eine Seite je 64-KB-Block (höchstens 256 kurze Lesezugriffe,
+// nur beim Start, nicht im Loop).
+bool restBlank(uint32_t from) {
+  for (uint32_t a = roundUpBlock(from); a < fl.size(); a += QspiFlash::BLOCK)
+    if (!pageBlank(a)) return false;
+  return true;
+}
+
+// Löschen planen. Der Chip wird nur einmal ganz gelöscht; danach ist alles hinter dem benutzten
+// Bereich leer, und es genügt, [0, used_end + 1 Block) neu zu löschen. Sobald das geschehen ist, gilt
+// der ganze Chip als frei (FlashLog_service setzt erased_to auf die Chipgröße). Bis 14.11.2026 blieb
+// erased_to am Ende des gelöschten Stücks stehen, und jede Seite dahinter wurde verworfen: nach einer
+// kurzen Sitzung passten nur noch 64 KB in den Flugschreiber (Befund 26).
+// known_end = false (Sitzung ohne Abschluss, Ende nur gesucht, Lücken möglich): alles löschen.
+void planErase(uint32_t used_end, bool known_end, bool check_rest) {
+  erase_limit = known_end ? roundUpBlock(used_end) + QspiFlash::BLOCK : fl.size();
+  if (erase_limit > fl.size()) erase_limit = fl.size();
+  if (check_rest && erase_limit < fl.size() && !restBlank(erase_limit)) erase_limit = fl.size();
+  erased_to = 0;
+}
+
 // ---- Kopie zur SD-Karte: Datensätze prüfen und glätten ----
 // Nach einem Neustart im Flug fehlt ein angefangener Satz (Seitenpuffer im RAM verloren), und micros()
 // beginnt von vorn. Die Kopie sucht deshalb jeden Satz an Format und Kanalzahl, überspringt Bruchstücke
@@ -121,9 +142,7 @@ bool FlashLog_copyToSd() {
     Serial.printf("Flugschreiber: %lu Byte aus dem Flash nach %s kopiert\n", (unsigned long)(c_end - DATA0), name);
     old_pending = false;
     if (!session && !session_pending) {         // kopiert: benutzten Bereich für den nächsten Flug löschen
-      erase_limit = roundUpBlock(c_end) + QspiFlash::BLOCK;
-      if (erase_limit > fl.size()) erase_limit = fl.size();
-      erased_to = 0;
+      planErase(c_end, h.end != 0xFFFFFFFFu, false);
     }
   }
   return ok;
@@ -148,10 +167,7 @@ void FlashLog_setup(bool resume) {
     }
   }
   // zu löschen: der zuletzt benutzte Bereich; ohne gültigen Kopf (erster Einsatz) der ganze Chip
-  const uint32_t used = valid ? (h.end != 0xFFFFFFFFu ? h.end : findEnd()) : fl.size();
-  erase_limit = roundUpBlock(used) + (valid ? QspiFlash::BLOCK : 0);
-  if (erase_limit > fl.size()) erase_limit = fl.size();
-  erased_to = 0;
+  planErase(valid ? h.end : fl.size(), valid && h.end != 0xFFFFFFFFu, true);
 }
 
 void FlashLog_startSession() {
@@ -164,8 +180,7 @@ void FlashLog_abortSession() {
   session = session_pending = false;
   q_head = q_tail = q_count = 0;
   page_fill = 0;
-  erase_limit = roundUpBlock(write_pos);
-  erased_to = 0;
+  planErase(write_pos, true, false);          // Ende genau bekannt; der Rest war vor der Sitzung leer
   write_pos = DATA0;
 }
 
@@ -218,6 +233,7 @@ void FlashLog_service(bool erase_ok) {
   if (erase_ok && erased_to < erase_limit) {
     fl.startErase64k(erased_to);
     erased_to += QspiFlash::BLOCK;
+    if (erased_to >= erase_limit) erased_to = erase_limit = fl.size();   // benutzter Bereich gelöscht: der Rest ist leer
   }
 }
 

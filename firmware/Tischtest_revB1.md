@@ -19,7 +19,8 @@ LIS3MDL (U16), SHT40 (U18). Noch nicht bestückt: **INA239** (U6, nachbestellt, 
 | Testkonsole | `examples/revb_test/` | PlatformIO-Umgebung `revb_test`: Befehlsmenü über USB-Serial, feste Ausgabezeilen (`Proto.h`) |
 | Inbetriebnahme | `examples/revb_bringup/` | Selbsttest aller Bausteine beim Start (jetzt auch LIS3MDL, SHT40, ADXL375), danach Messwerte |
 | PC-Werkzeug | `tools/bench_test.py` | führt durch Versorgung, Flashen, Befehle und Rückfragen; Bericht in `test_reports/` |
-| Tests ohne Hardware | `tools/test_bench_test.py`, `test/host/` | Parser der Konsolenzeilen (pytest), CRC/Ellipsoid/Achsen/NMEA (g++); laufen in der CI |
+| Oberfläche | `tools/werkbank.py`, `tools/bench_gui/` | Werkbank im Browser: Live-Daten, Prüfungen, Kalibrierung, Aktoren (Abschnitt 3b) |
+| Tests ohne Hardware | `tools/test_bench_test.py`, `tools/test_bench_gui.py`, `test/host/` | Parser der Konsolenzeilen und Werkbank gegen die simulierte Platine (pytest), CRC/Ellipsoid/Achsen/NMEA (g++); laufen in der CI |
 
 ## 2. Versorgung und Lötbrücken
 
@@ -78,6 +79,26 @@ LIS3MDL (U16), SHT40 (U18). Noch nicht bestückt: **INA239** (U6, nachbestellt, 
 
 Die Flug-Firmware (`src/main.cpp`) lädt den Block beim Start; bei leerem oder beschädigtem Block
 (CRC, Version, Layout) meldet sie `WARNUNG: Kalibrierung ...` und nimmt die Standardwerte.
+
+## 3b. Werkbank: dasselbe mit Oberfläche (seit 14.11.2026)
+
+`python tools/werkbank.py` öffnet eine Oberfläche im Browser, die dieselbe Testkonsole bedient: Live-Verläufe
+von IMU, Magnetometer und Barometer, die Prüfungen als Knöpfe mit Ergebnistabelle und Bericht, die
+Kalibrierungen aus Schritt 8 mit Erklärung und Rückfrage-Dialogen, dazu Fits am PC (Beschleunigung aus
+beliebigen ruhenden Lagen, Magnetometer mit Bild der Abdeckung) und eine Skalenprüfung des Gyros.
+`python tools/werkbank.py --sim` läuft ohne Platine. Beschreibung: `tools/bench_gui/README.md`.
+
+Dafür hat die Konsole zwei neue Befehle:
+
+- `stream [hz]` gibt bis `q` fortlaufend eine Zeile `D ...` je Messung aus (Standard 50 Hz, Spalten in der
+  Zeile `HDR ...`, Format in `examples/revb_test/Stream.h`). IMU und Magnetometer roh in Chip-Achsen.
+- `cal set <name> <werte>` setzt ein Feld des Kalibrierblocks im RAM, mit denselben Grenzen wie die geführten
+  Kalibrierungen: `gyro_bias_dps`, `acc_offset_ms2`, `acc_scale`, `mag_offset_gauss`, `mag_soft_iron` (9 Werte),
+  `mag_field_gauss`, `imu_axis` und `mag_axis` (je `map0 map1 map2 sign0 sign1 sign2`), `baro_ground_pa`,
+  `adc_gain <kanal> <faktor>`, `ina_offset_a`, `ina_gain`, `servo_us <kanal> <mitte> <min> <max>`, `valid <bits>`.
+  Danach `cal save`.
+
+Beides ist gegen die simulierte Platine getestet und baut; an der echten Platine noch nicht gelaufen.
 
 ## 3a. Bestückungsliste: fehlende Teile ein- und austragen
 

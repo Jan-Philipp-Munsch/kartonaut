@@ -249,6 +249,13 @@ uint32_t SDLogger_queued() { return ring.count(); }
 
 void SDLogger_setOverwrite(bool on) { ring.setOverwrite(on); }
 
+uint32_t SDLogger_setPreroll(uint32_t max_records) {
+  const uint32_t cap = ring.capacityRecords() / 5;      // der Flug braucht den größeren Teil
+  if (max_records > cap) max_records = cap;
+  ring.setOverwriteLimit(max_records);
+  return max_records;
+}
+
 void SDLogger_pack(const SDFrame& f, void* out) {
   Record& r = *(Record*)out;
   r.ts_us  = micros();

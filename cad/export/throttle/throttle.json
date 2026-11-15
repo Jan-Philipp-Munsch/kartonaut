@@ -1,0 +1,33 @@
+{
+ "mass_g": 26.3,
+ "parts": {
+  "Drosselträger (Druckteil)": 4.49,
+  "Servo 4,3 g": 5.8,
+  "Servohebel": 0.3,
+  "Stange Servo–Kurbel": 0.15,
+  "Hebel 1 (Stahlblech 1 mm)": 2.84,
+  "Pad 1 (Ofenmörtel)": 1.87,
+  "Hebel 2 (Stahlblech 1 mm)": 2.8,
+  "Pad 2 (Ofenmörtel)": 1.87,
+  "Koppelstange (Stahlblech 1 mm)": 2.65,
+  "Schraube M3 Drehachse 1": 1.1,
+  "Hülse Drehachse 1": 0.25,
+  "Zapfen Ø 2 Kurbel 1": 0.2,
+  "Schraube M3 Drehachse 2": 1.1,
+  "Hülse Drehachse 2": 0.25,
+  "Zapfen Ø 2 Kurbel 2": 0.2,
+  "Klemmschraube M2": 0.4
+ },
+ "link_mm": 8.48,
+ "servo_range_deg": [
+  -29.8,
+  27.0
+ ],
+ "clearance_mm": {
+  "±5° in einer Achse": 4.28,
+  "±5° in beiden Achsen": 2.41,
+  "±7° in einer Achse": 1.74,
+  "±7° in beiden Achsen": -0.75
+ },
+ "servo_reserve": 1.32
+}

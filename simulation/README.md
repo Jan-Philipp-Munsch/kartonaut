@@ -13,7 +13,7 @@ laufen ohne Installation aus dem Ordner `simulation/`; alternativ `pip install -
 
 ```bash
 cd simulation
-python -m pytest tests                      # 52 Tests
+python -m pytest tests                      # 67 Tests
 python scripts/fit_servo.py                 # Servo-Fit gegen die Messung -> out/servo_fit.png
 python scripts/run_nominal.py               # Nominallauf -> out/nominal_*.png
 python scripts/run_nominal.py --controller firmware --vehicle preload --static-error-y 1
@@ -27,6 +27,8 @@ python scripts/landing_study.py             # Landebrennen mit der E12 nach Mass
 python scripts/export_landing_firmware.py   # E12-Kurve und Prüfvektoren des Landeplaners für die Firmware
 python scripts/throttle_study.py            # Landebrennen mit Schubdrossel: Masse × f_min, Monte-Carlo
 python scripts/rate_study.py                # 100 gegen 250 Hz, Kardan-Reaktionsmoment, D-Tiefpass, Slew
+python scripts/pinpoint_study.py            # Punktlandung: Flugprofil, Wind, Drossel, Regelung, Sensorik (Monte-Carlo)
+python scripts/motorwechsel_study.py        # Motorwechsel im Magazin: Rutschzeit, erlaubte Schublücke, Drossel gegen Masse
 ```
 
 Alle Ausgaben landen in `simulation/out/` (per `.gitignore` ausgeschlossen). Ein Lauf über
@@ -67,6 +69,8 @@ simulation/
              sim.py        Lauf: Regelschleife alle 4 ms (250 Hz), dazwischen RK4 mit 1 ms, Quaternion normiert
              montecarlo.py Port von TVC6DOF.m
              tuning.py     Port von pid_tuner.m
+             pinpoint.py   Punktlandung: ganzer Flug in 6DOF fuer viele Laeufe zugleich, mit Wind, Aerodynamik,
+                           Sensoren (GPS, Magnetometer, Kamera, Barometer, IMU), Kalman-Filter und Landefuehrung
              plots.py      Höhe/Lage/Servo, 3D-Trajektorien, Servo-Fit
   tests/     Quaternionnorm, Schwebe-Gleichgewicht, Momentenvorzeichen, Regler gegeneinander
   scripts/   run_nominal.py, run_montecarlo.py, tune_pid.py, fit_servo.py, compare_gains.py,
@@ -74,7 +78,9 @@ simulation/
              export_firmware_vectors.py (Software-in-the-Loop-Vektoren für die Firmware-Tests),
              landing_study.py, export_landing_firmware.py (Landebrennen, tvcsim/landing.py),
              throttle_study.py (Schubdrossel, tvcsim/throttle.py),
-             rate_study.py (Regeltakt, Reaktionsmoment, D-Tiefpass, Slew)
+             rate_study.py (Regeltakt, Reaktionsmoment, D-Tiefpass, Slew),
+             pinpoint_study.py (Punktlandung, tvcsim/pinpoint.py),
+             motorwechsel_study.py (Motorwechsel im Magazin, tvcsim/motorswap.py)
 ```
 
 ## Regeltakt 250 Hz und Reaktionsmoment des Kardans (seit 05.11.2026)
@@ -175,6 +181,64 @@ Linear (offener Kreis mit diskretem Regler, Halteglied, IMU-Mittelung, Totzeit, 
 für die Stabilität nötig: sie liegt beim Zwei- bis Sechsfachen dessen, was der Regler braucht, und unter der
 Servo-Grenze. `A_NORM_TAU_S` 0,095 s wie umgesetzt. Nach E01 (W5652H-Totzeit und Bandbreite) die Tabellen mit
 `--servo-model` bzw. neuen `ServoParams` neu rechnen.
+
+
+## Punktlandung in 6DOF mit Sensoren und Navigation (seit 15.11.2026)
+
+`tvcsim/pinpoint.py` ist ein eigenes, vektorisiertes Modell neben `sim.py`: Es rechnet den ganzen Flug
+(Aufstieg, gegebenenfalls freier Fall, Landebrennen, Aufsetzen) für alle Läufe eines Monte-Carlo gleichzeitig
+(500 Flüge in etwa 5 s) und enthält, was `sim.py` nicht hat: Wind mit Böen, das aerodynamische Moment der
+finnenlosen Rakete, Sensorfehler einschließlich Kalibrierung (IMU, Barometer, Magnetometer, GPS, Kamera mit
+Zielmarke, Laser-Höhe), einen Navigationsfilter (`KalmanZ` der Firmware auf drei Achsen mit Fehlerzustand
+erweitert) und eine Führung auf den Zielpunkt (Drossel senkrecht, Kippwinkel seitlich). Koordinaten wie die
+Firmware (Ost, Nord, oben; Körper-z zur Spitze), nicht wie Simulink. Der Lageregler ist das PID der Firmware
+als Bandbreite und Dämpfung (Kp 2 / Ki 1 / Kd 0,45 bei 0,021 kg·m² sind 7,4 rad/s und 0,83).
+
+```python
+from tvcsim.pinpoint import profile, run, summarize
+res = run(profile("wechsel", wind10=3.0), n=500, seed=0)     # Profile: bps, langsam, wechsel, huepfer, erstflug
+print(summarize(res))                                        # Erfolgsanteile, Ablage, Sinkrate, Kippwinkel, ...
+```
+
+`scripts/pinpoint_study.py` rechnet 157 Szenarien in acht Blöcken (Flugprofil × Wind, Schubdrossel,
+Stabilisierung, Sensorik, Unsicherheitsbudget, Erstflug im Wind, Hebel für den freien Fall, Einbau von zwei
+Motoren) parallel auf allen
+Kernen und schreibt Tabellen, `out/pinpoint_study.csv` und fünf Bilder. Modell, Annahmen und alle Ergebnisse:
+`docs/Navigation_und_Landung_2026-11-15.md`. Kurzfassung (500 Läufe je Fall, Erfolg = weich und aufrecht
+im 1-m-Kreis um den Zielpunkt):
+
+| Flugprofil | Wind 0 | 1,5 m/s | 3 m/s | 5 m/s | Ablage bei 3 m/s (50 / 95 %) |
+|---|---|---|---|---|---|
+| `bps`: frei steigen, antriebslos über den Gipfel, Landebrennen (0,6 kg, f_min 0,5) | 7 % | 0 % | 0 % | 0 % | 37 / 51 m |
+| `langsam`: gedrosselt auf 25 m, 1 s Fall, Landebrennen (0,6 kg, f_min 0,35) | 88 % | 55 % | 11 % | 0 % | 2,4 / 8,5 m |
+| `wechsel`: Schweben in 6 m, Motor 2 übernimmt ohne Schublücke (0,8 kg, f_min 0,35) | 98 % | 98 % | 90 % | 26 % | 0,30 / 0,76 m |
+| `huepfer`: ein Motor, 3 m hoch (0,8 kg, f_min 0,35) | 93 % | 94 % | 90 % | 55 % | 0,19 / 0,45 m |
+
+- Ohne Schub kippt die Rakete weg (Querkraft der Spitze 35 cm vor dem Schwerpunkt, Seitenfläche 9 cm über ihm):
+  Kippwinkel bei der Landezündung im Median 26 bis 34° (`bps`), 64° (`langsam` bei 3 m/s Wind).
+- Drossel: kleinster Schub höchstens das halbe Gewicht, also f_min ≤ 0,35 bei 0,8 bis 1,0 kg; mit f_min 0,5 bei
+  0,8 kg nur 56 % weiche Landungen (`wechsel`) bzw. 12 % (`huepfer`).
+- Regelung: Servo-Totzeit ≤ 30 ms (50 ms: 59 %, 80 ms: 0 %), Kardan ±5 bis ±8°, Nullfehler ≤ 1°.
+- Zwei Motoren für `wechsel` (`motor_offset`, `motor_cant`, `motor_ff`): gerade nebeneinander 3 %; schräg durch den
+  Schwerpunkt (je 3,6°) 86 bis 90 % bei 3 m/s Wind wie der ideale Fall; hintereinander mit Zündung beim Brennschluss 90 %.
+- Sensorik bei 6,6 s Flug: nur IMU und Barometer 50 %, mit NEO-6M (auf den Startpunkt eingemessen) 90 %, mit
+  Kamera 92 % und 0,11 m Ablage im Median; unkalibriert 39 %; Kursfehler 30° mit GPS 63 %.
+- Erstflug (`erstflug`, nur Aufstieg): bis 3 m/s Wind Kippwinkel unter 8°, bei 5 m/s verlieren 6 % der Läufe die
+  Lage, mit ±3,75° Kardanbereich schon 8 % bei 4 m/s. Ohne das aerodynamische Moment (wie `sim.py` rechnet) sähe
+  man davon nichts.
+
+**Motorwechsel im Magazin** (`tvcsim/motorswap.py`, `scripts/motorwechsel_study.py`,
+`docs/Motorwechsel_und_Huepfer_2026-11-15.md`): zwei Motoren hintereinander, eine Feder schiebt nach dem
+Brennschluss den zweiten in die Brennstellung. `swap_kinematics()` rechnet das Nachrutschen (etwa 0,1 s bei
+5 N); `PinpointConfig.swap_time` zündet Motor 2 erst nach dem wirklichen Brennschluss plus dieser Zeit. Bis
+0,35 s Schublücke landet `wechsel` aus 6 m wie ohne Lücke (96 bis 99 % bei 1,5 m/s Wind, 79 bis 93 % bei
+3 m/s), über 0,4 s nicht mehr. Dasselbe Skript rechnet den Hüpfer über Masse und Drosseltiefe (0,75 kg
+braucht f_min 0,35, bei 1,05 kg reicht 0,5) und die Massenbilanz ohne Fallschirm.
+
+Die 1D-Studien unten (`landing_study.py`, `throttle_study.py`) bleiben gültig für die senkrechte Frage. Die
+Drosselführung in `pinpoint.py` plant anders als `throttle.py` mit den Momenten der Schubkurve und drosselt
+auch in der Schubspitze, weil die langsamen Profile mit wenig Sinkrate zünden; `throttle.py` und der
+Firmware-Port `ThrottleLaw.*` sind unverändert.
 
 
 ## Landebrennen und Luftwiderstand (seit 23.10.2026)

@@ -103,6 +103,12 @@ elif view == "groundbridge":
     aim((0.8, 1.3, 0.35), ctr, ext.z * 1.05, 900, 1500)
 elif view == "groundbridge_detail":
     aim((0.8, 1.3, 0.45), ctr, max(ext.x, ext.z) * 1.35, 1200, 1100)
+elif view == "throttle":
+    # Schubdrossel (cad/throttle.py) schräg von unten gegen die Düse
+    aim((0.9, -1.0, -1.25), ctr, max(ext) * 1.2, 1300, 1100)
+elif view == "throttle_side":
+    # Drossel im aufgeschnittenen Rohr A, Kardan ausgelenkt, Blick aus -y leicht von unten
+    aim((0.25, -1.0, -0.35), ctr, max(ext) * 1.3, 1300, 1100)
 elif view == "pad_section":
     # Schnitt y = 0 durch die Stütze bei 180°, Blick aus -y
     aim((0.0, -1.0, 0.15), ctr, max(ext.x * 1.08, ext.z * 1.6), 1400, 1000)

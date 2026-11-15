@@ -12,7 +12,7 @@ Durchmesser, der Motor sitzt in einer Kardanaufhängung mit zwei Servos, und ein
 Flugcomputer hält die Rakete während des Brennens aufrecht. Von der Platine bis zu den Reglerparametern
 ist alles in diesem Repository entworfen, simuliert und dokumentiert.
 
-*English version: [README.md](README.md) · Stand: 14.11.2026*
+*English version: [README.md](README.md) · Stand: 15.11.2026*
 
 <table>
 <tr>
@@ -21,7 +21,7 @@ ist alles in diesem Repository entworfen, simuliert und dokumentiert.
 <b>Der Flugcomputer rev B1 ist da.</b> Links: die Platine, wie sie am 5.11.2026 ankam, maschinell mit
 106 Teilen bestückt. Oben: dieselbe Platine als Rendering aus dem KiCad-Projekt, das vollständig aus
 einer Python-Beschreibung der Schaltung erzeugt wird. Als Nächstes: Teensy-Sockel, Stecker und Funkmodul
-von Hand löten, dann der Tischtest.</td>
+von Hand löten, dann der Tischtest mit der <a href="#werkbank-die-platine-am-pc">Werkbank</a>.</td>
 </tr>
 </table>
 
@@ -34,8 +34,8 @@ von Hand löten, dann der Tischtest.</td>
 | Motor | TSP E12 (24 mm, 39 Ns, 3,5 s Brenndauer) im Zwei-Achsen-Kardan mit 2 × FrSky W5652H |
 | Flugcomputer | Teensy 4.1 auf eigener 4-Lagen-Platine: IMU, Barometer, Magnetometer, Leistungsmessung, LoRa 433 MHz, SD, vier Pyrokanäle |
 | Regelung | Lage als Quaternion aus dem Gyro, PID auf Nicken und Gieren, Verstärkungen per Bayes-Optimierung in einer 6DOF-Simulation |
-| Bergung | CO₂-Kartusche drückt die Spitze ab, Fallschirm 125 cm |
-| Erwarteter Flug | etwa 74 m Gipfelhöhe, Neigung unter 2,5° während des Brennens (Simulation, ohne Luftwiderstand) |
+| Bergung | ein Servo sticht im Gipfelpunkt die CO₂-Kartusche an, das Gas drückt die Spitze ab, Fallschirm 125 cm |
+| Erwarteter Flug | etwa 74 m Gipfelhöhe ohne Luftwiderstand, 63 m mit; Neigung während des Brennens wenige Grad, bis 3 m/s Wind unter 8° (Simulation) |
 
 ## Projektstand
 
@@ -58,10 +58,20 @@ von Hand löten, dann der Tischtest.</td>
 - [PR #9](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/9): Löt- und Messanleitung für rev B1,
   Testfirmware für die bestückte IMU, Flug-Firmware mit 250 Hz, PSRAM-Log und Flugschreiber im Flash,
   Bauanleitung der LoRa-Antenne.
-- Im selben Branch: die **[Werkbank](#werkbank-die-platine-am-pc)**, eine Oberfläche im Browser für die
-  Platine am USB, gegen eine simulierte Platine getestet, an der echten noch nicht; dazu die Korrekturen
-  aus der Code-Durchsicht vom 14.11. an der Flug-Firmware (CO₂-Auslösung, Pyro-Puls, Flug-Log). Die
-  58 nativen Firmware-Tests laufen in der CI durch.
+- **[Werkbank](#werkbank-die-platine-am-pc)** (PR #9): Oberfläche im Browser für die Platine am USB mit
+  Live-Verläufen, Prüfungen und geführter Kalibrierung; gegen eine simulierte Platine getestet, an der
+  echten noch nicht.
+- **Testkonsole** `revb_test` (PR #9): `stream` liefert die Rohwerte aller Sensoren fortlaufend,
+  `cal set` nimmt Kalibrierwerte vom PC an.
+- **Flug-Firmware nach der Code-Durchsicht vom 14.11.** (PR #9): der Fallschirm-Servo öffnet im
+  Gipfelpunkt (bisher blieb er zu), der Pyro-Puls läuft die volle Länge, das Log behält an der Rampe nur
+  10 s Vorlauf und lässt den Rest des Puffers für den Flug, die Pins der rev B1 kommen aus einer einzigen
+  Datei, und nach einem Watchdog-Neustart kehrt kein alter Startbereit-Zustand zurück
+  ([PROJECT.md](PROJECT.md) §5, Befunde 24–28). 58 native Tests laufen in der CI durch; an der Platine
+  ist noch nichts davon geprüft.
+- **[Navigation und Punktlandung](#sensorfusion-zustandsschätzung-und-navigation)** (15.11., PR #9):
+  Simulation des ganzen Flugs mit Wind, Aerodynamik, GPS, Magnetometer, Kamera und Navigationsfilter;
+  Anforderungen an Drossel, Regelung und Sensorik abgeleitet. Nur Simulation, nichts davon in der Firmware.
 - [PR #8](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/8): Motorzündung an Bord über Pyro 1,
   ausgelöst durch einen gesicherten Funkbefehl vom Laptop.
 
@@ -76,7 +86,15 @@ von Hand löten, dann der Tischtest.</td>
    Pins, Zustandsspeicher; [PROJECT.md](PROJECT.md) §5, Befunde 24–28) an der Platine prüfen und die
    kleineren Punkte aus Befund 29 abarbeiten.
 4. Bodentests: Übersetzung Servo–Kardan, CO₂-Ausstoß, TVC-Prüfstand mit Propellermotor, Funkreichweite.
-5. ***Kartonaut 1*: geregelter Aufstieg mit einem Motor, Bergung am Fallschirm.**
+5. ***Kartonaut 1*: geregelter Aufstieg mit einem Motor, Bergung am Fallschirm**, nach der Simulation bei
+   höchstens 3 m/s Wind.
+6. Danach die Landung, voraussichtlich zuerst als Hüpfer mit einem Motor (3 m hoch, ohne Fallschirm): Servos
+   und Drossel vermessen (Versuche E01, E05, dazu Zündverzug des Anzünders), die Drossel mit einem Servo bauen
+   ([`cad/throttle.py`](cad/throttle.py)), Fahrwerk konstruieren,
+   Navigationsfilter und Führung in die Firmware.
+7. Parallel das Magazin für den Motorwechsel (zwei Motoren hintereinander) als Tischversuch, danach die
+   Landung mit zwei Motoren aus 6 m
+   ([docs/Motorwechsel_und_Huepfer_2026-11-15.md](docs/Motorwechsel_und_Huepfer_2026-11-15.md)).
 
 Details und Änderungsprotokoll in [PROJECT.md](PROJECT.md), Baulog in [docs/BUILD.md](docs/BUILD.md).
 
@@ -131,12 +149,119 @@ Erste Version: gegen die simulierte Platine getestet (18 Tests in der CI), an de
 noch nicht gelaufen. Verfahren, Aufbau und Grenzen stehen in
 [`firmware/tools/bench_gui/`](firmware/tools/bench_gui/README.md).
 
+## Sensorfusion, Zustandsschätzung und Navigation
+
+Der Flugcomputer schätzt heute **Lage** und **Höhe**. Für eine Landung am Zielpunkt kommt die **seitliche
+Position** dazu, und aus dem Halten der Lage wird eine Führung. Die Überlegungen dazu und eine
+Monte-Carlo-Studie über Flugprofil, Wind, Schubdrossel, Regelung und Sensorik stehen in
+[docs/Navigation_und_Landung_2026-11-15.md](docs/Navigation_und_Landung_2026-11-15.md).
+
+| Ebene | Heute im Flug-Code | Für die Punktlandung (simuliert, noch nicht in der Firmware) |
+|---|---|---|
+| Lage | Gyro-Quaternion mit 250 Hz aus den gemittelten FIFO-Werten der IMU. Auf der Rampe stützen Schwerkraft und Magnetometer die Lage und lernen den Gyro-Nullpunkt, ab dem Start läuft nur der Gyro | unverändert; im Modell nach 7 s auf 0,7° genau |
+| Höhe | Kalman-Filter aus Beschleunigung und Barometer (Höhe, Steiggeschwindigkeit) mit Ausreißertor gegen Druckstöße | dazu ein Laser-Höhenmesser für die letzten Meter |
+| Position | fehlt | derselbe Filter je Achse mit einem dritten Zustand für den Beschleunigungsfehler, gestützt durch GPS relativ zum eingemessenen Startpunkt und wahlweise eine Kamera mit Zielmarke |
+| Kurs | Magnetometer, nur auf der Rampe | verbindet die GPS-Koordinaten mit den Körperachsen, in denen der Kardan stellt; auf 10° nötig |
+| Führung | Schubrichtung senkrecht halten | die Drossel führt senkrecht auf Höhe null zum Brennschluss, der Kippwinkel seitlich auf den Zielpunkt |
+
+Die Grundgedanken:
+
+- **Schnell statt glatt.** Regelung und Servos laufen mit 250 Hz. Gegen Vibrationen wird über die IMU-Werte
+  eines Takts gemittelt statt träge gefiltert; sonst faltet sich eine Schwingung des Motors zu einer
+  scheinbaren Drehung herunter, die kein Servo mehr glättet.
+- **Im Flug nur der Gyro.** Unter Schub misst der Beschleunigungssensor den Schub und nicht die Schwerkraft,
+  und das Magnetometer sitzt neben den Servoströmen. Beide stützen deshalb nur auf der Rampe.
+- **Trägheitsnavigation trägt Sekunden, nicht länger.** 0,3° Lagefehler oder 5 mg Nullpunktfehler sind nach
+  7 s gut 1 m. Für einen Hüpfer reicht die IMU, für alles Längere braucht es GPS oder Kamera.
+- **GPS relativ statt absolut.** Wird der Zielpunkt vor dem Start mit demselben Empfänger eingemessen, zählt
+  nur, wie weit sein Fehler während des Flugs wandert. Die Kamera wird mit sinkender Höhe genauer und braucht
+  keinen Kurs.
+
+<img src="docs/img/sim/pinpoint_profiles.png" width="720" alt="Aufsetzpunkte von je 500 simulierten Landungen für vier Flugprofile bei 3 m/s Wind">
+
+Was die Simulation dazu sagt (500 Flüge je Fall mit gestreuter Brennkurve, Stellgliedern, Masse,
+Aerodynamik, Wind, Sensorrauschen und Kalibrierfehlern; Erfolg = weich und aufrecht im 1-m-Kreis um das Ziel):
+
+| Flugprofil | Windstill | 3 m/s Wind | Ablage bei 3 m/s (Median / 95 %) |
+|---|---|---|---|
+| frei steigen, antriebslos über den Gipfel, Landebrennen (wie Scout F) | 7 % | 0 % | 37 m / 51 m |
+| gedrosselt auf 25 m, eine Sekunde Fall, Landebrennen | 88 % | 11 % | 2,4 m / 8,5 m |
+| Schweben in 6 m, der zweite Motor übernimmt ohne Schublücke | 98 % | 90 % | 0,30 m / 0,76 m |
+| Hüpfer auf 3 m mit einem Motor | 93 % | 90 % | 0,19 m / 0,45 m |
+
+- **Nie ohne Schub.** Die finnenlose Rakete kippt antriebslos weg; bei der Landezündung steht sie im Median
+  26 bis 34° schief. Wo der Schub nie aussetzt, hält der Kardan die Lage.
+- **Schubdrossel:** Der kleinste Schub darf höchstens das halbe Gewicht sein, das heißt Schubfaktor 0,35 bei
+  0,8 bis 1,0 kg. Mit 0,5 landet bei 0,8 kg nur noch gut die Hälfte weich.
+- **Stabilisierung:** Servo-Totzeit höchstens 30 ms (bei 50 ms 59 %, bei 80 ms 0 %), Kardan ±5 bis ±8°,
+  Nullstellung auf 1°.
+- **Zwei Motoren:** Nebeneinander ist verworfen (Platz im Rohr, Stellweg des Kardans). Hintereinander in
+  einem Magazin mit Motorwechsel geht im Modell, solange die Rakete höchstens 0,35 s ohne Schub ist; siehe
+  den nächsten Abschnitt.
+- **Sensorik:** nur IMU und Barometer 50 %, mit dem vorhandenen GPS 90 %, mit Kamera 0,11 m Ablage im Median.
+  Ohne Kalibrierung der Sensoren 39 %; ein Kursfehler von 30° kostet mit GPS ein Drittel der Landungen.
+- **Fläche und Wind:** ein Kreis mit 1 m Radius fängt 95 % der Landungen bis 3 m/s Wind; bei 5 m/s hält die
+  Rakete den Punkt nicht mehr.
+- **Für den Erstflug:** mit dem aerodynamischen Moment im Modell verliert *Kartonaut 1* ab 5 m/s Wind in 6 %
+  der Läufe die Lage. Empfehlung: nicht über 3 m/s starten.
+
+Das sind Modellwerte. Sie hängen an Annahmen, die erst Versuche prüfen: der Aerodynamik der finnenlosen
+Rakete, der Totzeit der Servos und der Kennlinie der Drossel (Abschnitt 6 des Dokuments).
+
+```bash
+cd simulation && python scripts/pinpoint_study.py     # 157 Szenarien, 2 bis 5 Minuten
+```
+
+## Motorwechsel, Schubdrossel und der Hüpfer
+
+Für die Landung mit zwei Motoren sollen die Motoren hintereinander sitzen. Die Idee ist ein Magazin mit
+„Kugelschreiber-Logik“: Der Schub des ersten Motors entriegelt die Mechanik, nach dem Brennschluss wirft eine
+Feder die leere Hülse aus und schiebt den zweiten Motor in die Brennstellung, wo er zündet. Rechnung, Bilder
+und offene Punkte in
+[docs/Motorwechsel_und_Huepfer_2026-11-15.md](docs/Motorwechsel_und_Huepfer_2026-11-15.md).
+
+![Prinzip des Motorwechsels im Magazin](docs/img/sim/motorwechsel_konzept.png)
+
+- **Das Nachrutschen dauert etwa 0,1 s** (Feder 5 N). Mit dem Zündverzug des Anzünders ist die Rakete 0,15
+  bis 0,35 s ohne Schub.
+- **Bis 0,35 s Lücke landet sie aus 6 m so gut wie ohne Lücke** (96 bis 99 % im 1-m-Kreis bei 1,5 m/s Wind,
+  79 bis 93 % bei 3 m/s). Über 0,4 s fehlt die Zeit zum Bremsen. Der Zündverzug ist nicht gemessen.
+- **Die Pads braucht jede Variante,** und die Masse hilft: Bei 0,75 kg muss der Schubfaktor 0,35 sein, bei
+  1,05 kg reicht 0,5.
+- **Der Fallschirm entfällt bei diesen Flügen** (aus 3 bis 9 m öffnet er nicht). Das macht 94 g frei; Drossel und
+  Beine brauchen etwa 116 g.
+- **Empfehlung:** zuerst der Hüpfer mit einem Motor (94 % bei 1,5 m/s Wind, keine Wechselmechanik), das
+  Magazin parallel als Tischversuch.
+
+**Schubdrossel mit einem Servo** ([`cad/throttle.py`](cad/throttle.py), Konzept): Zwei Pads drehen sich wie
+eine Schere unter der Düse, eine Koppelstange hält sie auf demselben Winkel, ein Mikroservo am Motoradapter
+stellt beide. Die Kraft des Strahls geht in die Drehachsen, nicht ins Servo. Das wiegt 26 g statt 60 g mit zwei
+Servos und lässt dem Kardan ±5° in beiden Achsen (2,4 mm Luft zur Rohrwand). Offen sind die Querkraft des
+Strahls auf die Pads und die Wärme am Druckteil.
+
+![Kinematik der Schubdrossel](docs/img/cad/throttle_kinematik.png)
+
+<table>
+<tr>
+<td align="center" width="33%"><img src="docs/img/cad/throttle_closed.png" height="260" alt="Drossel geschlossen"><br><sub>geschlossen, von unten</sub></td>
+<td align="center" width="33%"><img src="docs/img/cad/throttle_open.png" height="260" alt="Drossel offen"><br><sub>offen</sub></td>
+<td align="center" width="33%"><img src="docs/img/cad/throttle_in_tube.png" height="260" alt="Drossel im Rohr"><br><sub>im Rohr, Kardan 5°/5°</sub></td>
+</tr>
+</table>
+
+![Erlaubte Schublücke beim Motorwechsel](docs/img/sim/motorwechsel_luecke.png)
+
+![Drosseltiefe gegen Masse und Massenbilanz](docs/img/sim/motorwechsel_drossel_masse.png)
+
+Das Magazin ist ein Konzept und nicht konstruiert, die Drossel ist konstruiert und nicht gebaut; alle Zahlen
+sind Modellwerte.
+
 ## Was drin ist
 
 | Teil | Inhalt | Wo |
 |---|---|---|
 | Mainboard | KiCad-Projekt aus `circuit.py` erzeugt: Schaltplan, Layout, Gerber/BOM/CPL, Datenblatt | [hardware/mainboard/](hardware/mainboard/README.md) |
-| Simulation | Python-6DOF-Modell `tvcsim` mit 1:1 portiertem Firmware-Regler, Reglerabstimmung, Landestudien | [simulation/](simulation/README.md) |
+| Simulation | Python-6DOF-Modell `tvcsim` mit 1:1 portiertem Firmware-Regler, Reglerabstimmung, Landestudien, Punktlandung mit Sensoren und Navigation | [simulation/](simulation/README.md) |
 | Firmware | PlatformIO für Teensy 4.1: Flugsoftware, Sensortreiber, Testkonsole mit Oberfläche am PC, native Tests | [firmware/](firmware/README.md) |
 | Mechanik | parametrisches CAD für Druckteile, Startrampe, Prüfstand; Massen- und Trägheitsmodelle | [cad/](cad/README.md) |
 | Bauanleitung | Module, Teileliste, Bauschritte, Kabelplan ([PDF](docs/bauanleitung/Bauanleitung_Kartonaut1.pdf)) | [docs/Bauanleitung_Kartonaut1.md](docs/Bauanleitung_Kartonaut1.md) |

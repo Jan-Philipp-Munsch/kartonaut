@@ -41,6 +41,7 @@ nur die Bilder.
 | `testrig.py` | TVC-Prüfstand um die gebaute Rakete: Gestell, Rahmen, Klemmkragen mit Lukenfenstern, Prop-Adapter mit BR2814 und Propeller, Schutzkäfig; Prüfung, Druckteile einzeln als STL (siehe unten) |
 | `build.py` | Zusammenbau, Export, Kollisionsprüfung, Render-Aufrufe |
 | `groundbridge.py` | Gehäuse der Bodenstations-Funkbrücke (Raspberry Pi Pico + E22-400T22S) mit senkrechtem Halbwellen-Dipol in einer Leiste, Stativmutter 1/4"; Druckteile als STL (siehe unten) |
+| `throttle.py` | Schubdrossel mit einem Servo für den Hüpfer (Konzept): zwei Scheren-Pads, Koppelstange, Mikroservo am Motoradapter; Prüfung gegen Rohr A bei ausgelenktem Kardan, Massen, Kinematikbild, eigener Export (siehe unten) |
 | `landingpad.py` | Startrampe: Platte mit Loch, drei verstellbare Beine, Startstützen bei 45°/135°/250°; Prüfung gegen die gebaute Rakete, eigener Export und Bilder (siehe unten) |
 | `mass_model.py` | Stabmodell für Schwerpunkt und Trägheitstensor (Konfigurationen `voll` und `erstflug`) |
 | `modular.py`, `modular_params.py` | Modulbauweise *Kartonaut 1* Stand 2b: Rohre A/B/C mit Bohrungen und Luken, Druckteile, gebauter Kardan als Netz, Servos und Gestänge schematisch, Kollisionsprüfung, Gesamtmodell STEP/GLB, Bilder (siehe unten) |
@@ -250,6 +251,35 @@ Antrieb, Käfig und Kragen gegen Gestell, Rahmen, Lagerböcke und ESC bei Rig ±
 Nicht modelliert: Kabel (ESC und 4S-Akku sitzen als Klotz auf dem Rahmen), Gurt-Anschläge, Schrauben. Maße des BR2814
 (Glocke Ø 35 × 36, Lochkreuz 16/19, 75 g) sind Annahmen für einen 2814-Außenläufer; am Teil nachmessen und `PM_*` oben in
 `testrig.py` anpassen.
+
+## Schubdrossel mit einem Servo (`throttle.py`, 15.11.2026, Konzept)
+
+| Kinematik und Prüfungen | geschlossen | offen | im Rohr, Kardan 5°/5° |
+|---|---|---|---|
+| ![](../docs/img/cad/throttle_kinematik.png) | ![](../docs/img/cad/throttle_closed.png) | ![](../docs/img/cad/throttle_open.png) | ![](../docs/img/cad/throttle_in_tube.png) |
+
+`python cad/throttle.py` baut die Drossel für den Hüpfer, prüft sie und schreibt `export/throttle.step` (mit Motor und
+Adapter), `export/throttle/` (Druckteil als STL, die drei Blechteile als STEP, `throttle.json` mit Massen und Ergebnissen)
+und vier Bilder. Hintergrund: `docs/Motorwechsel_und_Huepfer_2026-11-15.md` §4.
+
+**Aufbau:** Ein gedruckter Klemmring sitzt auf dem Motoradapter direkt über der Düsenebene und schwenkt mit dem Kardan.
+Zwei Blechhebel (Stahl 1 mm) mit je einem Mörtelklotz 18 × 13 × 4 drehen sich um senkrechte M3-Achsen bei x = ±20 wie eine
+Schere 1,5 mm unter der Düse. Die Kraft des Strahls auf ein Pad wirkt längs der Achse und geht in die Schraube. Beide Hebel
+drehen gleichsinnig; eine Koppelstange (Blechbogen um die Düse, unter den Hebeln) verbindet zwei Kurbeln von 8 mm zu einem
+Parallelkurbelgetriebe, die Winkel sind damit exakt gleich. Ein Mikroservo (Klasse 4,3 g, 20 × 8,5 × 17, Welle nach unten)
+liegt tangential am Adapter, dort, wohin kein Pad schwenkt; sein Hebel (4 mm) zieht über eine 8,5 mm lange Stange am
+Kurbelzapfen von Hebel 1.
+
+**Geprüft** (Ausgabe des Skripts): 16 Teile, 26,3 g (vorher 60 g mit zwei Servos angenommen); Teile gegeneinander frei über
+0 … 30° Öffnungswinkel; Strahlkegel ±15° frei bei offenen Pads (3,3 mm); mit dem Kardan geschwenkt gegen Rohr A: 4,3 mm Luft
+bei ±5° in einer Achse, 2,4 mm bei ±5°/±5°, 1,7 mm bei ±7° in einer Achse, **−0,7 mm bei ±7°/±7°** (Ecke des Servos;
+das Skript meldet das, wertet es aber nicht als Fehler, weil Firmware und Simulation mit ±5° arbeiten). Servo −30° … +27°
+für den ganzen Weg, Übersetzung 1,9 : 1.
+
+**Offen:** Querkraft des Strahls auf die Pad-Kante (im Skript ein Viertel der Axialkraft angenommen, damit 1,3-fache
+Reserve am Servo in der Schubspitze) und die Kennlinie Stellung → Schub: beides Versuch E05. Werkstoff des Trägers (PETG
+wird an der Düse vermutlich weich). Der Adapter muss bis 0,5 mm über die Düsenebene reichen [Annahme, am Teil messen].
+Servotyp und Maße aus dem Datenblatt prüfen; die Laschenecken des Servos werden auf r = 25,6 abgerundet.
 
 ## Startrampe (`landingpad.py`, 22.10.2026; auf die gebaute Rakete umgestellt 27.10.2026)
 

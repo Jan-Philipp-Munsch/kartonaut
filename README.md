@@ -12,7 +12,7 @@ is a 75 mm cardboard tube, the motor sits in a servo-driven gimbal, and a home-d
 holds the rocket upright during the burn. Everything from the circuit board to the control gains is
 designed, simulated and documented in this repository.
 
-*Deutsche Fassung: [README.de.md](README.de.md) · detailed documents are in German · last updated: 14 Nov 2026*
+*Deutsche Fassung: [README.de.md](README.de.md) · detailed documents are in German · last updated: 15 Nov 2026*
 
 <table>
 <tr>
@@ -21,7 +21,7 @@ designed, simulated and documented in this repository.
 <b>Flight computer rev B1 has arrived.</b> Left: the board as delivered on 5 Nov 2026, machine-assembled
 with 106 parts. Above: the same board as rendered from the KiCad project, which is generated entirely
 from a Python description of the circuit. Next step: hand-soldering the Teensy sockets, connectors and
-radio, then the bench test.</td>
+radio, then the bench test with the <a href="#werkbank-the-board-on-your-pc">Werkbank</a>.</td>
 </tr>
 </table>
 
@@ -34,8 +34,8 @@ radio, then the bench test.</td>
 | Motor | TSP E12 (24 mm, 39 Ns, 3.5 s burn) in a two-axis gimbal with 2 × FrSky W5652H servos |
 | Flight computer | Teensy 4.1 on a custom 4-layer board: IMU, barometer, magnetometer, power monitor, LoRa 433 MHz, SD, four pyro channels |
 | Control | gyro quaternion, PID on pitch and yaw, gains from Bayesian optimisation in a 6DOF simulation |
-| Recovery | CO₂ cartridge pushes off the nose cone, 125 cm parachute |
-| Predicted flight | about 74 m apogee, tilt below 2.5° during the burn (simulation, no drag) |
+| Recovery | a servo pierces the CO₂ cartridge at apogee, the gas pushes off the nose cone, 125 cm parachute |
+| Predicted flight | about 74 m apogee without drag, 63 m with; tilt of a few degrees during the burn, below 8° in up to 3 m/s wind (simulation) |
 
 ## Status
 
@@ -57,10 +57,18 @@ radio, then the bench test.</td>
 - [PR #9](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/9): soldering and measurement guide for
   rev B1, test firmware for the fitted IMU, flight firmware at 250 Hz with PSRAM log and flash flight
   recorder, LoRa antenna build guide.
-- On the same branch: the **[Werkbank](#werkbank-the-board-on-your-pc)**, a browser front end for the
-  board on USB, tested against a simulated board, not yet on the real one; plus the fixes from the
-  14 Nov code review of the flight firmware (CO₂ release, pyro pulse, flight log). The 58 native
-  firmware tests pass in CI.
+- **[Werkbank](#werkbank-the-board-on-your-pc)** (PR #9): browser front end for the board on USB with
+  live plots, checks and guided calibration; tested against a simulated board, not yet on the real one.
+- **Bench console** `revb_test` (PR #9): `stream` sends the raw values of all sensors continuously,
+  `cal set` accepts calibration values from the PC.
+- **Flight firmware after the 14 Nov code review** (PR #9): the parachute servo opens at apogee (it
+  used to stay closed), the pyro pulse runs its full length, the log keeps only 10 s of pre-roll on the
+  pad and leaves the rest of the buffer for the flight, the rev B1 pins come from a single file, and no
+  stale launch-ready state returns after a watchdog reset ([PROJECT.md](PROJECT.md) §5, findings 24–28).
+  58 native tests pass in CI; none of this has been checked on the board yet.
+- **[Navigation and pinpoint landing](#sensor-fusion-state-estimation-and-navigation)** (15 Nov, PR #9):
+  simulation of the whole flight with wind, aerodynamics, GPS, magnetometer, camera and navigation filter;
+  requirements for throttle, control and sensors derived from it. Simulation only, none of it in the firmware.
 - [PR #8](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/8): on-board motor ignition through
   pyro 1, triggered by an authenticated radio command from a laptop.
 
@@ -75,7 +83,15 @@ radio, then the bench test.</td>
    log, pins, state store; [PROJECT.md](PROJECT.md) §5, findings 24–28) and work through the smaller
    items in finding 29.
 4. Ground tests: servo-to-gimbal ratio, CO₂ ejection, TVC test rig with a propeller motor, radio range.
-5. ***Kartonaut 1*: controlled ascent on one motor, parachute recovery.**
+5. ***Kartonaut 1*: controlled ascent on one motor, parachute recovery**, in at most 3 m/s wind according
+   to the simulation.
+6. After that the landing, probably first as a hop on one motor (3 m high, no parachute): characterise
+   servos and throttle (experiments E01, E05, plus the igniter delay), build the one-servo throttle
+   ([`cad/throttle.py`](cad/throttle.py)), design the landing gear,
+   navigation filter and guidance in the firmware.
+7. In parallel the magazine for the motor swap (two motors in line) as a bench test, then the two-motor
+   landing from 6 m
+   ([docs/Motorwechsel_und_Huepfer_2026-11-15.md](docs/Motorwechsel_und_Huepfer_2026-11-15.md), German).
 
 Details and changelog in [PROJECT.md](PROJECT.md), build log in [docs/BUILD.md](docs/BUILD.md).
 
@@ -131,12 +147,124 @@ First version: tested against the simulated board (18 tests in CI), it has not r
 yet. Methods, structure and limits are in
 [`firmware/tools/bench_gui/`](firmware/tools/bench_gui/README.md) (German).
 
+## Sensor fusion, state estimation and navigation
+
+Today the flight computer estimates **attitude** and **altitude**. Landing on a target adds **horizontal
+position**, and holding attitude turns into guidance. The reasoning and a Monte Carlo study over flight
+profile, wind, thrust throttling, control and sensors are in
+[docs/Navigation_und_Landung_2026-11-15.md](docs/Navigation_und_Landung_2026-11-15.md) (German).
+
+| Layer | In the flight code today | For a pinpoint landing (simulated, not yet in the firmware) |
+|---|---|---|
+| Attitude | gyro quaternion at 250 Hz from the averaged FIFO samples of the IMU. On the pad, gravity and the magnetometer aid the attitude and learn the gyro bias; from lift-off on, the gyro runs alone | unchanged; accurate to 0.7° after 7 s in the model |
+| Altitude | Kalman filter from acceleration and barometer (altitude, vertical speed) with an outlier gate against pressure spikes | plus a laser rangefinder for the last metres |
+| Position | missing | the same filter per axis with a third state for the acceleration error, aided by GPS relative to the surveyed launch point and optionally a camera tracking a target marker |
+| Heading | magnetometer, on the pad only | ties the GPS coordinates to the body axes in which the gimbal acts; needed to within 10° |
+| Guidance | keep the thrust vertical | the throttle guides vertically to zero altitude at burnout, the tilt angle guides sideways to the target |
+
+The main ideas:
+
+- **Fast rather than smooth.** Control and servos run at 250 Hz. Against vibration, the IMU samples of one
+  cycle are averaged instead of low-pass filtered; otherwise a motor vibration aliases down to an apparent
+  rotation that no servo smooths out.
+- **Gyro only in flight.** Under thrust the accelerometer measures thrust, not gravity, and the magnetometer
+  sits next to the servo currents. Both aid the attitude on the pad only.
+- **Inertial navigation lasts seconds, not longer.** 0.3° of attitude error or 5 mg of accelerometer bias is
+  a good 1 m after 7 s. The IMU is enough for a hop; anything longer needs GPS or a camera.
+- **GPS relative, not absolute.** If the target is surveyed with the same receiver before launch, only the
+  drift of its error during the flight counts. The camera gets more accurate as the rocket descends and
+  needs no heading.
+
+<img src="docs/img/sim/pinpoint_profiles.png" width="720" alt="Touchdown points of 500 simulated landings each for four flight profiles in 3 m/s wind">
+
+What the simulation says (500 flights per case with scatter in thrust curve, actuators, mass, aerodynamics,
+wind, sensor noise and calibration errors; success = soft and upright within 1 m of the target; plot labels
+are in German):
+
+| Flight profile | Calm | 3 m/s wind | Miss distance at 3 m/s (median / 95 %) |
+|---|---|---|---|
+| free ascent, unpowered over apogee, landing burn (as Scout F) | 7 % | 0 % | 37 m / 51 m |
+| throttled ascent to 25 m, one second of free fall, landing burn | 88 % | 11 % | 2.4 m / 8.5 m |
+| hover at 6 m, the second motor takes over without a thrust gap | 98 % | 90 % | 0.30 m / 0.76 m |
+| hop to 3 m on a single motor | 93 % | 90 % | 0.19 m / 0.45 m |
+
+- **Never without thrust.** The finless rocket tips over when unpowered; at landing ignition it is tilted
+  26 to 34° in the median. Where thrust never stops, the gimbal holds the attitude.
+- **Throttle:** the lowest thrust must be at most half the weight, i.e. a thrust factor of 0.35 at 0.8 to
+  1.0 kg. With 0.5, only a good half of the landings at 0.8 kg are soft.
+- **Stabilisation:** servo dead time at most 30 ms (59 % at 50 ms, 0 % at 80 ms), gimbal range ±5 to ±8°,
+  gimbal zero within 1°.
+- **Two motors:** side by side is ruled out (space in the tube, gimbal travel). In line in a magazine with a
+  motor swap works in the model as long as the rocket is without thrust for at most 0.35 s; see the next
+  section.
+- **Sensors:** IMU and barometer alone 50 %, with the GPS already on hand 90 %, with a camera 0.11 m median
+  miss. Without sensor calibration 39 %; a heading error of 30° costs a third of the landings when GPS guides.
+- **Area and wind:** a circle of 1 m radius catches 95 % of the landings up to 3 m/s wind; at 5 m/s the
+  rocket no longer holds its position.
+- **For the first flight:** with the aerodynamic moment in the model, *Kartonaut 1* loses attitude in 6 % of
+  the runs from 5 m/s wind. Recommendation: do not launch above 3 m/s.
+
+These are model values. They rest on assumptions that only experiments can check: the aerodynamics of the
+finless rocket, the servo dead time and the throttle characteristic (section 6 of the document).
+
+```bash
+cd simulation && python scripts/pinpoint_study.py     # 157 scenarios, 2 to 5 minutes
+```
+
+## Motor swap, throttle and the hop
+
+For the two-motor landing the motors are to sit in line. The idea is a magazine with "ballpoint-pen logic":
+the thrust of the first motor unlatches the mechanism, after burnout a spring ejects the spent case and pushes
+the second motor into the firing position, where it ignites. Calculation, figures and open points in
+[docs/Motorwechsel_und_Huepfer_2026-11-15.md](docs/Motorwechsel_und_Huepfer_2026-11-15.md) (German).
+
+![Principle of the motor swap in the magazine](docs/img/sim/motorwechsel_konzept.png)
+
+*Panels: 1 before launch, spring loaded, latch holds the stack; 2 motor 1 burns, thrust lifts the stack 3 mm
+against the stop and the latch springs open; 3 burnout, the spring ejects the case and motor 2 slides down;
+4 motor 2 seated, pawls lock, the contact closes and the igniter fires.*
+
+- **Sliding down takes about 0.1 s** (5 N spring). With the igniter delay the rocket is without thrust for
+  0.15 to 0.35 s.
+- **Up to a 0.35 s gap it lands from 6 m as well as without a gap** (96 to 99 % inside the 1 m circle in
+  1.5 m/s wind, 79 to 93 % in 3 m/s). Above 0.4 s there is not enough time to brake. The igniter delay has
+  not been measured.
+- **Every variant needs the throttle pads,** and mass helps: at 0.75 kg the thrust factor must be 0.35, at
+  1.05 kg 0.5 is enough.
+- **No parachute on these flights** (it does not open from 3 to 9 m). That frees 94 g; throttle and legs
+  need about 116 g.
+- **Recommendation:** the one-motor hop first (94 % in 1.5 m/s wind, no swap mechanism), the magazine as a
+  bench test in parallel.
+
+**Throttle with one servo** ([`cad/throttle.py`](cad/throttle.py), concept): two pads swing like scissors
+below the nozzle, a coupling bar keeps them at the same angle, and one micro servo on the motor adapter moves
+both. The jet force goes into the pivots, not into the servo. It weighs 26 g instead of 60 g with two servos
+and leaves the gimbal ±5° in both axes (2.4 mm clearance to the tube wall). Still open: the side force of the
+jet on the pads and the heat at the printed part.
+
+![Kinematics of the throttle](docs/img/cad/throttle_kinematik.png)
+
+<table>
+<tr>
+<td align="center" width="33%"><img src="docs/img/cad/throttle_closed.png" height="260" alt="Throttle closed"><br><sub>closed, from below</sub></td>
+<td align="center" width="33%"><img src="docs/img/cad/throttle_open.png" height="260" alt="Throttle open"><br><sub>open</sub></td>
+<td align="center" width="33%"><img src="docs/img/cad/throttle_in_tube.png" height="260" alt="Throttle inside the tube"><br><sub>inside the tube, gimbal at 5°/5°</sub></td>
+</tr>
+</table>
+
+![Allowed thrust gap during the motor swap](docs/img/sim/motorwechsel_luecke.png)
+
+![Throttle depth against mass, and mass budget](docs/img/sim/motorwechsel_drossel_masse.png)
+
+The magazine is a concept and has not been designed, the throttle is designed but not built; all numbers are
+model values.
+
 ## What is inside
 
 | Part | What it does | Where |
 |---|---|---|
 | Mainboard | KiCad project generated from `circuit.py`: schematic, layout, Gerber/BOM/CPL, datasheet | [hardware/mainboard/](hardware/mainboard/README.md) |
-| Simulation | Python 6DOF model `tvcsim` with the firmware controller ported 1:1, gain tuning, landing studies | [simulation/](simulation/README.md) |
+| Simulation | Python 6DOF model `tvcsim` with the firmware controller ported 1:1, gain tuning, landing studies, pinpoint landing with sensors and navigation | [simulation/](simulation/README.md) |
 | Firmware | PlatformIO for Teensy 4.1: flight software, sensor drivers, bench-test console with a PC front end, native tests | [firmware/](firmware/README.md) |
 | Mechanics | parametric CAD for printed parts, launch stand, test rig; mass and inertia models | [cad/](cad/README.md) |
 | Build manual | modules, parts list, build steps, cable plan ([PDF](docs/bauanleitung/Bauanleitung_Kartonaut1.pdf)) | [docs/Bauanleitung_Kartonaut1.md](docs/Bauanleitung_Kartonaut1.md) |

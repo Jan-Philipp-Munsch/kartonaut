@@ -22,7 +22,18 @@ struct KalmanZ {
   void setState(float z0_m, float vz0_ms);  // initialer Zustand
   void setPDiag(float pz_var, float pv_var);// initiale Unsicherheit
 
-  // Filter-Schritt
+  // Vorhersage mit der vertikalen Beschleunigung (jeder Loop)
+  void predict(float accel_z);
+  // Messung einrechnen (nur bei neuem Barometerwert). gate_sigma > 0: Innovation über so vielen
+  // Standardabweichungen gilt als Ausreißer und wird verworfen, höchstens max_rejects-mal in Folge.
+  // true = eingerechnet.
+  bool update(float z_meas, float gate_sigma, uint8_t max_rejects);
+  float z() const { return S(0,0); }
+  float vz() const { return S(1,0); }
+  float last_innov = 0;
+  uint8_t rejects = 0;
+
+  // Vorhersage und Messung in einem (alte Schnittstelle)
   void step(float accel_z, float z_meas, float& z_est, float& vz_est);
 };
 

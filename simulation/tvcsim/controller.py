@@ -8,6 +8,8 @@ zurueckgesetzt, dann ``Moments2Commands``.
 ``FirmwareController`` rechnet wie ``firmware/src/main.cpp`` + ``Control.cpp``:
 ``rot_deg += omega * dt``, PID auf ``rot/-100``, ``delta = asin(M / (l m |a|))``,
 Servo-Grad = delta_deg * GAIN + OFFSET, mechanisches Fenster, Rundung auf ganze Grad.
+Optional (fuer den 250-Hz-Takt, ``FirmwareParams.D_LPF_HZ`` / ``SERVO_SLEW_DPS``): Tiefpass auf
+omega im D-Anteil und Ratenbegrenzung des Servokommandos; beide aus = Control.cpp bis Oktober 2026.
 
 Beide liefern das Kommando ``(th_y_com, th_z_com)`` in Grad in der Simulink-Konvention.
 Zuordnung der Achsen: Firmware x (Yaw) <-> Simulink-Koerperachse y,
@@ -47,7 +49,8 @@ class SimulinkController:
         self.last = {}
 
     def reset_time(self) -> float:
-        return self.p.secondburn / 100.0 if self.p.dt == 0.01 else self.p.secondburn * self.p.dt
+        # Step-Block bei secondburn/100 s, unabhaengig vom Regeltakt (wie der zweite Motor)
+        return self.p.secondburn / 100.0
 
     def moments(self, t: float, w_est_dps) -> np.ndarray:
         """Momentenforderung ``[Mx, My, Mz]`` zum Takt t (vor Moments2Commands)."""
@@ -86,6 +89,8 @@ class FirmwareController:
         self.rot_deg = np.zeros(3)        # main.cpp: x = Yaw, y = Pitch, z = Roll
         self.rot_int_deg_s = np.zeros(3)  # Control.cpp: static Integrator
         self.a_norm_filt = fw.G_MS2       # main.cpp: init G_MS2
+        self.omega_d = None               # tiefpassgefiltertes omega fuer den D-Anteil (D_LPF_HZ > 0)
+        self.servo_prev = None            # letztes Servokommando [yaw, pitch] (SERVO_SLEW_DPS > 0)
         self.last = {}
 
     @staticmethod
@@ -94,18 +99,27 @@ class FirmwareController:
         return np.array([v_sim[1], v_sim[2], v_sim[0]], dtype=float)
 
     def update_a_norm(self, a_norm: float) -> None:
-        """Sensors.cpp: ``a_norm_filt += (|a| - a_norm_filt) * A_NORM_ALPHA``."""
-        self.a_norm_filt += (a_norm - self.a_norm_filt) * self.fw.A_NORM_ALPHA
+        """main.cpp: ``a_norm_filt = lowpassStep(a_norm_filt, |a|, A_NORM_TAU_S, dt)``, also
+        ``+= (|a| - a_norm_filt) * dt / (tau + dt)``; mit ``A_NORM_ALPHA`` der alte feste Faktor je Takt."""
+        fw = self.fw
+        alpha = fw.A_NORM_ALPHA if fw.A_NORM_ALPHA is not None else self.dt / (fw.A_NORM_TAU_S + self.dt)
+        self.a_norm_filt += (a_norm - self.a_norm_filt) * alpha
 
     def moments_fw(self, omega_fw_dps) -> np.ndarray:
         """Geforderte Momente ``[yaw, pitch]`` in N m, inkl. Integrationsschritt von main.cpp."""
         fw = self.fw
         omega = np.asarray(omega_fw_dps, dtype=float)
         self.rot_deg = self.rot_deg + omega * self.dt
-        self.rot_int_deg_s = self.rot_int_deg_s + self.rot_deg * self.dt
+        self.rot_int_deg_s = np.clip(self.rot_int_deg_s + self.rot_deg * self.dt, -fw.PY_INT_LIMIT, fw.PY_INT_LIMIT)
+        omega_d = omega
+        if fw.D_LPF_HZ > 0.0:
+            # PT1 diskret: y += a (x - y), a = 1 - exp(-2 pi f dt)
+            a = 1.0 - math.exp(-2.0 * math.pi * fw.D_LPF_HZ * self.dt)
+            self.omega_d = omega.copy() if self.omega_d is None else self.omega_d + a * (omega - self.omega_d)
+            omega_d = self.omega_d
         s = fw.PY_ERROR_SCALE
         m = (fw.PY_KP * (self.rot_deg / s) + fw.PY_KI * (self.rot_int_deg_s / s)
-             + fw.PY_KD * (omega / s))
+             + fw.PY_KD * (omega_d / s))
         return m[:2]
 
     def moments(self, t: float, w_est_dps) -> np.ndarray:
@@ -128,6 +142,13 @@ class FirmwareController:
         if fw.apply_window:
             yaw_deg = max(fw.SERVO_YAW_MIN_DEG, min(fw.SERVO_YAW_MAX_DEG, yaw_deg))
             pitch_deg = max(fw.SERVO_PITCH_MIN_DEG, min(fw.SERVO_PITCH_MAX_DEG, pitch_deg))
+        if fw.SERVO_SLEW_DPS > 0.0:
+            step = fw.SERVO_SLEW_DPS * self.dt
+            if self.servo_prev is None:
+                self.servo_prev = (fw.SERVO_YAW_OFFSET, fw.SERVO_PITCH_OFFSET)
+            yaw_deg = self.servo_prev[0] + max(-step, min(step, yaw_deg - self.servo_prev[0]))
+            pitch_deg = self.servo_prev[1] + max(-step, min(step, pitch_deg - self.servo_prev[1]))
+            self.servo_prev = (yaw_deg, pitch_deg)
         if fw.quantize_servo:
             yaw_deg = float(max(0, min(180, round(yaw_deg))))
             pitch_deg = float(max(0, min(180, round(pitch_deg))))

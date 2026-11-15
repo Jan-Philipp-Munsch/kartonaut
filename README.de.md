@@ -12,7 +12,7 @@ Durchmesser, der Motor sitzt in einer Kardanaufhängung mit zwei Servos, und ein
 Flugcomputer hält die Rakete während des Brennens aufrecht. Von der Platine bis zu den Reglerparametern
 ist alles in diesem Repository entworfen, simuliert und dokumentiert.
 
-*English version: [README.md](README.md) · Stand: 10.11.2026*
+*English version: [README.md](README.md) · Stand: 14.11.2026*
 
 <table>
 <tr>
@@ -84,16 +84,25 @@ neueren Chips:
 - [PR #9](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/9): Löt- und Messanleitung für rev B1,
   Testfirmware für die bestückte IMU, Flug-Firmware mit 250 Hz, PSRAM-Log und Flugschreiber im Flash,
   Bauanleitung der LoRa-Antenne.
+- Im selben Branch: die **[Werkbank](#werkbank-die-platine-am-pc)**, eine Oberfläche im Browser für die
+  Platine am USB, gegen eine simulierte Platine getestet, an der echten noch nicht; dazu die Korrekturen
+  aus der Code-Durchsicht vom 14.11. an der Flug-Firmware (CO₂-Auslösung, Pyro-Puls, Flug-Log). Die
+  58 nativen Firmware-Tests laufen in der CI durch.
 - [PR #8](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/8): Motorzündung an Bord über Pyro 1,
   ausgelöst durch einen gesicherten Funkbefehl vom Laptop.
 
 **Als Nächstes**
 
-1. Platine von Hand fertig löten und mit `revb_test` prüfen (Leistungsmessung und ein Widerstand kommen
-   mit der zweiten DigiKey-Sendung).
+1. Platine von Hand fertig löten und mit `revb_test` und der Werkbank prüfen und kalibrieren, nach der
+   [Löt- und Messanleitung](hardware/mainboard/LOETANLEITUNG_revB1.pdf) (Leistungsmessung und ein Widerstand
+   kommen mit der zweiten DigiKey-Sendung); zwei IPEX-Pigtails für die
+   [LoRa-Antenne](docs/Bauanleitung_LoRa_Antenne.md) besorgen.
 2. Teile drucken und wiegen, Rakete zusammenbauen, Schwerpunkt austarieren.
-3. Bodentests: Übersetzung Servo–Kardan, CO₂-Ausstoß, TVC-Prüfstand mit Propellermotor, Funkreichweite.
-4. ***Kartonaut 1*: geregelter Aufstieg mit einem Motor, Bergung am Fallschirm.**
+3. Firmware: die Korrekturen aus der Code-Durchsicht vom 14.11. (CO₂-Auslösung, Pyro-Puls, Flug-Log,
+   Pins, Zustandsspeicher; [PROJECT.md](PROJECT.md) §5, Befunde 24–28) an der Platine prüfen und die
+   kleineren Punkte aus Befund 29 abarbeiten.
+4. Bodentests: Übersetzung Servo–Kardan, CO₂-Ausstoß, TVC-Prüfstand mit Propellermotor, Funkreichweite.
+5. ***Kartonaut 1*: geregelter Aufstieg mit einem Motor, Bergung am Fallschirm.**
 
 Details und Änderungsprotokoll in [PROJECT.md](PROJECT.md), Baulog in [docs/BUILD.md](docs/BUILD.md).
 
@@ -116,13 +125,45 @@ Details und Änderungsprotokoll in [PROJECT.md](PROJECT.md), Baulog in [docs/BUI
 </tr>
 </table>
 
+## Werkbank: die Platine am PC
+
+<img src="docs/img/werkbank_live.jpg" width="800" alt="Live-Ansicht der Werkbank mit Verläufen, Lage und Messwerten">
+
+Die Werkbank verbindet den PC über den USB-Anschluss des Teensy mit dem Flugcomputer. Ein
+Python-Programm liest die serielle Schnittstelle der Testkonsole `revb_test` und schickt Befehle und
+Kalibrierwerte zurück; bedient wird im Browser auf dem eigenen Rechner, ohne Netz.
+
+| Reiter | Was er kann |
+|---|---|
+| **Live** | Beschleunigung, Drehrate, Magnetfeld und Höhe als Verlauf, Lage in 3D, Akkus, ARM, Pyro-Durchgang; roh oder kalibriert, Aufzeichnung als CSV |
+| **Prüfungen** | ein Knopf je Prüfung der Testkonsole, Ergebnistabelle, Bericht als Markdown und JSON |
+| **Kalibrierung** | geführt je Sensor: Beschleunigung aus sechs oder beliebig vielen Ruhelagen, Magnetometer per Ellipsoid-Fit mit Bild der Abdeckung, Achszuordnung, Gyro, Spannungs- und Strommessung, Servos |
+| **Aktoren** | Servos, Rollmotor, Pyrokanäle; gezündet wird nur mit ARM, Durchgang und von Hand getipptem `JA` |
+| **Konsole** | alle Zeilen der Testkonsole und eine Befehlszeile |
+
+```bash
+pip install pyserial numpy
+```
+
+```bash
+python firmware/tools/werkbank.py --sim    # ohne Hardware: simulierte Platine mit bekannten Sensorfehlern
+```
+
+```bash
+python firmware/tools/werkbank.py          # sucht den Teensy mit der Testkonsole revb_test
+```
+
+Erste Version: gegen die simulierte Platine getestet (18 Tests in der CI), an der echten Platine ist sie
+noch nicht gelaufen. Verfahren, Aufbau und Grenzen stehen in
+[`firmware/tools/bench_gui/`](firmware/tools/bench_gui/README.md).
+
 ## Was drin ist
 
 | Teil | Inhalt | Wo |
 |---|---|---|
 | Mainboard | KiCad-Projekt aus `circuit.py` erzeugt: Schaltplan, Layout, Gerber/BOM/CPL, Datenblatt | [hardware/mainboard/](hardware/mainboard/README.md) |
 | Simulation | Python-6DOF-Modell `tvcsim` mit 1:1 portiertem Firmware-Regler, Reglerabstimmung, Landestudien | [simulation/](simulation/README.md) |
-| Firmware | PlatformIO für Teensy 4.1: Flugsoftware, Sensortreiber, Testkonsole, native Tests | [firmware/](firmware/README.md) |
+| Firmware | PlatformIO für Teensy 4.1: Flugsoftware, Sensortreiber, Testkonsole mit Oberfläche am PC, native Tests | [firmware/](firmware/README.md) |
 | Mechanik | parametrisches CAD für Druckteile, Startrampe, Prüfstand; Massen- und Trägheitsmodelle | [cad/](cad/README.md) |
 | Bauanleitung | Module, Teileliste, Bauschritte, Kabelplan ([PDF](docs/bauanleitung/Bauanleitung_Kartonaut1.pdf)) | [docs/Bauanleitung_Kartonaut1.md](docs/Bauanleitung_Kartonaut1.md) |
 | Bodensystem | Startprotokoll, Funkbrücke, ESP32-Station als spätere Option | [groundstation/](groundstation/README.md) |

@@ -3,10 +3,16 @@
 Zustand ``x = [r(3), rd(3), w(3), q(4), servo_y(2), servo_z(2)]``; die Quaternion wird nach
 jedem Teilschritt normiert. Ablauf je Takt ``t_k``:
 
-1. Avionics tastet ``q``, ``w`` (Grad/s) und ``rdd`` ab und verrauscht sie.
+1. Avionics tastet ``q``, ``w`` (Grad/s) und ``rdd`` ab und verrauscht sie. Mit
+   ``NoiseParams.imu_average`` (Vorgabe) sind ``w`` und ``rdd`` das Mittel ueber den letzten Takt
+   (Trapez ueber die RK4-Teilschritte), wie die Firmware die FIFO-Werte je Takt mittelt.
 2. Estimator: ``w_est, q_est, T_est``.
 3. Regler liefert ``th_y_com, th_z_com`` (Grad), ZOH haelt sie bis ``t_{k+1}``.
 4. Integration ``t_k -> t_{k+1}``.
+
+Regeltakt ``ControlParams.dt``: Vorgabe 0,004 s (250 Hz wie die Firmware), ``SimParams.at_rate(100)``
+rechnet wie bisher mit 0,01 s und Momentanwerten. ``VehicleParams.gimbal_inertia > 0`` schaltet das
+Reaktionsmoment des Kardans ein: ``M = -gimbal_inertia * theta_ddot`` um dieselbe Querachse.
 
 Mit ``SimParams.ground`` (Vorgabe) sitzt die Rakete auf der Rampe, bis der Schub das Gewicht
 uebersteigt, und der Lauf endet bei der Landung (Hoehe 0); ``extra["t_land"]`` nennt den Zeitpunkt,
@@ -76,7 +82,8 @@ class SimResult:
 def simulate(p: SimParams) -> SimResult:
     dt = p.control.dt
     n_steps = int(round(p.t_end / dt))
-    h = dt / p.substeps
+    n_sub = p.n_substeps
+    h = dt / n_sub
     rng = np.random.default_rng(p.seed)
 
     thrust = ThrustModel(p.motor)
@@ -85,6 +92,10 @@ def simulate(p: SimParams) -> SimResult:
     ctrl = make_controller(p.controller, p.control, p.firmware, p.vehicle.l_ctrl)
     eom_params = p.vehicle.as_eom_params()
     rad2deg = 57.2957  # Gain "rad to deg" im Modell
+    I_g = p.vehicle.gimbal_inertia
+    react_y = I_g * act.y.servo.servo_deg_per_tvc_deg * np.pi / 180.0 / p.vehicle.Iy   # (Grad/s^2 Zustand) -> rad/s^2 Rumpf
+    react_z = I_g * act.z.servo.servo_deg_per_tvc_deg * np.pi / 180.0 / p.vehicle.Iz
+    imu_avg = p.noise.imu_average
 
     landing = None
     throttle_ctrl = None
@@ -126,7 +137,11 @@ def simulate(p: SimParams) -> SimResult:
         m_fuel = thrust.fuel_mass_g(t, dt)
         th_y, th_z = act.angles(t, xy, xz)
         rdd, wd, qd, Mb, Tb, m = eom(eom_params, m_fuel, th_y, th_z, T, q, w, rd)
-        return rd, rdd, wd, qd, act.y.deriv(t, xy), act.z.deriv(t, xz), thr_act.deriv(t, xu), (T, m, th_y, th_z, Tb)
+        dy, dz = act.y.deriv(t, xy), act.z.deriv(t, xz)
+        if I_g > 0.0:
+            # Reaktionsmoment: der Kardan dreht um +y bzw. +z (tvc_rotation), der Rumpf mit -I_g theta_ddot
+            wd = wd - np.array([0.0, react_y * dy[1], react_z * dz[1]])
+        return rd, rdd, wd, qd, dy, dz, thr_act.deriv(t, xu), (T, m, th_y, th_z, Tb)
 
     N = n_steps + 1
     log = {k: np.zeros((N, 3)) for k in ("r", "rd", "rdd", "w_dps", "u", "rot")}
@@ -135,13 +150,25 @@ def simulate(p: SimParams) -> SimResult:
         log[k] = np.zeros(N)
     t_arr = np.arange(N) * dt
 
+    def accel_of(rdd, aux):
+        return rdd if p.noise.accel_model == "rdd" else aux[4] / aux[1]
+
+    imu_w: list[np.ndarray] = []      # Teilschritt-Werte des laufenden Takts (Anfang jedes Teilschritts)
+    imu_a: list[np.ndarray] = []
+
     for k in range(N):
         t = k * dt
         # Werte zum Abtastzeitpunkt
         _, rdd, _, _, _, _, _, aux = derivs(t, r, rd, w, q, xy, xz, xu)
         T, m, th_y, th_z, Tb = aux
-        accel = rdd if p.noise.accel_model == "rdd" else Tb / m
-        q_n, w_n, a_n = avionics.sample(q, w * rad2deg, accel)
+        accel = accel_of(rdd, aux)
+        w_meas, a_meas = w, accel
+        if imu_avg and imu_w:
+            # Boxcar ueber [t - dt, t] (Trapez): Teilschritt-Anfaenge plus der Wert jetzt
+            w_meas = (sum(imu_w) - 0.5 * imu_w[0] + 0.5 * w) / len(imu_w)
+            a_meas = (sum(imu_a) - 0.5 * imu_a[0] + 0.5 * accel) / len(imu_a)
+        imu_w.clear(); imu_a.clear()
+        q_n, w_n, a_n = avionics.sample(q, w_meas * rad2deg, a_meas)
         w_est, q_est, T_est = estimate(a_n, w_n, q_n, m)
         th_y_com, th_z_com = ctrl.step(t, w_est, q_est, T_est, a_norm=float(np.linalg.norm(a_n)))
         if p.controller == "firmware" and p.firmware.coast_center and T < 0.5:
@@ -192,9 +219,12 @@ def simulate(p: SimParams) -> SimResult:
             break
 
         # Integration bis t + dt (RK4 mit festen Teilschritten)
-        for s in range(p.substeps):
+        for s in range(n_sub):
             ts = t + s * h
-            k1 = derivs(ts, r, rd, w, q, xy, xz, xu)[:7]
+            k1f = derivs(ts, r, rd, w, q, xy, xz, xu)
+            k1 = k1f[:7]
+            if imu_avg:
+                imu_w.append(w.copy()); imu_a.append(accel_of(k1f[1], k1f[7]))
             a = [v + 0.5 * h * d for v, d in zip((r, rd, w, q, xy, xz, xu), k1)]
             k2 = derivs(ts + 0.5 * h, *a)[:7]
             b = [v + 0.5 * h * d for v, d in zip((r, rd, w, q, xy, xz, xu), k2)]
@@ -204,6 +234,7 @@ def simulate(p: SimParams) -> SimResult:
             r, rd, w, q, xy, xz, xu = [v + h / 6.0 * (d1 + 2 * d2 + 2 * d3 + d4)
                                        for v, d1, d2, d3, d4 in zip((r, rd, w, q, xy, xz, xu), k1, k2, k3, k4)]
             q = q / np.linalg.norm(q)
+            xy = act.y.clip_rate(xy); xz = act.z.clip_rate(xz)
             if p.ground and not lifted:
                 if r[0] > 1e-6:
                     lifted = True

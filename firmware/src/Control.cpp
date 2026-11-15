@@ -73,13 +73,30 @@ void Chute_servo_deg(float deg){
   chuteServo.write(d < 0 ? 0 : (d > 180 ? 180 : d));
 }
 
+// Stellratenbegrenzung außerhalb von ControlLaw (SIL-Vektoren bleiben gültig; tvcsim wendet sie
+// genauso nach dem Servofenster an). Startwert = Mitte.
+static float slew_yaw = SERVO_YAW_OFFSET, slew_pitch = SERVO_PITCH_OFFSET;
+
+static float slewLimit(float target, float& last, float max_step) {
+  if (max_step > 0.f) {
+    if (target > last + max_step) target = last + max_step;
+    else if (target < last - max_step) target = last - max_step;
+  }
+  last = target;
+  return target;
+}
+
 PyOutput Control_updatePY(float tilt_x_deg, float tilt_y_deg, const Vec3& omega_dps, float dt_s, float a_norm_filt){
-  const PyOutput o = pyLaw.update(tilt_x_deg, tilt_y_deg, omega_dps.x, omega_dps.y, dt_s, a_norm_filt);
+  PyOutput o = pyLaw.update(tilt_x_deg, tilt_y_deg, omega_dps.x, omega_dps.y, dt_s, a_norm_filt);
+  o.yaw_servo_deg   = slewLimit(o.yaw_servo_deg, slew_yaw, PY_SLEW_TVC_DPS * fabsf(SERVO_YAW_GAIN) * dt_s);
+  o.pitch_servo_deg = slewLimit(o.pitch_servo_deg, slew_pitch, PY_SLEW_TVC_DPS * fabsf(SERVO_PITCH_GAIN) * dt_s);
+  o.yaw_tvc_deg   = (o.yaw_servo_deg - SERVO_YAW_OFFSET) / SERVO_YAW_GAIN;
+  o.pitch_tvc_deg = (o.pitch_servo_deg - SERVO_PITCH_OFFSET) / SERVO_PITCH_GAIN;
   Apply_servos_deg(o.yaw_servo_deg, o.pitch_servo_deg);
   return o;
 }
 
-void Control_resetPY(){ pyLaw.reset(); }
+void Control_resetPY(){ pyLaw.reset(); slew_yaw = SERVO_YAW_OFFSET; slew_pitch = SERVO_PITCH_OFFSET; }
 void Control_resetRoll(){ rollLaw.reset(); }
 
 RollOutput Control_updateRoll(float roll_deg, float roll_rate_dps, float dt_s){

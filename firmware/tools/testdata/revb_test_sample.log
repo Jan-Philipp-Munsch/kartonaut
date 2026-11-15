@@ -1,7 +1,8 @@
 # Kartonaut Mainboard rev B1: Testkonsole (revb_test)
 INFO reset_cause Einschalten
 INFO kalibrierung leer -> Standardwerte
-INFO Bausteine: IMU 1 Baro 1 Baro2 0 INA 1 Mag 1 SHT 1 ADXL 0
+INFO bestückt: imu an, baro an, baro2 aus, ina aus, mag an, sht an, adxl aus, lora aus, gps aus
+INFO Bausteine: IMU 1 Baro 1 Baro2 0 INA 0 Mag 1 SHT 1 ADXL 0 (IMU-Treiber LSM6DSV16X)
 INFO 1S 3.98 V, 2S 0.02 V, ARM 0.01 V, nFAULT hoch, Kalibrierung leer, gültig 0x00
 # Befehle (q bricht laufende Messungen ab):
 READY
@@ -15,17 +16,20 @@ TEST mux_pyro3 SKIP ohne 2S
 TEST mux_pyro4 SKIP ohne 2S
 END mux SKIP
 READY
-TEST imu_whoami OK 0x47 soll 0x47 (ICM-42688-P)
+TEST imu_whoami OK 0x70 soll 0x70 (LSM6DSV16X)
 TEST imu_config OK Flugkonfiguration zurückgelesen
-TEST imu_rate OK 1000 Hz soll 1000
+TEST imu_rate OK 962 Hz soll 960
 TEST imu_rest OK |a| 9.79 m/s2 a=[0.12 -0.05 9.79] |w| 0.31 dps T 24.3 C
-TEST imu_selftest_gyro OK Antwort 112 118 109 dps, Verhältnis 1.02 1.05 0.98, Offset 0.3 -0.2 0.1
-TEST imu_selftest_acc OK Antwort 0.212 0.198 0.305 g, Verhältnis 0.97 1.01 1.03
+TEST imu_selftest_gyro OK Antwort 312 -298 305 dps, Grenzen 150..700, Offset 0.3 -0.2 0.1
+TEST imu_selftest_acc OK Antwort 0.412 0.398 0.505 g, Grenzen 0.050..1.700
 END imu OK
 READY
-TEST baro1 OK Chip-ID 0x60, 98712 Pa, 25.1 C
-TEST baro2 SKIP nicht bestückt (DNP), Chip-ID 0x00
-END baro SKIP
+TEST baro1 OK Chip-ID 0x50 (BMP388), 98712 Pa, 25.1 C
+TEST baro2 NICHT_ERKANNT nicht bestückt oder keine Antwort (Bestückungsliste: fit baro2 off)
+END baro NICHT_ERKANNT
+READY
+TEST ina_id NICHT_ERKANNT nicht bestückt oder keine Antwort (Bestückungsliste: fit ina off)
+END ina NICHT_ERKANNT
 READY
 INFO Gyro-Nullpunkt: Platine 10 s ruhig liegen lassen (q bricht ab)
 CAL gyro_bias_dps 0.3120 -0.1980 0.0470

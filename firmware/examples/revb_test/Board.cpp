@@ -5,8 +5,8 @@
 namespace board {
 
 BusRevB    bus;
-static ICM42688 icm(bus);
-ImuDriver& imu = icm;
+static ImuAuto imu_auto(bus);
+ImuDriver& imu = imu_auto;
 BMP390     baro(bus, rb::Cs::BARO);
 BMP390     baro2(bus, rb::Cs::BARO2);
 INA239     ina(bus, rb::INA_SHUNT_OHM, rb::INA_MAX_CURRENT_A);
@@ -17,6 +17,7 @@ CRGB       leds[rb::LED_COUNT_ONBOARD];
 cal::CalData calib;
 cal::Check   calib_check = cal::Check::EMPTY;
 Status st;
+rb::Fit fit;
 
 static const uint8_t SERVO_PINS[4] = {rb::PIN_SERVO_YAW, rb::PIN_SERVO_PITCH, rb::PIN_SERVO_CHUTE, rb::PIN_SERVO_LEGS};
 static Servo servos[4];
@@ -31,8 +32,7 @@ void safeOutputs() {
   digitalWrite(rb::PIN_CAM_TRIG, LOW);   pinMode(rb::PIN_CAM_TRIG, OUTPUT);
   pinMode(rb::PIN_MOT_FAULT, INPUT_PULLUP);
   pinMode(rb::PIN_IMU_INT, INPUT);
-  pinMode(rb::PIN_LORA_NRST, INPUT);     // Open-Drain: loslassen = Pull-up hält hoch
-  pinMode(rb::PIN_LORA_AUX, INPUT);
+  rb::loraPinsIdle(fit.lora);            // M0/M1/AUX/NRST in Ruhe, ohne Modul nichts treiben
   // CS_EN hält der Pull-up hoch; bus.begin() setzt ihn als Ausgang hoch
 }
 
@@ -41,14 +41,19 @@ void begin() {
   revb_i2c::begin(rb::I2C_SPEED_HZ);
   FastLED.addLeds<WS2812B, rb::PIN_LED_DATA, GRB>(leds, rb::LED_COUNT_ONBOARD);
   calib_check = cal::load(calib);
+  beginParts();
+}
 
-  st.imu   = imu.begin();
-  st.baro  = baro.begin();
-  st.baro2 = baro2.begin();
-  st.ina   = ina.begin();
-  st.mag   = mag.begin();
-  st.sht   = sht.begin();
-  st.adxl  = adxl.begin();
+void beginParts() {
+  rb::loraPinsIdle(fit.lora);
+  // Nicht bestückte Teile (fit.* = aus) werden nicht angesprochen und bleiben "nicht bereit"
+  st.imu   = fit.imu   && imu.begin();
+  st.baro  = fit.baro  && baro.begin();
+  st.baro2 = fit.baro2 && baro2.begin();
+  st.ina   = fit.ina   && ina.begin();
+  st.mag   = fit.mag   && mag.begin();
+  st.sht   = fit.sht   && sht.begin();
+  st.adxl  = fit.adxl  && adxl.present() && adxl.begin();
 }
 
 float muxInputV(rb::Mux ch) {

@@ -12,7 +12,7 @@ is a 75 mm cardboard tube, the motor sits in a servo-driven gimbal, and a home-d
 holds the rocket upright during the burn. Everything from the circuit board to the control gains is
 designed, simulated and documented in this repository.
 
-*Deutsche Fassung: [README.de.md](README.de.md) · detailed documents are in German · last updated: 10 Nov 2026*
+*Deutsche Fassung: [README.de.md](README.de.md) · detailed documents are in German · last updated: 14 Nov 2026*
 
 <table>
 <tr>
@@ -80,16 +80,25 @@ radio telemetry to the ground, servo control and a pyro channel that fired a tes
 - [PR #9](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/9): soldering and measurement guide for
   rev B1, test firmware for the fitted IMU, flight firmware at 250 Hz with PSRAM log and flash flight
   recorder, LoRa antenna build guide.
+- On the same branch: the **[Werkbank](#werkbank-the-board-on-your-pc)**, a browser front end for the
+  board on USB, tested against a simulated board, not yet on the real one; plus the fixes from the
+  14 Nov code review of the flight firmware (CO₂ release, pyro pulse, flight log). The 58 native
+  firmware tests pass in CI.
 - [PR #8](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/8): on-board motor ignition through
   pyro 1, triggered by an authenticated radio command from a laptop.
 
 **Next**
 
-1. Hand-solder the board and bench-test it with `revb_test` (power monitor and one resistor follow
-   with the second DigiKey shipment).
+1. Hand-solder the board, then bench-test and calibrate it with `revb_test` and the Werkbank, following the
+   [soldering and measurement guide](hardware/mainboard/LOETANLEITUNG_revB1.pdf) (power monitor and one
+   resistor follow with the second DigiKey shipment); get two IPEX pigtails for the
+   [LoRa antenna](docs/Bauanleitung_LoRa_Antenne.md).
 2. Print and weigh the parts, assemble the rocket, balance the centre of gravity.
-3. Ground tests: servo-to-gimbal ratio, CO₂ ejection, TVC test rig with a propeller motor, radio range.
-4. ***Kartonaut 1*: controlled ascent on one motor, parachute recovery.**
+3. Firmware: verify the fixes from the 14 Nov code review on the board (CO₂ release, pyro pulse, flight
+   log, pins, state store; [PROJECT.md](PROJECT.md) §5, findings 24–28) and work through the smaller
+   items in finding 29.
+4. Ground tests: servo-to-gimbal ratio, CO₂ ejection, TVC test rig with a propeller motor, radio range.
+5. ***Kartonaut 1*: controlled ascent on one motor, parachute recovery.**
 
 Details and changelog in [PROJECT.md](PROJECT.md), build log in [docs/BUILD.md](docs/BUILD.md).
 
@@ -112,13 +121,46 @@ Details and changelog in [PROJECT.md](PROJECT.md), build log in [docs/BUILD.md](
 </tr>
 </table>
 
+## Werkbank: the board on your PC
+
+<img src="docs/img/werkbank_live.jpg" width="800" alt="Live view of the Werkbank with plots, attitude and readings">
+
+The Werkbank (German for workbench) connects a PC to the flight computer through the Teensy's USB port.
+A Python program reads the serial port of the `revb_test` bench console and sends commands and
+calibration values back; the user interface runs in a browser on the same machine, no network needed.
+Its labels are in German.
+
+| Tab | What it does |
+|---|---|
+| **Live** | acceleration, angular rate, magnetic field and altitude as plots, attitude in 3D, batteries, ARM, pyro continuity; raw or calibrated, recording to CSV |
+| **Prüfungen** (checks) | one button per check of the bench console, result table, report as Markdown and JSON |
+| **Kalibrierung** (calibration) | guided per sensor: accelerometer from six or any number of rest positions, magnetometer by ellipsoid fit with a coverage plot, axis mapping, gyro, voltage and current measurement, servos |
+| **Aktoren** (actuators) | servos, roll motor, pyro channels; firing needs ARM, continuity and the word `JA` typed by hand |
+| **Konsole** (console) | every line of the bench console and a command line |
+
+```bash
+pip install pyserial numpy
+```
+
+```bash
+python firmware/tools/werkbank.py --sim    # no hardware: simulated board with known sensor errors
+```
+
+```bash
+python firmware/tools/werkbank.py          # looks for the Teensy running the revb_test console
+```
+
+First version: tested against the simulated board (18 tests in CI), it has not run on the real board
+yet. Methods, structure and limits are in
+[`firmware/tools/bench_gui/`](firmware/tools/bench_gui/README.md) (German).
+
 ## What is inside
 
 | Part | What it does | Where |
 |---|---|---|
 | Mainboard | KiCad project generated from `circuit.py`: schematic, layout, Gerber/BOM/CPL, datasheet | [hardware/mainboard/](hardware/mainboard/README.md) |
 | Simulation | Python 6DOF model `tvcsim` with the firmware controller ported 1:1, gain tuning, landing studies | [simulation/](simulation/README.md) |
-| Firmware | PlatformIO for Teensy 4.1: flight software, sensor drivers, bench-test console, native tests | [firmware/](firmware/README.md) |
+| Firmware | PlatformIO for Teensy 4.1: flight software, sensor drivers, bench-test console with a PC front end, native tests | [firmware/](firmware/README.md) |
 | Mechanics | parametric CAD for printed parts, launch stand, test rig; mass and inertia models | [cad/](cad/README.md) |
 | Build manual | modules, parts list, build steps, cable plan ([PDF](docs/bauanleitung/Bauanleitung_Kartonaut1.pdf)) | [docs/Bauanleitung_Kartonaut1.md](docs/Bauanleitung_Kartonaut1.md) |
 | Ground system | launch protocol, radio bridge, ESP32 station as later option | [groundstation/](groundstation/README.md) |

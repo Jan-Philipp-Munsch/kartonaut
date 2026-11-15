@@ -109,9 +109,11 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - run: pip install pytest
+      - run: pip install pytest numpy pyserial
       - name: Parser von bench_test.py
         run: python -m pytest -q firmware/tools/test_bench_test.py
+      - name: Werkbank (Rechenteil, Verbindung gegen die simulierte Platine, Webserver)
+        run: python -m pytest -q firmware/tools/test_bench_gui.py
       - name: Kalibrierbibliothek (CRC, Ellipsoid-Fit, Achsen) und NMEA auf dem PC
         run: |
           g++ -std=c++17 -Wall -Wextra -O1 -I firmware/lib/calstore firmware/test/host/test_calstore.cpp -o /tmp/test_calstore

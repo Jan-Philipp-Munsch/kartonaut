@@ -1,9 +1,14 @@
 // revb_test – Testkonsole und Kalibrierung des Mainboards rev B1
 //
 // Befehlsmenü über USB-Serial (115200 Bd). Jede Prüfung meldet eine Zeile
-// "TEST <name> OK|FEHL|SKIP <detail>", jeder Kalibrierwert "CAL <name> <werte>",
+// "TEST <name> OK|FEHL|SKIP|NICHT_ERKANNT <detail>", jeder Kalibrierwert "CAL <name> <werte>",
 // jeder Befehl endet mit "END <befehl> <ergebnis>" (Format: Proto.h).
 // tools/bench_test.py stößt die Befehle nacheinander an und schreibt den Bericht.
+//
+// Bestückung: was auf der Platine fehlt (Standard: INA239, LoRa, GPS, Baro 2, ADXL375), steht in
+// der Bestückungsliste (lib/mainboard_revb/FitRevB.h) auf "aus" und meldet
+// "TEST <name> NICHT_ERKANNT nicht bestückt oder keine Antwort ..." statt FEHL. Umschalten zur
+// Laufzeit mit "fit <teil> on|off" (nur RAM, nach dem Neustart wieder der Standard).
 //
 // Versorgung: VIN des Teensy ist vom USB getrennt. Ohne 1S (J_BAT1 plus JP1
 // oder Schalter an J_SW) läuft nichts; ohne 2S (XT30 plus JP2 oder Schalter)
@@ -24,12 +29,13 @@
 #include "Calib.h"
 #include "Watchdog.h"
 #include "Tvc.h"
+#include "Stream.h"
 
 using namespace board;
 
 static void help() {
   proto::comment("Befehle (q bricht laufende Messungen ab):");
-  proto::comment("  all            alle Prüfungen ohne Bewegung: mux imu baro mag sht adxl ina timing");
+  proto::comment("  all            alle Prüfungen ohne Bewegung: mux imu baro mag sht adxl ina timing mem");
   proto::comment("  all full       dazu led buzzer cam servo 1..4 motor lora gps sd (mit Rückfragen)");
   proto::comment("  mux | imu | baro | mag | sht | adxl | ina | ina load");
   proto::comment("  led | buzzer | cam");
@@ -37,15 +43,51 @@ static void help() {
   proto::comment("  motor          zwei kurze Pulse, nFAULT");
   proto::comment("  pyro <1..4> [ms]   NUR mit Lämpchen, fragt CONFIRM, höchstens 1000 ms");
   proto::comment("  lora | gps | sd | timing | watchdog | watchdog fire (Neustart!)");
+  proto::comment("  mem            PSRAM und QSPI-Flash unter dem Teensy erkennen und prüfen");
   proto::comment("  cal gyro [s] | cal acc | cal mag [s] | cal axes | cal baro [s]");
   proto::comment("  cal adc [kanal] | cal ina | cal servo <1..4>");
   proto::comment("  cal show | cal save | cal load | cal defaults | cal erase");
+  proto::comment("  cal set <name> <werte>   Feld im RAM setzen (Werte vom PC, z. B. cal set gyro_bias_dps 0.1 -0.2 0.05)");
+  proto::comment("  stream [hz]    Live-Messwerte als D-Zeilen bis q (Format: Stream.h, Oberflaeche: tools/bench_gui)");
   proto::comment("  tvc ...        Versuch E02 Servo -> Kardan (tvc help)");
+  proto::comment("  fit            Bestückungsliste zeigen; nicht bestückte Teile melden NICHT_ERKANNT statt FEHL");
+  proto::comment("  fit <teil> on|off | fit all on|off | fit default   (teil: imu baro baro2 ina mag sht adxl lora gps)");
   proto::comment("  status | help");
 }
 
+static void showFit() {
+  char buf[160];
+  size_t n = 0;
+  for (int i = 0; i < rb::Fit::COUNT; ++i)
+    n += snprintf(buf + n, sizeof buf - n, "%s%s %s", i ? ", " : "", rb::Fit::name(i), fit.at(i) ? "an" : "aus");
+  proto::info("bestückt: %s", buf);
+}
+
+// fit | fit <teil> on|off | fit all on|off | fit default
+static Res fitCommand(const char* a1, const char* a2) {
+  if (a1 && !strcmp(a1, "default")) {
+    fit = rb::Fit{};
+  } else if (a1) {
+    const bool on = a2 && (!strcmp(a2, "on") || !strcmp(a2, "an") || !strcmp(a2, "1"));
+    const bool off = a2 && (!strcmp(a2, "off") || !strcmp(a2, "aus") || !strcmp(a2, "0"));
+    if (!on && !off) { proto::info("fit %s: on oder off fehlt (fit <teil> on|off)", a1); return Res::FEHL; }
+    if (!strcmp(a1, "all")) {
+      for (int i = 0; i < rb::Fit::COUNT; ++i) fit.at(i) = on;
+    } else {
+      bool* f = fit.find(a1);
+      if (!f) { proto::info("fit: unbekanntes Teil %s (imu baro baro2 ina mag sht adxl lora gps)", a1); return Res::FEHL; }
+      *f = on;
+    }
+  }
+  beginParts();          // Status neu, LoRa-Pins passend in Ruhe
+  showFit();
+  return Res::OK;
+}
+
 static void status() {
-  proto::info("Bausteine: IMU %d Baro %d Baro2 %d INA %d Mag %d SHT %d ADXL %d", st.imu, st.baro, st.baro2, st.ina, st.mag, st.sht, st.adxl);
+  showFit();
+  proto::info("Bausteine: IMU %d Baro %d Baro2 %d INA %d Mag %d SHT %d ADXL %d (IMU-Treiber %s)", st.imu, st.baro, st.baro2, st.ina,
+              st.mag, st.sht, st.adxl, imu.name());
   proto::info("1S %.2f V, 2S %.2f V, ARM %.2f V, nFAULT %s, Kalibrierung %s, gültig 0x%02lX",
               vbat1(), vbat2(), armV(), digitalRead(rb::PIN_MOT_FAULT) ? "hoch" : "TIEF", cal::checkName(calib_check), (unsigned long)calib.valid);
 }
@@ -63,6 +105,7 @@ static Res runAll(bool full) {
   r = proto::worst(r, testAdxl());
   r = proto::worst(r, testIna());
   r = proto::worst(r, testTiming());
+  r = proto::worst(r, testMem());
   if (!full) return r;
   r = proto::worst(r, testLeds());
   r = proto::worst(r, testBuzzer());
@@ -78,7 +121,7 @@ static Res runAll(bool full) {
 // Befehlszeile ausführen; gibt END aus
 static void execute(char* line) {
   if (line[0] == 0) return;
-  char cmdcopy[64];
+  char cmdcopy[200];
   strncpy(cmdcopy, line, sizeof cmdcopy - 1);
   cmdcopy[sizeof cmdcopy - 1] = 0;
   char* a0 = strtok(line, " ");
@@ -90,6 +133,7 @@ static void execute(char* line) {
   else if (!strcmp(a0, "tvc") && a1 && !strcmp(a1, "help")) { tvcHelp(); return; }
   else if (!strcmp(a0, "status"))  { status(); return; }
   else if (!strcmp(a0, "all"))     r = runAll(a1 && !strcmp(a1, "full"));
+  else if (!strcmp(a0, "fit"))     r = fitCommand(a1, a2);
   else if (!strcmp(a0, "mux"))     r = testMux();
   else if (!strcmp(a0, "imu"))     r = testImu();
   else if (!strcmp(a0, "baro"))    r = testBaro();
@@ -115,7 +159,9 @@ static void execute(char* line) {
   else if (!strcmp(a0, "gps"))     r = testGps();
   else if (!strcmp(a0, "sd"))      r = testSd();
   else if (!strcmp(a0, "timing"))  r = testTiming();
+  else if (!strcmp(a0, "mem"))     r = testMem();
   else if (!strcmp(a0, "watchdog")) r = testWatchdog(a1 && !strcmp(a1, "fire"));
+  else if (!strcmp(a0, "stream"))  r = streamRun(argFloat(a1, 50.0f));
   else if (!strcmp(a0, "tvc")) {
     // Rest der Zeile hinter dem Unterbefehl, aus der unzerlegten Kopie (center/window/note brauchen mehrere Wörter)
     const char* rest = cmdcopy + 3;
@@ -135,6 +181,14 @@ static void execute(char* line) {
     else if (!strcmp(a1, "ina"))      r = calIna();
     else if (!strcmp(a1, "servo"))    r = calServo(argInt(a2, 0) - 1);
     else if (!strcmp(a1, "show"))     { calShow(); return; }
+    else if (!strcmp(a1, "set")) {
+      // Rest der Zeile hinter "cal set", aus der unzerlegten Kopie (bis zu neun Werte)
+      const char* rest = cmdcopy + 3;
+      while (*rest == ' ') ++rest;
+      rest += 3;
+      while (*rest == ' ') ++rest;
+      r = calSet(rest);
+    }
     else if (!strcmp(a1, "save"))     r = calSave();
     else if (!strcmp(a1, "load"))     r = calLoad();
     else if (!strcmp(a1, "defaults")) r = calDefaults();
@@ -173,7 +227,7 @@ void setup() {
 }
 
 void loop() {
-  static char line[96];
+  static char line[200];
   if (!proto::readLine(line, sizeof line, 50)) return;
   if (line[0] == 0) { proto::ready(); return; }
   execute(line);

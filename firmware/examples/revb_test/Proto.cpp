@@ -5,11 +5,19 @@
 
 namespace proto {
 
-const char* name(Res r) { return r == Res::OK ? "OK" : r == Res::FEHL ? "FEHL" : "SKIP"; }
+const char* name(Res r) {
+  switch (r) {
+    case Res::OK:   return "OK";
+    case Res::FEHL: return "FEHL";
+    case Res::SKIP: return "SKIP";
+    default:        return "NICHT_ERKANNT";
+  }
+}
 
 Res worst(Res a, Res b) {
   if (a == Res::FEHL || b == Res::FEHL) return Res::FEHL;
   if (a == Res::SKIP || b == Res::SKIP) return Res::SKIP;
+  if (a == Res::NICHT || b == Res::NICHT) return Res::NICHT;
   return Res::OK;
 }
 

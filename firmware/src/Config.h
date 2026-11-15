@@ -1,5 +1,8 @@
 #pragma once
 #include <stdint.h>
+#ifdef BOARD_REVB
+#include "BoardRevB.h"   // Pins des Mainboards rev B1
+#endif
 
 // =====================================================================
 //  Config.h – alle Zahlen, Pins und Schalter der Flug-Firmware
@@ -13,7 +16,11 @@
 // =====================================================================
 
 // ===== Loop-Takt =====
-constexpr float    LOOP_HZ        = 100.0f;
+// 250 Hz seit 05.11.2026 (vorher 100): gleich der Servo-Pulsrate, jeder Puls bringt einen neuen
+// Sollwert, Totzeit Messung -> Stellbefehl im Mittel ~2 ms statt ~5 ms. Die IMU (960 Hz) wird je
+// Loop über ihren FIFO gemittelt (Sensors_revb.cpp), das verhindert Aliasing ohne trägen Filter.
+// Rechenzeit je Loop auf dem Teensy 4.1 typisch < 0,5 ms; SD-Zugriffe nie in der Flugphase (Logging).
+constexpr float    LOOP_HZ        = 250.0f;
 constexpr uint32_t LOOP_PERIOD_US = uint32_t(1e6f / LOOP_HZ);
 
 // ===== Physik (Erstflug-Konfiguration, cad/mass_properties.md, 22.10.2026) =====
@@ -22,12 +29,23 @@ constexpr float MASS_KG      = 0.761f;  // Start, voller E12, Rohr 700 mm, ohne 
 constexpr float MOMENT_ARM_M = 0.242f;  // Kardanpunkt–Schwerpunkt (voll: 0,372 m)
 
 // ===== IMU =====
-// Breakout: ICM-20948 roh (ohne DMP), ±4 g und ±2000 °/s. Rev B: ICM-42688-P an SPI1.
+// Breakout: ICM-20948 roh (ohne DMP), ±4 g und ±2000 °/s. Rev B: LSM6DSV16X an SPI1 (ältere Platinen ICM-42688-P, ImuAuto wählt nach WHO_AM_I).
 constexpr float ACC_RANGE_G      = 4.0f;    // E12: 3,2 g bei 0,9 kg; F35 bräuchte ±8 g
 constexpr bool  GYRO_FILT        = false;   // IIR-Glättung der Drehrate ein/aus
 constexpr float GYRO_FILT_ALPHA  = 0.25f;   // 0..1, höher = weniger Glättung
-constexpr int   GYRO_CAL_SAMPLES = 400;     // Gyro-Nullpunkt auf dem Pad (bei 100 Hz: 4 s)
+constexpr int   GYRO_CAL_SAMPLES = 1000;    // Gyro-Nullpunkt auf dem Pad (bei 250 Hz: 4 s)
 constexpr float GYRO_CAL_MAX_DPS = 2.0f;    // größer: Rakete wackelt, Kalibrierung ungültig
+// Kerbfilter auf der Drehrate (Filters.h), nur rev B: 0 = aus. Erst einschalten, wenn das Log
+// (Spalten omega_raw_*) eine schmale Vibrationslinie zeigt, z. B. Servo-Brummen oder Motor.
+constexpr float GYRO_NOTCH_HZ    = 0.0f;
+constexpr float GYRO_NOTCH_Q     = 4.0f;    // Breite ≈ f0/Q
+// Stützung der Lage am Boden (Attitude.h, MahonyAid): nur in SAFE/PAD_READY und in Ruhe
+constexpr float MAHONY_KP_ACC    = 1.0f;    // 1/s
+constexpr float MAHONY_KP_MAG    = 0.5f;    // 1/s, nur mit kalibriertem Magnetometer ("cal mag", "cal axes")
+constexpr float MAHONY_KI        = 0.05f;   // 1/s², lernt den Rest-Nullpunkt des Gyros
+constexpr float MAHONY_ACC_TOL   = 0.05f;   // Ruhe: ||a| - g| < Toleranz · g ...
+constexpr float MAHONY_RATE_MAX_DPS = 5.0f; // ... und |ω| darunter
+constexpr bool  MAHONY_USE_MAG   = true;
 // Drehung Chip -> Körpersystem (x, y quer, z Rollachse): Vorzeichen und Achsenreihenfolge.
 // Breakout: Chip-Achsen = Körperachsen (bisheriger Einbau). Rev B: wird mit der Platzierung
 // eingetragen (Plan 22.10., A2).
@@ -44,19 +62,21 @@ constexpr uint32_t I2C_MAIN_SPEED_HZ = 400000;
 
 // ===== Pins (Teensy 4.1) =====
 #ifdef BOARD_REVB
-// Mainboard rev B: Pins aus BoardRevB.h; hier nur die Aliase, die die Module benutzen.
-constexpr int PIN_BEEPER      = 37;
-constexpr int PIN_LED_DATA    = 5;    // WS2812B-Kette LED1 -> LED2
-constexpr int PIN_MOT_IN1     = 2;    // DRV8833
-constexpr int PIN_MOT_IN2     = 3;
-constexpr int PIN_MOT_NSLEEP  = 11;
-constexpr int PIN_SERVO_YAW   = 28;
-constexpr int PIN_SERVO_PITCH = 29;
-constexpr int PIN_SERVO_CHUTE = 9;
-constexpr int PIN_PYRO1       = 23;
-constexpr int PIN_PYRO2       = 22;
-constexpr int PIN_RADIO_M0    = 33;   // E22: M0 = M1 = 0 -> transparenter Modus
-constexpr int PIN_RADIO_M1    = 32;
+// Mainboard rev B1: die Pins stehen nur in lib/mainboard_revb/BoardRevB.h (dort gegen circuit.py
+// geprüft, tools/check_board_pins.py); hier Aliase mit den Namen, die die Module benutzen.
+// Bis 14.11.2026 standen hier Zahlen, zwei davon noch vom Stand vor dem 23.10. (Befund 27).
+constexpr int PIN_BEEPER      = revb::PIN_BUZZER;
+constexpr int PIN_LED_DATA    = revb::PIN_LED_DATA;      // WS2812B-Kette LED1 -> LED2
+constexpr int PIN_MOT_IN1     = revb::PIN_MOT_IN1;       // DRV8833
+constexpr int PIN_MOT_IN2     = revb::PIN_MOT_IN2;
+constexpr int PIN_MOT_NSLEEP  = revb::PIN_MOT_NSLEEP;
+constexpr int PIN_SERVO_YAW   = revb::PIN_SERVO_YAW;
+constexpr int PIN_SERVO_PITCH = revb::PIN_SERVO_PITCH;
+constexpr int PIN_SERVO_CHUTE = revb::PIN_SERVO_CHUTE;
+constexpr int PIN_PYRO1       = revb::PIN_PYRO1_FIRE;
+constexpr int PIN_PYRO2       = revb::PIN_PYRO2_FIRE;
+constexpr int PIN_RADIO_M0    = revb::PIN_LORA_M0;       // E22: M0 = M1 = 0 -> transparenter Modus
+constexpr int PIN_RADIO_M1    = revb::PIN_LORA_M1;
 #else
 constexpr int PIN_BEEPER      = 13;
 constexpr int PIN_LED1        = 5;    // WS2812B
@@ -95,8 +115,14 @@ constexpr float SERVO_YAW_MIN_DEG   =  70.0f;
 constexpr float SERVO_YAW_MAX_DEG   = 115.0f;
 constexpr float SERVO_PITCH_MIN_DEG =  60.0f;
 constexpr float SERVO_PITCH_MAX_DEG = 105.0f;
-constexpr float CHUTE_SERVO_CLOSED_DEG = 10.0f;   // Reserve, falls der Fallschirm doch per Servo kommt
+// Fallschirm-Servo an J_SERVO3 (Kartonaut 1: sticht die CO₂-Kapsel an, ChuteRelease.h). Winkel sind
+// Platzhalter: am gebauten CO₂-Modul einstellen (revb_test: servo 3 us <wert>).
+constexpr float CHUTE_SERVO_CLOSED_DEG = 10.0f;
 constexpr float CHUTE_SERVO_OPEN_DEG   = 120.0f;
+constexpr bool  CHUTE_SERVO_RELEASE    = true;    // Servo in APOGEE/DESCENT öffnen (zusätzlich zu den Pyrokanälen)
+// false: der Servo öffnet auch ohne scharfen ARM-Schalter. Die Bergung soll nicht an einer
+// Spannungsmessung hängen; am Boden schützt der Zustandsautomat (kein APOGEE ohne erkannten Start).
+constexpr bool  CHUTE_SERVO_NEEDS_ARM  = false;
 
 // ===== Regler Pitch/Yaw (TVC) =====
 // Arbeitet auf den Kippwinkeln aus der Gyro-Quaternion (Grad), skaliert mit 1/100.
@@ -106,8 +132,15 @@ constexpr float PY_KI = 0.0f;
 constexpr float PY_KD = 1.0f;
 constexpr float PY_ERROR_SCALE = -100.0f;   // Grad -> Reglereingang
 constexpr float PY_INT_LIMIT   = 500.0f;    // Anti-Windup des I-Anteils [Grad·s]
+// Tiefpass 1. Ordnung nur auf der Drehrate im D-Anteil (Simulation 05.11.2026, scripts/rate_study.py):
+// halbiert die Stellaktivität aus dem Gyro-Rauschen, kostet ~2° Phase, Kippwinkel unverändert.
+constexpr float PY_D_LPF_HZ  = 30.0f;       // 0 = aus
+// Stellratenbegrenzung des Kardans (Schutz gegen Sprünge bei Moduswechsel oder Ausreißern, nicht für
+// die Stabilität): 100 Kardan-Grad/s, das 2-6-fache dessen, was der Regler in der Simulation braucht.
+// In Kardan-Grad, weil SERVO_*_GAIN (6 oder 23, Befund 13) noch offen ist.
+constexpr float PY_SLEW_TVC_DPS = 100.0f;   // 0 = aus
 constexpr float A_NORM_MIN   = 1.0f;        // Schutz gegen Division bei kleiner Beschleunigung [m/s²]
-constexpr float A_NORM_ALPHA = 0.1f;        // Tiefpass für |a|
+constexpr float A_NORM_TAU_S = 0.095f;      // Tiefpass für |a| (entspricht dem alten Faktor 0,1 bei 100 Hz)
 
 // ===== Regler Roll (Schwungrad / Rollmotor) =====
 // TODO Befund 15: Izz ist 0,0006 kg·m² (Erstflug), nicht 0,1; Gewinne vor dem Einsatz prüfen.
@@ -121,8 +154,12 @@ constexpr int   ROLL_PWM_MAX      = 4095;
 constexpr uint32_t ROLL_PWM_FREQ_HZ = 20000;
 
 // ===== Kalman (Höhe, Vertikalgeschwindigkeit) =====
-constexpr float KALMAN_MEAS_STD_M    = 30.0f;   // Baro-Rauschen [m]
-constexpr float KALMAN_SIGMA_ACC_MS2 = 10.0f;   // Prozessrauschen [m/s²]
+// BMP388 mit ×8 und IIR 3: Rauschen ~0,1 m; 0,5 m lässt Platz für Strömung am Druckausgleichsloch.
+// Vorher 30 m: dann folgte die Höhe fast nur der integrierten Beschleunigung (driftet).
+constexpr float KALMAN_MEAS_STD_M    = 0.5f;    // Baro-Rauschen [m]
+constexpr float KALMAN_SIGMA_ACC_MS2 = 2.0f;    // Prozessrauschen: Fehler der vertikalen Beschleunigung [m/s²]
+constexpr float KALMAN_GATE_SIGMA    = 5.0f;    // Innovation darüber = Ausreißer (Druckstoß) ...
+constexpr uint8_t KALMAN_MAX_REJECTS = 25;      // ... höchstens so viele Barometerwerte in Folge (0,5 s)
 constexpr float KALMAN_INIT_PZ_VAR   = 10000.0f;
 constexpr float KALMAN_INIT_PV_VAR   = 10000.0f;
 
@@ -160,7 +197,7 @@ constexpr uint32_t LANDING_BURN_MAX_MS   = 6000;      // LANDING_BURN -> LANDED 
 constexpr bool     THROTTLE_ENABLED      = false;    // erst mit Drosselmechanik und Experiment E05
 constexpr float    THROTTLE_F_MIN        = 0.5f;     // Axialschub bei ganz eingeschwenkten Pads (Kennlinie E05)
 #ifdef BOARD_REVB
-constexpr int      PIN_SERVO_THROTTLE    = 10;       // J_SERVO4 (SERVO_LEGS) an VSERVO, solange die Beine keinen Servo haben
+constexpr int      PIN_SERVO_THROTTLE    = revb::PIN_SERVO_LEGS;   // J_SERVO4 an VSERVO, solange die Beine keinen Servo haben
 #else
 constexpr int      PIN_SERVO_THROTTLE    = -1;       // Breakouts: kein freier Servoausgang
 #endif
@@ -182,8 +219,8 @@ constexpr float    THROTTLE_SCALE_PLAN    = 0.9f;    // Zündung für den schwä
 // Reserve der Ausstoßladung, im Landemodus der Anzünder des zweiten Motors.
 constexpr int      PYRO_CH_CHUTE        = 0;
 constexpr int      PYRO_CH_IGNITER      = 1;
-constexpr uint32_t PYRO_PULSE_MS        = 80;      // Ausstoßladung: 50..100 ms, Abbruch bei Durchgangsverlust
-constexpr uint32_t PYRO_IGNITER_PULSE_MS = 1000;   // Anzünder im Motor: bis er durchbrennt, höchstens 1 s
+constexpr uint32_t PYRO_PULSE_MS        = 80;      // Ausstoßladung: 50..100 ms, immer die volle Länge (Pyro.h)
+constexpr uint32_t PYRO_IGNITER_PULSE_MS = 1000;   // Anzünder im Motor: 1 s, auch wenn er früher durchbrennt
 constexpr uint32_t PYRO_MIN_FLIGHT_MS   = 2000;    // zweite Bedingung: mindestens so lange seit dem Start
 constexpr uint32_t PYRO_BACKUP_DELAY_MS = 1500;    // Kanal 2 zündet so viel später, falls bestückt
 constexpr uint32_t PYRO_RETRY_DELAY_MS  = 500;     // zweiter Versuch, wenn der Durchgang nach dem Puls bleibt
@@ -198,14 +235,24 @@ constexpr uint32_t TLM_CMD_TIMEOUT_MS = 1000;   // Kommando-Rahmen älter als da
 
 // ===== Watchdog und Zustandsspeicher =====
 constexpr bool     WDT_ENABLED    = true;
-constexpr uint32_t WDT_TIMEOUT_MS = 250;        // Loop 10 ms; SD-Flush bleibt mit dem Slack darunter
+constexpr uint32_t WDT_TIMEOUT_MS = 250;        // Loop 4 ms; im Flug kein SD-Zugriff (Logging)
 constexpr uint32_t STATE_SAVE_EVERY_N_LOOPS = 1;
 
-// ===== Logging =====
-constexpr bool     LOG_DATA = false;
-constexpr uint32_t LOG_EVERY_N_LOOPS = 1;       // 1 = 100 Hz, 10 = 10 Hz
-// Nach so vielen Frames stoppen und die CSV exportieren (Tischtest). 0 = nie.
-constexpr uint32_t LOG_STOP_AFTER_FRAMES = 1000;
+// ===== Logging (SDLogger.h) =====
+// Jeder Datensatz geht zuerst in einen Ringpuffer im PSRAM (8 MB, ohne PSRAM 384 KB im RAM2).
+// Auf die SD-Karte geschrieben wird nur am Boden (SAFE) und ab DESCENT; von PAD_READY bis APOGEE
+// berührt der Loop die Karte nie, damit ein langsamer Schreibzugriff die Regelung nicht aufhält.
+// Der Rückstand wird ab DESCENT nachgeschrieben, bei LANDED alles.
+constexpr bool     LOG_DATA = true;
+constexpr uint32_t LOG_DIV_GROUND  = 10;        // SAFE: jeder 10. Loop = 25 Hz
+constexpr uint32_t LOG_DIV_FLIGHT  = 1;         // PAD_READY bis APOGEE: 250 Hz
+constexpr uint32_t LOG_DIV_DESCENT = 5;         // DESCENT, LANDED: 50 Hz
+// Vorlauf auf der Rampe: in PAD_READY behält der Ringpuffer nur die letzten Sekunden, damit beim
+// Start Platz für den Flug ist (bis 14.11.2026 lief er auf der Rampe voll und verwarf dann den Flug,
+// Befund 26). Höchstens ein Fünftel des Puffers; ohne PSRAM sind das etwa 2 s.
+constexpr float    LOG_PREROLL_S   = 10.0f;
+// Nach so vielen Frames stoppen und die CSV exportieren (Tischtest). 0 = nie; sonst USB-Befehl 'x'.
+constexpr uint32_t LOG_STOP_AFTER_FRAMES = 0;
 constexpr bool     LOOP_WARNING = true;         // Overrun auf Serial melden
 
 // ===== Regler-Freigaben =====

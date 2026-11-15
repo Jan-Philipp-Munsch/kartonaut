@@ -3,7 +3,8 @@
     python -m pytest firmware/tools/test_bench_test.py
 
 Die Beispielzeilen in testdata/revb_test_sample.log sind im Format der Testkonsole
-(examples/revb_test/Proto.h) aufgezeichnet; sie decken TEST, CAL, END, INFO, READY ab.
+(examples/revb_test/Proto.h) aufgezeichnet; sie decken TEST, CAL, END, INFO, READY ab, dazu die
+IMU LSM6DSV16X (rev B1) und NICHT_ERKANNT für Teile, die laut Bestückungsliste fehlen (Baro 2, INA239).
 """
 from pathlib import Path
 
@@ -19,6 +20,11 @@ SAMPLE = Path(__file__).parent / "testdata" / "revb_test_sample.log"
     ("TEST mux_gnd OK 0.002 V am ADC (Y7)", {"kind": "test", "name": "mux_gnd", "result": "OK", "detail": "0.002 V am ADC (Y7)"}),
     ("TEST baro2 SKIP nicht bestückt (DNP), Chip-ID 0x00", {"kind": "test", "name": "baro2", "result": "SKIP", "detail": "nicht bestückt (DNP), Chip-ID 0x00"}),
     ("TEST sd_init FEHL", {"kind": "test", "name": "sd_init", "result": "FEHL", "detail": ""}),
+    ("TEST ina_id NICHT_ERKANNT nicht bestückt oder keine Antwort (Bestückungsliste: fit ina off)",
+     {"kind": "test", "name": "ina_id", "result": "NICHT_ERKANNT", "detail": "nicht bestückt oder keine Antwort (Bestückungsliste: fit ina off)"}),
+    ("TEST imu_whoami OK 0x70 soll 0x70 (LSM6DSV16X)", {"kind": "test", "name": "imu_whoami", "result": "OK", "detail": "0x70 soll 0x70 (LSM6DSV16X)"}),
+    ("END ina NICHT_ERKANNT", {"kind": "end", "cmd": "ina", "result": "NICHT_ERKANNT"}),
+    ("END fit ina on OK", {"kind": "end", "cmd": "fit ina on", "result": "OK"}),
     ("TEST cal_gyro OK Nullpunkt 0.3 dps\r\n", {"kind": "test", "name": "cal_gyro", "result": "OK", "detail": "Nullpunkt 0.3 dps"}),
     ("CAL gyro_bias_dps 0.3120 -0.1980 0.0470", {"kind": "cal", "name": "gyro_bias_dps", "values": [0.312, -0.198, 0.047]}),
     ("CAL imu_axis_map 1 0 2", {"kind": "cal", "name": "imu_axis_map", "values": [1, 0, 2]}),
@@ -35,6 +41,7 @@ SAMPLE = Path(__file__).parent / "testdata" / "revb_test_sample.log"
     ("irgendein freier Text", None),
     ("TESTER foo OK", None),
     ("TEST foo MAYBE detail", None),
+    ("TEST foo NICHT detail", None),
     ("ENDE mux OK", None),
     ("", None),
 ])
@@ -60,11 +67,16 @@ def test_session_from_sample_log():
                     t["cmd"] = ev["cmd"]
     names = [t["name"] for t in s.tests]
     assert names[:3] == ["mux_gnd", "mux_vbat1", "mux_vbat2"]
-    assert len(s.tests) == 21
+    assert len(s.tests) == 22
     assert [t["name"] for t in s.failed()] == ["timing_loop"]
-    assert len(s.skipped()) == 7
+    assert len(s.skipped()) == 6
+    assert [t["name"] for t in s.not_fitted()] == ["baro2", "ina_id"]
     assert s.overall() == "FEHL"
-    assert [e["cmd"] for e in s.ends] == ["mux", "imu", "baro", "cal gyro 10", "cal save", "timing"]
+    assert [e["cmd"] for e in s.ends] == ["mux", "imu", "baro", "ina", "cal gyro 10", "cal save", "timing"]
+    assert s.ends[3] == {"cmd": "ina", "result": "NICHT_ERKANNT"}
+    imu = {t["name"]: t["detail"] for t in s.tests if t["cmd"] == "imu"}
+    assert "LSM6DSV16X" in imu["imu_whoami"]
+    assert "Grenzen 150..700" in imu["imu_selftest_gyro"]
     assert s.cals["gyro_bias_dps"] == [0.312, -0.198, 0.047]
     assert s.cals["gyro_bias_temp_c"] == [24.31]
     assert s.cals["adc_gain[4]"] == [1.0021]
@@ -83,6 +95,29 @@ def test_session_overall_levels():
     assert s.overall() == "SKIP"
     s.feed("END x FEHL")
     assert s.overall() == "FEHL"
+
+
+def test_session_overall_not_fitted():
+    # nicht bestückte Teile sind kein Fehler: schwächer als SKIP, stärker als OK
+    s = bt.Session()
+    s.feed("TEST a OK")
+    s.feed("TEST ina_id NICHT_ERKANNT nicht bestückt oder keine Antwort (Bestückungsliste: fit ina off)")
+    s.feed("END ina NICHT_ERKANNT")
+    assert s.overall() == "NICHT_ERKANNT"
+    assert s.failed() == [] and s.skipped() == []
+    s.feed("TEST b SKIP ohne 2S")
+    assert s.overall() == "SKIP"
+
+
+def test_fit_commands():
+    assert bt.fit_commands(None) == []
+    assert bt.fit_commands("ina=on") == ["fit ina on"]
+    assert bt.fit_commands(" baro=off , LoRa=ON,default") == ["fit baro off", "fit lora on", "fit default"]
+    assert bt.fit_commands("all=off") == ["fit all off"]
+    for bad in ("ina", "ina=vielleicht", "toaster=on"):
+        with pytest.raises(ValueError):
+            bt.fit_commands(bad)
+    assert bt.timeout_for("fit ina on") == bt.TIMEOUTS["fit"]
 
 
 # ---------------------------------------------------------------- Befehlssteuerung mit nachgebildetem Port
@@ -173,6 +208,8 @@ def test_report_markdown(tmp_path):
     s.feed("TEST mux_gnd OK 0.002 V")
     s.feed("TEST mux_vbat2 SKIP 2S fehlt")
     s.feed("END mux SKIP")
+    s.current_cmd = "ina"
+    s.feed("TEST ina_id NICHT_ERKANNT nicht bestückt oder keine Antwort (Bestückungsliste: fit ina off)")
     s.current_cmd = "cal save"
     s.feed("CAL servo_us 1 1480 1120 1860")
     s.feed("END cal save OK")
@@ -183,6 +220,8 @@ def test_report_markdown(tmp_path):
     assert "| 5V_SYS | 5.010 V | 4.85..5.15 V | ok |" in md
     assert "| 3V3_RF | – | 3.20..3.40 V | übersprungen |" in md
     assert "| mux | mux_vbat2 | übersprungen | 2S fehlt |" in md
+    assert "| ina | ina_id | nicht bestückt | nicht bestückt oder keine Antwort (Bestückungsliste: fit ina off) |" in md
+    assert "3 Prüfungen, 0 FEHL, 1 SKIP, 1 nicht bestückt" in md
     assert "| servo_us[1] | 1480 1120 1860 |" in md
     assert "**SKIP**" in md
     assert "- Hinweis" in md
@@ -193,9 +232,13 @@ def test_report_markdown(tmp_path):
 # ---------------------------------------------------------------- alter Ablauf (revb_bringup)
 def test_bringup_parser():
     c = bt.parse_bringup_line("  [ OK ] GND-Kanal (Y7)               0.003 V am ADC", "1. Analogmux 74HC4051")
-    assert c == {"section": "1. Analogmux 74HC4051", "what": "GND-Kanal (Y7)", "ok": True, "detail": "0.003 V am ADC"}
+    assert c == {"section": "1. Analogmux 74HC4051", "what": "GND-Kanal (Y7)", "ok": True, "result": "OK", "detail": "0.003 V am ADC"}
     c = bt.parse_bringup_line("  [FEHL] Konfiguration                ", "2. IMU")
-    assert c["ok"] is False and c["what"] == "Konfiguration" and c["detail"] == ""
+    assert c["ok"] is False and c["result"] == "FEHL" and c["what"] == "Konfiguration" and c["detail"] == ""
+    c = bt.parse_bringup_line("  [ -- ] INA239                       nicht bestückt oder keine Antwort (REVB_FIT_INA239=0)",
+                              "4. Strommonitor INA239 (CS Y3)")
+    assert c["ok"] is True and c["result"] == "NICHT_ERKANNT" and c["what"] == "INA239"
+    assert c["detail"] == "nicht bestückt oder keine Antwort (REVB_FIT_INA239=0)"
     assert bt.parse_bringup_line("IMU a=[  0.12  -0.05   9.79] m/s²", "") is None
 
 

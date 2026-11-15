@@ -1,6 +1,7 @@
 """Schubkurve und Prüfvektoren für das Landebrennen in die Firmware exportieren.
 
-    python scripts/export_landing_firmware.py
+    python scripts/export_landing_firmware.py                 # Regeltakt 250 Hz (Firmware ab 11/2026)
+    python scripts/export_landing_firmware.py --rate-hz 100   # wie bis Oktober 2026
 
 * ``firmware/src/ThrustCurveE12.h``: die TSP-E12-Kurve (data/E12_thrustcurve.csv) als Tabelle
   für ``LandingBurn.cpp`` (gleiche Stützpunkte wie die Simulation).
@@ -12,6 +13,7 @@
 * ``firmware/test/data/landing_profile_tvcsim.csv``: ein 6DOF-Flug mit Landebrennen (Masse 0,7 kg)
   für den Zustandsautomaten: Zeit, |a|, axiale Kraft, Höhe, vz, Barometerhöhe, Schub.
 """
+import argparse
 import csv
 
 import numpy as np
@@ -57,11 +59,11 @@ def export_costs() -> None:
     print(f"landing_cost_E12.csv: {len(rows)} Zeilen")
 
 
-def export_profile(m: float = 0.7) -> None:
+def export_profile(m: float = 0.7, dt: float = 0.004) -> None:
     from scipy.spatial.transform import Rotation as R
     p = SimParams(vehicle=VehicleParams.light(m), controller="firmware",
                   motor=MotorParams(fuel_model="impulse", second_mode="landing", landing_alt_sigma=0, landing_vz_sigma=0),
-                  noise=NoiseParams(accel_model="specific_force", enabled=False), t_end=30.0, seed=0)
+                  noise=NoiseParams(accel_model="specific_force", enabled=False), t_end=30.0, seed=0).at_rate(1.0 / dt)
     p.firmware.MASS_KG = m; p.firmware.MOMENT_ARM_M = 0.242
     res = simulate(p)
     g = 9.81
@@ -70,12 +72,12 @@ def export_profile(m: float = 0.7) -> None:
     rot = R.from_quat(np.column_stack([q[:, 1], q[:, 2], q[:, 3], q[:, 0]]))
     f_body = rot.inv().apply(f_in)
     rng = np.random.default_rng(0)
-    rows = [[k * 0.01, g, g, 0.0, 0.0, float(rng.normal(0, 0.3)), 0.0] for k in range(200)]
+    rows = [[k * dt, g, g, 0.0, 0.0, float(rng.normal(0, 0.3)), 0.0] for k in range(int(round(2.0 / dt)))]
     for k in range(len(res.t)):
         rows.append([2.0 + res.t[k], np.linalg.norm(f_body[k]), f_body[k, 0], res.r[k, 0], res.rd[k, 0],
                      res.r[k, 0] + rng.normal(0, 0.3), res.T[k]])
     t_end = 2.0 + res.t[-1]
-    rows += [[t_end + k * 0.01, g, g, 0.0, 0.0, float(rng.normal(0, 0.3)), 0.0] for k in range(1, 501)]
+    rows += [[t_end + k * dt, g, g, 0.0, 0.0, float(rng.normal(0, 0.3)), 0.0] for k in range(1, int(round(5.0 / dt)) + 1)]
     with open(FW / "test" / "data" / "landing_profile_tvcsim.csv", "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow(["t_s", "a_norm_ms2", "a_axial_ms2", "alt_m", "vz_ms", "baro_alt_m", "thrust_N"])
@@ -88,7 +90,7 @@ def export_profile(m: float = 0.7) -> None:
 
 
 
-def export_throttle_vectors() -> None:
+def export_throttle_vectors(dt: float = 0.004) -> None:
     """Drosselregler: stop_height- und command-Werte für test_throttle.cpp (gleicher Algorithmus)."""
     from tvcsim.params import ThrottleParams
     from tvcsim.throttle import ThrottleLandingController, stop_height
@@ -100,17 +102,17 @@ def export_throttle_vectors() -> None:
             rows.append(["stop", m, h, v, t0, fnow, 0.0, f"{hs:.4f}"])
     # Kommandofolge: 0,6 kg, f_min 0,5, ein fester Zustandsverlauf (nicht die geschlossene Schleife)
     tp = ThrottleParams(enabled=True, f_min=0.5)
-    c = ThrottleLandingController("E12", 0.6, tp, 0.003, 1.2, 0.028, 0.1, 0.01)
+    c = ThrottleLandingController("E12", 0.6, tp, 0.003, 1.2, 0.028, 0.1, dt)
     h, v = 51.0, -25.6
-    for k in range(360):
-        ts = k * 0.01
+    for k in range(int(round(3.6 / dt))):
+        ts = k * dt
         a_meas = 0.9 * float(np.interp(ts - 0.1, t, f, left=0, right=0)) / 0.6 + 0.5 * 1.2 * 0.003 * v * v / 0.6
         u = c.throttle_command(ts, h, v, 0.6, a_meas=a_meas)
         rows.append(["cmd", 0.6, h, v, ts, a_meas, u, f"{c.scale_est:.5f}"])
         # einfacher Zustandsverlauf: Vollschub-Bremsung zu 90 %
         T = 0.9 * float(np.interp(ts - 0.1, t, f, left=0, right=0)) * (1 - 0.5 * u)
-        v += (T / 0.6 - 9.81) * 0.01
-        h += v * 0.01
+        v += (T / 0.6 - 9.81) * dt
+        h += v * dt
         if h <= 0:
             break
     with open(FW / "test" / "data" / "throttle_vectors.csv", "w", newline="", encoding="utf-8") as fh:
@@ -121,7 +123,10 @@ def export_throttle_vectors() -> None:
 
 
 if __name__ == "__main__":
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--rate-hz", type=float, default=250.0, help="Regeltakt (Config.h LOOP_HZ)")
+    args = ap.parse_args()
     export_curve()
     export_costs()
-    export_profile()
-    export_throttle_vectors()
+    export_profile(dt=1.0 / args.rate_hz)
+    export_throttle_vectors(dt=1.0 / args.rate_hz)

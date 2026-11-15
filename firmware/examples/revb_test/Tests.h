@@ -21,3 +21,4 @@ Res testGps();
 Res testSd();
 Res testTiming();
 Res testWatchdog(bool fire);
+Res testMem();             // PSRAM und QSPI-Flash unter dem Teensy

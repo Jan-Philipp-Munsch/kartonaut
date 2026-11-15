@@ -51,14 +51,15 @@ class ThrustModel:
         if self.t_ignite2 is None:
             self.t_ignite2 = t_thrust
 
-    def t_second(self, dt: float) -> float | None:
-        """Zuendzeitpunkt des zweiten Motors in s: ``secondburn`` Schritte zu ``dt`` (Modus
-        "time") oder der Zeitpunkt aus dem Landemodus (None, solange nicht gezuendet)."""
+    def t_second(self, dt: float | None = None) -> float | None:
+        """Zuendzeitpunkt des zweiten Motors in s: ``secondburn`` Schritte zu ``secondburn_dt`` = 10 ms
+        (Modus "time", 7,3 s wie Simulink, unabhaengig vom Regeltakt ``dt``) oder der Zeitpunkt aus dem
+        Landemodus (None, solange nicht gezuendet)."""
         if self.params.second_mode == "landing":
             return self.t_ignite2
         if self.params.second_mode == "none":
             return None
-        return self.params.secondburn * dt
+        return self.params.secondburn * self.params.secondburn_dt
 
     def thrust_single(self, t: float) -> float:
         return float(np.interp(t, self.t_curve, self.f_curve, left=0.0, right=0.0))

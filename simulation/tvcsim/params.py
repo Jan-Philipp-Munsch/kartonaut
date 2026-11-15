@@ -25,6 +25,20 @@ CAD_MASS_FILE = REPO_DIR / "cad" / "mass_properties.json"
 STAND2B_MASS_FILE = REPO_DIR / "cad" / "mass_stand2b.json"
 FUEL_PER_MOTOR_KG = 0.028   # TSP E12: 28 g Treibstoff
 
+# Regeltakt. Die Firmware rechnet seit November 2026 mit 250 Hz (Servo-PWM 250 Hz, Gyro/Accel als Mittel
+# der FIFO-Werte ueber den 4-ms-Takt); bis dahin 100 Hz wie das Simulink-Modell (dt = 0,01 s).
+CONTROL_RATE_HZ = 250.0
+DT_CONTROL = 1.0 / CONTROL_RATE_HZ    # 0,004 s, Vorgabe von ControlParams.dt
+DT_SIMULINK = 0.01                    # Simulink-Modell und Firmware bis Oktober 2026 (100 Hz)
+
+# Wirksames Traegheitsmoment des bewegten Kardans (Motor, Adapter, Motorrohr, Innenrahmen) fuer das
+# Reaktionsmoment auf den Rumpf, Stand 2b (cad/mass_stand2b.md, Kardanpunkt 69,5 mm ueber der Duese):
+# I_Drehpunkt ~ 1,0e-4 kg m^2 (Motor 64 g, Schwerpunkt 28 mm unter dem Drehpunkt: 0,8e-4; Adapter 15 g:
+# 0,12e-4; Motorrohr und Innenrahmen: 0,1e-4) plus Kopplung m_g d l = 2,1e-3 kg m * 0,19 m = 4,1e-4
+# (der Schwerpunkt des Kardans liegt unter dem Drehpunkt; seine Querbeschleunigung stoesst am Hebelarm l
+# gegen den Rumpf). Zusammen ~5e-4 kg m^2, 2,4 % des Quer-Traegheitsmoments der Rakete (0,021).
+GIMBAL_INERTIA_STAND2B = 5.0e-4
+
 
 @dataclass
 class VehicleParams:
@@ -47,6 +61,12 @@ class VehicleParams:
     # Rumpf Ø 75 mm: A = 0,0044 m^2, Cd ~ 0,6..0,8 -> cd_a ~ 0,003. 0 = aus (wie Simulink).
     cd_a: float = 0.0
     rho: float = 1.2
+    # Reaktionsmoment des Kardans (nicht im Simulink-Modell, seit 05.11.2026 als Option): beschleunigt
+    # der Servo den Kardan um die Querachse, dreht der Rumpf mit -gimbal_inertia * theta_ddot dagegen
+    # (Drehimpuls bleibt), und das sieht der Gyro. Wirksames Traegheitsmoment in kg m^2 bezogen auf den
+    # Schwerpunkt der Rakete (I_Drehpunkt + m_Kardan * d * l), 0 = aus (wie Simulink).
+    # Stand 2b: GIMBAL_INERTIA_STAND2B = 5e-4.
+    gimbal_inertia: float = 0.0
 
     @classmethod
     def nominal(cls) -> "VehicleParams":
@@ -110,7 +130,8 @@ class MotorParams:
     """Schubmodell: zwei Motoren derselben Kurve, der zweite um ``secondburn`` Schritte spaeter."""
 
     curve: str = "E12"          # "E12" oder "F35" (data/<curve>_thrustcurve.csv)
-    secondburn: int = 730       # Verzoegerung des zweiten Motors in Regelschritten (dt)
+    secondburn: int = 730       # Verzoegerung des zweiten Motors in Schritten zu secondburn_dt (Simulink: 7,3 s)
+    secondburn_dt: float = DT_SIMULINK   # s je Schritt; fest 10 ms, unabhaengig vom Regeltakt
     second_motor: bool = True
     # Zuendung des zweiten Motors: "time" nach secondburn Schritten (Simulink), "landing" aus
     # dem Zustand (Landebrennen, tvcsim.landing: Zuendhoehe als Funktion der Sinkgeschwindigkeit)
@@ -147,6 +168,20 @@ class ServoParams:
     # 6 aus der Identifikation (35 Servo-Grad -> 5,5 Kardan-Grad), Config.h sagt 23.
     servo_deg_per_tvc_deg: float = 6.0
     sat_deg: float = 5.0       # Saettigung des Kommandos (Block "Saturation", +-5 Grad)
+    # Stellratenbegrenzung des Servos in Servo-Grad/s (0 = aus, wie Simulink). Am Kardan wirkt
+    # rate_limit_dps / servo_deg_per_tvc_deg. SG90-Messung: ~70 Grad/s am Kardan (bei Gain 6: 420 Servo-Grad/s).
+    rate_limit_dps: float = 0.0
+
+    @classmethod
+    def w5652h(cls, t_eq: float = 0.025, rate_s_per_60: float = 0.06, tau: float = 0.004,
+               servo_deg_per_tvc_deg: float = 6.0) -> "ServoParams":
+        """Annahme fuer die FrSky Xact W5652H am 2S-Akku, bis E01 sie vermisst (Datenblatt: 0,05 s/60 Grad
+        bei 8,4 V, 0,10 s bei 4,2 V; am 2S ~0,06 s). Verzoegerung erster Ordnung t_eq (20..30 ms), hier als
+        aperiodisches PT2 (zeta = 1, wn = 2 / t_eq, gleiche mittlere Verzoegerung), damit die
+        Kardanbeschleunigung fuer das Reaktionsmoment endlich bleibt; Totzeit tau (PWM-Rahmen 250 Hz, im
+        Mittel 2 ms, plus Servo-Elektronik); Ratenbegrenzung 60 Grad / rate_s_per_60."""
+        return cls(K=1.0 / servo_deg_per_tvc_deg, wn=2.0 / t_eq, zeta=1.0, tau=tau,
+                   servo_deg_per_tvc_deg=servo_deg_per_tvc_deg, rate_limit_dps=60.0 / rate_s_per_60)
 
 
 @dataclass
@@ -182,7 +217,7 @@ class ControlParams:
     kp: float = 1.0            # TVC6DOF.m: kp=1, ki=1, kd=0.1; pid_tuner.m: 3.1, 5, 0.385
     ki: float = 1.0
     kd: float = 0.1
-    dt: float = 0.01           # s, Regeltakt (Zero-Order Hold)
+    dt: float = DT_CONTROL     # s, Regeltakt (Zero-Order Hold); 250 Hz wie die Firmware, DT_SIMULINK = 0,01 wie Simulink
     error_scale: float = -0.01  # Gain12: Winkel (Grad) -> Regelfehler
     secondburn: int = 730      # Step-Block, der die I-Anteile bei secondburn/100 s zuruecksetzt
 
@@ -208,7 +243,11 @@ class FirmwareParams:
     MASS_KG: float = 0.70
     MOMENT_ARM_M: float = 0.30
     A_NORM_MIN: float = 1.0
-    A_NORM_ALPHA: float = 0.1
+    # |a|-Tiefpass, seit 11/2026 zeitbasiert (main.cpp: lowpassStep(y, x, A_NORM_TAU_S, dt) = y + (x - y) dt/(tau + dt)).
+    # A_NORM_ALPHA != None rechnet wie vorher mit festem Faktor je Takt (0,1 bei 100 Hz ~ tau 95 ms).
+    A_NORM_TAU_S: float = 0.095
+    A_NORM_ALPHA: float | None = None
+    PY_INT_LIMIT: float = 500.0   # Anti-Windup des I-Anteils, Grad s (ControlLaw.cpp)
     SERVO_YAW_GAIN: float = -23.0
     SERVO_YAW_OFFSET: float = 92.5
     SERVO_PITCH_GAIN: float = 23.0
@@ -229,6 +268,9 @@ class FirmwareParams:
     quantize_servo: bool = False  # True = auf ganze Grad runden wie die Firmware bis 22.10.2026 (PWMServo);
                                   # seitdem 16-Bit-PWM ohne Rundung
     apply_window: bool = True     # mechanische Fenster anwenden
+    # 250-Hz-Takt, wie Config.h seit 05.11.2026 (0 = aus):
+    D_LPF_HZ: float = 30.0        # PY_D_LPF_HZ: Tiefpass 1. Ordnung auf omega nur im D-Anteil (Grenzfrequenz Hz)
+    SERVO_SLEW_DPS: float = 2300.0  # PY_SLEW_TVC_DPS 100 Kardan-Grad/s x |SERVO_*_GAIN| 23, in Servo-Grad/s
 
 
 @dataclass
@@ -243,6 +285,10 @@ class NoiseParams:
     #  "rdd":            die inertiale Beschleunigung inkl. g, wie im Simulink-Modell
     #  "specific_force": Schub/Masse im Koerpersystem, wie eine echte IMU
     accel_model: str = "rdd"
+    # Gyro und Beschleunigung als Mittel ueber den Regeltakt (Boxcar ueber [t_k - dt, t_k], Gruppenlaufzeit
+    # dt/2: bei 250 Hz 2 ms), wie die Firmware die FIFO-Werte (960 Hz) je 4-ms-Takt mittelt.
+    # False = Momentanwert zum Takt (Simulink-Modell, Firmware bei 100 Hz).
+    imu_average: bool = True
 
 
 @dataclass
@@ -274,10 +320,23 @@ class SimParams:
     noise: NoiseParams = field(default_factory=NoiseParams)
     controller: str = "simulink"   # "simulink" oder "firmware"
     t_end: float = 12.0            # s, StopTime des Modells (Monte-Carlo: 7 s)
-    substeps: int = 10             # RK4-Teilschritte je Regelschritt (dt/substeps = 1 ms)
+    substeps: int | None = None    # RK4-Teilschritte je Regelschritt; None = so viele, dass dt/substeps ~ 1 ms
     ground: bool = True            # Boden: auf der Rampe keine Bewegung nach unten, der Lauf endet bei der
                                    # Landung (Hoehe 0 nach dem Abheben). False = wie Simulink, ohne Boden.
     seed: int | None = None
 
     def with_(self, **kw) -> "SimParams":
         return replace(self, **kw)
+
+    @property
+    def n_substeps(self) -> int:
+        if self.substeps is not None:
+            return int(self.substeps)
+        return max(1, int(round(self.control.dt / 1e-3)))
+
+    def at_rate(self, rate_hz: float, imu_average: bool | None = None) -> "SimParams":
+        """Kopie mit Regeltakt ``rate_hz``. ``imu_average`` None: Mittelung an ab 200 Hz (Firmware ab
+        November 2026), bei 100 Hz Momentanwert wie bisher; so rechnet ``at_rate(100)`` die alten Zahlen."""
+        avg = (rate_hz >= 200.0) if imu_average is None else imu_average
+        return replace(self, control=replace(self.control, dt=1.0 / rate_hz),
+                       noise=replace(self.noise, imu_average=avg))

@@ -1,6 +1,7 @@
 """Testvektoren für die nativen Firmware-Tests (firmware/test/data/) aus der Simulation erzeugen.
 
-    python scripts/export_firmware_vectors.py
+    python scripts/export_firmware_vectors.py                 # Regeltakt 250 Hz (Firmware ab 11/2026)
+    python scripts/export_firmware_vectors.py --rate-hz 100   # wie bis Oktober 2026
 
 * ``sil_controller_ki0.csv`` / ``sil_controller_ki1.csv``: Eingänge und Ausgänge von
   ``tvcsim.controller.FirmwareController`` (Winkel, Drehraten, gefiltertes |a|, Momente,
@@ -13,6 +14,7 @@
 Die Dateien liegen im Repo, damit die Tests ohne Python laufen; nach Änderungen an der
 Simulation oder an Config.h neu erzeugen.
 """
+import argparse
 import csv
 from pathlib import Path
 
@@ -28,14 +30,15 @@ OUT = REPO_DIR / "firmware" / "test" / "data"
 
 def export_sil(res, ki: float, name: str) -> None:
     fw = FirmwareParams(PY_KI=ki, quantize_servo=False, MASS_KG=0.761, MOMENT_ARM_M=0.242)
-    fc = FirmwareController(fw, 0.01)
+    dt = float(res.params.control.dt)
+    fc = FirmwareController(fw, dt)
     rows = []
     for k in range(len(res.t)):
         w_sim = res.w_dps[k]
         a_norm = float(abs(res.T[k] / res.m[k]))      # spezifische Kraft entlang der Achse
         fc.step(float(res.t[k]), w_sim, None, float(res.T_est[k]), a_norm=a_norm)
         omega_fw = fc.sim_to_fw(w_sim)
-        rows.append([f"{res.t[k]:.3f}", "0.01", f"{fc.rot_deg[0]:.6f}", f"{fc.rot_deg[1]:.6f}",
+        rows.append([f"{res.t[k]:.3f}", f"{dt:g}", f"{fc.rot_deg[0]:.6f}", f"{fc.rot_deg[1]:.6f}",
                      f"{omega_fw[0]:.6f}", f"{omega_fw[1]:.6f}", f"{fc.a_norm_filt:.6f}",
                      f"{fc.last['u'][1]:.8f}", f"{fc.last['u'][2]:.8f}",
                      f"{fc.last['yaw_servo_deg']:.5f}", f"{fc.last['pitch_servo_deg']:.5f}"])
@@ -63,14 +66,15 @@ def export_flight_profile(res) -> None:
     vz = res.rd[:, 0]
     rng = np.random.default_rng(0)
     baro = alt + rng.normal(0, 0.3, len(alt))
+    dt = float(res.params.control.dt)
     rows = []
-    for k in range(200):                               # 2 s Pad
-        rows.append([k * 0.01, g, g, 0.0, 0.0, float(rng.normal(0, 0.3))])
+    for k in range(int(round(2.0 / dt))):              # 2 s Pad
+        rows.append([k * dt, g, g, 0.0, 0.0, float(rng.normal(0, 0.3))])
     for k in range(len(t)):
         rows.append([2.0 + t[k], a_norm[k], a_axial[k], alt[k], vz[k], baro[k]])
     t_end = 2.0 + t[-1]
-    for k in range(1, 501):                            # 5 s Ruhe nach der Landung
-        rows.append([t_end + k * 0.01, g, g, 0.0, 0.0, float(rng.normal(0, 0.3))])
+    for k in range(1, int(round(5.0 / dt)) + 1):       # 5 s Ruhe nach der Landung
+        rows.append([t_end + k * dt, g, g, 0.0, 0.0, float(rng.normal(0, 0.3))])
     with open(OUT / "flight_profile_tvcsim.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["t_s", "a_norm_ms2", "a_axial_ms2", "alt_m", "vz_ms", "baro_alt_m"])
@@ -80,9 +84,12 @@ def export_flight_profile(res) -> None:
 
 
 def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--rate-hz", type=float, default=250.0, help="Regeltakt (Config.h LOOP_HZ)")
+    args = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
     p = SimParams(vehicle=VehicleParams.preload(), controller="firmware",
-                  noise=NoiseParams(accel_model="specific_force"), t_end=12.0, seed=0)
+                  noise=NoiseParams(accel_model="specific_force"), t_end=12.0, seed=0).at_rate(args.rate_hz)
     p.firmware.MASS_KG = 0.761
     p.firmware.MOMENT_ARM_M = 0.242
     res = simulate(p)

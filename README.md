@@ -57,10 +57,10 @@ radio, then the bench test.</td>
 - [PR #9](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/9): soldering and measurement guide for
   rev B1, test firmware for the fitted IMU, flight firmware at 250 Hz with PSRAM log and flash flight
   recorder, LoRa antenna build guide.
-- On the same branch: the **Werkbank**, a browser front end for the board on USB (live plots, checks,
-  guided calibration; [`firmware/tools/bench_gui/`](firmware/tools/bench_gui/README.md)), tested against
-  a simulated board, not yet on the real one; plus the fixes from the 14 Nov code review of the flight
-  firmware (CO₂ release, pyro pulse, flight log).
+- On the same branch: the **[Werkbank](#werkbank-the-board-on-your-pc)**, a browser front end for the
+  board on USB, tested against a simulated board, not yet on the real one; plus the fixes from the
+  14 Nov code review of the flight firmware (CO₂ release, pyro pulse, flight log). The 58 native
+  firmware tests pass in CI.
 - [PR #8](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/8): on-board motor ignition through
   pyro 1, triggered by an authenticated radio command from a laptop.
 
@@ -97,6 +97,39 @@ Details and changelog in [PROJECT.md](PROJECT.md), build log in [docs/BUILD.md](
 <td align="center"><img src="docs/img/bauanleitung/Z1_uebersicht.png" width="95%" alt="Overview drawing"><br><sub>Overview drawing from the build manual</sub></td>
 </tr>
 </table>
+
+## Werkbank: the board on your PC
+
+<img src="docs/img/werkbank_live.jpg" width="800" alt="Live view of the Werkbank with plots, attitude and readings">
+
+The Werkbank (German for workbench) connects a PC to the flight computer through the Teensy's USB port.
+A Python program reads the serial port of the `revb_test` bench console and sends commands and
+calibration values back; the user interface runs in a browser on the same machine, no network needed.
+Its labels are in German.
+
+| Tab | What it does |
+|---|---|
+| **Live** | acceleration, angular rate, magnetic field and altitude as plots, attitude in 3D, batteries, ARM, pyro continuity; raw or calibrated, recording to CSV |
+| **Prüfungen** (checks) | one button per check of the bench console, result table, report as Markdown and JSON |
+| **Kalibrierung** (calibration) | guided per sensor: accelerometer from six or any number of rest positions, magnetometer by ellipsoid fit with a coverage plot, axis mapping, gyro, voltage and current measurement, servos |
+| **Aktoren** (actuators) | servos, roll motor, pyro channels; firing needs ARM, continuity and the word `JA` typed by hand |
+| **Konsole** (console) | every line of the bench console and a command line |
+
+```bash
+pip install pyserial numpy
+```
+
+```bash
+python firmware/tools/werkbank.py --sim    # no hardware: simulated board with known sensor errors
+```
+
+```bash
+python firmware/tools/werkbank.py          # looks for the Teensy running the revb_test console
+```
+
+First version: tested against the simulated board (18 tests in CI), it has not run on the real board
+yet. Methods, structure and limits are in
+[`firmware/tools/bench_gui/`](firmware/tools/bench_gui/README.md) (German).
 
 ## What is inside
 

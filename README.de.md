@@ -58,10 +58,10 @@ von Hand löten, dann der Tischtest.</td>
 - [PR #9](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/9): Löt- und Messanleitung für rev B1,
   Testfirmware für die bestückte IMU, Flug-Firmware mit 250 Hz, PSRAM-Log und Flugschreiber im Flash,
   Bauanleitung der LoRa-Antenne.
-- Im selben Branch: die **Werkbank**, eine Oberfläche im Browser für die Platine am USB (Live-Verläufe,
-  Prüfungen, geführte Kalibrierung; [`firmware/tools/bench_gui/`](firmware/tools/bench_gui/README.md)),
-  gegen eine simulierte Platine getestet, an der echten noch nicht; dazu die Korrekturen aus der
-  Code-Durchsicht vom 14.11. an der Flug-Firmware (CO₂-Auslösung, Pyro-Puls, Flug-Log).
+- Im selben Branch: die **[Werkbank](#werkbank-die-platine-am-pc)**, eine Oberfläche im Browser für die
+  Platine am USB, gegen eine simulierte Platine getestet, an der echten noch nicht; dazu die Korrekturen
+  aus der Code-Durchsicht vom 14.11. an der Flug-Firmware (CO₂-Auslösung, Pyro-Puls, Flug-Log). Die
+  58 nativen Firmware-Tests laufen in der CI durch.
 - [PR #8](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/8): Motorzündung an Bord über Pyro 1,
   ausgelöst durch einen gesicherten Funkbefehl vom Laptop.
 
@@ -98,6 +98,38 @@ Details und Änderungsprotokoll in [PROJECT.md](PROJECT.md), Baulog in [docs/BUI
 <td align="center"><img src="docs/img/bauanleitung/Z1_uebersicht.png" width="95%" alt="Übersichtszeichnung"><br><sub>Übersichtszeichnung aus der Bauanleitung</sub></td>
 </tr>
 </table>
+
+## Werkbank: die Platine am PC
+
+<img src="docs/img/werkbank_live.jpg" width="800" alt="Live-Ansicht der Werkbank mit Verläufen, Lage und Messwerten">
+
+Die Werkbank verbindet den PC über den USB-Anschluss des Teensy mit dem Flugcomputer. Ein
+Python-Programm liest die serielle Schnittstelle der Testkonsole `revb_test` und schickt Befehle und
+Kalibrierwerte zurück; bedient wird im Browser auf dem eigenen Rechner, ohne Netz.
+
+| Reiter | Was er kann |
+|---|---|
+| **Live** | Beschleunigung, Drehrate, Magnetfeld und Höhe als Verlauf, Lage in 3D, Akkus, ARM, Pyro-Durchgang; roh oder kalibriert, Aufzeichnung als CSV |
+| **Prüfungen** | ein Knopf je Prüfung der Testkonsole, Ergebnistabelle, Bericht als Markdown und JSON |
+| **Kalibrierung** | geführt je Sensor: Beschleunigung aus sechs oder beliebig vielen Ruhelagen, Magnetometer per Ellipsoid-Fit mit Bild der Abdeckung, Achszuordnung, Gyro, Spannungs- und Strommessung, Servos |
+| **Aktoren** | Servos, Rollmotor, Pyrokanäle; gezündet wird nur mit ARM, Durchgang und von Hand getipptem `JA` |
+| **Konsole** | alle Zeilen der Testkonsole und eine Befehlszeile |
+
+```bash
+pip install pyserial numpy
+```
+
+```bash
+python firmware/tools/werkbank.py --sim    # ohne Hardware: simulierte Platine mit bekannten Sensorfehlern
+```
+
+```bash
+python firmware/tools/werkbank.py          # sucht den Teensy mit der Testkonsole revb_test
+```
+
+Erste Version: gegen die simulierte Platine getestet (18 Tests in der CI), an der echten Platine ist sie
+noch nicht gelaufen. Verfahren, Aufbau und Grenzen stehen in
+[`firmware/tools/bench_gui/`](firmware/tools/bench_gui/README.md).
 
 ## Was drin ist
 

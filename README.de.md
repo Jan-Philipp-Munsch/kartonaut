@@ -12,7 +12,7 @@ Durchmesser, der Motor sitzt in einer Kardanaufhängung mit zwei Servos, und ein
 Flugcomputer hält die Rakete während des Brennens aufrecht. Von der Platine bis zu den Reglerparametern
 ist alles in diesem Repository entworfen, simuliert und dokumentiert.
 
-*English version: [README.md](README.md) · Stand: 14.11.2026*
+*English version: [README.md](README.md) · Stand: 15.11.2026*
 
 <table>
 <tr>
@@ -21,7 +21,7 @@ ist alles in diesem Repository entworfen, simuliert und dokumentiert.
 <b>Der Flugcomputer rev B1 ist da.</b> Links: die Platine, wie sie am 5.11.2026 ankam, maschinell mit
 106 Teilen bestückt. Oben: dieselbe Platine als Rendering aus dem KiCad-Projekt, das vollständig aus
 einer Python-Beschreibung der Schaltung erzeugt wird. Als Nächstes: Teensy-Sockel, Stecker und Funkmodul
-von Hand löten, dann der Tischtest.</td>
+von Hand löten, dann der Tischtest mit der <a href="#werkbank-die-platine-am-pc">Werkbank</a>.</td>
 </tr>
 </table>
 
@@ -60,7 +60,7 @@ neueren Chips:
 | Motor | TSP E12 (24 mm, 39 Ns, 3,5 s Brenndauer) im Zwei-Achsen-Kardan mit 2 × FrSky W5652H |
 | Flugcomputer | Teensy 4.1 auf eigener 4-Lagen-Platine: IMU, Barometer, Magnetometer, Leistungsmessung, LoRa 433 MHz, SD, vier Pyrokanäle |
 | Regelung | Lage als Quaternion aus dem Gyro, PID auf Nicken und Gieren, Verstärkungen per Bayes-Optimierung in einer 6DOF-Simulation |
-| Bergung | CO₂-Kartusche drückt die Spitze ab, Fallschirm 125 cm |
+| Bergung | ein Servo sticht im Gipfelpunkt die CO₂-Kartusche an, das Gas drückt die Spitze ab, Fallschirm 125 cm |
 | Erwarteter Flug | etwa 74 m Gipfelhöhe, Neigung unter 2,5° während des Brennens (Simulation, ohne Luftwiderstand) |
 
 ## Projektstand
@@ -73,21 +73,23 @@ neueren Chips:
 - **6DOF-Simulation** in Python: Schubkurve, gemessene Servodynamik, Sensorrauschen, Monte Carlo; sie
   hat die Rakete von 981 g auf 704 g gebracht und Verstärkungen gefunden, bei denen der Kardan nicht am
   Anschlag hängt.
-- **Flug-Firmware** (Zustandsautomat, Lage, Kalman-Höhe, Pyro, Telemetrie, Watchdog) und eine
-  Testkonsole für die Platine, per Software-in-the-Loop gegen die Simulation getestet.
+- **Flug-Firmware** (Zustandsautomat, Lage, Kalman-Höhe, Pyro, Telemetrie, Watchdog) mit 250 Hz, Log im
+  PSRAM und Flugschreiber im Flash, per Software-in-the-Loop gegen die Simulation getestet. Seit der
+  Code-Durchsicht vom 14.11. öffnet der Fallschirm-Servo im Gipfelpunkt (bisher blieb er zu), der
+  Pyro-Puls läuft die volle Länge, und das Log behält an der Rampe nur 10 s Vorlauf
+  ([PROJECT.md](PROJECT.md) §5, Befunde 24–28); an der Platine ist das noch nicht geprüft.
+- **Testkonsole** `revb_test` für die Platine, dazu die **[Werkbank](#werkbank-die-platine-am-pc)**:
+  eine Oberfläche im Browser mit Live-Verläufen, Prüfungen und geführter Kalibrierung. Gegen eine
+  simulierte Platine getestet, an der echten noch nicht.
+- **Löt- und Messanleitung** für rev B1 ([PDF](hardware/mainboard/LOETANLEITUNG_revB1.pdf)) und
+  Bauanleitung der [LoRa-Antenne](docs/Bauanleitung_LoRa_Antenne.md).
 - **Bauanleitung** mit Zeichnungen und 1:1-Bohrschablonen; Startrampe, TVC-Prüfstand und die
   Funkbrücke der Bodenstation in parametrischem CAD.
-- CI auf GitHub Actions für Firmware, Simulation und Pin-Abgleich mit der Platine.
+- CI auf GitHub Actions für Firmware (58 native Tests), Simulation, Werkbank und Pin-Abgleich mit der
+  Platine.
 
 **Wartet auf Review und Merge**
 
-- [PR #9](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/9): Löt- und Messanleitung für rev B1,
-  Testfirmware für die bestückte IMU, Flug-Firmware mit 250 Hz, PSRAM-Log und Flugschreiber im Flash,
-  Bauanleitung der LoRa-Antenne.
-- Im selben Branch: die **[Werkbank](#werkbank-die-platine-am-pc)**, eine Oberfläche im Browser für die
-  Platine am USB, gegen eine simulierte Platine getestet, an der echten noch nicht; dazu die Korrekturen
-  aus der Code-Durchsicht vom 14.11. an der Flug-Firmware (CO₂-Auslösung, Pyro-Puls, Flug-Log). Die
-  58 nativen Firmware-Tests laufen in der CI durch.
 - [PR #8](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/8): Motorzündung an Bord über Pyro 1,
   ausgelöst durch einen gesicherten Funkbefehl vom Laptop.
 

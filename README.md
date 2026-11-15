@@ -12,7 +12,7 @@ is a 75 mm cardboard tube, the motor sits in a servo-driven gimbal, and a home-d
 holds the rocket upright during the burn. Everything from the circuit board to the control gains is
 designed, simulated and documented in this repository.
 
-*Deutsche Fassung: [README.de.md](README.de.md) · detailed documents are in German · last updated: 14 Nov 2026*
+*Deutsche Fassung: [README.de.md](README.de.md) · detailed documents are in German · last updated: 15 Nov 2026*
 
 <table>
 <tr>
@@ -21,7 +21,7 @@ designed, simulated and documented in this repository.
 <b>Flight computer rev B1 has arrived.</b> Left: the board as delivered on 5 Nov 2026, machine-assembled
 with 106 parts. Above: the same board as rendered from the KiCad project, which is generated entirely
 from a Python description of the circuit. Next step: hand-soldering the Teensy sockets, connectors and
-radio, then the bench test.</td>
+radio, then the bench test with the <a href="#werkbank-the-board-on-your-pc">Werkbank</a>.</td>
 </tr>
 </table>
 
@@ -57,7 +57,7 @@ radio telemetry to the ground, servo control and a pyro channel that fired a tes
 | Motor | TSP E12 (24 mm, 39 Ns, 3.5 s burn) in a two-axis gimbal with 2 × FrSky W5652H servos |
 | Flight computer | Teensy 4.1 on a custom 4-layer board: IMU, barometer, magnetometer, power monitor, LoRa 433 MHz, SD, four pyro channels |
 | Control | gyro quaternion, PID on pitch and yaw, gains from Bayesian optimisation in a 6DOF simulation |
-| Recovery | CO₂ cartridge pushes off the nose cone, 125 cm parachute |
+| Recovery | a servo pierces the CO₂ cartridge at apogee, the gas pushes off the nose cone, 125 cm parachute |
 | Predicted flight | about 74 m apogee, tilt below 2.5° during the burn (simulation, no drag) |
 
 ## Status
@@ -69,21 +69,23 @@ radio telemetry to the ground, servo control and a pyro channel that fired a tes
   from JLCPCB on 26 Oct and **delivered on 5 Nov 2026**.
 - **6DOF simulation** in Python: thrust curve, identified servo dynamics, sensor noise, Monte Carlo;
   it cut the rocket from 981 g to 704 g and found gains that keep the gimbal off its stop.
-- **Flight firmware** (state machine, attitude, Kalman altitude, pyro, telemetry, watchdog) and a
-  bench-test console for the board, tested in software-in-the-loop against the simulation.
+- **Flight firmware** (state machine, attitude, Kalman altitude, pyro, telemetry, watchdog) at 250 Hz
+  with a PSRAM log and a flash flight recorder, tested in software-in-the-loop against the simulation.
+  Since the 14 Nov code review the parachute servo opens at apogee (it used to stay closed), the pyro
+  pulse runs its full length, and the log keeps only 10 s of pre-roll on the pad
+  ([PROJECT.md](PROJECT.md) §5, findings 24–28); this has not been checked on the board yet.
+- **Bench console** `revb_test` for the board, plus the **[Werkbank](#werkbank-the-board-on-your-pc)**:
+  a browser front end with live plots, checks and guided calibration. Tested against a simulated
+  board, not yet on the real one.
+- **Soldering and measurement guide** for rev B1 ([PDF](hardware/mainboard/LOETANLEITUNG_revB1.pdf),
+  German) and a build guide for the [LoRa antenna](docs/Bauanleitung_LoRa_Antenne.md).
 - **Build manual** with drawings and 1:1 drilling templates; launch stand, TVC test rig and the radio
   bridge of the ground station designed in parametric CAD.
-- CI on GitHub Actions for firmware, simulation and pin check against the board.
+- CI on GitHub Actions for firmware (58 native tests), simulation, Werkbank and pin check against the
+  board.
 
 **In review**
 
-- [PR #9](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/9): soldering and measurement guide for
-  rev B1, test firmware for the fitted IMU, flight firmware at 250 Hz with PSRAM log and flash flight
-  recorder, LoRa antenna build guide.
-- On the same branch: the **[Werkbank](#werkbank-the-board-on-your-pc)**, a browser front end for the
-  board on USB, tested against a simulated board, not yet on the real one; plus the fixes from the
-  14 Nov code review of the flight firmware (CO₂ release, pyro pulse, flight log). The 58 native
-  firmware tests pass in CI.
 - [PR #8](https://github.com/Jan-Philipp-Munsch/kartonaut/pull/8): on-board motor ignition through
   pyro 1, triggered by an authenticated radio command from a laptop.
 

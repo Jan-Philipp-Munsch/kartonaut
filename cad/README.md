@@ -41,7 +41,8 @@ nur die Bilder.
 | `testrig.py` | TVC-Prüfstand um die gebaute Rakete: Gestell, Rahmen, Klemmkragen mit Lukenfenstern, Prop-Adapter mit BR2814 und Propeller, Schutzkäfig; Prüfung, Druckteile einzeln als STL (siehe unten) |
 | `build.py` | Zusammenbau, Export, Kollisionsprüfung, Render-Aufrufe |
 | `groundbridge.py` | Gehäuse der Bodenstations-Funkbrücke (Raspberry Pi Pico + E22-400T22S) mit senkrechtem Halbwellen-Dipol in einer Leiste, Stativmutter 1/4"; Druckteile als STL (siehe unten) |
-| `throttle.py` | Schubdrossel mit einem Servo für den Hüpfer (Konzept): zwei Scheren-Pads, Koppelstange, Mikroservo am Motoradapter; Prüfung gegen Rohr A bei ausgelenktem Kardan, Massen, Kinematikbild, eigener Export (siehe unten) |
+| `throttle_plate.py` | Schubdrossel als Schlitzscheibe (bevorzugt, Konzept): ein Blech mit Keilschlitz 15 mm unter der Düse, Welle, Kurbel, ein Mikroservo; Auswurfloch für den Motorwechsel; Prüfungen, Kennlinie, eigener Export |
+| `throttle.py` | erster Entwurf der Schubdrossel (abgelöst): zwei Scheren-Pads, Koppelstange, Mikroservo am Motoradapter; Prüfung gegen Rohr A bei ausgelenktem Kardan, Massen, Kinematikbild, eigener Export (siehe unten) |
 | `landingpad.py` | Startrampe: Platte mit Loch, drei verstellbare Beine, Startstützen bei 45°/135°/250°; Prüfung gegen die gebaute Rakete, eigener Export und Bilder (siehe unten) |
 | `mass_model.py` | Stabmodell für Schwerpunkt und Trägheitstensor (Konfigurationen `voll` und `erstflug`) |
 | `modular.py`, `modular_params.py` | Modulbauweise *Kartonaut 1* Stand 2b: Rohre A/B/C mit Bohrungen und Luken, Druckteile, gebauter Kardan als Netz, Servos und Gestänge schematisch, Kollisionsprüfung, Gesamtmodell STEP/GLB, Bilder (siehe unten) |
@@ -252,7 +253,34 @@ Nicht modelliert: Kabel (ESC und 4S-Akku sitzen als Klotz auf dem Rahmen), Gurt-
 (Glocke Ø 35 × 36, Lochkreuz 16/19, 75 g) sind Annahmen für einen 2814-Außenläufer; am Teil nachmessen und `PM_*` oben in
 `testrig.py` anpassen.
 
-## Schubdrossel mit einem Servo (`throttle.py`, 15.11.2026, Konzept)
+## Schubdrossel als Schlitzscheibe (`throttle_plate.py`, 16.11.2026, Konzept)
+
+| Übersicht | Auswurf der Hülse | gedrosselt | im Rohr, Kardan 5°/5° |
+|---|---|---|---|
+| ![](../docs/img/cad/throttle_plate_uebersicht.png) | ![](../docs/img/cad/throttle_plate_auswurf.png) | ![](../docs/img/cad/throttle_plate_gedrosselt.png) | ![](../docs/img/cad/throttle_plate_in_tube.png) |
+
+`python cad/throttle_plate.py` baut die bevorzugte Drossel, prüft sie und schreibt `export/throttle_plate.step`,
+`export/throttle_plate/` (Träger als STL, Scheibe als STEP und DXF zum Ausschneiden, `throttle_plate.json`) und vier Bilder.
+Hintergrund und alle Zahlen: `docs/Motorwechsel_und_Huepfer_2026-11-15.md` §4.
+
+**Aufbau:** ein Edelstahlblech 1,5 mm, 15 mm unter der Düse, drehbar um eine Welle M3 bei (24 | 0). Schlitz auf dem
+Kreisbogen um die Welle: Loch Ø 27 (Strahl frei, Hülse Ø 24 fällt beim Motorwechsel durch), von dort keilförmig auf 2 mm
+über 80° Drehwinkel. Welle in einer Messingbuchse 4 × 0,45 × 15,6 im gedruckten Träger (Klemmring auf dem Adapter), oben
+Kurbel 7 mm, Stange 14,5 mm, Servohebel 6 mm, Mikroservo 4,3 g mit der Welle nach oben. Gestänge und Servo liegen über der
+Düsenebene im Rohr.
+
+**Geprüft:** 29,2 g; Teile frei über 0 … 80°; Auswurfweg Ø 25 frei; Strahlkegel frei bei 0°; Luft zur Rohrwand 2,7 mm
+(Kardan ±5° eine Achse), 1,6 mm (±5°/±5°), 0,5 mm (±7° eine Achse), **−1,2 mm bei ±7°/±7°**; Servo 2,3-fache Reserve in der
+Schubspitze einschließlich Kippmoment; Scheibe reicht bis r = 49 mm.
+
+**Offen:** Kennlinie und Querkraft (E05), darin der Versatz des Reststrahls durch den Keilschlitz (bis 3,5 mm, wirkt wie 1°,
+bei jedem Flug gleich) und die Welle als einseitiges Hindernis im abfließenden Gas; Wärme an Blech und Welle; Freiraum für
+die ausschwenkende Scheibe am Fahrwerk.
+
+## Schubdrossel mit Pads und Gestänge (`throttle.py`, 15.11.2026, abgelöst)
+
+Erster Entwurf. Abgelöst am 16.11., weil die Pads 1,5 mm unter der Düse sitzen und ungleiches Abblocken dort stark
+ablenken kann, und weil die Symmetrie am Gestänge hängt.
 
 | Kinematik und Prüfungen | geschlossen | offen | im Rohr, Kardan 5°/5° |
 |---|---|---|---|

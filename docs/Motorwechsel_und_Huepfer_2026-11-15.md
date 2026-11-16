@@ -30,7 +30,7 @@ Parameter `swap_time`) und `simulation/scripts/motorwechsel_study.py` (300 Flüg
 4. **Die Pads braucht jede Variante.** Ohne Drossel landet nichts weich. Wie tief sie drosseln müssen, hängt
    an der Masse: bei 0,75 kg Schubfaktor 0,35, bei 1,05 kg reicht 0,5.
 5. **Der Fallschirm kann bei diesen Flügen weg.** Aus 3 bis 9 m Höhe öffnet er nicht rechtzeitig. Ohne ihn
-   und das CO₂-Modul werden 94 g frei; die Drossel mit einem Servo (26 g) und die Beine brauchen etwa 116 g.
+   und das CO₂-Modul werden 94 g frei; die Drossel mit einem Servo (29 g) und die Beine brauchen etwa 119 g.
 6. **Empfehlung: der Hüpfer zuerst.** Er prüft Pads, Führung und Fahrwerk mit einem Motor und ohne Mechanik.
    Das Magazin wird parallel auf dem Tisch und dem Prüfstand entwickelt und fliegt danach.
 
@@ -138,11 +138,11 @@ Hüpfer mit 300 g Ballast trotzdem. Viel mehr geht nicht: ab 1,15 kg trägt der 
   Stücke zusammen, wenn er reißt. Der Abbrand von Schwarzpulver setzt außerdem Schlacke ab; nach jedem
   Brennen wiegen und fotografieren (steht so in E05).
 - Die Pads selbst wiegen wenige Gramm. Schwer waren die zwei Servos mit Gestänge (60 g nach
-  `docs/Baustellen_2026-10-26.md`). Mit einem Servo sind es 26 g, siehe unten.
+  `docs/Baustellen_2026-10-26.md`). Mit einem Servo sind es 26 bis 29 g, siehe unten.
 - **E05 entscheidet.** Die Kennlinie Pad-Stellung gegen Schub und der kleinste erreichbare Schubfaktor sind
   die Messung, an der Hüpfer und Magazin gleichermaßen hängen.
 
-**Drossel mit einem Servo (CAD, `cad/throttle.py`).** Zwei Pads drehen sich wie eine Schere um senkrechte
+**Erster Entwurf vom 15.11.: Pads mit Gestänge (CAD, `cad/throttle.py`; abgelöst, siehe unten).** Zwei Pads drehen sich wie eine Schere um senkrechte
 Achsen direkt unter der Düse. Die Kraft des Strahls geht längs der Achse in die Schraube und nicht ins Servo.
 Eine Koppelstange um die Düse herum zwingt beide Pads auf denselben Winkel, ein Mikroservo (4,3 g) am
 Motoradapter stellt beide über eine kurze Stange. Alles schwenkt mit dem Kardan.
@@ -179,15 +179,162 @@ Was daran offen ist:
 - Die gesparten 34 g helfen dem Kardan (weniger schwenkende Masse) und dem Fahrwerk, nicht der Drossel: eine
   leichtere Rakete braucht eine tiefere Drosselung.
 
+### Einwand vom 16.11.2026: gleichmäßig abblocken, fehlerverzeihend bauen
+
+Jan hält die Drossel mit Gestänge für nicht überzeugend: Der Schub muss gleichmäßig abgeblockt werden, und das
+sieht bei realistischen Toleranzen nicht so aus. Gewünscht ist eine Bauform, die Fehler verzeiht und den Schub
+möglichst nur blockiert und nicht ablenkt. Gerechnet mit `simulation/scripts/drossel_toleranz_study.py`.
+
+![Bauformen und Toleranz der Drossel](img/sim/drossel_toleranz.png)
+
+**Was die Landung verträgt** (6DOF, 300 Flüge je Fall, Querablenkung bei voller Drosselung, 1 σ je Achse):
+
+| Ablenkung | Hüpfer, Wind 1,5 / 3 m/s | Zwei Motoren, Wind 1,5 / 3 m/s |
+|---|---|---|
+| 0° | 93 / 89 % | 98 / 94 % |
+| 1° (bisher angenommen) | 92 / 89 % | 97 / 91 % |
+| 2° | 85 / 73 % | 90 / 80 % |
+| 3° | 65 / 59 % | 74 / 63 % |
+| 4° | 51 / 46 % | 56 / 46 % |
+
+Bis 1° merkt die Landung nichts, ab 2° geht es bergab. Die Grenze liegt also bei etwa 1°.
+
+**Was ein Kantenfehler ausmacht** (Abschätzung, nicht gemessen). Blockieren ohne Ablenken gibt es streng nicht:
+Das abgefangene Gas muss zur Seite weg. Auf das Fahrzeug wirkt aber nur dann eine Querkraft, wenn das Gas auf
+Flächen drückt, die nicht quer zur Achse stehen. Zwei Grenzfälle:
+
+- *Freier Strahl auf eine ebene Platte:* Der Druck wirkt nur axial. Ein Kantenfehler von 0,5 mm verschiebt den
+  Restschub um etwa 0,5 mm; das wirkt wie 0,15° Ablenkung und ist harmlos.
+- *Platte dicht an der Düse:* Sie staut den Strahl einseitig bis in die Düse zurück, und die Düsenwand bekommt
+  eine Querkraft. So lenken Strahlruder (jet tabs). Im ungünstigen Fall sind das bei 0,5 mm Kantenfehler
+  5 bis 13° bezogen auf den Restschub, weit über der Grenze.
+
+Die Pads des Entwurfs vom 15.11. sitzen 1,5 mm unter der Düse und liegen damit nahe am zweiten Fall. Der Einwand
+ist also berechtigt; wie nahe, kann nur der Prüfstand zeigen.
+
+**Irisblende:** scheidet aus, und zwar an der Wärme, nicht am Abrieb. Die Lamellen einer optischen Blende sind
+etwa 0,1 mm dick. Bei einigen MW/m² im Strahl (Größenordnung, geschätzt) erwärmt sich so ein Blech um mehrere
+tausend Kelvin je Sekunde und glüht in Zehntelsekunden durch. Dazu verklebt die Schlacke des Schwarzpulvers die
+aufeinander gleitenden Lamellen, und die Strahlkraft biegt sie.
+
+**Folgerungen für die Bauform:**
+
+1. **Abstand zur Düse** von etwa einem Düsendurchmesser (8 bis 10 mm) statt 1,5 mm, damit die Platte auf den
+   freien Strahl wirkt und nicht in die Düse zurückstaut. Das ist der größte Hebel und gilt für jede Bauform.
+2. **Beide Kanten in einem Teil** (Schlitzscheibe, B im Bild): ein Blech mit keilförmigem Schlitz, um eine Achse
+   gedreht. Spiel im Gestänge ändert dann nur die Stärke der Drosselung, die der Regler ohnehin aus der
+   gemessenen Beschleunigung nachführt, und nicht die Symmetrie.
+3. **Ebene Flächen quer zur Achse, nichts im abfließenden Gas.** Achsen, Augen und Zapfen gehören nach außen
+   oder paarweise gegenüber.
+4. **Was keine Bauform beseitigt:** wie mittig die Düse im Motor und der Motor im Adapter sitzt (geschätzt 0,2
+   bis 0,5 mm). Auch dafür hilft nur der Abstand.
+5. **E05 misst die Querkraft** bei absichtlich um 0,5 mm versetzter Drossel, für zwei Abstände. Erst das
+   entscheidet zwischen den Grenzfällen.
+
+Der Entwurf `cad/throttle.py` (Scherenpads mit Koppelstange) bleibt als Stand vom 15.11. im Repo, ist aber
+nicht mehr die bevorzugte Bauform.
+
+### Schlitzscheibe (16.11.2026, `cad/throttle_plate.py`)
+
+Jans Vorgaben nach der Toleranzrechnung: Der Abstand zur Düse ist frei (das Fahrwerk schafft Platz zum Boden), und
+die Drossel muss mit dem Motorwechsel funktionieren, die leere Hülse fällt ja nach unten heraus.
+
+![Schlitzscheibe: Stellungen, Kennlinie, Schnitt](img/cad/throttle_plate_uebersicht.png)
+
+| Loch unter der Düse, Hülse fällt durch | gedrosselt (60°), von unten | im Rohr, Kardan 5°/5° |
+|---|---|---|
+| ![](img/cad/throttle_plate_auswurf.png) | ![](img/cad/throttle_plate_gedrosselt.png) | ![](img/cad/throttle_plate_in_tube.png) |
+
+**Aufbau.** Ein Edelstahlblech (1,5 mm) sitzt 15 mm unter der Düse und dreht sich um eine Welle M3, die 24 mm neben
+der Düsenachse steht. Im Blech liegt ein Schlitz auf einem Kreisbogen um die Welle: am einen Ende ein Loch Ø 27,
+von dort keilförmig schmaler bis 2 mm. Die Welle läuft in einer 15,6 mm langen Messingbuchse im Träger über der
+Düsenebene. Oben auf der Welle sitzt eine Kurbel (7 mm), die ein Mikroservo über eine Stange dreht (Servo −53°
+bis +44° für 80° an der Scheibe). Der Träger klemmt wie bisher auf dem Motoradapter, später auf dem Magazinrohr.
+
+| Prüfung (`python cad/throttle_plate.py`) | Ergebnis |
+|---|---|
+| Masse | **29 g** (Scheibe 12,3 g, Servo mit Kabel 5,8 g, Träger 5,5 g, Welle mit Muttern 3,6 g, Rest 2 g) |
+| Teile gegeneinander über den ganzen Drehweg | frei |
+| Auswurf: Hülse Ø 24 durch das Loch Ø 27 | frei, 1,5 mm Luft ringsum |
+| Strahl bei offener Scheibe | frei (Strahl Ø 18 an der Scheibe, Loch Ø 27) |
+| Luft zur Rohrwand bei Kardan ±5° in einer / in beiden Achsen | 2,7 mm / 1,6 mm |
+| bei Kardan ±7° in einer / in beiden Achsen | 0,5 mm / **−1,2 mm** (Servoecke) |
+| Servomoment, tiefste Drosselung im Plateau / in der Schubspitze | 14 / 34 von 78 mN·m (Reserve 5,8- / 2,3-fach) |
+| Biegespannung der Welle in der Schubspitze | 167 MPa |
+| Größter Radius der Scheibe | 49 mm (Rohr außen 37,5), 20 mm unter der Rohrunterkante |
+
+Im Servomoment steckt diesmal das Kippmoment: Die Strahlkraft greift 24 mm neben der Welle an und wird von zwei
+Lagerkräften im Abstand der Buchsenlänge getragen; die Reibung wirkt am Wellenradius. Beim Entwurf vom 15.11.
+fehlte dieser Anteil, dessen Reserve von 1,3 war also zu günstig gerechnet.
+
+**Kennlinie** (geometrisch; den Schub liefert erst E05):
+
+| Drehwinkel | Schlitzbreite | abgedeckter Strahl (gleichmäßig / zur Mitte konzentriert) | Versatz des Reststrahls |
+|---|---|---|---|
+| 0 bis 20° | 27 bis 21 mm | 0 % | 0 mm |
+| 40° | 14,5 mm | 14 % / 6 % | 0,4 mm |
+| 50° | 11,4 mm | 29 % / 17 % | 1,0 mm |
+| 60° | 8,2 mm | 47 % / 33 % | 1,9 mm |
+| 70° | 5,1 mm | 66 % / 55 % | 3,5 mm |
+| 80° | 2,0 mm | 81 % / 78 % | 5,0 mm |
+
+Für Schubfaktor 0,35 müssen 65 % abgedeckt sein; das liegt bei 70 bis 75°.
+
+**Die Eigenheit des Keilschlitzes.** Weil der Schlitz unter dem Strahl auf einer Seite breiter ist als auf der
+anderen, sitzt der durchgelassene Rest nicht mittig: 3,5 mm bei Schubfaktor 0,35. Über den Hebel von 190 mm wirkt
+das wie 1° Schubablenkung. Anders als ein Toleranzfehler ist das bei jedem Flug gleich und aus der Geometrie
+bekannt. In der Flugsimulation (`pad_side_bias`, 300 Flüge je Fall, Erfolg im 1-m-Kreis):
+
+| feste Ablenkung bei voller Drosselung | Hüpfer, Wind 1,5 / 3 m/s | Zwei Motoren, Wind 1,5 / 3 m/s |
+|---|---|---|
+| 0° | 92 / 89 % | 97 / 91 % |
+| 1° (Schlitzscheibe) | 90 / 86 % | 97 / 88 % |
+| 2° | 85 / 79 % | 93 / 84 % |
+| 3° | 74 / 64 % | 84 / 69 % |
+| 3°, davon 70 % im Regler vorgesteuert | 91 / 87 % | 97 / 89 % |
+
+1° kostet höchstens 3 Prozentpunkte. Steuert der Regler den Kardan um den bekannten Betrag vor (proportional zur
+Drosselstellung, Tabelle aus E05), bleibt auch von 3° nichts übrig.
+
+**Zusammenspiel mit dem Motorwechsel.** Für den Auswurf steht das Loch unter der Düse. Die Scheibe muss also
+auffahren, bevor die Hülse kommt, und Motor 1 brennt die letzten Zehntelsekunden ungedrosselt:
+
+| Scheibe öffnet vor dem Nenn-Brennschluss | Wind 1,5 m/s | Wind 3 m/s |
+|---|---|---|
+| gar nicht (Bezug, so nicht möglich) | 98 % | 89 % |
+| 0,3 s | 98 % | 84 % |
+| 0,5 s | 97 % | 67 % |
+| 0,7 s | 95 % | 58 % |
+
+(`swap_open_lead`, Schweben in 6 m, Nachrutschzeit 0,1 s.) 0,3 s kosten wenig, mehr als 0,5 s lassen die Rakete
+zu weit steigen. Brennt Motor 1 kürzer als erwartet, fällt die Hülse auf die noch geschlossene Scheibe und bleibt
+dort liegen, bis diese aufgefahren ist; verklemmen sollte sie nicht, solange der Schlitz schmaler ist als 24 mm (Erwartung, nicht erprobt).
+Das verlängert nur die Schublücke um die Stellzeit (etwa 0,15 s). Ob die Scheibe sich unter 5 N Federkraft
+drehen lässt, gehört in den Tischversuch des Magazins.
+
+**Was offen bleibt:**
+
+- **Die Welle steht im abfließenden Gas.** Sie ist das einzige Hindernis auf der Scheibe, und nur auf einer Seite.
+  Grob geschätzt fängt sie einige Prozent des abgelenkten Impulses, was noch einmal 1 bis 3° ausmachen kann. Auch
+  das wäre bei jedem Flug gleich und vorsteuerbar, muss aber gemessen werden (E05, Querkraft). Über der Scheibe
+  sitzt deshalb nur eine flache Mutter.
+- **Wärme.** 1,5 mm Edelstahl wird im Strahl rotglühend; ob das Blech 3,5 s formstabil bleibt, zeigt der
+  Prüfstand. Eine Graphitplatte 3 mm wäre leichter (etwa 8 g) und hitzefest, aber spröde an der Welle.
+- **Platz.** Die Scheibe schwenkt bis r = 49 mm, also 12 mm über das Rohr hinaus, und hängt 20 mm unter der
+  Rohrunterkante. Fahrwerk und Startgestell müssen das freihalten.
+- **Kardan ±7° in beiden Achsen** geht wie beim ersten Entwurf nicht (Servoecke, −1,2 mm).
+- Der Strahlwinkel von 15° ist angenommen. Ist der Strahl breiter, beginnt die Drosselung früher; die Scheibe
+  bleibt dieselbe.
+
 **Fallschirm weglassen:** Ja, für diese Flüge. Aus 3 bis 9 m fällt die Rakete 0,8 bis 1,4 s; in der Zeit
 öffnet kein Schirm. Er wäre nur Ballast. Die Folge ist, dass ein Fehlversuch mit bis zu 13 m/s aufschlägt;
 Platine und Kardan sollten dafür geschützt sein.
 
-| Start­masse | Rakete ohne Bergung | Fallschirm + CO₂ | Motoren | Pads + 1 Servo | Beine + Antrieb | Magazin, Feder | Summe |
+| Start­masse | Rakete ohne Bergung | Fallschirm + CO₂ | Motoren | Drossel, 1 Servo | Beine + Antrieb | Magazin, Feder | Summe |
 |---|---|---|---|---|---|---|---|
 | Kartonaut 1 (Erstflug) | 546 g | 94 g | 64 g | | | | 704 g |
-| Hüpfer | 546 g | | 64 g | 26 g | 90 g | | 726 g |
-| Zwei Motoren im Magazin | 546 g | | 128 g | 26 g | 90 g | 35 g | 825 g |
+| Hüpfer | 546 g | | 64 g | 29 g | 90 g | | 729 g |
+| Zwei Motoren im Magazin | 546 g | | 128 g | 29 g | 90 g | 35 g | 828 g |
 
 Die Drossel kommt aus dem CAD, Beine und Magazin sind Annahmen. Der Hüpfer landet mit etwa 0,70 kg und braucht
 damit Schubfaktor 0,35 oder Ballast. Das Magazin landet nach Abwurf der Hülse (36 g) und Abbrand mit etwa 0,73 kg.
@@ -203,7 +350,7 @@ auf 92 %; die Kamera brächte nur die Ablage von 0,3 auf 0,1 m.
 | Erfolg im 1-m-Kreis, Wind 1,5 / 3 m/s | 94 / 90 % | 96 bis 99 / 79 bis 93 % (Lücke bis 0,35 s) | 97 / 86 % (schräg eingebaut) |
 | Neue Mechanik | Pads, Beine | Pads, Beine, Magazin mit fünf Funktionen | Pads unter zwei Düsen, Beine, breiter Kardan |
 | Was schiefgehen kann | Drossel zu schwach | dazu: Riegel, Klemmen, Durchzünden, Zündverzug über 0,4 s | Platz im Rohr, Kardanweg |
-| Startmasse | 726 g | 825 g | etwa 820 g |
+| Startmasse | 729 g | 828 g | etwa 820 g |
 | Stand | bevorzugt als erster Versuch | Konzept, nach dem Hüpfer | von Jan verworfen (15.11.) |
 
 **Vorschlag für die Reihenfolge** (ersetzt Punkt 4 und 5 in Abschnitt 8 des Navigationsdokuments):
@@ -221,7 +368,9 @@ auf 92 %; die Kamera brächte nur die Ablage von 0,3 auf 0,1 m.
 cd simulation
 python -m pytest tests/test_motorswap.py           # 3 Tests
 python scripts/motorwechsel_study.py               # 2 Minuten, schreibt out/motorwechsel_*.png und .csv
-python ../cad/throttle.py                          # Drossel bauen und prüfen, 35 s (CadQuery, Bilder mit Blender)
+python scripts/drossel_toleranz_study.py           # 1 Minute: was die Landung an Querablenkung verträgt
+python ../cad/throttle_plate.py                    # Schlitzscheibe bauen und prüfen, 35 s (CadQuery, Bilder mit Blender)
+python ../cad/throttle.py                          # erster Entwurf mit Pads und Gestänge
 ```
 
 ```python

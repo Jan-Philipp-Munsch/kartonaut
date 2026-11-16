@@ -33,15 +33,15 @@ FMINS = (0.35, 0.5, 0.65, 0.8)
 
 # Massenbilanz in g; [Annahme] = noch nicht konstruiert oder gewogen
 BASE = 546                # Stand 2c ohne Motor (640 g), ohne Fallschirm und CO2-Modul (94 g)
-# Pads + 1 Servo: 26 g aus cad/throttle.py (vorher 60 g mit zwei Servos angenommen)
+# Drossel: 29 g aus cad/throttle_plate.py (Schlitzscheibe; vorher 60 g mit zwei Servos angenommen)
 BUDGET = {
     "Kartonaut 1\n(Erstflug, Fallschirm)": [("Rakete ohne Bergung", BASE), ("Fallschirm + CO₂", 94), ("Motor(en)", 64)],
-    "Hüpfer\n(ein Motor)": [("Rakete ohne Bergung", BASE), ("Motor(en)", 64), ("Pads + 1 Servo", 26), ("Beine + Antrieb", 90)],
-    "Zwei Motoren\nim Magazin": [("Rakete ohne Bergung", BASE), ("Motor(en)", 128), ("Pads + 1 Servo", 26),
+    "Hüpfer\n(ein Motor)": [("Rakete ohne Bergung", BASE), ("Motor(en)", 64), ("Drossel, 1 Servo", 29), ("Beine + Antrieb", 90)],
+    "Zwei Motoren\nim Magazin": [("Rakete ohne Bergung", BASE), ("Motor(en)", 128), ("Drossel, 1 Servo", 29),
                                  ("Beine + Antrieb", 90), ("Magazin, Feder", 35)],
 }
 COLORS = {"Rakete ohne Bergung": "#9aa5b1", "Fallschirm + CO₂": "#e07a5f", "Motor(en)": "#c9a26b",
-          "Pads + 1 Servo": "#3d5a80", "Beine + Antrieb": "#81b29a", "Magazin, Feder": "#f2cc8f"}
+          "Drossel, 1 Servo": "#3d5a80", "Beine + Antrieb": "#81b29a", "Magazin, Feder": "#f2cc8f"}
 
 
 def _work(job):

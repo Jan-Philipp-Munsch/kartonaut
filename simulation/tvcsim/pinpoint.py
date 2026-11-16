@@ -64,6 +64,8 @@ class PinpointConfig:
     swap_time: float | None = None  # s, Motorwechsel im Magazin ("handover"): Zuendkommando erst, wenn Motor 1 wirklich
                                    # ausgebrannt und Motor 2 nachgerutscht ist (Nennzeit, je Lauf 0,7- bis 1,5-fach);
                                    # ersetzt ``overlap``. Die Schubluecke ist swap_time plus Zuendverzug
+    swap_open_lead: float = 0.0    # s vor dem Nenn-Brennschluss von Motor 1 faehrt die Drossel ganz auf, damit die leere
+                                   # Huelse durch die Schlitzscheibe faellt (nur mit swap_time); bis dahin wird gedrosselt
     t_hop_switch: float = 1.5      # s nach der Zuendung ("hop")
     m_land: float = 0.60           # kg bei der Landezuendung: voller Landemotor, leere Huelse des ersten
                                    # ("hop": Startmasse mit vollem Motor)
@@ -164,6 +166,9 @@ class PinpointConfig:
     gamma_lo: float = 0.7          # Kennlinie der Pads u^gamma, gleichverteilt
     gamma_hi: float = 1.4
     sig_pad_side: float = 1.0      # Grad Schubablenkung bei voll eingeschwenkten Pads
+    pad_side_bias: float = 0.0     # Grad, feste (bei jedem Flug gleiche) Ablenkung bei voller Drosselung, z. B. durch den
+                                   # Keilschlitz der Schlitzscheibe; pad_bias_comp = Anteil, den der Regler vorsteuert
+    pad_bias_comp: float = 0.0
     sig_roll_arm: float = 1.0e-5   # m, Rollmoment je Newton Schub
     sig_aero: float = 0.15         # relativ auf cna_nose, cdc, cd_a
     sig_cp: float = 0.03           # m auf die Druckpunkte
@@ -498,6 +503,7 @@ def _draw(cfg: PinpointConfig, n: int, rng: np.random.Generator) -> SimpleNamesp
     P.fmin = np.clip(cfg.f_min * (1 + sa * cfg.sig_fmin * nrm(n)), 0.05, 1.0) if cfg.f_min < 1.0 else np.ones(n)
     P.gamma = around(1.0, cfg.gamma_lo, cfg.gamma_hi, sa)
     P.padside = sa * cfg.sig_pad_side * DEG * nrm((n, 2))
+    P.padside = P.padside + np.array([cfg.pad_side_bias * (1.0 - cfg.pad_bias_comp) * DEG, 0.0])
     P.roll = sm * cfg.sig_roll_arm * nrm(n)
     P.cna_nose = cfg.cna_nose * (1 + se * cfg.sig_aero * nrm(n))
     P.cdc = cfg.cdc * (1 + se * cfg.sig_aero * nrm(n))
@@ -813,6 +819,8 @@ def run(cfg: PinpointConfig, n: int = 200, seed: int = 0, keep: int = 0) -> dict
                 a_c = np.maximum(0.0, G + cfg.kv_ascent * (v_ref - vz_e))
                 f_asc = np.clip(m_a * a_c / np.maximum(cz_e, 0.7) / np.maximum(t_full, 0.1), cfg.f_min, 1.0)
                 f_cmd = np.where(on1 & lifted & ~land, f_asc, f_cmd)
+            if cfg.swap_time is not None and cfg.swap_open_lead > 0.0:
+                f_cmd = np.where(~land & (t >= tb_nom - cfg.swap_open_lead), 1.0, f_cmd)
             u_cmd = (1.0 - f_cmd) / (1.0 - cfg.f_min)
         else:
             u_cmd = np.zeros(n)

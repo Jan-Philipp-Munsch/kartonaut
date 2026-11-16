@@ -12,7 +12,7 @@ is a 75 mm cardboard tube, the motor sits in a servo-driven gimbal, and a home-d
 holds the rocket upright during the burn. Everything from the circuit board to the control gains is
 designed, simulated and documented in this repository.
 
-*Deutsche Fassung: [README.de.md](README.de.md) · detailed documents are in German · last updated: 15 Nov 2026*
+*Deutsche Fassung: [README.de.md](README.de.md) · detailed documents are in German · last updated: 16 Nov 2026*
 
 <table>
 <tr>
@@ -86,8 +86,8 @@ radio, then the bench test with the <a href="#werkbank-the-board-on-your-pc">Wer
 5. ***Kartonaut 1*: controlled ascent on one motor, parachute recovery**, in at most 3 m/s wind according
    to the simulation.
 6. After that the landing, probably first as a hop on one motor (3 m high, no parachute): characterise
-   servos and throttle (experiments E01, E05, plus the igniter delay), build the one-servo throttle
-   ([`cad/throttle.py`](cad/throttle.py)), design the landing gear,
+   servos and throttle (experiments E01, E05, plus the igniter delay), build the slotted-plate throttle
+   ([`cad/throttle_plate.py`](cad/throttle_plate.py)), design the landing gear,
    navigation filter and guidance in the firmware.
 7. In parallel the magazine for the motor swap (two motors in line) as a bench test, then the two-motor
    landing from 6 m
@@ -229,28 +229,53 @@ against the stop and the latch springs open; 3 burnout, the spring ejects the ca
 - **Up to a 0.35 s gap it lands from 6 m as well as without a gap** (96 to 99 % inside the 1 m circle in
   1.5 m/s wind, 79 to 93 % in 3 m/s). Above 0.4 s there is not enough time to brake. The igniter delay has
   not been measured.
-- **Every variant needs the throttle pads,** and mass helps: at 0.75 kg the thrust factor must be 0.35, at
+- **Every variant needs the throttle,** and mass helps: at 0.75 kg the thrust factor must be 0.35, at
   1.05 kg 0.5 is enough.
 - **No parachute on these flights** (it does not open from 3 to 9 m). That frees 94 g; throttle and legs
-  need about 116 g.
+  need about 119 g.
 - **Recommendation:** the one-motor hop first (94 % in 1.5 m/s wind, no swap mechanism), the magazine as a
   bench test in parallel.
 
-**Throttle with one servo** ([`cad/throttle.py`](cad/throttle.py), concept): two pads swing like scissors
-below the nozzle, a coupling bar keeps them at the same angle, and one micro servo on the motor adapter moves
-both. The jet force goes into the pivots, not into the servo. It weighs 26 g instead of 60 g with two servos
-and leaves the gimbal ±5° in both axes (2.4 mm clearance to the tube wall). Still open: the side force of the
-jet on the pads and the heat at the printed part.
+**Throttle: slotted plate with one servo** ([`cad/throttle_plate.py`](cad/throttle_plate.py), concept of
+16 Nov): a single stainless sheet turns 15 mm below the nozzle about a shaft next to the motor. The sheet has a
+slot that tapers from a Ø 27 hole down to 2 mm; turning it puts a different width under the nozzle.
 
-![Kinematics of the throttle](docs/img/cad/throttle_kinematik.png)
+- **Forgiving:** both edges are in the same part. Play in the linkage only changes how much is throttled, not the
+  symmetry. At 15 mm the plate acts on the free jet and does not back up into the nozzle.
+- **Works with the motor swap:** the spent case (Ø 24) drops through the Ø 27 hole. Opening the plate 0.3 s
+  before burnout costs no landings (98 % in 1.5 m/s wind).
+- **One servo, 29 g** (instead of 60 g with two servos). The shaft carries the jet force; the servo keeps a
+  2.3-fold reserve at the thrust peak. Linkage and servo sit above the nozzle inside the tube, away from the exhaust.
+- **Gimbal:** free up to ±5° in both axes (1.6 mm to the tube wall); at ±7° in both axes a servo corner touches.
+- **A property of the tapered slot:** at deep throttling the jet that passes sits up to 3.5 mm off centre. That
+  acts like 1° of deflection, is the same on every flight and costs at most 3 percentage points in the simulation,
+  nothing with feed-forward in the controller.
+- **Open:** the characteristic position → thrust and the side force (experiment E05), heat at plate and shaft,
+  and the plate swinging 12 mm beyond the tube (landing gear).
+
+![Slotted plate: positions, characteristic, section](docs/img/cad/throttle_plate_uebersicht.png)
+
+*Top: plan view at 0° (hole under the nozzle, jet free, case drops through), 40° and 80° (narrowest end). Bottom:
+blocked share of the jet against servo angle, section through nozzle and shaft, clearance to the tube wall.*
 
 <table>
 <tr>
-<td align="center" width="33%"><img src="docs/img/cad/throttle_closed.png" height="260" alt="Throttle closed"><br><sub>closed, from below</sub></td>
-<td align="center" width="33%"><img src="docs/img/cad/throttle_open.png" height="260" alt="Throttle open"><br><sub>open</sub></td>
-<td align="center" width="33%"><img src="docs/img/cad/throttle_in_tube.png" height="260" alt="Throttle inside the tube"><br><sub>inside the tube, gimbal at 5°/5°</sub></td>
+<td align="center" width="33%"><img src="docs/img/cad/throttle_plate_auswurf.png" height="260" alt="Slotted plate during ejection"><br><sub>hole under the nozzle: the spent case drops through</sub></td>
+<td align="center" width="33%"><img src="docs/img/cad/throttle_plate_gedrosselt.png" height="260" alt="Slotted plate throttling"><br><sub>throttling (60°), from below</sub></td>
+<td align="center" width="33%"><img src="docs/img/cad/throttle_plate_in_tube.png" height="260" alt="Slotted plate inside the tube"><br><sub>inside the tube, gimbal at 5°/5°</sub></td>
 </tr>
 </table>
+
+**Why not the pads with linkage of 15 Nov** ([`cad/throttle.py`](cad/throttle.py)): the landing tolerates only
+about 1° of random side deflection from uneven blocking (at 3° only 60 to 74 % still succeed). Pads 1.5 mm below
+the nozzle may exceed that with an edge error of 0.5 mm according to an estimate. An optical iris is ruled out
+because its thin leaves would burn through in the jet.
+
+![Throttle layouts and tolerance](docs/img/sim/drossel_toleranz.png)
+
+*Top: A two pads with coupling bar, B slotted plate, C plate with round holes, D iris. Bottom left: landings
+inside the 1 m circle against side deflection at full throttling. Bottom right: side deflection against the
+difference of the two edges, estimated.*
 
 ![Allowed thrust gap during the motor swap](docs/img/sim/motorwechsel_luecke.png)
 

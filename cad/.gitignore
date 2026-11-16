@@ -13,6 +13,8 @@ export/modular/*.step
 # Schubdrossel mit einem Servo (cad/throttle.py)
 !export/throttle.step
 !export/throttle/
+!export/throttle_plate.step
+!export/throttle_plate/
 # Druckteile der Bodenstations-Funkbrücke (cad/groundbridge.py)
 !export/groundbridge/
 # gedruckter Kardan als Netz aus den Blender-Dateien vom 12.06.2025

@@ -1,0 +1,83 @@
+{
+ "mass_g": 29.2,
+ "parts": {
+  "Drosselträger (Druckteil)": 5.49,
+  "Servo 4,3 g": 5.8,
+  "Servohebel": 0.3,
+  "Stange Servo–Kurbel": 0.2,
+  "Kurbel auf der Welle": 0.5,
+  "Welle M3 mit Muttern": 3.6,
+  "Buchse Messing 4 × 0,45": 0.6,
+  "Schlitzscheibe (Edelstahl 1,5 mm)": 12.29,
+  "Klemmschraube M2": 0.4
+ },
+ "gap_mm": 15.0,
+ "envelope_r_mm": 49.2,
+ "servo_range_deg": [
+  -52.7,
+  44.4
+ ],
+ "clearance_mm": {
+  "±5° in einer Achse": 2.73,
+  "±5° in beiden Achsen": 1.59,
+  "±7° in einer Achse": 0.5,
+  "±7° in beiden Achsen": -1.19
+ },
+ "servo_reserve_peak": 2.32,
+ "kennlinie": [
+  {
+   "theta": 0,
+   "blocked_uniform": 0.0,
+   "blocked_core": 0.0,
+   "offset_mm": 0.0
+  },
+  {
+   "theta": 10,
+   "blocked_uniform": 0.0,
+   "blocked_core": 0.0,
+   "offset_mm": 0.0
+  },
+  {
+   "theta": 20,
+   "blocked_uniform": 0.0,
+   "blocked_core": 0.0,
+   "offset_mm": 0.0
+  },
+  {
+   "theta": 30,
+   "blocked_uniform": 0.028,
+   "blocked_core": 0.01,
+   "offset_mm": 0.09
+  },
+  {
+   "theta": 40,
+   "blocked_uniform": 0.138,
+   "blocked_core": 0.064,
+   "offset_mm": 0.42
+  },
+  {
+   "theta": 50,
+   "blocked_uniform": 0.293,
+   "blocked_core": 0.17,
+   "offset_mm": 1.02
+  },
+  {
+   "theta": 60,
+   "blocked_uniform": 0.468,
+   "blocked_core": 0.332,
+   "offset_mm": 1.88
+  },
+  {
+   "theta": 70,
+   "blocked_uniform": 0.66,
+   "blocked_core": 0.553,
+   "offset_mm": 3.46
+  },
+  {
+   "theta": 80,
+   "blocked_uniform": 0.81,
+   "blocked_core": 0.778,
+   "offset_mm": 5.01
+  }
+ ]
+}

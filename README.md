@@ -12,16 +12,18 @@ is a 75 mm cardboard tube, the motor sits in a servo-driven gimbal, and a home-d
 holds the rocket upright during the burn. Everything from the circuit board to the control gains is
 designed, simulated and documented in this repository.
 
-*Deutsche Fassung: [README.de.md](README.de.md) · detailed documents are in German · last updated: 15 Nov 2026*
+*Deutsche Fassung: [README.de.md](README.de.md) · detailed documents are in German · last updated: 21 Nov 2026*
 
 <table>
 <tr>
-<td width="50%"><img src="docs/img/foto/mainboard_revB1_geliefert.jpg" alt="Mainboard rev B1 as delivered by JLCPCB"></td>
+<td width="50%"><img src="docs/img/foto/2026-11-21_mainboard_revB1_loetstand.jpg" alt="Mainboard rev B1 on 21 Nov 2026, partly hand-soldered; green marks what is fitted, red what is missing"></td>
 <td width="50%"><img src="hardware/mainboard/kicad/img/render_iso.png" alt="Mainboard rev B1, KiCad render with Teensy and modules"><br><br>
-<b>Flight computer rev B1 has arrived.</b> Left: the board as delivered on 5 Nov 2026, machine-assembled
-with 106 parts. Above: the same board as rendered from the KiCad project, which is generated entirely
-from a Python description of the circuit. Next step: hand-soldering the Teensy sockets, connectors and
-radio, then the bench test with the <a href="#werkbank-the-board-on-your-pc">Werkbank</a>.</td>
+<b>Flight computer rev B1 is being soldered.</b> Left: the board on 21 Nov 2026. JLCPCB placed 106 parts
+by machine; 19 of the 42 hand-soldered parts are on (green): E22 LoRa module, buzzer, stacking header,
+almost all connectors and both 3.3 V regulators. Red marks what is still missing, among it the Teensy
+sockets and the parts that set the 5 V converter. Above: the same board as rendered from the KiCad
+project, which is generated entirely from a Python description of the circuit. Then comes the bench test
+with the <a href="#werkbank-the-board-on-your-pc">Werkbank</a>. <a href="docs/img/foto/2026-11-21_mainboard_revB1_teilweise_geloetet.jpg">Photo without markings</a></td>
 </tr>
 </table>
 
@@ -66,7 +68,9 @@ radio telemetry to the ground, servo control and a pyro channel that fired a tes
 
 - **Gimbal** with both servos built; tubes A and B of the airframe built.
 - **Mainboard rev B1** designed as code (Python → KiCad, four layers, DRC clean), reviewed, ordered
-  from JLCPCB on 26 Oct and **delivered on 5 Nov 2026**.
+  from JLCPCB on 26 Oct and **delivered on 5 Nov 2026**. Hand-soldering is under way: as of 21 Nov, 19 of
+  the 42 hand-soldered parts are on ([photo](docs/img/foto/2026-11-21_mainboard_revB1_loetstand.jpg),
+  list in [docs/BUILD.md](docs/BUILD.md) §3a).
 - **6DOF simulation** in Python: thrust curve, identified servo dynamics, sensor noise, Monte Carlo;
   it cut the rocket from 981 g to 704 g and found gains that keep the gimbal off its stop.
 - **Flight firmware** (state machine, attitude, Kalman altitude, pyro, telemetry, watchdog) at 250 Hz
@@ -91,10 +95,12 @@ radio telemetry to the ground, servo control and a pyro channel that fired a tes
 
 **Next**
 
-1. Hand-solder the board, then bench-test and calibrate it with `revb_test` and the Werkbank, following the
-   [soldering and measurement guide](hardware/mainboard/LOETANLEITUNG_revB1.pdf) (power monitor and one
-   resistor follow with the second DigiKey shipment); get two IPEX pigtails for the
-   [LoRa antenna](docs/Bauanleitung_LoRa_Antenne.md).
+1. Finish hand-soldering the board, following the
+   [soldering and measurement guide](hardware/mainboard/LOETANLEITUNG_revB1.pdf): first complete stage 1
+   (L2, R14, R15, R17 set the 5 V converter; the board does not run without them), then logic and Teensy
+   sockets, the 2S path, LEDs and charger; power monitor U6 and GPS socket J11 follow with the second
+   DigiKey shipment. Then bench-test and calibrate with `revb_test` and the Werkbank; get two IPEX pigtails
+   for the [LoRa antenna](docs/Bauanleitung_LoRa_Antenne.md).
 2. Print and weigh the parts, assemble the rocket, balance the centre of gravity.
 3. Firmware: verify the fixes from the 14 Nov code review on the board (CO₂ release, pyro pulse, flight
    log, pins, state store; [PROJECT.md](PROJECT.md) §5, findings 24–28) and work through the smaller

@@ -12,16 +12,18 @@ Durchmesser, der Motor sitzt in einer Kardanaufhängung mit zwei Servos, und ein
 Flugcomputer hält die Rakete während des Brennens aufrecht. Von der Platine bis zu den Reglerparametern
 ist alles in diesem Repository entworfen, simuliert und dokumentiert.
 
-*English version: [README.md](README.md) · Stand: 15.11.2026*
+*English version: [README.md](README.md) · Stand: 21.11.2026*
 
 <table>
 <tr>
-<td width="50%"><img src="docs/img/foto/mainboard_revB1_geliefert.jpg" alt="Mainboard rev B1 wie von JLCPCB geliefert"></td>
+<td width="50%"><img src="docs/img/foto/2026-11-21_mainboard_revB1_loetstand.jpg" alt="Mainboard rev B1 am 21.11.2026, teilweise von Hand gelötet; grün markiert, was drauf ist, rot, was fehlt"></td>
 <td width="50%"><img src="hardware/mainboard/kicad/img/render_iso.png" alt="Mainboard rev B1, KiCad-Rendering mit Teensy und Modulen"><br><br>
-<b>Der Flugcomputer rev B1 ist da.</b> Links: die Platine, wie sie am 5.11.2026 ankam, maschinell mit
-106 Teilen bestückt. Oben: dieselbe Platine als Rendering aus dem KiCad-Projekt, das vollständig aus
-einer Python-Beschreibung der Schaltung erzeugt wird. Als Nächstes: Teensy-Sockel, Stecker und Funkmodul
-von Hand löten, dann der Tischtest mit der <a href="#werkbank-die-platine-am-pc">Werkbank</a>.</td>
+<b>Der Flugcomputer rev B1 wird gelötet.</b> Links: die Platine am 21.11.2026. JLCPCB hat 106 Teile
+maschinell bestückt, von den 42 Handlötteilen sind 19 drauf (grün): LoRa-Modul E22, Summer, Stapelleiste,
+fast alle Stecker und die beiden 3,3-V-Regler. Rot ist, was noch fehlt, darunter die Teensy-Sockel und die
+Teile, die den 5-V-Wandler einstellen. Oben: dieselbe Platine als Rendering aus dem KiCad-Projekt, das
+vollständig aus einer Python-Beschreibung der Schaltung erzeugt wird. Danach kommt der Tischtest mit der
+<a href="#werkbank-die-platine-am-pc">Werkbank</a>. <a href="docs/img/foto/2026-11-21_mainboard_revB1_teilweise_geloetet.jpg">Foto ohne Markierungen</a></td>
 </tr>
 </table>
 
@@ -69,7 +71,9 @@ neueren Chips:
 
 - **Kardan** mit beiden Servos gebaut; Rohr A und B des Rumpfs gebaut.
 - **Mainboard rev B1** als Code entworfen (Python → KiCad, vier Lagen, DRC fehlerfrei), begutachtet,
-  am 26.10. bei JLCPCB bestellt und **am 5.11.2026 geliefert**.
+  am 26.10. bei JLCPCB bestellt und **am 5.11.2026 geliefert**. Handlöten läuft: Stand 21.11. sind 19 von
+  42 Handlötteilen drauf ([Foto](docs/img/foto/2026-11-21_mainboard_revB1_loetstand.jpg),
+  Liste in [docs/BUILD.md](docs/BUILD.md) §3a).
 - **6DOF-Simulation** in Python: Schubkurve, gemessene Servodynamik, Sensorrauschen, Monte Carlo; sie
   hat die Rakete von 981 g auf 704 g gebracht und Verstärkungen gefunden, bei denen der Kardan nicht am
   Anschlag hängt.
@@ -95,10 +99,12 @@ neueren Chips:
 
 **Als Nächstes**
 
-1. Platine von Hand fertig löten und mit `revb_test` und der Werkbank prüfen und kalibrieren, nach der
-   [Löt- und Messanleitung](hardware/mainboard/LOETANLEITUNG_revB1.pdf) (Leistungsmessung und ein Widerstand
-   kommen mit der zweiten DigiKey-Sendung); zwei IPEX-Pigtails für die
-   [LoRa-Antenne](docs/Bauanleitung_LoRa_Antenne.md) besorgen.
+1. Platine von Hand fertig löten, nach der
+   [Löt- und Messanleitung](hardware/mainboard/LOETANLEITUNG_revB1.pdf): zuerst Stufe 1 fertig machen
+   (L2, R14, R15, R17 stellen den 5-V-Wandler ein, ohne sie läuft die Platine nicht), dann Logik und
+   Teensy-Sockel, 2S-Pfad, LEDs und Lader; Leistungsmessung U6 und GPS-Buchse J11 kommen mit der zweiten
+   DigiKey-Sendung. Danach mit `revb_test` und der Werkbank prüfen und kalibrieren; zwei IPEX-Pigtails für
+   die [LoRa-Antenne](docs/Bauanleitung_LoRa_Antenne.md) besorgen.
 2. Teile drucken und wiegen, Rakete zusammenbauen, Schwerpunkt austarieren.
 3. Firmware: die Korrekturen aus der Code-Durchsicht vom 14.11. (CO₂-Auslösung, Pyro-Puls, Flug-Log,
    Pins, Zustandsspeicher; [PROJECT.md](PROJECT.md) §5, Befunde 24–28) an der Platine prüfen und die
